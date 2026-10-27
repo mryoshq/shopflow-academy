@@ -80,4 +80,29 @@ Créer après accord un **tunnel nommé dédié ShopFlow**, avec `cloudflared` s
 - Plusieurs hostnames sur un tunnel : https://developers.cloudflare.com/tunnel/concepts/routing/
 - Publication / DNS CNAME : https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/routing-to-tunnel/
 
-**Statut au 27/10/2026 :** Compose local P0-01 vérifié sur `127.0.0.1:3080` (page, API et PostgreSQL). Les NS publics observés pour `rapidfox.io` sont `aria.ns.cloudflare.com` et `jobs.ns.cloudflare.com`. Un processus `cloudflared` sur le Mac hôte et un conteneur n8n ont été observés, mais l'association exacte tunnel/hostname n'est pas vérifiée. Un jeton du processus est apparu dans une sortie d'outil d'inventaire ; le propriétaire doit le renouveler avant publication, sans l'inscrire dans Git. Aucune route ni DNS ShopFlow créée ; aucune garantie que `shopflow.rapidfox.io` soit accessible.
+## Journal de publication — 27/10/2026 (Claude Code, ADR-0010)
+
+**Inventaire en lecture seule (aucun secret affiché) :**
+
+- NS `rapidfox.io` : `aria.ns.cloudflare.com`, `jobs.ns.cloudflare.com`. `shopflow.rapidfox.io` : aucun enregistrement avant publication.
+- `cloudflared` 2026.9.3 tourne **sur le Mac hôte** (`/opt/homebrew/bin/cloudflared tunnel run --token ***`), lancé par `/Library/LaunchDaemons/com.cloudflare.cloudflared.plist`. `~/.cloudflared/` est vide : tunnel **géré par le tableau de bord**. → **Cas A**.
+- n8n : conteneur `wordpress-n8n-1` (projet Compose `wordpress`) sur `127.0.0.1:5678`. ShopFlow : gateway sur `127.0.0.1:3080` (Docker Desktop).
+- État de référence n8n : `curl -sI https://n8n.rapidfox.io` → `HTTP/2 302` vers `https://mryoshq.cloudflareaccess.com/cdn-cgi/access/login/n8n.rapidfox.io…` (n8n protégé par Cloudflare Access).
+
+**Préparation applicative (branche `ops/publication-shopflow`) :** `.env` en `APP_ENV=production`, `APP_BASE_URL=https://shopflow.rapidfox.io`, `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ; OpenAPI masqué en production ; CSP + `Permissions-Policy` dans le gateway ; sauvegarde `pg_dump` datée dans `~/Developer/shopflow-backups/` (hors dépôt, hors iCloud, 0600) ; `scripts/smoke_public.py` (13 contrôles en local PASS).
+
+**Route à créer dans le tableau de bord (le connecteur à jeton ne permet pas de le faire en CLI ; extension Chrome non connectée pendant la session de nuit) :**
+
+1. `one.dash.cloudflare.com` → Networks → Tunnels → ouvrir le tunnel dont le connecteur est ce Mac et qui porte déjà `n8n.rapidfox.io`.
+2. Onglet **Published application routes** (ancien « Public Hostname ») → **Add a published application route**.
+3. Subdomain `shopflow` · Domain `rapidfox.io` · Path *(vide)* · Service Type **HTTP** · URL **`127.0.0.1:3080`**. Aucune option avancée. Enregistrer. Cloudflare crée le CNAME proxifié `shopflow` → `<id-tunnel>.cfargotunnel.com`.
+4. Ne rien modifier sur la ligne `n8n.rapidfox.io`, ni sur Access, ni sur le DNS.
+5. Si une application Cloudflare Access couvre `*.rapidfox.io`, `shopflow` serait derrière Access (le smoke test le signale) : ne pas modifier l'application n8n ; créer au besoin une application Access distincte en mode *Bypass* pour `shopflow.rapidfox.io` seulement.
+
+**Vérification après création :** `python3 scripts/smoke_public.py` (DNS, page, CSP, `/health/ready`, OpenAPI masqué, connexion d'un compte de démo, cookies `__Host-` `Secure`/`HttpOnly`, 403 étudiant sur l'API enseignant, origine étrangère refusée, déconnexion, n8n toujours en 302 vers Access). Puis test depuis un téléphone en 4G et connexion enseignant.
+
+**Retour arrière :** supprimer la seule route `shopflow.rapidfox.io` du tunnel (et le CNAME `shopflow` s'il reste) ; `docker compose stop` dans `~/Developer/shopflow-academy` ; rétablir `.env` depuis `~/Developer/shopflow-backups/env-avant-publication` si nécessaire. n8n, son conteneur et le connecteur ne sont jamais redémarrés.
+
+**Risque accepté :** le jeton du connecteur est apparu dans une sortie d'outil Codex. Décision du propriétaire le 27/10/2026 : on le garde pour l'instant. Action future : rotation du jeton (tableau de bord → tunnel → Refresh token, puis mise à jour du LaunchDaemon), à planifier hors cours.
+
+**Statut historique (Codex, 27/10/2026) :** Compose local P0-01 vérifié sur `127.0.0.1:3080` (page, API et PostgreSQL). Les NS publics observés pour `rapidfox.io` sont `aria.ns.cloudflare.com` et `jobs.ns.cloudflare.com`. Un processus `cloudflared` sur le Mac hôte et un conteneur n8n ont été observés, mais l'association exacte tunnel/hostname n'est pas vérifiée. Un jeton du processus est apparu dans une sortie d'outil d'inventaire ; le propriétaire doit le renouveler avant publication, sans l'inscrire dans Git. Aucune route ni DNS ShopFlow créée ; aucune garantie que `shopflow.rapidfox.io` soit accessible.

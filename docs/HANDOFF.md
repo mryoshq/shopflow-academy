@@ -1,6 +1,24 @@
 # HANDOFF — reprise ShopFlow Academy
 
-## État vérifié le 27/10/2026 — P0-04
+## État courant — session de nuit Claude Code (27-28/10/2026)
+
+Agent : Claude Code (reprise après Codex). Clone de travail **`~/Developer/shopflow-academy`** (hors iCloud, branches qui suivent `origin`). L'ancien clone `~/Documents/Codex/2026-10-27/…/shopflow-academy` a des SHA différents : ne plus l'ouvrir ni pousser depuis lui (fichier `ANCIEN-CLONE-NE-PLUS-UTILISER.txt` posé à côté). `.env` et `.local/` y ont été copiés sans affichage (0600/0700, ignorés par Git).
+
+### Phase 1 — assainissement : PASS
+Arbres identiques ancien/nouveau clone sur les 4 branches ; ancienne stack arrêtée sans `-v` ; stack relancée depuis le nouveau clone, données conservées (2 enseignants, 20 étudiants, migration `0003_curriculum`) ; connexion enseignant `.local/verify_teacher.py` PASS ; pytest 16 PASS, Vitest 4 PASS, build PASS, Playwright 1 PASS.
+
+### Phase 2 — publication : préparée, route Cloudflare **à créer par le propriétaire**
+Branche `ops/publication-shopflow` (PR empilée sur #14). Cas A (tunnel géré par le tableau de bord, même Mac). Stack locale en production, smoke test local 13/13 PASS. L'extension Chrome n'était pas connectée : la route `shopflow.rapidfox.io → HTTP 127.0.0.1:3080` n'a **pas** été créée. Valeurs exactes et retour arrière : `docs/DEPLOY-RAPIDFOX.md` § Journal de publication. n8n non touché (référence : 302 vers Cloudflare Access).
+
+### Décisions prises par prudence en l'absence du propriétaire
+- Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
+- `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).
+- Réglages anti-veille proposés dans `OPERATIONS.md`, non appliqués.
+- Le classificateur a refusé l'affichage de `.local/verify_teacher.py` ; le script a été exécuté sans être lu (sortie : une ligne PASS).
+
+## Historique Codex
+
+### État vérifié le 27/10/2026 — P0-04
 
 P0-04 est réalisé sur `feat/p0-04-course-studio`, [issue #4](https://github.com/mryoshq/shopflow-academy/issues/4), [PR #14](https://github.com/mryoshq/shopflow-academy/pull/14) ouverte et empilée sur #13. Commit fonctionnel local `c0a82da`, commit distant `4820a6a` avec arbre Git identique ; un commit documentaire de suivi peut s'ajouter. Les PR [#11](https://github.com/mryoshq/shopflow-academy/pull/11), [#12](https://github.com/mryoshq/shopflow-academy/pull/12) et [#13](https://github.com/mryoshq/shopflow-academy/pull/13) restent ouvertes, fusionnables et avec contrôles verts au 27/10/2026. Aucun merge automatique ; ordre manuel #11 → #12 → #13 → #14, avec changement de base et nouvelle vérification du diff/CI après chaque fusion. Voir `docs/INTEGRATION-PLAN.md`.
 
@@ -22,6 +40,6 @@ Le dépôt GitHub est **public**. Le transport Git HTTPS s'est bloqué sur ce Ma
 - CI [PR #14](https://github.com/mryoshq/shopflow-academy/pull/14) : backend, frontend, Compose, studio Playwright et kit **PASS** sur les runs push et PR. Recontrôler après toute modification et avant intégration.
 - Le lecteur étudiant P0-04 affiche les cours et missions attribués ; soumission, score et progression restent P0-05/P0-06. L'import/export de cours complet reste P0-08. Les tests Playwright ont seulement créé des cours/cohortes de démonstration et utilisé des comptes fictifs ; les comptes étudiants fournis n'ont pas été modifiés.
 
-## Reprise unique
+## Reprise unique (historique Codex)
 
 À la prochaine demande, commencer **P0-05** (lecteur étudiant générique) après avoir relu `AGENTS.md`, le CPS, BACKLOG, PROGRESS et la PR #14. Ne pas produire les vrais cours avant P2. Ne pas modifier Cloudflare, DNS, tunnels, tokens ni `n8n.rapidfox.io` sans accord ; seule publication future autorisée : Docker Compose sur Mac + Cloudflare Tunnel vers `shopflow.rapidfox.io`. Le jeton cloudflared apparu dans une sortie d'inventaire antérieure doit être traité comme exposé avant une publication future, sans le copier dans Git ou les réponses.

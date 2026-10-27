@@ -13,7 +13,7 @@ from pwdlib import PasswordHash
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
-from app.config import get_settings
+from app.config import allowed_origins, get_settings
 from app.database import get_db
 from app.models import AuthEvent, LoginThrottle, User, UserSession
 
@@ -49,11 +49,7 @@ def check_origin(request: Request) -> None:
     origin = request.headers.get("origin")
     if not origin:
         return
-    settings = get_settings()
-    allowed = {settings.app_base_url.rstrip("/")}
-    if settings.app_env != "production":
-        allowed.update({"http://127.0.0.1:3080", "http://localhost:3080"})
-    if origin not in allowed:
+    if origin not in allowed_origins(get_settings()):
         raise HTTPException(status_code=403, detail="origin not allowed")
 
 
