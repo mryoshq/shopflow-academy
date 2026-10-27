@@ -80,4 +80,4 @@ Créer après accord un **tunnel nommé dédié ShopFlow**, avec `cloudflared` s
 - Plusieurs hostnames sur un tunnel : https://developers.cloudflare.com/tunnel/concepts/routing/
 - Publication / DNS CNAME : https://developers.cloudflare.com/cloudflare-one/networks/connectors/cloudflare-tunnel/routing-to-tunnel/
 
-**Statut actuel : configuration documentée, non appliquée ; pas de garantie que `shopflow.rapidfox.io` soit déjà accessible.**
+**Statut au 27/10/2026 :** Compose local P0-01 vérifié sur `127.0.0.1:3080` (page, API et PostgreSQL). Les NS publics observés pour `rapidfox.io` sont `aria.ns.cloudflare.com` et `jobs.ns.cloudflare.com`. Le mode et l'hôte de `cloudflared` pour n8n restent à inventorier. Aucune route ni DNS ShopFlow créée ; aucune garantie que `shopflow.rapidfox.io` soit accessible.

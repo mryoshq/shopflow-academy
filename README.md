@@ -1,6 +1,21 @@
-# ShopFlow Academy — Kit complet de pilotage Codex + GitHub + Cloudflare Tunnel
+# ShopFlow Academy
 
-**Version 2.0 — 27 octobre 2026.** Ce ZIP contient **le CPS, le prompt principal exhaustif, neuf skills, les conventions d'architecture, le backlog, les tests documentaires et le plan d'exploitation**. **Ce n'est pas encore le code de l'Academy** : Codex doit l'implémenter à partir de ces documents.
+**État au 27 octobre 2026 : P0-01, fondations locales.** Ce dépôt contient le kit documentaire original et le premier socle exécutable React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx local. L'authentification, le studio et les cours sont prévus dans les lots suivants. Aucun contenu pédagogique définitif n'est publié.
+
+## Démarrer le socle en local sur Mac
+
+Pré-requis : Docker Desktop avec Compose. Le seul port hôte publié par cette stack est `127.0.0.1:3080`. Vérifier sa disponibilité avant le lancement. La stack ne contient ni n8n ni cloudflared.
+
+```bash
+python3 scripts/init_env.py
+docker compose config --quiet
+docker compose up -d --build
+curl --fail http://127.0.0.1:3080/health/ready
+```
+
+Ouvrir `http://127.0.0.1:3080/` pour la page de fondation. Arrêter uniquement cette stack avec `docker compose down` ; ne pas utiliser `-v` si les données PostgreSQL doivent être conservées. Pour les tests hors Docker : installer `backend/requirements-dev.txt` dans un environnement Python, exécuter `python -m pytest -q` depuis `backend`, puis `npm ci`, `npm run test -- --maxWorkers=1` et `npm run build` depuis `frontend`.
+
+Le domaine `https://shopflow.rapidfox.io` reste réservé au déploiement ultérieur sur Mac via Cloudflare Tunnel, après accord explicite. `n8n.rapidfox.io` est hors de cette stack et reste inchangé.
 
 ## Démarrage recommandé — directement dans Codex sur le Mac
 
@@ -29,7 +44,7 @@ python3 -m unittest discover -s tests -v
 python3 scripts/next_task.py
 ```
 
-La configuration `compose.yaml` incluse ne sert **au départ que de base infrastructure** (PostgreSQL + MySQL facultatif via profil labs) ; frontend/backend/gateway seront construits dans P0-01. Le kit ne prouve ni conteneurs opérationnels ni publication du sous-domaine.
+La vérification documentaire du kit ne valide pas l'application. Les tests applicatifs se trouvent désormais dans `backend/tests` et `frontend/src/*.test.tsx` ; la CI dédiée est `.github/workflows/app-ci.yml`.
 
 ## Carte des fichiers
 
@@ -53,4 +68,4 @@ La configuration `compose.yaml` incluse ne sert **au départ que de base infrast
 
 ## État vérifiable
 
-**Livré dans ce ZIP** : spécifications + prompt exhaustif + skills + backlog + tests du kit + documentation Tunnel. **Non livré** : plateforme React/FastAPI, véritable studio, moteur de missions, comptes utilisateurs, correcteur déployé, Cloudflare configuré. Ne pas confondre ces états.
+**Livré dans P0-01** : page React/Chakra v3, API FastAPI de santé, migration initiale de la table `users`, Compose Mac avec gateway loopback et tests de fondation. **À livrer dans les lots suivants** : authentification, studio, lecteur, correction, dashboards et publication Cloudflare après accord.
