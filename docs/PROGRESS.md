@@ -1,6 +1,6 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
-**Date : 2026-10-27 · État : P0-01 implémenté et vérifié localement ; CI applicative à confirmer sur PR. Branche locale `feat/p0-01-foundation`.**
+**Date : 2026-10-27 · État : P0-01 implémenté, vérifié localement et CI applicative PASS sur [PR #11](https://github.com/mryoshq/shopflow-academy/pull/11), non mergée. Branche `feat/p0-01-foundation`.**
 
 ## Livré et vérifiable dans le ZIP
 
@@ -21,4 +21,4 @@
 | Date | Lot | Branche / commit / PR | Tests exécutés | Résultat / risques |
 |---|---|---|---|---|
 | 2026-10-27 | KIT-02 | ZIP local sans dépôt GitHub | `python3 scripts/verify_kit.py` PASS 0 erreurs ; `python3 -m unittest discover -s tests -v` PASS 4 tests | Kit documentaire validé ; aucune application / aucun conteneur testé |
-| 2026-10-27 | P0-01 | `feat/p0-01-foundation` ; [issue #1](https://github.com/mryoshq/shopflow-academy/issues/1) ; PR en préparation | `backend: python -m pytest -q` PASS 4 ; `frontend: npm run test -- --maxWorkers=1` PASS 2 ; `npm run build` PASS ; `docker compose config --quiet` PASS ; `docker compose up -d --build` PASS après correction du gateway ; `curl` /, /health/live, /health/ready, /api/v1/status PASS ; table `users` vérifiée dans PostgreSQL | Aucun compte réel, aucun contenu de cours, aucune publication Cloudflare ; n8n inchangé. |
+| 2026-10-27 | P0-01 | `feat/p0-01-foundation` ; [issue #1](https://github.com/mryoshq/shopflow-academy/issues/1) ; [PR #11](https://github.com/mryoshq/shopflow-academy/pull/11) ; commit distant `7798c0f` ; commit local `a312de8` (arbres identiques) | `backend: python -m pytest -q` PASS 4 ; `frontend: npm run test -- --maxWorkers=1` PASS 2 ; `npm run build` PASS ; `docker compose config --quiet` PASS ; `docker compose up -d --build` PASS après correction du gateway ; `curl` /, /health/live, /health/ready, /api/v1/status PASS ; table `users` vérifiée dans PostgreSQL ; CI backend/frontend/Compose/kit PASS | Aucun compte réel, aucun contenu de cours, aucune publication Cloudflare ; n8n inchangé. Git HTTPS bloqué, synchronisation distante par `gh api`. |
