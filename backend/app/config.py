@@ -10,6 +10,8 @@ class Settings(BaseSettings):
     # Comma-separated extra origins allowed for cookie/CSRF checks, e.g. the
     # loopback gateway when the teacher also uses http://127.0.0.1:3080 in production.
     app_extra_origins: str = ""
+    # Optional key for opaque student choice IDs; derived from DATABASE_URL when empty.
+    app_secret: str = ""
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

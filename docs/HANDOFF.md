@@ -10,6 +10,12 @@ Arbres identiques ancien/nouveau clone sur les 4 branches ; ancienne stack arrê
 ### Phase 2 — publication : préparée, route Cloudflare **à créer par le propriétaire**
 Branche `ops/publication-shopflow` (PR empilée sur #14). Cas A (tunnel géré par le tableau de bord, même Mac). Stack locale en production, smoke test local 13/13 PASS. L'extension Chrome n'était pas connectée : la route `shopflow.rapidfox.io → HTTP 127.0.0.1:3080` n'a **pas** été créée. Valeurs exactes et retour arrière : `docs/DEPLOY-RAPIDFOX.md` § Journal de publication. n8n non touché (référence : 302 vers Cloudflare Access).
 
+### Phase 3 — configuration Claude Code : PR [#16](https://github.com/mryoshq/shopflow-academy/pull/16) vers `main`
+`CLAUDE.md`, skills liés symboliquement, `.claude/settings.json`. Préparée dans le worktree `~/Developer/shopflow-claude-setup` pour que ses règles `ask` (dont `git push`) ne bloquent pas le travail de nuit. Context7 et `frontend-design` documentés, **non installés** (accord requis).
+
+### Phase 4 — revue #11 à #14
+Rapport : `~/Developer/shopflow-notes/REVUE-P0-01-04.md`. Un bloquant (B1, réponse lisible pour ordre/association) corrigé sur `fix/revue-p0-01-04` (PR empilée sur #15). Importants I1-I2 traités en P0-05.
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).

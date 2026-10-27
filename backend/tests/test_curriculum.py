@@ -234,3 +234,59 @@ def test_teacher_upsert_rotates_password_without_duplicate(curriculum_env):
         accounts = db.scalars(select(User).where(User.username == "prof@example.com")).all()
         assert len(accounts) == 1 and accounts[0].role == "teacher"
         assert password_hash.verify("second-password-long-enough-456", accounts[0].password_hash)
+
+
+def test_student_view_hides_order_and_pairs_with_opaque_shuffled_ids():
+    from app.projection import reverse_ids, student_definition
+
+    labels = ["Lire", "Valider", "Nettoyer", "Dédupliquer", "Charger"]
+    reorder = definition(1)
+    reorder.update({"kind": "reorder", "choices": [{"id": f"option-{i}", "label": label} for i, label in enumerate(labels, 1)],
+                    "correct_ids": [f"option-{i}" for i in range(1, 6)], "feedback": {}})
+    parsed = MissionDefinition.model_validate(reorder)
+    for version_id in range(1, 40):
+        view = student_definition(parsed.student_projection(), version_id, parsed.model_dump())
+        ids = [choice["id"] for choice in view["choices"]]
+        assert [choice["label"] for choice in view["choices"]] != labels
+        assert not any(raw in str(view) for raw in ["option-1", "option-2"])
+        mapping = reverse_ids(version_id, "c", [choice.id for choice in parsed.choices])
+        assert sorted(mapping[i] for i in ids) == sorted(parsed.correct_ids)
+        assert view == student_definition(parsed.student_projection(), version_id, parsed.model_dump())
+
+    matching = definition(1)
+    matching.update({"kind": "matching", "correct_ids": [], "feedback": {},
+                     "choices": [{"id": "a", "label": "Doublon"}, {"id": "b", "label": "Date vide"}],
+                     "match_targets": [{"id": "x", "label": "Dédupliquer"}, {"id": "y", "label": "Imputer ou rejeter"}],
+                     "correct_pairs": {"a": "x", "b": "y"}})
+    parsed = MissionDefinition.model_validate(matching)
+    for version_id in range(1, 40):
+        view = student_definition(parsed.student_projection(), version_id, parsed.model_dump())
+        choice_raw = reverse_ids(version_id, "c", ["a", "b"])
+        target_raw = reverse_ids(version_id, "t", ["x", "y"])
+        aligned = [parsed.correct_pairs[choice_raw[c["id"]]] == target_raw[t["id"]] for c, t in zip(view["choices"], view["match_targets"])]
+        assert not all(aligned)
+
+
+def test_published_student_view_uses_opaque_ids(curriculum_env):
+    teacher, student_a, _, engine = curriculum_env
+    signin(teacher, "teacher.a", "teacher-a-test")
+    signin(student_a, "student.a", "student-a-test")
+    course = post(teacher, "/api/v1/teacher/courses", {"slug": "ordre", "title": "Ordre"}).json()["id"]
+    objective = post(teacher, f"/api/v1/teacher/courses/{course}/objectives", {"code": "OBJ-O", "statement": "Ordonner"}).json()["id"]
+    module = post(teacher, f"/api/v1/teacher/courses/{course}/modules", {"title": "M"}).json()["id"]
+    chapter = post(teacher, f"/api/v1/teacher/modules/{module}/chapters", {"title": "C"}).json()["id"]
+    body = definition(objective)
+    body.update({"kind": "reorder", "choices": [{"id": f"option-{i}", "label": f"Étape {i}"} for i in range(1, 5)],
+                 "correct_ids": [f"option-{i}" for i in range(1, 5)], "feedback": {}})
+    assert post(teacher, f"/api/v1/teacher/chapters/{chapter}/missions", {"slug": "ordre", "title": "Ordre", "definition": body}).status_code == 201
+    release = post(teacher, f"/api/v1/teacher/courses/{course}/publish").json()["id"]
+    cohort = post(teacher, "/api/v1/teacher/cohorts", {"label": "Classe ordre"}).json()["id"]
+    with Session(engine) as db:
+        student_id = db.scalar(select(User.id).where(User.username == "student.a"))
+    post(teacher, f"/api/v1/teacher/cohorts/{cohort}/enrollments", {"user_id": student_id})
+    post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": release})
+    text = student_a.get(f"/api/v1/student/courses/{release}").text
+    assert "option-1" not in text
+    view = student_a.get(f"/api/v1/student/courses/{release}").json()
+    labels = [c["label"] for c in view["modules"][0]["chapters"][0]["missions"][0]["definition"]["choices"]]
+    assert labels != [f"Étape {i}" for i in range(1, 5)]

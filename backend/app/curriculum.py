@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session
 from app.auth import AuthContext, require_student, require_teacher, require_teacher_csrf
 from app.curriculum_schema import DisplayData, MissionDefinition, plain
 from app.database import get_db
+from app.projection import student_definition
 from app.models import (
     Assignment, AuditEvent, Chapter, Cohort, Course, CourseModule, CourseRelease,
     Enrollment, LearningObjective, Mission, MissionVersion, User,
@@ -234,8 +235,12 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
     return result
 
 
-def student_safe_snapshot(snapshot: dict) -> dict:
-    """Defend even older stored releases against accidental answer-key exposure."""
+def student_safe_snapshot(snapshot: dict, private_by_version: dict[int, dict] | None = None) -> dict:
+    """Defend even older stored releases against accidental answer-key exposure.
+
+    Missions linked to a mission version also get opaque choice IDs and a shuffled
+    order (see ``app.projection``), so ordering/matching answers are not revealed.
+    """
     safe = deepcopy(snapshot)
     for module in safe.get("modules", []):
         for chapter in module.get("chapters", []):
@@ -250,8 +255,19 @@ def student_safe_snapshot(snapshot: dict) -> dict:
                         projected["display_data"] = display_adapter.validate_python(projected["display_data"]).model_dump()
                     except ValidationError:
                         projected.pop("display_data")
+                version_id = mission.get("mission_version_id")
+                if isinstance(version_id, int):
+                    projected = student_definition(projected, version_id, (private_by_version or {}).get(version_id))
                 mission["definition"] = projected
     return safe
+
+
+def release_private_definitions(db: Session, snapshot: dict) -> dict[int, dict]:
+    ids = [mission["mission_version_id"] for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])
+           for mission in chapter.get("missions", []) if isinstance(mission.get("mission_version_id"), int)]
+    if not ids:
+        return {}
+    return {item.id: item.definition_private for item in db.scalars(select(MissionVersion).where(MissionVersion.id.in_(ids)))}
 
 
 @router.get("/teacher/courses")
@@ -648,4 +664,4 @@ def student_course(release_id: int, response: Response, auth: AuthContext = Depe
     if release is None:
         raise HTTPException(status_code=404, detail="course not found")
     response.headers["Cache-Control"] = "no-store"
-    return student_safe_snapshot(release.student_snapshot)
+    return student_safe_snapshot(release.student_snapshot, release_private_definitions(db, release.student_snapshot))
