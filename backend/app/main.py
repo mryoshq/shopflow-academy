@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.database import database_is_ready
+from app.auth import router as auth_router
 
 
 class Health(BaseModel):
@@ -9,6 +10,7 @@ class Health(BaseModel):
 
 
 app = FastAPI(title="ShopFlow Academy API", version="0.1.0", openapi_url="/api/v1/openapi.json", docs_url=None, redoc_url=None)
+app.include_router(auth_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])

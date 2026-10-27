@@ -15,3 +15,4 @@ def test_initial_migration_creates_users_with_unique_username(tmp_path, monkeypa
     columns = {column["name"] for column in inspect(engine).get_columns("users")}
     assert {"id", "username", "password_hash", "role", "enabled", "created_at"} <= columns
     assert any({"username"} == set(item["column_names"]) for item in inspect(engine).get_unique_constraints("users"))
+    assert {"user_sessions", "login_throttles", "auth_events"} <= set(inspect(engine).get_table_names())

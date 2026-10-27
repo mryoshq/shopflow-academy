@@ -1,7 +1,13 @@
-.PHONY: init-env test-backend test-frontend config up down smoke
+.PHONY: init-env seed-demo import-students test-backend test-frontend config up down smoke
 
 init-env:
 	python3 scripts/init_env.py
+
+seed-demo:
+	python3 scripts/seed_demo.py
+
+import-students:
+	python3 scripts/import_students.py
 
 test-backend:
 	cd backend && ../.venv/bin/python -m pytest -q
