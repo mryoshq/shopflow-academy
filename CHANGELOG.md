@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27 — P0-03 (PR en préparation)
+## 2026-10-27 — P0-03 ([PR #13](https://github.com/mryoshq/shopflow-academy/pull/13), ouverte)
 
 - Référentiel cours/objectifs/modules/chapitres/missions, brouillons typés, cohortes et assignations.
 - Publication de versions figées avec projection étudiante sans clé de correction ; contrôle d'accès à la version assignée.
