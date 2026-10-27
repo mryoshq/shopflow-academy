@@ -128,6 +128,12 @@ def require_csrf(
     return auth
 
 
+def require_teacher_csrf(auth: AuthContext = Depends(require_csrf)) -> AuthContext:
+    if auth.user.role != "teacher":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return auth
+
+
 @router.post("/auth/login", response_model=UserOut, tags=["auth"])
 def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> UserOut:
     check_origin(request)
