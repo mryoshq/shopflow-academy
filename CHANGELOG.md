@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-10-27 — P0-02 (PR en préparation)
+## 2026-10-27 — P0-02 ([PR #12](https://github.com/mryoshq/shopflow-academy/pull/12), ouverte)
 
 - Authentification par session, Argon2, CSRF, expiration, révocation et limitation des tentatives.
 - Rôles enseignant/étudiant et contrôle des profils par propriétaire.
