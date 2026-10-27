@@ -9,9 +9,11 @@ from sqlalchemy.orm import Session
 
 from app.auth import password_hash
 from app.curriculum_schema import MissionDefinition
+from app.curriculum import student_safe_snapshot
 from app.database import get_db
 from app.main import app
 from app.models import AuditEvent, CourseRelease, MissionVersion, User
+from app.upsert_teacher import upsert_teacher
 
 
 @pytest.fixture
@@ -155,3 +157,80 @@ def test_typed_activity_variants_keep_answer_keys_private():
     guided.update({"kind": "guided_simulation", "action_id": "execute_arbitrary_code"})
     with pytest.raises(ValueError):
         MissionDefinition.model_validate(guided)
+
+
+def test_sql_comparison_text_and_typed_display_data():
+    item = definition(1)
+    item["scenario"] = "Filtrer les lignes où montant < 100 et quantité > 0."
+    item["display_data"] = {"kind": "table", "columns": ["Montant", "SQL"],
+                            "rows": [[70, "SELECT * FROM ventes WHERE montant < 100"]]}
+    parsed = MissionDefinition.model_validate(item)
+    assert "montant < 100" in parsed.scenario
+    projection = parsed.student_projection()
+    for secret in ("correct_ids", "correct_pairs", "feedback", "max_points", "action_id"):
+        assert secret not in projection
+    unsafe = dict(item)
+    unsafe["display_data"] = {"kind": "table", "columns": ["Montant"], "rows": [[70]],
+                              "correct_ids": ["a"]}
+    with pytest.raises(ValueError):
+        MissionDefinition.model_validate(unsafe)
+
+    legacy = {"modules": [{"chapters": [{"missions": [{"definition": {
+        "kind": "single_choice", "scenario": "Comparer x < 10", "correct_ids": ["a"],
+        "feedback": {"a": "secret"}, "max_points": 10, "action_id": "secret",
+        "display_data": {"kind": "table", "columns": ["Valeur"], "rows": [[10]], "answer": "secret"},
+    }}]}]}]}
+    scrubbed = student_safe_snapshot(legacy)
+    for secret in ("correct_ids", "feedback", "max_points", "action_id", "answer"):
+        assert secret not in str(scrubbed)
+    unsafe["display_data"] = {"kind": "table", "columns": ["Montant"], "rows": [[70, 100]]}
+    with pytest.raises(ValueError):
+        MissionDefinition.model_validate(unsafe)
+
+
+def test_archived_course_is_read_only_and_hidden_from_students(curriculum_env):
+    teacher, student, _, engine = curriculum_env
+    signin(teacher, "teacher.a", "teacher-a-test")
+    signin(student, "student.a", "student-a-test")
+    course = post(teacher, "/api/v1/teacher/courses", {"slug": "archive-demo", "title": "À archiver"}).json()["id"]
+    objective = post(teacher, f"/api/v1/teacher/courses/{course}/objectives", {"code": "ARCHIVE", "statement": "Tester l'archive"}).json()["id"]
+    module = post(teacher, f"/api/v1/teacher/courses/{course}/modules", {"title": "Module"}).json()["id"]
+    chapter = post(teacher, f"/api/v1/teacher/modules/{module}/chapters", {"title": "Chapitre"}).json()["id"]
+    mission = post(teacher, f"/api/v1/teacher/chapters/{chapter}/missions", {"slug": "test", "title": "Test", "definition": definition(objective)}).json()["id"]
+    release = post(teacher, f"/api/v1/teacher/courses/{course}/publish").json()["id"]
+    cohort = post(teacher, "/api/v1/teacher/cohorts", {"label": "Archive test"}).json()["id"]
+    with Session(engine) as db:
+        student_id = db.scalar(select(User.id).where(User.username == "student.a"))
+    assert post(teacher, f"/api/v1/teacher/cohorts/{cohort}/enrollments", {"user_id": student_id}).status_code == 201
+    assert post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": release}).status_code == 201
+    assert student.get(f"/api/v1/student/courses/{release}").status_code == 200
+    assert post(student, f"/api/v1/teacher/courses/{course}/archive").status_code == 403
+    assert post(teacher, f"/api/v1/teacher/courses/{course}/archive").status_code == 200
+    assert student.get(f"/api/v1/student/courses/{release}").status_code == 404
+    assert student.get("/api/v1/student/courses").json() == []
+    assert teacher.get(f"/api/v1/teacher/courses/{course}").status_code == 200
+    csrf = {"X-CSRF-Token": teacher.cookies["academy_csrf"]}
+    assert teacher.patch(f"/api/v1/teacher/courses/{course}", json={"title": "Refus"}, headers=csrf).status_code == 409
+    assert post(teacher, f"/api/v1/teacher/courses/{course}/objectives", {"code": "NO", "statement": "Refus"}).status_code == 409
+    assert post(teacher, f"/api/v1/teacher/courses/{course}/modules", {"title": "Refus"}).status_code == 409
+    assert teacher.patch(f"/api/v1/teacher/objectives/{objective}", json={"statement": "Refus"}, headers=csrf).status_code == 409
+    assert teacher.patch(f"/api/v1/teacher/modules/{module}", json={"title": "Refus"}, headers=csrf).status_code == 409
+    assert post(teacher, f"/api/v1/teacher/modules/{module}/chapters", {"title": "Refus"}).status_code == 409
+    assert teacher.patch(f"/api/v1/teacher/chapters/{chapter}", json={"title": "Refus"}, headers=csrf).status_code == 409
+    assert post(teacher, f"/api/v1/teacher/chapters/{chapter}/missions", {"slug": "no", "title": "Refus"}).status_code == 409
+    assert teacher.patch(f"/api/v1/teacher/missions/{mission}", json={"title": "Refus"}, headers=csrf).status_code == 409
+    assert put(teacher, f"/api/v1/teacher/missions/{mission}/draft", definition(objective)).status_code == 409
+    assert post(teacher, f"/api/v1/teacher/courses/{course}/publish").status_code == 409
+    assert post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": release}).status_code == 422
+
+
+def test_teacher_upsert_rotates_password_without_duplicate(curriculum_env):
+    _, _, _, engine = curriculum_env
+    with Session(engine) as db:
+        assert upsert_teacher(db, "prof@example.com", "first-password-long-enough-123", "development") is True
+    with Session(engine) as db:
+        assert upsert_teacher(db, "PROF@example.com", "second-password-long-enough-456", "development") is False
+    with Session(engine) as db:
+        accounts = db.scalars(select(User).where(User.username == "prof@example.com")).all()
+        assert len(accounts) == 1 and accounts[0].role == "teacher"
+        assert password_hash.verify("second-password-long-enough-456", accounts[0].password_hash)
