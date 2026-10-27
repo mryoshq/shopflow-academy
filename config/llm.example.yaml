@@ -1,0 +1,19 @@
+# Optional tutor LLM settings. This is an EXAMPLE; no provider/API is enabled by default.
+ai:
+  enabled: false
+  provider: none  # none | openrouter (implement adapter in P1-01)
+  locale_default: fr
+  allow_darija: true
+  fallback: static_hints
+  routes:
+    explanation: ${AI_MODEL_EXPLANATION:-}
+    hint: ${AI_MODEL_HINT:-}
+  limits:
+    requests_per_student_per_day: 30
+    max_output_tokens: 400
+    # Budget controls must be implemented server side; NOT merely UI configuration.
+    class_daily_spend_usd: 2
+  transport:
+    # OpenRouter API key only on backend, not in browser.
+    base_url: https://openrouter.ai/api/v1
+    api_key_env: OPENROUTER_API_KEY

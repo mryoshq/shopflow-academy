@@ -1,0 +1,21 @@
+SHOPFLOW ACADEMY — DÉMARRAGE CODEX (Mac + GitHub + Cloudflare Tunnel)
+
+Télécharger CE ZIP seulement dans ~/Downloads.
+Coller le message suivant dans Codex :
+
+« Trouve ~/Downloads/ShopFlow_Academy_Codex_GitHub_Rapidfox.zip.
+Inspecte et décompresse ce ZIP en conservant .agents/, .github/ et AGENTS.md.
+Lis ensuite INTÉGRALEMENT docs/PROMPT-CODEX-IMPORT-GITHUB-CLOUDFLARE.md
+et exécute ses instructions, ainsi que AGENTS.md/CPS/BACKLOG.
+Utilise mon GitHub via gh authentifié. Développe P0-01 ; la plateforme et
+l'éditeur de cours doivent précéder la saisie des cours définitifs.
+Le seul déploiement public préparé est Cloudflare Tunnel depuis un Mac
+vers shopflow.rapidfox.io. NE TOUCHE PAS n8n.rapidfox.io.
+Réalise le travail local/GitHub vérifiable, teste et remplis HANDOFF/PROGRESS.
+Demande mon autorisation avant publication publique ou modification Cloudflare. »
+
+Les consignes COMPLÈTES et détaillées (plus de 4 000 mots) sont dans :
+docs/PROMPT-CODEX-IMPORT-GITHUB-CLOUDFLARE.md
+
+On peut également copier ce prompt complet dans Codex : il ne remplace pas le
+fichier de suivi persistant AGENTS.md.
