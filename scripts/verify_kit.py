@@ -33,6 +33,10 @@ def main():
         body = path.read_text(encoding='utf-8')
         if not re.search(r'(?m)^---\nname:\s*' + re.escape(name) + r'\ndescription:\s*.+\n---', body):
             errors.append(f'Malformed skill metadata: {name}')
+        # Claude Code loads the same skills through relative symlinks (single source of truth).
+        exposed = ROOT / '.claude' / 'skills' / name
+        if not exposed.is_symlink() or exposed.resolve() != path.parent.resolve():
+            errors.append(f'Claude Code skill link missing or diverging: .claude/skills/{name}')
 
     ped_path = ROOT / 'docs/PEDAGOGIE-28-OCT.md'
     doc = ped_path.read_text(encoding='utf-8') if ped_path.is_file() else ''
