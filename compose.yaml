@@ -24,6 +24,7 @@ services:
       DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}
       APP_ENV: ${APP_ENV:-development}
       APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:3080}
+      APP_EXTRA_ORIGINS: ${APP_EXTRA_ORIGINS:-}
     depends_on:
       postgres:
         condition: service_healthy
