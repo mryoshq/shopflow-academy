@@ -27,7 +27,8 @@ async function openClass(page: Page) {
 test("the teacher follows the class live, pauses, unlocks and exports", async ({ page, browser }) => {
   await login(page, "demo.enseignant")
   const classId = await openClass(page)
-  const row = page.getByRole("row").filter({ hasText: "demo.etudiant06" })
+  // The students table only: the mission statistics also name students (« Clics rapides », ADR-0027).
+  const row = page.getByRole("table", { name: /^Progression de la classe/ }).getByRole("row").filter({ hasText: "demo.etudiant06" })
   await expect(row).toBeVisible()
   expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations
     .filter((item) => ["serious", "critical"].includes(item.impact ?? "")).map((item) => item.id)).toEqual([])

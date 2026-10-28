@@ -313,3 +313,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | 28/10/2026 (sprint 2, C) | Exécution livrée : `run` SQL (base de laboratoire, à la demande), `run` Python (exécuté à la compilation sur le Mac, sortie stockée), `sql_challenge` (corrigé par comparaison de résultats). `datasets/shopflow-lab.sql` chargé à l'import ; `datasets/python/` = répertoire de travail des extraits. Les échecs d'exécution sont des erreurs avec fichier et ligne. |
 | 28/10/2026 (sprint 2, F) | Livrés : `data.kind` `animation`, `mindmap`, `flow`, `video` (`url` youtube-nocookie.com / player.vimeo.com, ou `file` + `captions` dans `cours/media/`). |
 | 28/10/2026 (sprint 2, D) | Livrés : `lesson` (`body`, « J'ai compris »), `data.kind` `line_chart`, `code`, `comparison` (avec `title` de chaque côté), `title` facultatif d'un `table`. `run` et `sql_challenge` acceptés et stockés (exécution en partie C). Introduction de module = première ligne sous `# Module :`. Fichiers réservés ignorés. |
+
+## Règles contre le clic au hasard (ADR-0027)
+
+Ces règles ne s'écrivent pas dans le cours : elles se règlent dans « Mon cours » → « Règles », par cours. Conséquences pour l'auteur : les points dégressifs ne touchent que les missions principales (jamais `bonus: true`) ; la lecture minimale se calcule sur les mots de la leçon (200 mots par minute, entre 10 et 60 s), d'où l'intérêt de leçons courtes ; une `explanation` et des indices utiles comptent davantage, car l'étudiant les voit pendant la pause après une erreur.
