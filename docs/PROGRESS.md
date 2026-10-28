@@ -1,6 +1,6 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
-**Date : 2026-10-28 · État : P0 entièrement fusionné dans `main` (PR #11 à #25), production `https://shopflow.rapidfox.io` sur `main`. Sprint 2 (session cloud) : A, D, F fusionnées (#26, #27, #28) ; C (#29) et B en PR, E à suivre.** (Ligne d'état précédente : P0-01 à P0-10 livrés en PR empilées non fusionnées.) (Ligne d'état précédente, 27/10 : P0-04 sur `feat/p0-04-course-studio`, PR #14.)
+**Date : 2026-10-28 · État : P0 entièrement fusionné dans `main` (PR #11 à #25), production `https://shopflow.rapidfox.io` sur `main`. Sprint 2 (session cloud) : A, D, F, C fusionnées (#26 à #29) ; B (#30) en PR, E à suivre.** (Ligne d'état précédente : P0-01 à P0-10 livrés en PR empilées non fusionnées.) (Ligne d'état précédente, 27/10 : P0-04 sur `feat/p0-04-course-studio`, PR #14.)
 
 ## Livré et vérifiable dans le ZIP
 
