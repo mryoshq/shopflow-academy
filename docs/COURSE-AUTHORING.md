@@ -11,20 +11,26 @@
 
 ## 2. Fichiers et chaîne de traitement
 
-Le cours est un **dossier** dans le dépôt **privé** `mryoshq/shopflow-courses` (les fichiers contiennent les corrigés : jamais dans le dépôt public de la plateforme) :
+La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écrit par l'agent contenu (qui n'utilise pas GitHub) :
 
 ```
-cours/
-  00-cours.md               en-tête du cours (titre, objectifs)
-  10-module-sql.md          module SQL analytique
-  20-module-python.md       module Python ingestion et qualité (peut être découpé en 20-, 21-, 22-…)
-  datasets/
-    shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 6)
-    python/                 petits fichiers CSV/JSON fictifs utilisés par les extraits Python
+<dossier du cours>/
+  cours/
+    00-cours.md               en-tête du cours (titre, objectifs)
+    10-module-sql.md          module SQL analytique
+    20-module-python.md       module Python ingestion et qualité (peut être découpé en 20-, 21-, 22-…)
+    datasets/
+      shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 6)
+      python/                 petits fichiers CSV/JSON fictifs utilisés par les extraits Python
+  COVERAGE.md                 objectif → missions → points → durée
+  QUESTIONS.md                points à trancher par l'enseignant
+  RETOURS-PLATEFORME.md       écrit par l'agent plateforme après chaque compilation (à lire, ne pas éditer)
 ```
 
-- Le compilateur lit les fichiers `.md` du dossier **dans l'ordre de leur nom** et les assemble en un seul cours.
-- Chaîne : `scripts/course_md.py compile cours/` (validation, erreurs avec fichier et ligne) → import en brouillon → aperçu → publication → les modules s'ouvrent ensuite un par un depuis le suivi de classe.
+- Les fichiers contiennent les corrigés : **jamais** dans le dépôt public de la plateforme, une issue publique, un gist ou un lien partagé.
+- Le compilateur lit les fichiers `.md` de `cours/` **dans l'ordre de leur nom** et les assemble en un seul cours.
+- Chaîne, quand l'enseignant annonce « le cours est prêt » : l'agent plateforme lance `scripts/course_md.py compile "<dossier du cours>/cours"` (validation, erreurs avec fichier et ligne), écrit ses retours dans `<dossier du cours>/RETOURS-PLATEFORME.md`, puis, à 0 erreur, importe **en brouillon** (`import`) → aperçu par l'enseignant → publication **sur son accord écrit seulement** → les modules s'ouvrent ensuite un par un depuis le suivi de classe.
+- **Sauvegarde versionnée** : après chaque étape validée, l'agent plateforme copie `cours/` et les fichiers `.md` du dossier dans le dépôt GitHub **privé** `mryoshq/shopflow-courses`, après avoir vérifié qu'il est privé. Personne d'autre n'y pousse ; le dossier local reste la source.
 - Ajouter un module plus tard = ajouter un fichier, recompiler, republier : la progression et les notes déjà obtenues sur les missions inchangées sont conservées.
 
 ## 3. Syntaxe
