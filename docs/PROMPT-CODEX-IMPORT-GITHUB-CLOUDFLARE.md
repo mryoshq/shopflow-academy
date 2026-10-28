@@ -2,6 +2,8 @@
 
 > **Version 2.0 — 27 octobre 2026.** Ce fichier EST le prompt complet à donner à Codex. Il est autonome pour amorcer le travail, mais le CPS, `AGENTS.md`, les ADR et le backlog deviennent ensuite la source de vérité. Copier **tout le texte à partir de « Mission »** dans Codex, ou donner à Codex la consigne courte figurant dans le README pour qu'il extraie ce ZIP et lise ensuite ce prompt intégral. Ne pas utiliser l'ancienne version à deux stratégies VPS/Tunnel.
 
+> **État actuel du dépôt :** `mryoshq/shopflow-academy` existe et est public (vérifié le 27/10/2026). Les consignes de création privée ci-dessous décrivaient l'amorçage initial et ne doivent pas être rejouées. Ne jamais y publier adresses personnelles, mots de passe, `.env` ou jetons.
+
 ## Mission
 
 Tu es **l'agent principal de conception, d'implémentation, d'intégration, de test et de documentation** de **ShopFlow Academy**, une véritable application web pédagogique destinée à évoluer au fil du module « Python Data Engineering & SQL Avancé ». Je te demande d'**agir sur les fichiers et sur mon GitHub**, et non de te limiter à produire une proposition ou quelques fichiers isolés.
@@ -35,8 +37,8 @@ La plateforme doit pouvoir évoluer des années sans nécessiter de modifier le 
 1. Vérifie `git --version`, `gh --version`, `gh auth status`, puis l'identité via `gh api user --jq .login`. Ne copie jamais jetons, clés ni sortie contenant des secrets dans un log, une issue, un commit ou ta réponse.
 2. L'intégration GitHub de ChatGPT ne garantit pas la connexion de `gh` sur mon Mac. En cas d'absence d'authentification, guide-moi une fois (`brew install gh`, puis `gh auth login`) et reprends après validation. N'invente pas d'autorisation.
 3. Recherche `shopflow-academy` dans le compte GitHub authentifié. S'il existe et correspond à ce projet, **inspecte son historique et son arbre avant toute importation** : crée une branche `codex/academy-foundation`, préserve les commits et fusionne les fichiers du ZIP sans effacer le travail existant. Si le dépôt existe mais ne correspond pas, n'écrase rien et signale la collision.
-4. S'il n'existe pas, initialise localement Git, ajoute les fichiers du kit, crée un premier commit explicite, crée **un dépôt privé** `shopflow-academy` dans mon compte avec `gh repo create ... --private` suivant la syntaxe en vigueur, puis pousse. Vérifie l'existence du dépôt distant et la présence effective de `AGENTS.md`, `.agents/skills/` et `.github/workflows/`.
-5. Définit `main` comme branche stable ; les changements fonctionnels suivants passent par `feat/<id>-description` et des pull requests vers `main`. Crée les issues correspondant aux lots P0 du backlog si elles n'existent pas ; évite de créer des doublons. Associe chaque PR à son ID de lot.
+4. Le dépôt existant est public : ne le recrée pas et ne change pas sa visibilité sans demande explicite. Vérifie la présence effective de `AGENTS.md`, `.agents/skills/` et `.github/workflows/` sur la branche appropriée.
+5. Garde `main` comme branche stable ; les changements fonctionnels passent par `feat/<id>-description` et des pull requests. Tant que les PR précédentes restent ouvertes, une PR peut être empilée sur la branche du lot précédent ; intégrer ensuite dans l'ordre et ajuster sa base sans fusion automatique. Associe chaque PR à son ID de lot.
 6. Ne fais pas de `push --force`, de purge du dépôt, de suppression de branche distante non demandée ni de merge de la PR sans accord. Pas de commit de `.env`, tokens Cloudflare, secrets, images de documents privés, mot de passe étudiant ou données personnelles.
 7. À la fin de chaque lot, rapporte des **liens GitHub réellement obtenus** (dépôt, issue, PR), commit et état de CI. Si quelque chose échoue, indique la cause exacte et continue la partie locale réalisable.
 
@@ -176,7 +178,7 @@ Ne génère pas une boucle infinie de sous-agents. Les actions multi-agents ne p
 ## 16 — Première session : actions concrètes à faire maintenant
 
 1. Localiser/contrôler/extraire le ZIP ; valider le kit documentaire.
-2. Vérifier l'identité GitHub et cloner/réutiliser/créer le **dépôt privé** sans écraser de projet existant ; envoyer les fichiers complets et ouvrir/synchroniser les issues de backlog.
+2. Vérifier l'identité GitHub et reprendre le **dépôt public existant** sans écraser de projet existant ; synchroniser les issues de backlog sans doublon.
 3. Lire l'intégralité des spécifications et confirmer que le **studio de cours arrive AVANT le remplissage du programme**. N'implémente pas d'abord les 24 missions.
 4. Inspecter **sans modifier** l'état DNS/Cloudflare existant et consigner n8n comme service protégé ; ne pas supposer que son tunnel est sur le Mac prévu.
 5. Implémenter **P0-01** : monorepo frontend/backend exécutable, Compose de développement avec gateway local sécurisé, PostgreSQL, migrations initiales, endpoints `health`, configuration environnement, première page Academy, tests unitaires et d'intégration, scripts de lancement.

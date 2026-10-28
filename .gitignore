@@ -3,6 +3,7 @@
 !.env.example
 !.env.*.example
 .venv/
+.local/
 venv/
 __pycache__/
 .pytest_cache/
@@ -10,6 +11,7 @@ node_modules/
 dist/
 build/
 *.log
+*.tsbuildinfo
 *.sqlite3
 .DS_Store
 coverage/
@@ -20,3 +22,6 @@ test-results/
 *.p12
 *.pfx
 .claude/settings.local.json
+.backups/
+*.dump
+.backups-test/

@@ -1,6 +1,7 @@
 """Document-only tests: no claim about Academy runtime implementation."""
 import sys
 import unittest
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,13 +12,16 @@ class KitChecks(unittest.TestCase):
     def test_integrity_and_pedagogical_reference(self):
         self.assertEqual(main(), 0)
 
-    def test_next_task_identifies_platform_bootstrap(self):
+    def test_next_task_identifies_first_open_backlog_lot(self):
         import subprocess
         result = subprocess.run(
             [sys.executable, str(ROOT / 'scripts' / 'next_task.py')],
             capture_output=True, text=True, check=False)
         self.assertEqual(result.returncode, 0)
-        self.assertIn('P0-01', result.stdout)
+        backlog = (ROOT / 'docs/BACKLOG.md').read_text()
+        expected = re.search(r'(?m)^- \[ \] \*\*(P\d-\d{2})\*\*', backlog)
+        self.assertIsNotNone(expected)
+        self.assertIn(f'NEXT TASK: {expected.group(1)}', result.stdout)
 
     def test_gitignore_secrets(self):
         ignore = (ROOT / '.gitignore').read_text()

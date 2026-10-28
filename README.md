@@ -1,12 +1,29 @@
-# ShopFlow Academy — Kit complet de pilotage Codex + GitHub + Cloudflare Tunnel
+# ShopFlow Academy
 
-**Version 2.0 — 27 octobre 2026.** Ce ZIP contient **le CPS, le prompt principal exhaustif, neuf skills, les conventions d'architecture, le backlog, les tests documentaires et le plan d'exploitation**. **Ce n'est pas encore le code de l'Academy** : Codex doit l'implémenter à partir de ces documents.
+**Dépôt GitHub public** : [mryoshq/shopflow-academy](https://github.com/mryoshq/shopflow-academy). Les adresses des étudiants et de l'enseignant, mots de passe et fichiers `.env` restent uniquement en local, dans des chemins ignorés par Git. Le dépôt a été créé privé au départ ; sa visibilité actuelle est publique.
+
+**État au 27 octobre 2026 : P0-04 en revue, studio pédagogique local.** Ce dépôt contient le kit documentaire original et une application React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx locale. Le studio permet de créer, modifier, prévisualiser, publier et attribuer des cours de démonstration depuis le navigateur. Les cours définitifs et la publication publique de l'application restent à venir.
+
+## Démarrer le socle en local sur Mac
+
+Pré-requis : Docker Desktop avec Compose. Le seul port hôte publié par cette stack est `127.0.0.1:3080`. Vérifier sa disponibilité avant le lancement. La stack ne contient ni n8n ni cloudflared.
+
+```bash
+python3 scripts/init_env.py
+docker compose config --quiet
+docker compose up -d --build
+curl --fail http://127.0.0.1:3080/health/ready
+```
+
+Ouvrir `http://127.0.0.1:3080/` pour la page de connexion. Les comptes fictifs, le cours de démonstration et tous les tests de bout en bout, de charge et de persistance vivent sur une **stack de test séparée** (`python3 scripts/test_stack.py up`, `127.0.0.1:3180`, base jetable, identifiants dans `.local/test-stack-credentials.json`) ; la production (`127.0.0.1:3080`) n'a qu'un enseignant et les étudiants `@ynov.com` (voir `docs/RUNBOOK.md` et ADR-0016). Le compte enseignant réel peut être créé ou actualisé localement avec `python3 scripts/upsert_teacher.py` après placement de son adresse dans `.local/teacher-email.txt` ; son mot de passe généré reste dans `.local/teacher-credentials.json`. Les dix adresses fournies séparément sont importables avec `python3 scripts/import_students.py` depuis `.local/student-emails.txt`, également ignoré par Git. Aucun script n'envoie de message. Conserver les fichiers de mots de passe localement et ne pas les ajouter à Git. Voir [le guide du studio](docs/STUDIO.md). Arrêter uniquement cette stack avec `docker compose down` ; ne pas utiliser `-v` si les données PostgreSQL doivent être conservées. Pour les tests hors Docker : installer `backend/requirements-dev.txt` dans un environnement Python, exécuter `python -m pytest -q` depuis `backend`, puis `npm ci`, `npm run test -- --maxWorkers=1` et `npm run build` depuis `frontend`.
+
+Le domaine `https://shopflow.rapidfox.io` reste réservé au déploiement ultérieur sur Mac via Cloudflare Tunnel, après accord explicite. `n8n.rapidfox.io` est hors de cette stack et reste inchangé.
 
 ## Démarrage recommandé — directement dans Codex sur le Mac
 
 1. Télécharger **uniquement** `ShopFlow_Academy_Codex_GitHub_Rapidfox.zip` dans `~/Downloads`. Aucun autre fichier séparé nécessaire.
 2. **Le plus simple :** utiliser `DEMARRAGE-CODEX.txt` (petit message d'amorçage) ; Codex extraira alors le ZIP et lira le **prompt complet** du fichier `docs/PROMPT-CODEX-IMPORT-GITHUB-CLOUDFLARE.md` (ou demander à Codex d'ouvrir ce fichier après extraction ; il doit alors d'abord extraire le ZIP).
-3. Codex inspecte/extrait le ZIP, vérifie les neuf skills et le kit, utilise ton compte GitHub local (`gh auth status`) et crée ou reprend le dépôt **privé** `shopflow-academy` sans écraser des fichiers existants.
+3. Codex inspecte/extrait le ZIP, vérifie les neuf skills et le kit, utilise ton compte GitHub local (`gh auth status`) et reprend le dépôt **public existant** `shopflow-academy` sans écraser des fichiers existants.
 4. Codex commence le backlog **P0**, dans l'ordre : infrastructure → auth → schéma de cours → **studio de création de cours** → lecteur étudiant → score → dashboards → qualité → tunnel.
 5. **Les cours réels seront ajoutés après** depuis le studio. Le document `docs/PEDAGOGIE-28-OCT.md` est une référence pédagogique, pas un ordre de produire immédiatement les 24 missions.
 
@@ -29,7 +46,7 @@ python3 -m unittest discover -s tests -v
 python3 scripts/next_task.py
 ```
 
-La configuration `compose.yaml` incluse ne sert **au départ que de base infrastructure** (PostgreSQL + MySQL facultatif via profil labs) ; frontend/backend/gateway seront construits dans P0-01. Le kit ne prouve ni conteneurs opérationnels ni publication du sous-domaine.
+La vérification documentaire du kit ne valide pas l'application. Les tests applicatifs se trouvent désormais dans `backend/tests` et `frontend/src/*.test.tsx` ; la CI dédiée est `.github/workflows/app-ci.yml`.
 
 ## Carte des fichiers
 
@@ -53,4 +70,4 @@ La configuration `compose.yaml` incluse ne sert **au départ que de base infrast
 
 ## État vérifiable
 
-**Livré dans ce ZIP** : spécifications + prompt exhaustif + skills + backlog + tests du kit + documentation Tunnel. **Non livré** : plateforme React/FastAPI, véritable studio, moteur de missions, comptes utilisateurs, correcteur déployé, Cloudflare configuré. Ne pas confondre ces états.
+**Livré dans P0-01 à P0-04** : React/Chakra v3, API FastAPI, Compose Mac avec gateway loopback, authentification, référentiel versionné, studio enseignant et lecture des cours attribués sans corrigés. **À livrer dans les lots suivants** : lecteur interactif complet, correction, dashboards et publication Cloudflare après accord.
