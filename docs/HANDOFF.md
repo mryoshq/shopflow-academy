@@ -31,6 +31,9 @@ Branche `feat/p0-08-content-admin` (empilée sur P0-07 #20). ADR-0014. Les expor
 ### P0-09 — qualité : livré
 Branche `feat/p0-09-quality` (empilée sur P0-08 #21). Toutes les preuves et commandes : `docs/QUALITY.md`.
 
+### P0-10 — exploitation : partiel
+Branche `feat/p0-10-operations` (empilée sur P0-09 #22). ADR-0015, `docs/RUNBOOK.md`. Sauvegarde automatique active (service `backup`), restauration testée PASS, contrôle `ops_status.py`. **Reste** : route Cloudflare et test distant.
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).
@@ -39,6 +42,8 @@ Branche `feat/p0-09-quality` (empilée sur P0-08 #21). Toutes les preuves et com
 - Option A d'ADR-0011 retenue (recommandée) ; vouvoiement ; `@axe-core/playwright` ajouté en dépendance de développement.
 - Accès propriétaire strict pour le suivi de classe (404 pour un autre enseignant) ; studio laissé partagé (à trancher, revue I3).
 - Playwright limité à un worker : les tests partagent la base (pause de classe).
+- Sauvegarde automatique dans Compose (pas de tâche launchd : aucune configuration système modifiée). `BACKUP_DIR` ajouté à `.env` (chemin seulement).
+- Fiabilité E2E : 1 échec isolé sur 4 exécutions juste après un redéploiement, non reproduit ensuite (3 passages consécutifs) ; cause non identifiée, à surveiller en CI.
 - Le classificateur a refusé l'affichage de `.local/verify_teacher.py` ; le script a été exécuté sans être lu (sortie : une ligne PASS).
 
 ## Historique Codex

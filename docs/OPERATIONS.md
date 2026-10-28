@@ -35,6 +35,7 @@ Clone de travail : `~/Developer/shopflow-academy` (l'ancien clone dans `~/Docume
 
 - **Démarrer / redéployer :** `cd ~/Developer/shopflow-academy && git switch <branche> && docker compose up -d --build --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080`, puis `python3 scripts/smoke_public.py` pour l'URL publique.
 - **Arrêter ShopFlow seul :** `docker compose stop` (ou `down` **sans** `-v`). Ne jamais toucher au projet `wordpress` (n8n) ni au LaunchDaemon `cloudflared`.
+- **Sauvegarde automatique (P0-10) :** service `backup` toutes les 6 h, voir `docs/RUNBOOK.md`.
 - **Sauvegarde manuelle :** `docker compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc' > ~/Developer/shopflow-backups/academy-$(date +%Y%m%d-%H%M%S).dump && chmod 600 ~/Developer/shopflow-backups/*.dump`. Sauvegarde automatique et restauration testée : P0-10.
 - **Si le Mac redémarre :** Docker Desktop doit démarrer à l'ouverture de session (Réglages Docker → General → *Start Docker Desktop when you sign in*) ; les services ont `restart: unless-stopped`. `cloudflared` est un LaunchDaemon système et redémarre seul. Vérifier avec le smoke test.
 - **Empêcher la veille pendant les cours (proposé, non appliqué) :** `caffeinate -dimsu` dans un terminal ouvert pendant la séance, ou durablement `sudo pmset -c sleep 0 disksleep 0` (secteur uniquement) ; écran verrouillable sans veille système.

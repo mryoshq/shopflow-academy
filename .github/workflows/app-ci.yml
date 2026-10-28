@@ -68,6 +68,8 @@ jobs:
         run: python3 scripts/load_test.py
       - name: Persistence after restart and container re-creation
         run: python3 scripts/persistence_check.py
+      - name: Automatic backup present and tested restore
+        run: python3 scripts/restore_check.py
       - if: always()
         uses: actions/upload-artifact@v4
         with:
