@@ -55,7 +55,7 @@ Ne pas dupliquer inutilement les données publication `release` et `version` : c
 ## API minimales (propositions à formaliser en OpenAPI)
 
 - `POST /api/v1/auth/login`, `POST /api/v1/auth/logout`, `GET /api/v1/auth/me`.
-- Étudiant : `GET /api/v1/student/dashboard`, `/courses`, `/missions/{id}` ; `POST /missions/{id}/attempts`, `POST /missions/{id}/hint`.
+- Étudiant (implémenté en P0-05, ADR-0011) : `GET /api/v1/student/dashboard` ; `GET /api/v1/student/missions/{mission_version_id}` (projection expurgée, identifiants opaques, état verrouillé/à faire/en cours/réussie, indices déjà vus, position) ; `POST /api/v1/student/missions/{mission_version_id}/attempts` (CSRF, idempotent, ajout seul) ; `POST /api/v1/student/missions/{mission_version_id}/hints` (un niveau à la fois). Historique : `GET /api/v1/student/courses`, `/courses/{release_id}`.
 - Enseignant : CRUD `/api/v1/teacher/courses`, `/modules`, `/chapters`, `/missions` ; `POST /missions/{id}/preview`, `/publish`, `/archive` ; import/export de cours JSON et assignation aux cohortes.
 - Classe : `GET /api/v1/teacher/overview`, `/students/{id}`, `/export/scores.csv` ; `POST /api/v1/teacher/sessions/{id}/open|pause|resume|unlock`.
 - Santé : `GET /health/live`, `/health/ready` (exposer via gateway de façon contrôlée).
@@ -86,3 +86,8 @@ La méthode HTTP, version de schéma, erreurs et statut auth doivent être défi
 **P0 = produit d'administration et d'apprentissage générique** fonctionnel, validé avec trois missions de démonstration. **P1 = extras/IA/labs préprogrammés. P2 = insertion du contenu réel** du cours et intégrations des axes. GitHub Actions passe des tests documentaires initiaux à `pytest`, `Vitest`, `Playwright`, migration et charge; la CI initiale ne prouve pas que l'app existe.
 
 Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mode d'exécution hôte initial. Voir `docs/DEPLOY-RAPIDFOX.md` pour le routage conditionné à l'emplacement réel de n8n et cloudflared.
+
+## Lecteur étudiant (P0-05)
+
+- Backend : `app/student.py` (routes), `app/grading.py` (évaluation déterministe, aucune note), `app/projection.py` (identifiants opaques HMAC + mélange), tables `mission_attempts` et `hint_reveals` (migration 0004). Cours de démonstration idempotent : `python -m app.demo_course` (comptes `demo.*` uniquement).
+- Frontend : routage par hash (`#/`, `#/mission/<id>`) dans `src/useHashRoute.ts` ; `src/student/` (tableau de bord, lecteur, activités accessibles, stockage local de confort : dernière mission et brouillon de réponse en `sessionStorage`). Thème : `src/theme.ts`, voir `docs/DESIGN.md`.

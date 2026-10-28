@@ -1,10 +1,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react"
-import { ChakraProvider, defaultSystem } from "@chakra-ui/react"
+import { ChakraProvider } from "@chakra-ui/react"
+import { system } from "./theme"
 import { afterEach, expect, it, vi } from "vitest"
 import { App } from "./App"
 
 function show() {
-  render(<ChakraProvider value={defaultSystem}><App /></ChakraProvider>)
+  render(<ChakraProvider value={system}><App /></ChakraProvider>)
 }
 
 const json = (body: unknown) => ({ status: 200, ok: true, json: async () => body })
@@ -45,18 +46,17 @@ it("opens the teacher studio and logs out with CSRF", async () => {
   expect(logout?.[1].headers["X-CSRF-Token"]).toBe("A".repeat(43))
 })
 
-it("shows assigned courses to a student without corrections", async () => {
+it("greets a student by the local part of the identifier and shows the empty state", async () => {
   vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
-    if (url.endsWith("/auth/me")) return json({ id: 2, username: "demo.etudiant", role: "student" })
-    if (url.endsWith("/student/courses")) return json([{ id: 7, course_id: 4, version: 1, title: "Démo SQL" }])
-    if (url.endsWith("/student/courses/7")) return json({ title: "Démo SQL", description: "Démonstration", version: 1, objectives: [], modules: [{ id: 1, title: "Module", sort_order: 0, chapters: [{ id: 2, title: "Chapitre", sort_order: 0, missions: [{ id: 3, title: "Mission", slug: "mission", sort_order: 0, definition: { kind: "single_choice", scenario: "Comparer A < B", instructions: "Choisir", choices: [{ id: "a", label: "A" }, { id: "b", label: "B" }], match_targets: [], hints: [], resources: [], display_data: null } }] }] }] })
+    if (url.endsWith("/auth/me")) return json({ id: 2, username: "prenom.nom@example.com", role: "student" })
+    if (url.endsWith("/student/dashboard")) return json({ display_name: "prenom.nom", ai_enabled: false, courses: [] })
     throw new Error(`Unexpected path ${url}`)
   }))
   show()
-  fireEvent.click(await screen.findByRole("button", { name: "Démo SQL · version 1" }))
-  expect(await screen.findByLabelText("Aperçu de Mission")).toBeInTheDocument()
-  expect(screen.queryByText("Simuler cette réponse")).not.toBeInTheDocument()
-  expect(screen.queryByText(/correction privée/i)).not.toBeInTheDocument()
+  expect(await screen.findByRole("heading", { name: "Bonjour, prenom.nom" })).toBeInTheDocument()
+  expect(screen.getByText("Aucun cours pour le moment")).toBeInTheDocument()
+  expect(screen.queryByText(/@example.com/)).not.toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: /Continuer/ })).not.toBeInTheDocument()
 })
 
 it("shows a useful network error during session recovery", async () => {

@@ -117,6 +117,8 @@ class MissionDefinition(BaseModel):
     resources: list[str] = Field(default_factory=list, max_length=10)
     hints: list[str] = Field(default_factory=list, max_length=5)
     feedback: dict[str, str] = Field(default_factory=dict)
+    # Private explanation, revealed by the server after a correct answer or enough attempts.
+    explanation: str = Field(default="", max_length=3000)
     max_points: int = Field(ge=1, le=100)
     estimated_duration_minutes: int = Field(ge=1, le=120)
     bonus: bool = False
@@ -125,6 +127,11 @@ class MissionDefinition(BaseModel):
     @classmethod
     def safe_text(cls, value: str) -> str:
         return plain(value)
+
+    @field_validator("explanation")
+    @classmethod
+    def safe_explanation(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
 
     @field_validator("hints")
     @classmethod
@@ -183,4 +190,11 @@ class MissionDefinition(BaseModel):
         return self
 
     def student_projection(self) -> dict:
-        return self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback", "action_id", "max_points"})
+        """Public part stored with a release. Hints are revealed one by one by the API."""
+        data = self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback", "action_id", "max_points", "explanation", "hints"})
+        data["hint_count"] = len(self.hints)
+        return data
+
+    def preview_projection(self) -> dict:
+        """Teacher preview: student view plus hints, never answer keys."""
+        return {**self.student_projection(), "hints": list(self.hints)}

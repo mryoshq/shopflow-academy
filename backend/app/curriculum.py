@@ -25,7 +25,7 @@ router = APIRouter(prefix="/api/v1", tags=["curriculum"])
 PUBLIC_DEFINITION_FIELDS = {
     "schema_version", "kind", "scenario", "instructions", "objective_ids",
     "prerequisite_mission_ids", "choices", "match_targets", "display_data",
-    "resources", "hints", "estimated_duration_minutes", "bonus",
+    "resources", "hint_count", "estimated_duration_minutes", "bonus",
 }
 display_adapter = TypeAdapter(DisplayData)
 
@@ -223,7 +223,7 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
                 definition = mission.draft_definition
                 if definition and not private:
                     try:
-                        definition = MissionDefinition.model_validate(definition).student_projection()
+                        definition = MissionDefinition.model_validate(definition).preview_projection()
                     except ValidationError as exc:
                         raise HTTPException(status_code=422, detail="draft definition needs correction") from exc
                 chapter_data["missions"].append({
@@ -250,6 +250,9 @@ def student_safe_snapshot(snapshot: dict, private_by_version: dict[int, dict] | 
                     mission["definition"] = None
                     continue
                 projected = {key: value for key, value in raw.items() if key in PUBLIC_DEFINITION_FIELDS}
+                if "hint_count" not in projected:
+                    hints = raw.get("hints")
+                    projected["hint_count"] = len(hints) if isinstance(hints, list) else 0
                 if "display_data" in projected and projected["display_data"] is not None:
                     try:
                         projected["display_data"] = display_adapter.validate_python(projected["display_data"]).model_dump()
