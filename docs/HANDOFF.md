@@ -2,7 +2,7 @@
 
 ## Reprise unique (28/10/2026, matin — décisions du propriétaire appliquées)
 
-**Prochaine tâche unique : fusion de la pile, sur accord écrit du propriétaire** (#11 → #23 puis la PR `feat/p0-10-owner-decisions`, merge commit, dans l'ordre, en changeant la base de chaque PR après la précédente : `docs/INTEGRATION-PLAN.md`). Ensuite seulement : phase P2 (cours réels, fichiers fournis par le propriétaire).
+**Prochaine tâche unique : fusion de la pile, sur accord écrit du propriétaire** (#11 → #23 puis #24 (`feat/p0-10-owner-decisions`), merge commit, dans l'ordre, en changeant la base de chaque PR après la précédente : `docs/INTEGRATION-PLAN.md`). Ensuite seulement : phase P2 (cours réels, fichiers fournis par le propriétaire).
 
 **État** : P0-01 à P0-10 livrés. `https://shopflow.rapidfox.io` en ligne via la route créée par le propriétaire ; `python3 scripts/smoke_public.py` 16/16 PASS ; n8n toujours 302 vers Access. Stack de production sur la branche `feat/p0-10-owner-decisions`.
 
