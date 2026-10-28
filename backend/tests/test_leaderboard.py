@@ -113,7 +113,8 @@ def test_name_is_self_only_and_never_taken_from_login(env):
     assert put(clients["a"], path, {"display_name": " Atlas "}).json() == {"display_name": "Atlas"}
     rows = read(clients["b"], aid).json()["rows"]
     assert next(row for row in rows if row["display_name"] == "Atlas")["is_self"] is False
-    assert next(row for row in rows if row["is_self"])["display_name"].startswith("Élève ")
+    assert next(row for row in rows if row["is_self"])["display_name"] == "Demo Etudiant02"
+    assert all("@" not in row["display_name"] for row in rows)
     with Session(engine) as db:
         assert len(db.scalars(select(LeaderboardName)).all()) == 1
     enable(clients, aid, enabled=False)
@@ -297,3 +298,13 @@ def test_block_requires_lesson_and_day_uses_morocco_midnight_not_utc(env, monkey
     assert body["day"] == "2026-06-11"
     assert own["completed_blocks"] == own["today_blocks"] == 1
     assert own["core_points"] == 20  # reading the lesson never grants points
+
+
+def test_real_name_is_taken_from_the_login_without_address():
+    from app.leaderboard import real_name
+
+    assert real_name("youssef.el-amrani@ynov.com") == "Youssef El Amrani"
+    assert real_name("SALMA.BENANI@ynov.com") == "Salma Benani"
+    assert real_name("imane_tazi@ynov.com") == "Imane Tazi"
+    assert real_name("@ynov.com") == ""
+    assert "@" not in real_name("a.b@ynov.com") and "ynov" not in real_name("a.b@ynov.com")

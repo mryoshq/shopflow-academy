@@ -1,10 +1,11 @@
 """Private class leaderboard: read-only projection of the existing score engine.
 
-All visibility filtering happens here, before serialization. No username, answer,
+All visibility filtering happens here, before serialization. No login address, answer,
 mission score, or other student's identifier crosses this API boundary.
 """
 
 from datetime import datetime
+import re
 import unicodedata
 from zoneinfo import ZoneInfo
 
@@ -23,6 +24,17 @@ from app.teacher_dashboard import audit, owned_class
 
 router = APIRouter(tags=["leaderboard"])
 DAY_ZONE = ZoneInfo("Africa/Casablanca")
+
+
+def real_name(username: str) -> str:
+    """« Prénom Nom » from a login like prenom.nom@ynov.com (owner decision, 28/10/2026).
+
+    Only the part before « @ » is used, split on dots, dashes and underscores; the
+    address and its domain never cross the API. Returns "" when nothing usable remains.
+    """
+    local = username.split("@", 1)[0]
+    words = [word for word in re.split(r"[._\-]+", local) if word]
+    return " ".join(word[:1].upper() + word[1:].lower() for word in words)[:24].strip()
 
 
 class SettingsInput(BaseModel):
@@ -141,7 +153,7 @@ def board(db: Session, auth: AuthContext, assignment: Assignment, release: Cours
                     if m["mission_version_id"] in scores and not scores[m["mission_version_id"]].bonus]
             if core and all(vid in first_correct for vid in core):
                 completions.append(max(first_correct[vid] for vid in core))
-        rows.append({"order": order, "display_name": names.get(student.id, f"Élève {order}"), "is_self": student.id == auth.user.id,
+        rows.append({"order": order, "display_name": names.get(student.id) or real_name(student.username) or f"Élève {order}", "is_self": student.id == auth.user.id,
                      "core_points": totals["core_points"], "bonus_points": totals["bonus_points"], "completed_blocks": len(completions),
                      "today_blocks": sum(at.astimezone(DAY_ZONE).date().isoformat() == result["day"] for at in completions)})
     # Teachers see the same privacy limits; they have no personal row.
