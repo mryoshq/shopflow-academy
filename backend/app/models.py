@@ -149,6 +149,7 @@ class Assignment(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False)
     course_release_id: Mapped[int] = mapped_column(ForeignKey("course_releases.id", ondelete="RESTRICT"), nullable=False)
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class AuditEvent(Base):
@@ -159,6 +160,7 @@ class AuditEvent(Base):
     action: Mapped[str] = mapped_column(String(64), nullable=False)
     resource_type: Mapped[str] = mapped_column(String(64), nullable=False)
     resource_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    details: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -187,4 +189,18 @@ class HintReveal(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
     level: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class MissionUnlock(Base):
+    """A teacher intervention: one student may open one mission despite its prerequisites."""
+
+    __tablename__ = "mission_unlocks"
+    __table_args__ = (UniqueConstraint("user_id", "mission_version_id", name="uq_mission_unlock"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
+    unlocked_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

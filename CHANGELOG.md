@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28 — P0-07 tableau de bord enseignant (`feat/p0-07-teacher-dashboard`)
+
+- Onglet « Suivi de classe » : classes du propriétaire, élèves (missions réussies, score, mission en cours, dernière activité, actif, besoin d'aide), détail par élève, actualisation toutes les 5 s.
+- Interventions auditées : pause/reprise de séquence, déblocage individuel d'une mission, export CSV (Excel, anti-injection), journal ; migration 0006.
+- Côté étudiant : état « En pause » ; correctif du focus clavier dans l'activité d'ordre ; contraste AA des badges succès/safran.
+- Studio aligné sur le thème (palette `brand`).
+
 ## 2026-10-28 — P0-06 notation et progression (`feat/p0-06-grading-progress`)
 
 - Points par tentative (barème tout ou rien ou partiel), meilleur score conservé, bonus séparés, progression et totaux recalculés depuis le journal des tentatives (aucun double comptage), rejeu vérifiable ; migration 0005.

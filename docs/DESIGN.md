@@ -10,7 +10,7 @@ Professionnelle, chaleureuse, légèrement ludique, jamais enfantine. Français 
 |---|---|---|---|
 | Marque | `brand.solid` | `#146457` (texte blanc 6,9:1) | actions principales, progression |
 | Marque texte | `brand.fg` | `#0F5047` | liens, intitulés de section |
-| Accent | `saffron.*` | `#A86A1F` / fond `#FDF6EA` | badge « Démonstration », état « En cours », indices |
+| Accent | `saffron.*` | `#84521A` (solide) / fond `#FDF6EA` | badge « Démonstration », état « En cours », indices |
 | Succès | `green.solid` | redéfini sur `green.700` (blanc ≥ 4,5:1) | « Réussie », « Bonne décision » |
 | Fond | `app.canvas` | `#F7F4EE` (sable) | page |
 | Surface | `app.surface` / `app.sunken` | blanc / `#F1EDE4` | cartes / zones secondaires |
