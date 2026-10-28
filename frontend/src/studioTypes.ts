@@ -19,9 +19,15 @@ export type MindNode = { label: string; children: MindNode[] }
 export type MindmapDisplay = { kind: "mindmap"; description?: string; title: string; root: MindNode }
 export type FlowDisplay = { kind: "flow"; description?: string; title: string; input: number; unit: string; steps: { id: string; label: string; rejects: number; note: string }[] }
 export type VideoDisplay = { kind: "video"; description?: string; title: string; url: string | null; src: string | null; captions_src: string | null }
-export type DisplayData = TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay
+export type Flashcard = { front: string; back: string }
+export type FlashcardsDisplay = { kind: "flashcards"; description?: string; title?: string; cards: Flashcard[] }
+export type DisplayData = TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay
+/** Not graded, validated with « J'ai compris » and counted like a lesson (ADR-0028). */
+export function isUngraded(kind: string): boolean {
+  return kind === "lesson" || kind === "review"
+}
 export type RunView = { id: string; label: string; language: "sql" | "python"; code: string }
-export type MissionKind = "single_choice" | "multiple_choice" | "true_false" | "reorder" | "matching" | "data_interpretation" | "scenario_choice" | "guided_simulation" | "lesson" | "sql_challenge"
+export type MissionKind = "single_choice" | "multiple_choice" | "true_false" | "reorder" | "matching" | "data_interpretation" | "scenario_choice" | "guided_simulation" | "lesson" | "sql_challenge" | "review"
 export type MissionDefinition = {
   schema_version: 1
   kind: MissionKind

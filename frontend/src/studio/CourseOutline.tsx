@@ -1,3 +1,4 @@
+import { isUngraded } from "../studioTypes"
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Grid, Input, NativeSelect, Stack, Text } from "@chakra-ui/react"
 import type { Chapter, CourseModule, MissionDefinition, MissionKind, Objective, StudentDefinition } from "../studioTypes"
@@ -23,7 +24,7 @@ export function itemFacts(mission: OutlineMission, objectives?: Objective[], pri
   const definition = mission.definition
   if (!definition) return { kind: null, lesson: false, bonus: false, run: false, points: 0, duration: 0, state: "todo", stateLabel: "À compléter" }
   const source = (privateDefinition ?? definition) as Partial<MissionDefinition>
-  const lesson = definition.kind === "lesson"
+  const lesson = isUngraded(definition.kind)
   const known = objectives ? new Set(objectives.map((item) => item.id)) : null
   const unknown = known ? definition.objective_ids.some((id) => !known.has(id)) : false
   return {

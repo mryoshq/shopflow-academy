@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, aware, display_name, require_teacher, require_teacher_csrf, utcnow
 from app.database import get_db
 from app.live import DISCONNECT_AFTER, notify, push_after_commit, teacher_event, teacher_settings
@@ -333,7 +334,7 @@ def class_events(db: Session, now: datetime) -> list[int]:
         threshold = int(settings.get("block_done_percent", 80))
         for block in blocks:
             here = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs]
-            core = [vid for vid in here if not defs[vid].bonus and defs[vid].kind != "lesson"] or [vid for vid in here if defs[vid].kind == "lesson"]
+            core = [vid for vid in here if not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS] or [vid for vid in here if defs[vid].kind in UNGRADED_KINDS]
             if not core:
                 continue
             done = sum(1 for sid in ids if all((sid, vid) in solved for vid in core))

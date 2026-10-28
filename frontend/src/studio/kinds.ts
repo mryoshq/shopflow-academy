@@ -4,6 +4,7 @@ import type { MissionKind } from "../studioTypes"
 /** French label and icon of each activity type (studio, preview, outline). */
 export const KIND_META: Record<MissionKind, { label: string; icon: IconName }> = {
   lesson: { label: "Leçon", icon: "book" },
+  review: { label: "Révision", icon: "layers" },
   single_choice: { label: "Choix unique", icon: "list" },
   multiple_choice: { label: "Choix multiples", icon: "list" },
   true_false: { label: "Vrai ou faux", icon: "check" },

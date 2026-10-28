@@ -25,6 +25,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, aware, require_teacher, require_teacher_csrf, utcnow
 from app.curriculum_schema import HTML_TAG, MissionDefinition
 from app.database import get_db
@@ -118,7 +119,7 @@ def percent_for(rules: Rules, number: int) -> int:
 
 
 def decays(rules: Rules, definition: MissionDefinition) -> bool:
-    return rules.decay_enabled and rules.decay_since is not None and not definition.bonus and definition.kind != "lesson"
+    return rules.decay_enabled and rules.decay_since is not None and not definition.bonus and definition.kind not in UNGRADED_KINDS
 
 
 def attempts_since(db: Session, user_id: int, version_id: int, start: datetime | None) -> list[MissionAttempt]:
@@ -211,7 +212,7 @@ def student_state(db: Session, rules: Rules, definition: MissionDefinition, user
     """What the player shows before answering: « Essai 2 : jusqu'à 70 % des points », countdowns."""
     number, percent = next_attempt(db, rules, definition, user_id, version_id)
     return {"next_attempt": number, "next_percent": percent,
-            "pause_remaining": pause_remaining(db, rules, user_id, version_id, now) if definition.kind != "lesson" else 0,
+            "pause_remaining": pause_remaining(db, rules, user_id, version_id, now) if definition.kind not in UNGRADED_KINDS else 0,
             "reading_seconds": reading_seconds(rules, definition),
             "reading_remaining": reading_remaining(db, rules, definition, user_id, version_id, now)}
 

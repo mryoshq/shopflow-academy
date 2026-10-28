@@ -6,6 +6,7 @@ from io import StringIO
 from fastapi import APIRouter, Depends, Query, Response
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, display_name, require_teacher
 from app.database import get_db
 from app.progress import course_score, definitions, mission_scores
@@ -22,7 +23,7 @@ def results_data(db: Session, auth: AuthContext, assignment_id: int, threshold: 
     defs = definitions(db, ids)
     # Optional bonuses and lessons are never described as weak points.
     principal = [item for item in missions if item["mission_version_id"] in defs
-                 and not defs[item["mission_version_id"]].bonus and defs[item["mission_version_id"]].kind != "lesson"]
+                 and not defs[item["mission_version_id"]].bonus and defs[item["mission_version_id"]].kind not in UNGRADED_KINDS]
     successes = {item["mission_version_id"]: 0 for item in principal}
     students, exports = [], []
     for student in class_students(db, cohort.id):

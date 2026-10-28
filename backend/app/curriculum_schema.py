@@ -12,8 +12,10 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 MissionKind = Literal[
     "single_choice", "multiple_choice", "true_false", "reorder", "matching",
-    "data_interpretation", "scenario_choice", "guided_simulation", "lesson", "sql_challenge",
+    "data_interpretation", "scenario_choice", "guided_simulation", "lesson", "sql_challenge", "review",
 ]
+# Not graded, counted in progress like a lesson (« J'ai compris »): lessons and flashcard reviews (ADR-0028).
+UNGRADED_KINDS = {"lesson", "review"}
 # Kinds answered by choosing among propositions (choices, answer key, feedback).
 CHOICE_KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching",
                 "data_interpretation", "scenario_choice", "guided_simulation"}
@@ -458,8 +460,33 @@ class VideoDisplay(Described):
         return self
 
 
+class Flashcard(BaseModel):
+    """One card: a short front (question, term) and its back, light formatting allowed (ADR-0028)."""
+    model_config = ConfigDict(extra="forbid")
+    front: str = Field(min_length=1, max_length=200)
+    back: str = Field(min_length=1, max_length=500)
+
+    @field_validator("front", "back")
+    @classmethod
+    def safe(cls, value: str) -> str:
+        return plain(value)
+
+
+class FlashcardsDisplay(Described):
+    """Cards to flip, one at a time (ADR-0028). Shown before any answer: never a mission's answer key."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["flashcards"]
+    title: str = Field(default="", max_length=200)
+    cards: list[Flashcard] = Field(min_length=2, max_length=30)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 
@@ -623,7 +650,13 @@ class MissionDefinition(BaseModel):
         layout = bool(self.objective or self.hook or self.key_terms or self.example or self.practice)
         if len({term.term.casefold() for term in self.key_terms}) != len(self.key_terms):
             raise ValueError("Duplicate key term")
-        if self.kind == "lesson":
+        if self.kind == "review":
+            if self.display_data is None or self.display_data.kind != "flashcards":
+                raise ValueError("A review needs flashcards (data.kind: flashcards)")
+            if (self.choices or self.correct_ids or self.match_targets or self.correct_pairs or self.feedback or self.max_points
+                    or self.hints or self.explanation or self.run):
+                raise ValueError("A review has no choices, answer key, hints or points")
+        elif self.kind == "lesson":
             if not (self.body or self.hook or self.key_terms or self.example or self.practice):
                 raise ValueError("A lesson needs a body or structured content")
             if self.choices or self.correct_ids or self.match_targets or self.correct_pairs or self.feedback or self.max_points:
@@ -633,10 +666,12 @@ class MissionDefinition(BaseModel):
                 raise ValueError("Scenario and instructions are required")
             if self.max_points < 1:
                 raise ValueError("Points must be between 1 and 100")
-            if self.body:
+            if self.body and self.kind not in UNGRADED_KINDS:
                 raise ValueError("body is only for lessons")
             if layout:
                 raise ValueError("objective, hook, key_terms, example and practice are only for lessons")
+        if self.display_data is not None and self.display_data.kind == "flashcards" and self.kind not in UNGRADED_KINDS:
+            raise ValueError("Flashcards are only for lessons and reviews")
         if self.kind == "sql_challenge":
             if not self.starter_sql or not self.expected_sql:
                 raise ValueError("An SQL challenge needs starter_sql and expected_sql")
