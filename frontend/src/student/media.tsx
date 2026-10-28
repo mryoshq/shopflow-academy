@@ -161,7 +161,8 @@ export function MindMap({ data }: { data: MindmapDisplay }) {
   const walk = (id: string) => { visible.push(id); if (open.has(id)) nodes.get(id)!.children.forEach(walk) }
   walk("0")
   const toggle = (id: string) => setOpen((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next })
-  const focus = (id: string) => { setActive(id); window.requestAnimationFrame(() => refs.current[id]?.focus()) }
+  // Keyboard targets are always rendered already (visible items, or children of an open node): focus at once.
+  const focus = (id: string) => { setActive(id); refs.current[id]?.focus() }
   function onKey(event: KeyboardEvent<HTMLDivElement>, id: string) {
     const node = nodes.get(id)!
     const index = visible.indexOf(id)

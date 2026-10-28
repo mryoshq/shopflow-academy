@@ -92,6 +92,7 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
   const tree = student.getByRole("tree", { name: "Qualité d'un fichier importé" })
   await tree.getByRole("treeitem", { name: /Qualité des données/ }).focus()
   await student.keyboard.press("ArrowDown")
+  await expect(tree.getByRole("treeitem", { name: /^Types/ })).toBeFocused()
   await student.keyboard.press("ArrowRight")
   await expect(tree.getByRole("treeitem", { name: "Montants numériques" })).toBeVisible()
   expect(await serious(student)).toEqual([])
