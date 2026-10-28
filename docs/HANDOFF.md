@@ -14,10 +14,11 @@
 
 | Ordre | Partie | Branche | PR | État |
 |---|---|---|---|---|
-| 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | [#26](https://github.com/mryoshq/shopflow-academy/pull/26) | ouverte, CI verte |
-| 2 | D — chaîne d'import du cours Markdown | `claude/lucid-brahmagupta-htwgun-d` | [#27](https://github.com/mryoshq/shopflow-academy/pull/27) (base : A) | ouverte |
-| 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | [#28](https://github.com/mryoshq/shopflow-academy/pull/28) (base : D) | ouverte |
-| 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | (PR C, base : F) | ouverte |
+| 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | [#26](https://github.com/mryoshq/shopflow-academy/pull/26) | **fusionnée** |
+| 2 | D — chaîne d'import du cours Markdown | `claude/lucid-brahmagupta-htwgun-d` | [#27](https://github.com/mryoshq/shopflow-academy/pull/27) | **fusionnée** |
+| 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | [#28](https://github.com/mryoshq/shopflow-academy/pull/28) | **fusionnée** |
+| 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | [#29](https://github.com/mryoshq/shopflow-academy/pull/29) (base : `main`, rebasée) | ouverte, CI verte |
+| 5 | B — expérience simple et mode sombre | `claude/lucid-brahmagupta-htwgun-b` | [#30](https://github.com/mryoshq/shopflow-academy/pull/30) (base : C) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10)** : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -44,6 +45,11 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Con
 2. `docker compose up -d --build --wait` (nouveaux services `labdb`, `lab-init`, réseau `lab`), puis `docker compose logs lab-init` : une ligne `{"lab": "ready", …}` ; puis `python3 scripts/smoke_public.py`.
 3. Sur le Mac, une fois : `docker pull postgres:16-alpine` et `docker build -t shopflow-python-runner:1 runner/python` (sinon `scripts/course_md.py` le construit au premier usage).
 4. Recompiler le cours : les requêtes `run` et les extraits Python sont maintenant exécutés ; corriger les erreurs signalées dans `RETOURS-PLATEFORME.md`. L'import charge `datasets/shopflow-lab.sql` dans la base de laboratoire.
+
+### À faire en local après la PR B
+1. Redéployer (`docker compose up -d --build --wait`, puis `python3 scripts/smoke_public.py`). Pas de migration.
+2. Fiches de connexion : `python3 scripts/login_sheets.py` (lit `.local/student-emails.txt`, un identifiant par ligne ; le créer s'il manque) ; ouvrir puis imprimer le fichier écrit dans `~/Developer/shopflow-notes/`. Mots de passe initiaux seulement sur demande : `--with-passwords` (lit `.local/student-credentials.json`).
+3. Mot de passe oublié en séance : « Ma classe » → « Détail » de l'étudiant → « Réinitialiser le mot de passe » (affiché une seule fois, à transmettre en personne).
 
 ### Attend l'accord du propriétaire
 - Publication du cours réel pour la classe et ouverture des blocs (jamais faites par un agent).
