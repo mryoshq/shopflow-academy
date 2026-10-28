@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — P0-09 qualité et démonstration complète (`feat/p0-09-quality`)
+
+- Matrice d'autorisation générée depuis toutes les routes (anonyme, rôles, CSRF) et contrôles inter-comptes.
+- Parcours E2E complet : l'enseignant importe et publie la démo, un étudiant la termine, la note persiste, un autre étudiant n'y a pas accès.
+- `scripts/load_test.py` (10 étudiants + enseignant) et `scripts/persistence_check.py` (redémarrage et recréation), ajoutés à la CI ; `docs/QUALITY.md`.
+
 ## 2026-10-28 — P0-08 administration de contenu (`feat/p0-08-content-admin`)
 
 - Format portable `shopflow-course` v1 ; export du brouillon ou d'une version publiée exacte ; import vérifié (simulation, rapport d'erreurs par chemin, jamais d'écrasement).

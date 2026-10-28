@@ -64,6 +64,10 @@ jobs:
         working-directory: frontend
       - run: npm run test:e2e
         working-directory: frontend
+      - name: Load test, 10 simultaneous demo students + teacher
+        run: python3 scripts/load_test.py
+      - name: Persistence after restart and container re-creation
+        run: python3 scripts/persistence_check.py
       - if: always()
         uses: actions/upload-artifact@v4
         with:
