@@ -10,8 +10,13 @@ class Settings(BaseSettings):
     # Comma-separated extra origins allowed for cookie/CSRF checks, e.g. the
     # loopback gateway when the teacher also uses http://127.0.0.1:3080 in production.
     app_extra_origins: str = ""
-    # Optional key for opaque student choice IDs; derived from DATABASE_URL when empty.
+    # Key for opaque student choice IDs. Required in production (the app refuses to start
+    # without it); outside production it falls back to a key derived from DATABASE_URL.
     app_secret: str = ""
+    # One class, one teacher, one course (owner decision, sprint 2).
+    main_course_slug: str = "python-data-engineering-sql"
+    main_course_title: str = "Python Data Engineering & SQL Avancé"
+    class_label: str = "Classe B3 IA/Data"
     ai_provider: str = "none"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
@@ -22,6 +27,15 @@ def allowed_origins(settings: "Settings") -> set[str]:
     if settings.app_env != "production":
         allowed.update({"http://127.0.0.1:3080", "http://localhost:3080"})
     return allowed
+
+
+MIN_SECRET_LENGTH = 32
+
+
+def check_secure_settings(settings: "Settings") -> None:
+    """Refuse to start in production without a real APP_SECRET."""
+    if settings.app_env == "production" and len(settings.app_secret.strip()) < MIN_SECRET_LENGTH:
+        raise RuntimeError(f"APP_SECRET (>= {MIN_SECRET_LENGTH} characters) is required when APP_ENV=production")
 
 
 @lru_cache

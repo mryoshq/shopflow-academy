@@ -1,13 +1,14 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from app.config import get_settings
+from app.config import check_secure_settings, get_settings
 from app.database import database_is_ready
 from app.auth import router as auth_router
 from app.curriculum import router as curriculum_router
 from app.student import router as student_router
 from app.teacher_dashboard import router as teacher_dashboard_router
 from app.course_io import router as course_io_router
+from app.classroom import router as classroom_router
 
 
 class Health(BaseModel):
@@ -18,6 +19,8 @@ def openapi_url_for(app_env: str) -> str | None:
     """The API schema is a development aid; it is not published in production."""
     return None if app_env == "production" else "/api/v1/openapi.json"
 
+
+check_secure_settings(get_settings())
 
 app = FastAPI(
     title="ShopFlow Academy API",
@@ -31,6 +34,7 @@ app.include_router(curriculum_router)
 app.include_router(student_router)
 app.include_router(teacher_dashboard_router)
 app.include_router(course_io_router)
+app.include_router(classroom_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])

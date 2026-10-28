@@ -19,6 +19,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   const suffix = Date.now().toString(36)
   const title = `Parcours de démonstration ${suffix}`
   await login(page, "demo.enseignant")
+  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
   await page.getByLabel("Fichier de cours JSON").setInputFiles({ name: "demo.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(fixture)) })
   await expect(page.getByText(/Fichier valide/)).toBeVisible()
   await page.getByLabel("Titre du nouveau cours").fill(title)
@@ -34,6 +35,11 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await expect(row.getByText("Inscrit")).toBeVisible()
   await page.getByRole("button", { name: "Attribuer à la cohorte" }).click()
   await expect(page.getByRole("button", { name: "Déjà attribuée" })).toBeDisabled()
+  // Blocks arrive closed: the teacher opens the first one for this class.
+  const classes = await (await page.request.get("/api/v1/teacher/classes")).json() as { id: number; cohort: string }[]
+  const classId = classes.find((item) => item.cohort === `Cohorte parcours ${suffix}`)!.id
+  const token = (await page.context().cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
+  expect((await page.request.post(`/api/v1/teacher/classes/${classId}/blocks/open-next`, { headers: { "X-CSRF-Token": token } })).status()).toBe(200)
 
   const studentContext = await browser.newContext({ viewport: { width: 1366, height: 768 } })
   const student = await studentContext.newPage()
@@ -87,11 +93,12 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await outsiderContext.close()
 
   // The teacher sees the persistent grade in the class view.
-  await page.getByRole("tab", { name: "Suivi de classe" }).click()
+  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await page.getByRole("button", { name: "Options avancées : autres classes" }).click()
   const select = page.getByLabel("Classe suivie")
   const value = await select.locator("option").filter({ hasText: `Cohorte parcours ${suffix}` }).getAttribute("value")
   await select.selectOption(value!)
-  const line = page.getByRole("row").filter({ hasText: "demo.etudiant07" })
+  const line = page.getByRole("table", { name: `Progression de la classe Cohorte parcours ${suffix}` }).getByRole("row").filter({ hasText: "demo.etudiant07" })
   await expect(line.getByRole("cell").nth(1)).toHaveText("3 / 3")
   await expect(line.getByRole("cell").nth(2)).toHaveText("30 / 30")
 })

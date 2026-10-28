@@ -4,6 +4,7 @@ import { api, ApiError } from "./api"
 import { CoursePreview, type PreviewTree } from "./CoursePreview"
 import { MissionEditor } from "./MissionEditor"
 import { CourseImport, CourseSearch, ReleaseTools } from "./teacher/ContentAdmin"
+import { Cleanup } from "./teacher/Cleanup"
 import type { Chapter, Cohort, CohortDetail, CourseModule, CourseSummary, CourseTree, Mission, MissionDefinition, Release, StudentAccount } from "./studioTypes"
 
 function slugify(value: string): string {
@@ -21,7 +22,24 @@ function errorText(error: unknown): string {
 
 type Direction = -1 | 1
 
-export function TeacherStudio() {
+type StudioProps = {
+  /** The single course of the class (sprint 2): opened by default, published for the class. */
+  mainCourseId?: number | null
+  onPublished?: () => void
+}
+
+/** Accessible disclosure for rarely used options (other courses, cohorts, JSON import). */
+export function Advanced({ label, children, defaultOpen = false }: { label: string; children: React.ReactNode; defaultOpen?: boolean }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return <Box>
+    <Button size="sm" variant="ghost" px="1" aria-expanded={open} onClick={() => setOpen(!open)}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
+        style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>{label}</Button>
+    {open && <Box pt="3">{children}</Box>}
+  </Box>
+}
+
+export function TeacherStudio({ mainCourseId = null, onPublished }: StudioProps = {}) {
   const [courses, setCourses] = useState<CourseSummary[]>([])
   const [cohorts, setCohorts] = useState<Cohort[]>([])
   const [students, setStudents] = useState<StudentAccount[]>([])
@@ -61,7 +79,7 @@ export function TeacherStudio() {
       setCourses(items)
       setCohorts(groups)
       setStudents(accounts)
-      setSelectedId(items[0]?.id ?? null)
+      setSelectedId(mainCourseId && items.some((item) => item.id === mainCourseId) ? mainCourseId : items[0]?.id ?? null)
       setSelectedCohortId(groups[0]?.id ?? null)
     }).catch((cause) => { if (live) setError(errorText(cause)) }).finally(() => { if (live) setLoading(false) })
     return () => { live = false }
@@ -232,10 +250,14 @@ export function TeacherStudio() {
 
   function publish() {
     if (!course) return
+    const isMain = course.id === mainCourseId
     return run(async () => {
-      const result = await api<{ version: number }>(`/teacher/courses/${course.id}/publish`, "POST")
+      const result = await api<{ version: number }>(isMain ? "/teacher/main/publish" : `/teacher/courses/${course.id}/publish`, "POST")
       await refreshCourse(course.id)
-      setNotice(`Version ${result.version} publiée. Vous pouvez maintenant l’attribuer à une cohorte.`)
+      onPublished?.()
+      setNotice(isMain
+        ? `Version ${result.version} publiée pour votre classe. Les nouveaux blocs restent fermés : ouvrez-les dans « Ma classe ».`
+        : `Version ${result.version} publiée. Vous pouvez maintenant l’attribuer à une cohorte.`)
     }, "Version publiée.")
   }
 
@@ -277,17 +299,23 @@ export function TeacherStudio() {
   const corrections = Object.fromEntries(missions.filter((item) => item.definition).map((item) => [item.id, item.definition!]))
   const archived = course?.status === "archived"
 
-  return <Stack gap="6" aria-label="Studio de cours">
-    <Flex align="center" justify="space-between" gap="4" wrap="wrap"><Box><Heading as="h2" size="xl">Studio de cours</Heading><Text color="gray.600" mt="1">Créez une démonstration, puis vérifiez-la avant de publier une version.</Text></Box><Badge colorPalette="brand" variant="subtle">Aucun code requis</Badge></Flex>
-    {error && <Box role="alert" bg="red.50" color="red.800" p="4" rounded="md">{error}</Box>}
-    {notice && <Box role="status" bg="brand.subtle" color="brand.fg" p="4" rounded="md">{notice}</Box>}
-    {loading ? <Text role="status">Chargement du studio…</Text> : <SimpleGrid columns={{ base: 1, lg: 2 }} gap="6" gridTemplateColumns={{ lg: "270px minmax(0, 1fr)" }} alignItems="start">
-      <Stack gap="5" as="aside" bg="white" p="5" rounded="xl" borderWidth="1px">
+  const sidebar = <Stack gap="5" as="aside" bg="white" p="5" rounded="xl" borderWidth="1px">
         <Heading as="h3" size="md">Mes cours</Heading>
         {courses.length === 0 ? <Text color="gray.600">Aucun cours créé. Commencez ci-dessous.</Text> : <CourseSearch selectedId={selectedId} refreshKey={refreshKey} onSelect={(id) => { setSelectedId(id); setTab("structure"); setError(""); setNotice("") }} />}
         <Box borderTopWidth="1px" pt="4"><Heading as="h4" size="sm" mb="3">Nouveau cours</Heading><Stack gap="3"><Field.Root required><Field.Label>Titre</Field.Label><Input value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Démo : qualité des données" /></Field.Root><Field.Root><Field.Label>Description</Field.Label><Textarea value={newCourseDescription} onChange={(event) => setNewCourseDescription(event.target.value)} rows={3} /></Field.Root><Button colorPalette="brand" onClick={createCourse} loading={busy} disabled={!newCourseTitle.trim()}>Créer le cours</Button></Stack></Box>
         <Box borderTopWidth="1px" pt="4"><CourseImport onImported={(id) => { setCourses((items) => [...items]); setRefreshKey((value) => value + 1); setSelectedId(id); setTab("structure"); setNotice("Cours importé comme nouveau brouillon. Vérifiez-le puis publiez une version.") }} /></Box>
+        {mainCourseId && <Box borderTopWidth="1px" pt="4"><Cleanup onDone={() => { void api<CourseSummary[]>("/teacher/courses").then(setCourses); setRefreshKey((value) => value + 1) }} /></Box>}
+        {mainCourseId && selectedId !== mainCourseId && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => { setSelectedId(mainCourseId); setTab("structure") }}>Revenir à mon cours</Button>}
       </Stack>
+
+  return <Stack gap="6" aria-label="Studio de cours">
+    <Flex align="center" justify="space-between" gap="4" wrap="wrap"><Box><Heading as="h2" size="xl">Studio de cours</Heading><Text color="gray.600" mt="1">Créez une démonstration, puis vérifiez-la avant de publier une version.</Text></Box><Badge colorPalette="brand" variant="subtle">Aucun code requis</Badge></Flex>
+    {error && <Box role="alert" bg="red.50" color="red.800" p="4" rounded="md">{error}</Box>}
+    {notice && <Box role="status" bg="brand.subtle" color="brand.fg" p="4" rounded="md">{notice}</Box>}
+    {loading ? <Text role="status">Chargement du studio…</Text> : <SimpleGrid columns={{ base: 1, lg: mainCourseId ? 1 : 2 }} gap="6" gridTemplateColumns={mainCourseId ? undefined : { lg: "270px minmax(0, 1fr)" }} alignItems="start">
+      {mainCourseId ? <Box bg="app.surface" p="4" rounded="xl" borderWidth="1px" borderColor="app.border">
+        <Advanced label="Options avancées : autres cours, import JSON, ménage">{sidebar}</Advanced>
+      </Box> : sidebar}
       <Box minW="0">{course ? <Tabs.Root value={tab} onValueChange={(event) => setTab(event.value)} variant="line">
         <Flex justify="space-between" align="center" wrap="wrap" gap="3" mb="3"><Box><Heading as="h3" size="lg">{course.title}</Heading><Text color="gray.600">{course.status === "archived" ? "Archivé — lecture seule" : course.status === "published" ? "Publié — une nouvelle édition créera une révision" : "Brouillon"}</Text></Box><Badge colorPalette={archived ? "gray" : "brand"}>{course.status === "archived" ? "Archivé" : course.status === "published" ? "Publié" : "Brouillon"}</Badge></Flex>
         <Tabs.List overflowX="auto"><Tabs.Trigger value="structure">Structure</Tabs.Trigger><Tabs.Trigger value="mission">Missions</Tabs.Trigger><Tabs.Trigger value="preview">Aperçu</Tabs.Trigger><Tabs.Trigger value="publication">Publication</Tabs.Trigger></Tabs.List>
@@ -298,9 +326,9 @@ export function TeacherStudio() {
         </Stack></Tabs.Content>
         <Tabs.Content value="mission" py="5">{missions.length === 0 ? <Text>Créez d’abord un module, un chapitre et une mission dans Structure.</Text> : <Stack gap="5"><NativeSelect.Root maxW="md"><NativeSelect.Field aria-label="Mission à éditer" value={selectedMissionId ?? ""} onChange={(event) => setSelectedMissionId(Number(event.target.value))}><option value="">Choisir une mission</option>{missions.map((mission) => <option key={mission.id} value={mission.id}>{mission.title}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>{selectedMission && <Box bg="white" p={{ base: "4", md: "6" }} borderWidth="1px" rounded="xl"><MissionEditor key={selectedMission.id} mission={selectedMission} course={course} busy={busy} onSave={saveMission} /></Box>}</Stack>}</Tabs.Content>
         <Tabs.Content value="preview" py="5"><Stack gap="4"><Text color="gray.600">Aperçu étudiant sans notation ni tentative. Les corrections restent réservées à l’enseignant.</Text><Button alignSelf="start" colorPalette="brand" onClick={loadPreview} loading={busy}>Charger l’aperçu</Button>{preview ? <CoursePreview course={preview} corrections={corrections} /> : <Text>Chargez l’aperçu du brouillon actuel.</Text>}</Stack></Tabs.Content>
-        <Tabs.Content value="publication" py="5"><Stack gap="6"><Box bg="white" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">Vérifier et publier</Heading><Text>La publication fige une version. Les anciennes versions et leurs réponses privées restent intactes.</Text><Flex gap="3" wrap="wrap"><Button variant="outline" onClick={validate} disabled={archived} loading={busy}>Vérifier le brouillon</Button><Button colorPalette="brand" onClick={publish} disabled={archived} loading={busy}>Publier une version</Button><Button colorPalette="red" variant="outline" onClick={archive} disabled={archived} loading={busy}>Archiver le cours</Button></Flex>{releases.length === 0 && <Text color="gray.600">Aucune version publiée.</Text>}</Stack></Box>
+        <Tabs.Content value="publication" py="5"><Stack gap="6"><Box bg="white" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">Vérifier et publier</Heading><Text>{course.id === mainCourseId ? "La publication fige une version et la donne à votre classe. Les blocs nouveaux arrivent fermés : vous les ouvrez un par un dans « Ma classe »." : "La publication fige une version. Les anciennes versions et leurs réponses privées restent intactes."}</Text><Flex gap="3" wrap="wrap"><Button variant="outline" onClick={validate} disabled={archived} loading={busy}>Vérifier le brouillon</Button><Button colorPalette="brand" onClick={publish} disabled={archived} loading={busy}>{course.id === mainCourseId ? "Publier pour la classe" : "Publier une version"}</Button><Button colorPalette="red" variant="outline" onClick={archive} disabled={archived} loading={busy}>Archiver le cours</Button></Flex>{releases.length === 0 && <Text color="gray.600">Aucune version publiée.</Text>}</Stack></Box>
           <Box bg="white" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">Versions, sauvegardes et historique</Heading><Text>Chaque version publiée reste intacte. Vous pouvez l’exporter, ou remettre son contenu dans le brouillon ; le brouillon actuel est alors sauvegardé.</Text><ReleaseTools courseId={course.id} releases={releases} archived={archived} refreshKey={refreshKey} onRestored={() => void refreshCourse(course.id)} /></Stack></Box>
-          <Box bg="white" p="5" borderWidth="1px" rounded="xl"><Stack gap="4"><Heading as="h4" size="md">Attribuer une version</Heading><Text>Créez une cohorte, inscrivez les étudiants voulus, puis attribuez la version publiée.</Text><Flex gap="2" wrap="wrap"><Input aria-label="Nom de la nouvelle cohorte" value={newCohortLabel} onChange={(event) => setNewCohortLabel(event.target.value)} placeholder="Nom de la cohorte" flex="1" minW="44" /><Button variant="outline" onClick={createCohort} disabled={!newCohortLabel.trim()} loading={busy}>Créer la cohorte</Button></Flex><Field.Root><Field.Label>Cohorte</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedCohortId ?? ""} onChange={(event) => setSelectedCohortId(Number(event.target.value))}><option value="">Choisir une cohorte</option>{cohorts.map((group) => <option key={group.id} value={group.id}>{group.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>{selectedCohortId !== null && <><Heading as="h5" size="sm">Étudiants de la cohorte</Heading>{students.length === 0 ? <Text>Aucun étudiant actif.</Text> : <Stack gap="2" maxH="52" overflowY="auto">{students.map((student) => <Flex key={student.id} gap="2" align="center" justify="space-between"><Text overflowWrap="anywhere">{student.username}</Text>{cohortDetail?.student_ids.includes(student.id) ? <Badge colorPalette="brand">Inscrit</Badge> : <Button size="xs" variant="outline" onClick={() => enroll(student.id)} loading={busy}>Inscrire</Button>}</Flex>)}</Stack>}</>}<Field.Root><Field.Label>Version publiée</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedReleaseId ?? ""} onChange={(event) => setSelectedReleaseId(Number(event.target.value))}><option value="">Choisir une version</option>{releases.filter((release) => release.status === "published").map((release) => <option key={release.id} value={release.id}>Version {release.version}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root><Button colorPalette="brand" alignSelf="start" onClick={assign} disabled={archived || selectedCohortId === null || selectedReleaseId === null || cohortDetail?.release_ids.includes(selectedReleaseId)} loading={busy}>{selectedReleaseId !== null && cohortDetail?.release_ids.includes(selectedReleaseId) ? "Déjà attribuée" : "Attribuer à la cohorte"}</Button></Stack></Box>
+          <Box bg="white" p="5" borderWidth="1px" rounded="xl"><Advanced key={course.id} label="Options avancées : cohortes et attributions" defaultOpen={course.id !== mainCourseId}><Stack gap="4"><Heading as="h4" size="md">Attribuer une version</Heading><Text>Créez une cohorte, inscrivez les étudiants voulus, puis attribuez la version publiée.</Text><Flex gap="2" wrap="wrap"><Input aria-label="Nom de la nouvelle cohorte" value={newCohortLabel} onChange={(event) => setNewCohortLabel(event.target.value)} placeholder="Nom de la cohorte" flex="1" minW="44" /><Button variant="outline" onClick={createCohort} disabled={!newCohortLabel.trim()} loading={busy}>Créer la cohorte</Button></Flex><Field.Root><Field.Label>Cohorte</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedCohortId ?? ""} onChange={(event) => setSelectedCohortId(Number(event.target.value))}><option value="">Choisir une cohorte</option>{cohorts.map((group) => <option key={group.id} value={group.id}>{group.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>{selectedCohortId !== null && <><Heading as="h5" size="sm">Étudiants de la cohorte</Heading>{students.length === 0 ? <Text>Aucun étudiant actif.</Text> : <Stack gap="2" maxH="52" overflowY="auto">{students.map((student) => <Flex key={student.id} gap="2" align="center" justify="space-between"><Text overflowWrap="anywhere">{student.username}</Text>{cohortDetail?.student_ids.includes(student.id) ? <Badge colorPalette="brand">Inscrit</Badge> : <Button size="xs" variant="outline" onClick={() => enroll(student.id)} loading={busy}>Inscrire</Button>}</Flex>)}</Stack>}</>}<Field.Root><Field.Label>Version publiée</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedReleaseId ?? ""} onChange={(event) => setSelectedReleaseId(Number(event.target.value))}><option value="">Choisir une version</option>{releases.filter((release) => release.status === "published").map((release) => <option key={release.id} value={release.id}>Version {release.version}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root><Button colorPalette="brand" alignSelf="start" onClick={assign} disabled={archived || selectedCohortId === null || selectedReleaseId === null || cohortDetail?.release_ids.includes(selectedReleaseId)} loading={busy}>{selectedReleaseId !== null && cohortDetail?.release_ids.includes(selectedReleaseId) ? "Déjà attribuée" : "Attribuer à la cohorte"}</Button></Stack></Advanced></Box>
         </Stack></Tabs.Content>
       </Tabs.Root> : <Box bg="white" p="8" borderWidth="1px" rounded="xl"><Heading as="h3" size="md">Choisissez un cours</Heading><Text mt="2">Créez votre premier cours dans le panneau de gauche.</Text></Box>}</Box>
     </SimpleGrid>}

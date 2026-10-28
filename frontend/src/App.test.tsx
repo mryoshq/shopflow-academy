@@ -24,12 +24,22 @@ it("shows login without course content to an anonymous visitor", async () => {
   expect(screen.queryByLabelText("Studio de cours")).not.toBeInTheDocument()
 })
 
-it("opens the teacher studio and logs out with CSRF", async () => {
+const main = {
+  course: { id: 5, slug: "python-data-engineering-sql", title: "Python Data Engineering & SQL Avancé", status: "draft" },
+  cohort: { id: 3, label: "Classe B3 IA/Data", student_count: 10 }, assignment_id: null, assigned_version: null, latest_version: null,
+}
+
+it("opens the teacher home on the single course and logs out with CSRF", async () => {
   const fetchMock = vi.fn().mockImplementation(async (url: string) => {
     if (url.endsWith("/auth/me")) return { status: 401, ok: false }
     if (url.endsWith("/auth/login")) return json({ id: 1, username: "demo.enseignant", role: "teacher" })
     if (url.endsWith("/auth/logout")) return { status: 204, ok: true }
-    if (url.endsWith("/teacher/courses") || url.endsWith("/teacher/cohorts") || url.endsWith("/teacher/students")) return json([])
+    if (url.endsWith("/teacher/main/setup")) return json(main)
+    if (url.endsWith("/teacher/courses")) return json([{ id: 5, slug: "python-data-engineering-sql", title: "Python Data Engineering & SQL Avancé", status: "draft" }])
+    if (url.endsWith("/teacher/courses/5")) return json({ id: 5, slug: "python-data-engineering-sql", title: "Python Data Engineering & SQL Avancé", status: "draft", description: "", objectives: [], modules: [] })
+    if (url.endsWith("/teacher/courses/5/releases")) return json([])
+    if (url.endsWith("/teacher/cohorts") || url.endsWith("/teacher/students")) return json([])
+    if (url.includes("/teacher/cohorts/")) return json({ id: 3, label: "Classe B3 IA/Data", student_ids: [], release_ids: [] })
     throw new Error(`Unexpected path ${url}`)
   })
   vi.stubGlobal("fetch", fetchMock)
@@ -38,7 +48,17 @@ it("opens the teacher studio and logs out with CSRF", async () => {
   fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "local-secret" } })
   fireEvent.click(screen.getByRole("button", { name: "Se connecter" }))
   expect(await screen.findByRole("heading", { name: "Studio de cours" })).toBeInTheDocument()
-  expect(await screen.findByText("Aucun cours créé. Commencez ci-dessous.")).toBeInTheDocument()
+  // Three zones, the single course opened directly; other courses are folded in the advanced options.
+  for (const name of ["Mon cours", "Ma classe", "Résultats"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument()
+  expect(await screen.findByRole("heading", { name: "Python Data Engineering & SQL Avancé" })).toBeInTheDocument()
+  expect(screen.getByText(/Classe B3 IA\/Data · 10 étudiants/)).toBeInTheDocument()
+  expect(screen.queryByText("Nouveau cours")).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: /Options avancées : autres cours/ }))
+  expect(screen.getByText("Nouveau cours")).toBeInTheDocument()
+  const setup = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/teacher/main/setup"))
+  expect(setup?.[1].method).toBe("POST")
+  fireEvent.click(screen.getByRole("tab", { name: "Ma classe" }))
+  expect(await screen.findByText("Votre cours n’est pas encore publié")).toBeInTheDocument()
   document.cookie = `academy_csrf=${"A".repeat(43)}; Path=/`
   fireEvent.click(screen.getByRole("button", { name: "Se déconnecter" }))
   expect(await screen.findByRole("heading", { name: "Connexion" })).toBeInTheDocument()

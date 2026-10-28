@@ -128,10 +128,13 @@ def student_detail(assignment_id: int, user_id: int, response: Response, auth: A
         raise HTTPException(status_code=404, detail="student not found")
     from app.student import statuses
 
+    from app.student import open_blocks
+
     missions = flatten(release.student_snapshot)
     ids = [item["mission_version_id"] for item in missions]
     scores = mission_scores(db, student.id, ids)
     state = statuses(db, student.id, missions)
+    opened = open_blocks(db, [cohort.id])
     attempts = db.scalars(select(MissionAttempt).where(MissionAttempt.user_id == student.id, MissionAttempt.mission_version_id.in_(ids))
                           .order_by(MissionAttempt.id.desc()).limit(100)).all() if ids else []
     hints = db.scalars(select(HintReveal).where(HintReveal.user_id == student.id, HintReveal.mission_version_id.in_(ids))).all() if ids else []
@@ -143,7 +146,9 @@ def student_detail(assignment_id: int, user_id: int, response: Response, auth: A
         "id": student.id, "display_name": display_name(student.username),
         "missions": [{
             "mission_version_id": vid, "title": titles[vid], "status": state[vid]["status"], "locked_by": state[vid]["locked_by"],
-            "unlocked_by_teacher": state[vid]["unlocked_by_teacher"], "best_points": scores[vid].best, "possible": scores[vid].possible,
+            "unlocked_by_teacher": state[vid]["unlocked_by_teacher"],
+            "block_open": next(item.get("chapter_id") for item in missions if item["mission_version_id"] == vid) in opened,
+            "best_points": scores[vid].best, "possible": scores[vid].possible,
             "bonus": scores[vid].bonus, "attempts": scores[vid].attempts, "hints": sum(1 for h in hints if h.mission_version_id == vid),
         } for vid in ids],
         "attempts": [{"id": a.id, "mission": titles[a.mission_version_id], "created_at": iso(a.created_at),

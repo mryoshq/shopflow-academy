@@ -668,4 +668,8 @@ def student_course(release_id: int, response: Response, auth: AuthContext = Depe
     if release is None:
         raise HTTPException(status_code=404, detail="course not found")
     response.headers["Cache-Control"] = "no-store"
-    return student_safe_snapshot(release.student_snapshot, release_private_definitions(db, release.student_snapshot))
+    from app.student import visible_snapshot
+
+    # Closed blocks keep their title only: no mission, no content (sprint 2, part A).
+    snapshot = visible_snapshot(db, auth.user.id, release)
+    return student_safe_snapshot(snapshot, release_private_definitions(db, snapshot))

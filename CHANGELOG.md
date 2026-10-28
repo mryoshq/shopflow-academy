@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie A : blocs, « Ma classe », aide (`claude/lucid-brahmagupta-htwgun`)
+
+- Journée en blocs de 15 minutes : état d'ouverture par classe et par bloc (migration 0007), blocs nouveaux fermés, aucun contenu exposé pour un bloc fermé ; « Ouvrir le bloc suivant », ouvrir/fermer un bloc, audit ; repère horaire réservé à l'enseignant.
+- Étudiant : modules et blocs (ouvert, terminé, « Bientôt disponible »), « Continuer » vers la première mission principale non réussie, badge « Bonus », bouton « J'ai besoin d'une explication » (reçue → traitée).
+- Enseignant : trois zones « Mon cours », « Ma classe », « Résultats » ; classe et cours uniques créés ou retrouvés automatiquement ; publication donnée directement à la classe ; demandes d'aide et statistiques par mission ; options avancées repliées.
+- Ménage des cours de test (simulation par défaut, archivage seulement) : interface et `python -m app.course_cleanup`.
+- `APP_SECRET` obligatoire en production (le backend refuse de démarrer sans lui). ADR-0019. `## Bloc :` accepté dans le format du cours.
+
 ## 2026-10-28 — P0-10 terminé, décisions du propriétaire (`feat/p0-10-owner-decisions`)
 
 - `https://shopflow.rapidfox.io` en ligne ; `smoke_public.py` se connecte en production avec le compte du propriétaire et vérifie qu'un compte de démo est refusé.

@@ -63,7 +63,8 @@ def test_second_teacher_cannot_reach_any_owned_course_object(env):
     extra = {"student_id": me["id"], "version_id": missions_of(clients["a"])[0]["mission_version_id"]}
     before = owner.get(f"/api/v1/teacher/courses/{ids['course_id']}").json()
     intruder = other_teacher(engine)
-    values = {**ids, "assignment_id": klass["id"], "user_id": me["id"]}
+    help_id = post(clients["a"], f"/api/v1/student/missions/{extra['version_id']}/help", {"message": "Je bloque"}).json()["id"]
+    values = {**ids, "assignment_id": klass["id"], "user_id": me["id"], "help_id": help_id}
     checked, failures = 0, []
     for path, method in api_routes():
         if not path.startswith("/api/v1/teacher/") or "{" not in path or NOT_COURSE_SCOPED.match(path):
@@ -80,6 +81,8 @@ def test_second_teacher_cannot_reach_any_owned_course_object(env):
     assert owner.get(f"/api/v1/teacher/courses/{ids['course_id']}").json() == before
     with Session(engine) as db:
         assert db.get(Course, ids["course_id"]).status != "archived"
+    # The help request was not handled by the intruder.
+    assert clients["a"].get("/api/v1/student/help").json()[0]["status"] == "pending"
 
 
 def test_listings_and_assignment_hide_other_teachers_courses(env):

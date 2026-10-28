@@ -5,6 +5,7 @@ import { Activity, DataView, emptyAnswer, isAnswerComplete } from "./activities"
 import { clearDraft, loadDraft, newIdempotencyKey, rememberLastMission, saveDraft } from "./storage"
 import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "./ui"
+import { HelpRequest } from "./HelpRequest"
 
 type Props = { missionId: number; navigate: (path: string) => void }
 
@@ -222,6 +223,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             {mission.hint_count > 0 && mission.hint_count === mission.hints.length && <Text fontSize="xs" color="app.muted">Tous les indices sont affichés.</Text>}
           </Stack>
         </Panel>
+        <HelpRequest key={mission.mission_version_id} missionId={mission.mission_version_id} initial={mission.help_request} />
         {mission.attempts_count > 0 && <Panel>
           <Stack gap="2">
             <Button size="sm" variant="ghost" alignSelf="start" px="0" aria-expanded={Boolean(history)} onClick={() => void toggleHistory()}>

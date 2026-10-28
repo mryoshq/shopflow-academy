@@ -5,7 +5,7 @@
 ## 1. Organisation retenue (simple)
 
 - **Une seule classe** (les 10 étudiants `@ynov.com`), **un seul enseignant**, **un seul cours** : « Python Data Engineering & SQL Avancé ».
-- Le cours est découpé en **modules** que l'enseignant **débloque un par un** pour toute la classe. Aujourd'hui : module SQL analytique, puis module(s) Python ingestion et qualité ; les axes 3 (Airflow) et 4 (NoSQL, séries temporelles) s'ajouteront plus tard comme nouveaux modules du même cours.
+- Le cours est découpé en **modules**, eux-mêmes découpés en **blocs** d'environ 15 minutes que l'enseignant **ouvre un par un** pour toute la classe (module SQL = 6 blocs, module Python = 18 blocs). Aujourd'hui : module SQL analytique, puis module(s) Python ingestion et qualité ; les axes 3 (Airflow) et 4 (NoSQL, séries temporelles) s'ajouteront plus tard comme nouveaux modules du même cours.
 - **Ton amusant, jamais pénalisant** : les étudiants peuvent réessayer autant qu'ils veulent ; la note retient leur meilleure tentative. Le feedback, les indices et l'explication sont là pour apprendre, pas pour sanctionner.
 - **Bonus** : chaque module peut proposer des missions bonus (défis plus difficiles, souvent avec du code à exécuter), comptées à part de la note principale.
 
@@ -54,7 +54,7 @@ objectives:
 
 Dans les fichiers de module :
 - `# Module : <titre>` (une ligne d'introduction facultative en dessous, montrée aux étudiants à l'ouverture du module) ;
-- `## Chapitre : <titre>` ;
+- `## Bloc : <titre>` (ou `## Chapitre : <titre>`, synonyme) : un **bloc** d'environ 15 minutes. L'enseignant ouvre les blocs un par un pour toute la classe ; un bloc nouvellement importé arrive **fermé** et les étudiants n'en voient que le titre (« Bientôt disponible ») ;
 - `### Mission : <titre>` ou `### Leçon : <titre>` suivi d'**un seul** bloc ```` ```yaml ```` ;
 - tout autre texte = note pour l'enseignant, jamais montrée aux étudiants.
 
@@ -157,7 +157,7 @@ Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai r�
 
 ## 8. Bonus
 
-- Chaque module peut se terminer par un chapitre `## Chapitre : Bonus` (missions `bonus: true`).
+- Les missions `bonus: true` peuvent se placer dans n'importe quel bloc (disponibles dès que le bloc est ouvert) ou dans un dernier bloc `## Bloc : Bonus` du module.
 - Les bonus ne pénalisent jamais la note principale ; ils rapportent des points bonus affichés à part.
 - Pistes : `sql_challenge`, PERCENT_RANK, CTE récursives, index partiels PostgreSQL contre MySQL, partitionnement, variantes Python plus avancées.
 

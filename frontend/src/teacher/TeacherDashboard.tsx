@@ -25,6 +25,8 @@ type Intervention = { id: number; action: string; actor: string; created_at: str
 const ACTIONS: Record<string, string> = {
   "class.pause": "Séquence mise en pause", "class.resume": "Séquence reprise",
   "mission.unlock": "Mission débloquée", "class.export": "Export CSV des notes",
+  "block.open": "Bloc ouvert", "block.close": "Bloc fermé", "help.handled": "Demande d’aide traitée",
+  "release.assign": "Version donnée à la classe", "release.move": "Classe passée à la nouvelle version",
 }
 
 function since(iso: string | null, now: number): string {
@@ -35,9 +37,10 @@ function since(iso: string | null, now: number): string {
   return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
 }
 
-export function TeacherDashboard() {
+/** Class tracking. With ``assignmentId`` (the single class) there is no class selector. */
+export function TeacherDashboard({ assignmentId = null }: { assignmentId?: number | null } = {}) {
   const [classes, setClasses] = useState<ClassSummary[] | null>(null)
-  const [selected, setSelected] = useState<number | null>(null)
+  const [selected, setSelected] = useState<number | null>(assignmentId)
   const [overview, setOverview] = useState<Overview | null>(null)
   const [detail, setDetail] = useState<StudentDetail | null>(null)
   const [log, setLog] = useState<Intervention[]>([])
@@ -54,7 +57,7 @@ export function TeacherDashboard() {
     try {
       const items = await api<ClassSummary[]>("/teacher/classes")
       setClasses(items)
-      setSelected((current) => current ?? items[0]?.id ?? null)
+      setSelected((current) => assignmentId ?? current ?? items[0]?.id ?? null)
     } catch (reason) {
       if (!(reason instanceof ApiError && reason.status === 401)) setError("Impossible de charger vos classes.")
     }
@@ -128,14 +131,14 @@ export function TeacherDashboard() {
 
   return <Stack gap="6" aria-label="Suivi de classe">
     <Flex gap="4" wrap="wrap" align="end" justify="space-between">
-      <Stack gap="1.5" minW="72">
+      {assignmentId ? <Heading as="h3" size="md">Suivi des étudiants</Heading> : <Stack gap="1.5" minW="72">
         <label htmlFor="class-select"><Text as="span" fontWeight="semibold" fontSize="sm">Classe suivie</Text></label>
         <NativeSelect.Root maxW="xl"><NativeSelect.Field id="class-select" value={selected ?? ""} onChange={(event) => setSelected(Number(event.target.value))}>
           {classes.map((item) => <option key={item.id} value={item.id}>{item.course_title} · v{item.version} · {item.cohort} ({item.student_count} étudiants){item.paused ? " · en pause" : ""}</option>)}
         </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
-      </Stack>
+      </Stack>}
       <Flex gap="2" wrap="wrap" align="center">
-        <Text fontSize="sm" color={stale ? "red.700" : "app.muted"} role="status" aria-live="polite">
+        <Text fontSize="sm" color={stale ? "red.700" : "app.muted"} aria-live="polite">
           {stale ? "Connexion perdue : données possiblement anciennes" : `Actualisé ${since(new Date(generated).toISOString(), now)}`}
         </Text>
         <Button size="sm" variant="ghost" onClick={() => setAutoRefresh(!autoRefresh)} aria-pressed={autoRefresh}>
@@ -211,7 +214,7 @@ export function TeacherDashboard() {
           <Heading as="h3" size="sm" id="interventions-title">Journal des interventions</Heading>
           {log.length === 0 ? <Text color="app.muted" fontSize="sm">Aucune intervention enregistrée.</Text>
             : <Stack as="ul" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{log.slice(0, 20).map((item) => <Flex as="li" key={item.id} gap="3" justify="space-between">
-              <Text>{ACTIONS[item.action] ?? item.action}{item.details.mission ? ` : « ${item.details.mission} » pour ${item.details.student}` : ""}</Text>
+              <Text>{ACTIONS[item.action] ?? item.action}{item.details.block ? ` : « ${item.details.block} »` : ""}{item.details.mission ? ` : « ${item.details.mission} » pour ${item.details.student}` : ""}</Text>
               <Text color="app.muted">{item.actor} · {new Date(item.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</Text>
             </Flex>)}</Stack>}
         </Stack>

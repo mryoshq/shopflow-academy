@@ -6,7 +6,6 @@ const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test
 const accounts = JSON.parse(readFileSync(credentialsPath, "utf8")) as { username: string; password: string }[]
 const account = (name: string) => accounts.find((item) => item.username === name)!
 const shots = process.env.SHOPFLOW_SCREENSHOT_DIR ?? "test-results/p0-07"
-const DEMO_CLASS = /Démonstration — Données ShopFlow · v\d+ · Cohorte démonstration/
 
 async function login(page: Page, name: string) {
   const { username, password } = account(name)
@@ -18,12 +17,11 @@ async function login(page: Page, name: string) {
 }
 
 async function openClass(page: Page) {
-  await page.getByRole("tab", { name: "Suivi de classe" }).click()
-  const select = page.getByLabel("Classe suivie")
-  const value = await select.locator("option").filter({ hasText: DEMO_CLASS }).first().getAttribute("value")
-  await select.selectOption(value!)
+  // The single class of the test stack is the demonstration cohort (config/test-stack.env).
+  await page.getByRole("tab", { name: "Ma classe" }).click()
   await expect(page.getByRole("table", { name: /Progression de la classe Cohorte démonstration/ })).toBeVisible()
-  return Number(value)
+  const main = await (await page.request.get("/api/v1/teacher/main")).json() as { assignment_id: number }
+  return main.assignment_id
 }
 
 test("the teacher follows the class live, pauses, unlocks and exports", async ({ page, browser }) => {
@@ -69,7 +67,7 @@ test("the teacher follows the class live, pauses, unlocks and exports", async ({
     const token = (await page.context().cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
     await page.request.post(`/api/v1/teacher/classes/${classId}/resume`, { headers: { "X-CSRF-Token": token } })
   }
-  await page.getByRole("button", { name: "Actualiser" }).click()
+  await page.getByRole("button", { name: "Actualiser" }).first().click()
   await expect(page.getByRole("button", { name: "Mettre en pause" })).toBeVisible()
   await learner.reload()
   await expect(learner.getByText("Séquence en pause")).toHaveCount(0)

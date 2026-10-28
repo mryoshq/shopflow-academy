@@ -103,3 +103,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Administration de contenu (P0-08)
 
 `app/course_io.py` : `GET /api/v1/teacher/course-search`, `/courses/{id}/export`, `/releases/{id}/export`, `/courses/{id}/history`, `/history/{event_id}/backup` ; `POST /courses/import[?dry_run=true]`, `/courses/{id}/restore` (CSRF). Format `shopflow-course` v1. Frontend `src/teacher/ContentAdmin.tsx`. Voir ADR-0014.
+
+## Blocs, classe unique et aide (sprint 2, partie A)
+
+`app/classroom.py` : `GET /api/v1/teacher/main`, `POST /main/setup|publish` (classe et cours uniques, `CLASS_LABEL`, `MAIN_COURSE_SLUG`) ; `POST /teacher/classes/{id}/blocks/open-next`, `/blocks/{chapter_id}/open|close` ; `GET /classes/{id}/timeline` ; `POST /teacher/help/{id}/handle` ; `POST /teacher/courses/cleanup`. Étudiant (`app/student.py`) : filtrage des blocs fermés (`visible_missions`), `POST /student/missions/{id}/help`, `GET /student/help`. Tables `block_states`, `help_requests` (migration 0007). Frontend : `src/teacher/TeacherHome.tsx` (Mon cours, Ma classe, Résultats), `ClassTimeline.tsx`, `Results.tsx`, `Cleanup.tsx`, `src/student/HelpRequest.tsx`. Voir ADR-0019.

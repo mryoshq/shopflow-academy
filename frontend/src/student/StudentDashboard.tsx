@@ -2,16 +2,18 @@ import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { lastMission } from "./storage"
-import type { Dashboard, DashboardMission } from "./types"
+import type { Dashboard, DashboardBlock, DashboardCourse, DashboardMission } from "./types"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
 
 type Props = { navigate: (path: string) => void }
 
+/** First mission not yet solved in the open blocks (main missions before bonus), else the last one visited. */
 export function continueTarget(dashboard: Dashboard, remembered: number | null): DashboardMission | null {
   const all = dashboard.courses.flatMap((course) => course.missions)
   const open = all.filter((mission) => mission.status !== "locked")
-  const last = open.find((mission) => mission.mission_version_id === remembered && mission.status !== "completed")
-  return last ?? open.find((mission) => mission.status !== "completed") ?? open[0] ?? null
+  const todo = open.find((mission) => !mission.bonus && mission.status !== "completed")
+    ?? open.find((mission) => mission.status !== "completed")
+  return todo ?? open.find((mission) => mission.mission_version_id === remembered) ?? open[0] ?? null
 }
 
 export function StudentDashboard({ navigate }: Props) {
@@ -59,9 +61,11 @@ export function StudentDashboard({ navigate }: Props) {
               <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
               {course.description && <Text color="app.muted">{course.description}</Text>}
             </Stack>
-            <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
-              {course.missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={index} navigate={navigate} />)}
-            </Stack>
+            {course.modules && course.modules.length > 0
+              ? <CourseBlocks course={course} navigate={navigate} />
+              : <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
+                {course.missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={index} navigate={navigate} />)}
+              </Stack>}
           </Stack>
         </Panel>)}
       </Stack>
@@ -100,7 +104,7 @@ function MissionRow({ mission, index, navigate }: { mission: DashboardMission; i
       <Flex align="center" justify="center" w="9" h="9" rounded="full" bg={locked ? "app.border" : "brand.subtle"} color="brand.fg"
         fontWeight="bold" flexShrink={0} aria-hidden="true">{locked ? <Icon name="lock" size={16} /> : index + 1}</Flex>
       <Stack gap="0.5" flex="1" minW="0">
-        <Text fontWeight="semibold">{mission.title}</Text>
+        <Flex gap="2" align="center" wrap="wrap"><Text fontWeight="semibold">{mission.title}</Text>{mission.bonus && <Badge colorPalette="saffron" variant="outline" rounded="full">Bonus</Badge>}</Flex>
         <Text fontSize="sm" color="app.muted">{locked ? `Se débloque après : ${mission.locked_by.join(", ")}` : `${mission.chapter} · environ ${mission.estimated_duration_minutes ?? "?"} min · ${formatPoints(mission.best_points)} / ${mission.possible} pts${mission.bonus ? " (bonus)" : ""}`}</Text>
       </Stack>
       <StatusBadge status={mission.status} />
@@ -109,5 +113,39 @@ function MissionRow({ mission, index, navigate }: { mission: DashboardMission; i
         {locked ? "Verrouillée" : mission.status === "completed" ? "Revoir" : mission.status === "in_progress" ? "Reprendre" : "Commencer"}
       </Button>
     </Flex>
+  </Box>
+}
+
+/** Modules, then their 15-minute blocks: open (with missions), done, or "Bientôt disponible". */
+function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate: (path: string) => void }) {
+  const byId = new Map(course.missions.map((mission) => [mission.mission_version_id, mission]))
+  let number = 0
+  return <Stack gap="5">
+    {course.modules!.map((module, moduleIndex) => <Stack key={moduleIndex} gap="3" as="section" aria-label={`Module : ${module.title}`}>
+      {course.modules!.length > 1 || module.title ? <Text fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{module.title}</Text> : null}
+      {module.blocks.map((block) => {
+        const missions = block.mission_ids.map((id) => byId.get(id)).filter((item): item is DashboardMission => Boolean(item))
+        const first = number
+        number += missions.length
+        return <BlockCard key={block.id} block={block} missions={missions} offset={first} navigate={navigate} />
+      })}
+    </Stack>)}
+  </Stack>
+}
+
+function BlockCard({ block, missions, offset, navigate }: { block: DashboardBlock; missions: DashboardMission[]; offset: number; navigate: (path: string) => void }) {
+  const state = block.done ? { label: "Terminé", palette: "green", variant: "solid" as const }
+    : block.open ? { label: "Ouvert", palette: "brand", variant: "subtle" as const }
+      : { label: "Bientôt disponible", palette: "gray", variant: "subtle" as const }
+  return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={`Bloc : ${block.title}`} role="group">
+    <Flex gap="3" align="center" wrap="wrap" mb={missions.length ? "3" : "0"}>
+      <Text fontWeight="semibold" flex="1">{block.title}</Text>
+      {block.open && block.mission_count > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_count} / {block.mission_count} mission{block.mission_count > 1 ? "s" : ""}{block.bonus_count ? ` · ${block.bonus_count} bonus` : ""}</Text>}
+      <Badge colorPalette={state.palette} variant={state.variant} rounded="full" gap="1">{block.done && <Icon name="check" size={12} />}{!block.open && <Icon name="clock" size={12} />}{state.label}</Badge>
+    </Flex>
+    {!block.open && missions.length === 0 && <Text fontSize="sm" color="app.muted">Votre enseignant ouvrira ce bloc pendant la séance.</Text>}
+    {missions.length > 0 && <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
+      {missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={offset + index} navigate={navigate} />)}
+    </Stack>}
   </Box>
 }

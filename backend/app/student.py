@@ -22,7 +22,9 @@ from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
 from app.progress import attempt_points, course_score, mission_scores
-from app.models import Assignment, Course, CourseRelease, Enrollment, HintReveal, MissionAttempt, MissionUnlock, MissionVersion
+from app.models import (
+    Assignment, BlockState, Course, CourseRelease, Enrollment, HelpRequest, HintReveal, MissionAttempt, MissionUnlock, MissionVersion,
+)
 
 router = APIRouter(prefix="/api/v1/student", tags=["student"])
 ATTEMPTS_PER_MINUTE = 20
@@ -52,8 +54,56 @@ def flatten(snapshot: dict) -> list[dict]:
         for chapter in module.get("chapters", []):
             for mission in chapter.get("missions", []):
                 if isinstance(mission.get("mission_version_id"), int):
-                    items.append({"module": module.get("title", ""), "chapter": chapter.get("title", ""), **mission})
+                    items.append({"module": module.get("title", ""), "chapter": chapter.get("title", ""),
+                                  "chapter_id": chapter.get("id"), **mission})
     return items
+
+
+def blocks_of(snapshot: dict) -> list[dict]:
+    """Blocks (chapters) in course order, with their module title."""
+    return [{"chapter_id": chapter.get("id"), "title": chapter.get("title", ""), "module": module.get("title", ""),
+             "missions": [m for m in chapter.get("missions", []) if isinstance(m.get("mission_version_id"), int)]}
+            for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])]
+
+
+def student_cohorts(db: Session, user_id: int, release_id: int) -> list[int]:
+    return list(db.scalars(select(Assignment.cohort_id).join(Enrollment, Enrollment.cohort_id == Assignment.cohort_id)
+                           .where(Enrollment.user_id == user_id, Assignment.course_release_id == release_id)).all())
+
+
+def open_blocks(db: Session, cohort_ids: list[int]) -> set[int]:
+    """Chapters opened for at least one of these classes."""
+    if not cohort_ids:
+        return set()
+    return set(db.scalars(select(BlockState.chapter_id).where(BlockState.cohort_id.in_(cohort_ids),
+                                                              BlockState.opened_at.is_not(None))).all())
+
+
+def unlocked_versions(db: Session, user_id: int, version_ids: list[int]) -> set[int]:
+    if not version_ids:
+        return set()
+    return set(db.scalars(select(MissionUnlock.mission_version_id).where(
+        MissionUnlock.user_id == user_id, MissionUnlock.mission_version_id.in_(version_ids))).all())
+
+
+def visible_missions(db: Session, user_id: int, release: CourseRelease, missions: list[dict] | None = None) -> list[dict]:
+    """Missions of open blocks, plus missions a teacher unlocked for this student. A closed block exposes nothing."""
+    missions = flatten(release.student_snapshot) if missions is None else missions
+    opened = open_blocks(db, student_cohorts(db, user_id, release.id))
+    unlocked = unlocked_versions(db, user_id, [item["mission_version_id"] for item in missions])
+    return [item for item in missions if item.get("chapter_id") in opened or item["mission_version_id"] in unlocked]
+
+
+def visible_snapshot(db: Session, user_id: int, release: CourseRelease) -> dict:
+    """Release snapshot where closed blocks keep only their title (no mission, no content)."""
+    from copy import deepcopy
+
+    visible = {item["mission_version_id"] for item in visible_missions(db, user_id, release)}
+    snapshot = deepcopy(release.student_snapshot)
+    for module in snapshot.get("modules", []):
+        for chapter in module.get("chapters", []):
+            chapter["missions"] = [m for m in chapter.get("missions", []) if m.get("mission_version_id") in visible]
+    return snapshot
 
 
 def completed_versions(db: Session, user_id: int, version_ids: list[int]) -> set[int]:
@@ -72,12 +122,12 @@ def attempted_versions(db: Session, user_id: int, version_ids: list[int]) -> set
     ).distinct()).all())
 
 
-def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]:
+def statuses(db: Session, user_id: int, missions: list[dict], visible: set[int] | None = None) -> dict[int, dict]:
+    """Status of each mission. ``visible`` (version IDs) hides the titles of prerequisites in closed blocks."""
     ids = [item["mission_version_id"] for item in missions]
     done = completed_versions(db, user_id, ids)
     tried = attempted_versions(db, user_id, ids)
-    unlocked = set(db.scalars(select(MissionUnlock.mission_version_id).where(
-        MissionUnlock.user_id == user_id, MissionUnlock.mission_version_id.in_(ids))).all()) if ids else set()
+    unlocked = unlocked_versions(db, user_id, ids)
     by_mission_id = {item["id"]: item for item in missions}
     result: dict[int, dict] = {}
     for item in missions:
@@ -86,7 +136,12 @@ def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]
         for prerequisite in definition.get("prerequisite_mission_ids", []):
             other = by_mission_id.get(prerequisite)
             if other is None or other["mission_version_id"] not in done:
-                blockers.append(other["title"] if other else "Mission indisponible")
+                if other is None:
+                    blockers.append("Mission indisponible")
+                elif visible is not None and other["mission_version_id"] not in visible:
+                    blockers.append("une mission d’un bloc à venir")
+                else:
+                    blockers.append(other["title"])
         version_id = item["mission_version_id"]
         if version_id in unlocked:
             blockers = []
@@ -102,12 +157,17 @@ def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]
     return result
 
 
-def locate(db: Session, user_id: int, version_id: int) -> tuple[CourseRelease, list[dict], int]:
+def locate(db: Session, user_id: int, version_id: int) -> tuple[CourseRelease, list[dict], int, list[dict]]:
+    """Find a mission the student may see: (release, visible missions, index in them, all missions).
+
+    A mission of a closed block answers 404 exactly like a mission of another class.
+    """
     for release in assigned_releases(db, user_id):
         missions = flatten(release.student_snapshot)
-        for index, item in enumerate(missions):
+        visible = visible_missions(db, user_id, release, missions)
+        for index, item in enumerate(visible):
             if item["mission_version_id"] == version_id:
-                return release, missions, index
+                return release, visible, index, missions
     raise HTTPException(status_code=404, detail="mission not found")
 
 
@@ -126,6 +186,7 @@ def is_paused(db: Session, user_id: int, release_id: int) -> bool:
 
 
 def ensure_open(db: Session, user_id: int, release: CourseRelease, missions: list[dict], version_id: int) -> None:
+    """``missions``: every mission of the release (prerequisites may sit in another block)."""
     if statuses(db, user_id, missions)[version_id]["status"] == "locked":
         raise HTTPException(status_code=409, detail="mission locked")
     if is_paused(db, user_id, release.id):
@@ -151,33 +212,55 @@ def attempt_count(db: Session, user_id: int, version_id: int) -> int:
         MissionAttempt.user_id == user_id, MissionAttempt.mission_version_id == version_id)) or 0
 
 
+def mission_kind(item: dict) -> str | None:
+    return (item.get("definition") or {}).get("kind")
+
+
 @router.get("/dashboard")
 def dashboard(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
     courses = []
     for release in assigned_releases(db, auth.user.id):
         missions = flatten(release.student_snapshot)
-        state = statuses(db, auth.user.id, missions)
+        visible = visible_missions(db, auth.user.id, release, missions)
+        visible_ids = {item["mission_version_id"] for item in visible}
+        state = statuses(db, auth.user.id, missions, visible_ids)
         scores = mission_scores(db, auth.user.id, [item["mission_version_id"] for item in missions])
+        opened = open_blocks(db, student_cohorts(db, auth.user.id, release.id))
         resources: list[str] = []
-        for item in missions:
+        for item in visible:
             for url in (item.get("definition") or {}).get("resources", []):
                 if url not in resources:
                     resources.append(url)
+        modules: list[dict] = []
+        for block in blocks_of(release.student_snapshot):
+            if not modules or modules[-1]["title"] != block["module"]:
+                modules.append({"title": block["module"], "blocks": []})
+            ids = [m["mission_version_id"] for m in block["missions"]]
+            core = [vid for vid in ids if not scores[vid].bonus] if ids else []
+            is_open = block["chapter_id"] in opened
+            shown = [vid for vid in ids if vid in visible_ids]
+            modules[-1]["blocks"].append({
+                "id": block["chapter_id"], "title": block["title"], "open": is_open,
+                "mission_count": len(core), "bonus_count": len(ids) - len(core),
+                "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
+                "done": is_open and bool(core) and all(scores[vid].completed for vid in core),
+                "mission_ids": shown,
+            })
         courses.append({
             "release_id": release.id, "title": release.student_snapshot.get("title", ""),
             "description": release.student_snapshot.get("description", ""), "version": release.version,
             "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
-            "paused": is_paused(db, auth.user.id, release.id),
+            "paused": is_paused(db, auth.user.id, release.id), "modules": modules,
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
-                "module": item["module"], "chapter": item["chapter"],
-                "kind": (item.get("definition") or {}).get("kind"),
+                "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),
+                "kind": mission_kind(item),
                 "estimated_duration_minutes": (item.get("definition") or {}).get("estimated_duration_minutes"),
                 "best_points": scores[item["mission_version_id"]].best, "possible": scores[item["mission_version_id"]].possible,
                 "bonus": scores[item["mission_version_id"]].bonus,
                 **state[item["mission_version_id"]],
-            } for item in missions],
+            } for item in visible],
         })
     return {"display_name": display_name(auth.user.username), "ai_enabled": ai_enabled(), "courses": courses}
 
@@ -185,19 +268,19 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
 @router.get("/missions/{version_id}")
 def mission(version_id: int, response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    release, missions, index = locate(db, auth.user.id, version_id)
-    state = statuses(db, auth.user.id, missions)[version_id]
+    release, missions, index, every = locate(db, auth.user.id, version_id)
+    state = statuses(db, auth.user.id, every, {item["mission_version_id"] for item in missions})[version_id]
     entry = missions[index]
     payload = {
         "mission_version_id": version_id, "release_id": release.id,
         "course_title": release.student_snapshot.get("title", ""), "is_demo": is_demo(release),
-        "module": entry["module"], "chapter": entry["chapter"], "title": entry["title"],
+        "module": entry["module"], "chapter": entry["chapter"], "block_id": entry.get("chapter_id"), "title": entry["title"],
         "position": index + 1, "total": len(missions),
         "previous_id": missions[index - 1]["mission_version_id"] if index > 0 else None,
         "next_id": missions[index + 1]["mission_version_id"] if index + 1 < len(missions) else None,
         "ai_enabled": ai_enabled(), "paused": is_paused(db, auth.user.id, release.id), **state,
         "definition": None, "hints": [], "hint_count": 0, "attempts_count": 0, "last_attempt": None, "explanation": None,
-        "score": None,
+        "score": None, "help_request": help_payload(latest_help(db, auth.user.id, version_id)),
     }
     if state["status"] == "locked":
         return payload
@@ -241,7 +324,7 @@ def attempt_response(db: Session, attempt: MissionAttempt, definition: MissionDe
 def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
                    auth: AuthContext = Depends(require_student_csrf), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    release, missions, _ = locate(db, auth.user.id, version_id)
+    release, _, _, missions = locate(db, auth.user.id, version_id)
     definition = private_definition(db, version_id)
     existing = db.scalar(select(MissionAttempt).where(MissionAttempt.user_id == auth.user.id,
                                                       MissionAttempt.idempotency_key == payload.idempotency_key))
@@ -280,7 +363,7 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
 def reveal_hint(version_id: int, response: Response, auth: AuthContext = Depends(require_student_csrf),
                 db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    release, missions, _ = locate(db, auth.user.id, version_id)
+    release, _, _, missions = locate(db, auth.user.id, version_id)
     ensure_open(db, auth.user.id, release, missions, version_id)
     definition = private_definition(db, version_id)
     shown = revealed_hints(db, auth.user.id, version_id, definition)
@@ -304,3 +387,60 @@ def attempt_history(version_id: int, response: Response, auth: AuthContext = Dep
                           .order_by(MissionAttempt.id.desc()).limit(50)).all()
     return [{"id": item.id, "created_at": item.created_at.isoformat(), "correct": item.is_correct,
              "points": attempt_points(item, definition)} for item in attempts]
+
+
+# Help requests ("J'ai besoin d'une explication") -------------------------------------------
+
+HELP_PER_HOUR = 20
+
+
+class HelpInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    message: str = Field(default="", max_length=300)
+
+
+def latest_help(db: Session, user_id: int, version_id: int) -> HelpRequest | None:
+    return db.scalar(select(HelpRequest).where(HelpRequest.user_id == user_id, HelpRequest.mission_version_id == version_id)
+                     .order_by(HelpRequest.id.desc()).limit(1))
+
+
+def help_payload(item: HelpRequest | None) -> dict | None:
+    if item is None:
+        return None
+    from app.auth import aware
+
+    return {"id": item.id, "status": item.status, "message": item.message, "created_at": aware(item.created_at).isoformat(),
+            "handled_at": aware(item.handled_at).isoformat() if item.handled_at else None}
+
+
+@router.post("/missions/{version_id}/help", status_code=201)
+def ask_help(version_id: int, payload: HelpInput, response: Response, auth: AuthContext = Depends(require_student_csrf),
+             db: Session = Depends(get_db)) -> dict:
+    """One pending request per mission: asking again while it is pending returns the same request."""
+    from app.curriculum_schema import CONTROL, HTML_TAG
+
+    response.headers["Cache-Control"] = "no-store"
+    release, _, _, _ = locate(db, auth.user.id, version_id)
+    message = payload.message.strip()
+    if HTML_TAG.search(message) or CONTROL.search(message.replace("\n", " ")):
+        raise HTTPException(status_code=422, detail="plain text only")
+    pending = latest_help(db, auth.user.id, version_id)
+    if pending is not None and pending.status == "pending":
+        response.status_code = 200
+        return help_payload(pending)  # type: ignore[return-value]
+    recent = db.scalar(select(func.count(HelpRequest.id)).where(
+        HelpRequest.user_id == auth.user.id, HelpRequest.created_at >= utcnow() - timedelta(hours=1))) or 0
+    if recent >= HELP_PER_HOUR:
+        raise HTTPException(status_code=429, detail="too many help requests")
+    item = HelpRequest(user_id=auth.user.id, mission_version_id=version_id, course_release_id=release.id, message=message)
+    db.add(item)
+    db.commit()
+    return help_payload(item)  # type: ignore[return-value]
+
+
+@router.get("/help")
+def my_help(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> list[dict]:
+    """The student's own help requests only, newest first."""
+    response.headers["Cache-Control"] = "no-store"
+    items = db.scalars(select(HelpRequest).where(HelpRequest.user_id == auth.user.id).order_by(HelpRequest.id.desc()).limit(50)).all()
+    return [{**help_payload(item), "mission_version_id": item.mission_version_id} for item in items]  # type: ignore[dict-item]

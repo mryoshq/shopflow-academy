@@ -213,3 +213,53 @@ it("player shows the attempt history on demand", async () => {
   expect(screen.getByText("À revoir · 0 pts")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Masquer l’historique" })).toHaveAttribute("aria-expanded", "true")
 })
+
+it("dashboard groups missions in blocks: open blocks list them, closed blocks are 'Bientôt disponible'", async () => {
+  const row = (id: number, title: string, bonus = false) => ({ mission_version_id: id, title, module: "SQL", chapter: "Bloc 1", kind: "single_choice" as const,
+    estimated_duration_minutes: 15, status: "not_started" as const, locked_by: [], best_points: 0, possible: 5, bonus, block_id: 1 })
+  const dashboard: Dashboard = { display_name: "salma", ai_enabled: false, courses: [{
+    release_id: 1, title: "Cours principal", description: "", version: 2, is_demo: false, resources: [], paused: false,
+    score: { core_points: 0, core_possible: 10, bonus_points: 0, bonus_possible: 5, completed: 0, total: 3 },
+    modules: [{ title: "Module SQL", blocks: [
+      { id: 1, title: "Bloc 1 : le grain", open: true, mission_count: 1, bonus_count: 1, completed_count: 0, done: false, mission_ids: [21, 22] },
+      { id: 2, title: "Bloc 2 : fenêtres", open: false, mission_count: 1, bonus_count: 0, completed_count: 0, done: false, mission_ids: [] },
+    ] }],
+    missions: [row(22, "Défi bonus", true), row(21, "Pourquoi 70 DH deviennent 100 DH")],
+  }] }
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(dashboard)))
+  wrap(<StudentDashboard navigate={vi.fn()} />)
+  const open = await screen.findByRole("group", { name: "Bloc : Bloc 1 : le grain" })
+  expect(within(open).getByText("Ouvert")).toBeInTheDocument()
+  expect(within(open).getByText("Bonus")).toBeInTheDocument()
+  const closed = screen.getByRole("group", { name: "Bloc : Bloc 2 : fenêtres" })
+  expect(within(closed).getByText("Bientôt disponible")).toBeInTheDocument()
+  expect(within(closed).queryByRole("button")).not.toBeInTheDocument()
+  // "Continuer" goes to the first main mission not solved, before the bonus.
+  expect(screen.getByRole("button", { name: /Continuer : Pourquoi 70 DH/ })).toBeInTheDocument()
+  expect(continueTarget(dashboard, 22)?.mission_version_id).toBe(21)
+})
+
+it("player sends a help request with an optional message and shows 'reçue'", async () => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/student/missions/11") && init?.method === "GET") return json(mission())
+    if (url.endsWith("/student/missions/11/help") && init?.method === "POST") return json({ id: 4, status: "pending", message: "Le total", created_at: new Date().toISOString(), handled_at: null }, 201)
+    throw new Error(`Unexpected ${url}`)
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  fireEvent.click(await screen.findByRole("button", { name: "J’ai besoin d’une explication" }))
+  fireEvent.change(screen.getByLabelText("Ce qui vous bloque (facultatif)"), { target: { value: "Le total" } })
+  fireEvent.click(screen.getByRole("button", { name: "Envoyer la demande" }))
+  expect(await screen.findByText("Demande reçue")).toBeInTheDocument()
+  const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/help"))
+  expect(JSON.parse(call![1].body)).toEqual({ message: "Le total" })
+  expect(call![1].headers["X-CSRF-Token"]).toBe("B".repeat(43))
+  expect(screen.queryByRole("button", { name: "J’ai besoin d’une explication" })).not.toBeInTheDocument()
+})
+
+it("player shows a handled help request and lets the student ask again", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(mission({ help_request: { id: 4, status: "handled", message: "", created_at: "2026-10-28T09:00:00Z", handled_at: "2026-10-28T09:05:00Z" } }))))
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  expect(await screen.findByText("Demande traitée")).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "J’ai besoin d’une explication" })).toBeInTheDocument()
+})

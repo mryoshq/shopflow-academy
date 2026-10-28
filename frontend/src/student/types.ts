@@ -15,7 +15,22 @@ export type DashboardMission = {
   best_points: number
   possible: number
   bonus: boolean
+  block_id?: number | null
 }
+
+export type DashboardBlock = {
+  id: number
+  title: string
+  open: boolean
+  mission_count: number
+  bonus_count: number
+  completed_count: number
+  done: boolean
+  mission_ids: number[]
+}
+export type DashboardModule = { title: string; blocks: DashboardBlock[] }
+
+export type HelpRequestState = { id: number; status: "pending" | "handled"; message: string; created_at: string; handled_at: string | null }
 
 export type CourseScore = { core_points: number; core_possible: number; bonus_points: number; bonus_possible: number; completed: number; total: number }
 export type MissionScore = { best: number; possible: number; bonus: boolean }
@@ -30,6 +45,7 @@ export type DashboardCourse = {
   resources: string[]
   score: CourseScore
   paused: boolean
+  modules?: DashboardModule[]
   missions: DashboardMission[]
 }
 
@@ -70,6 +86,7 @@ export type PlayerMission = {
   last_attempt: { correct: boolean; created_at: string } | null
   explanation: string | null
   score: MissionScore | null
+  help_request?: HelpRequestState | null
 }
 
 export type Answer = { choice_ids: string[]; pairs: Record<string, string> }

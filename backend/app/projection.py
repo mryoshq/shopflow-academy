@@ -16,12 +16,14 @@ from functools import lru_cache
 from hashlib import sha256
 import hmac
 
-from app.config import get_settings
+from app.config import check_secure_settings, get_settings
 
 
 @lru_cache
 def _key() -> bytes:
     settings = get_settings()
+    check_secure_settings(settings)
+    # Outside production only: a key derived from the database URL keeps local stacks simple.
     material = settings.app_secret or f"shopflow-projection:{settings.database_url}"
     return sha256(material.encode("utf-8")).digest()
 

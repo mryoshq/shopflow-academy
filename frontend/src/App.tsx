@@ -1,7 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Tabs, Text } from "@chakra-ui/react"
-import { TeacherStudio } from "./TeacherStudio"
-import { TeacherDashboard } from "./teacher/TeacherDashboard"
+import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react"
+import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import type { User } from "./studioTypes"
 
@@ -136,16 +135,9 @@ export function App() {
           <Stack gap="8">
             <Stack gap="2">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
-              <Text fontSize="lg" color="app.muted">Construisez vos cours et missions depuis le navigateur.</Text>
+              <Text fontSize="lg" color="app.muted">Préparez votre cours, ouvrez les blocs et suivez votre classe.</Text>
             </Stack>
-            <Tabs.Root defaultValue="studio" variant="line" colorPalette="brand" lazyMount>
-              <Tabs.List aria-label="Espace enseignant">
-                <Tabs.Trigger value="studio">Studio de cours</Tabs.Trigger>
-                <Tabs.Trigger value="suivi">Suivi de classe</Tabs.Trigger>
-              </Tabs.List>
-              <Tabs.Content value="studio" pt="6"><TeacherStudio /></Tabs.Content>
-              <Tabs.Content value="suivi" pt="6"><TeacherDashboard /></Tabs.Content>
-            </Tabs.Root>
+            <TeacherHome />
             {message && <Text role="alert" color="red.700">{message}</Text>}
           </Stack>
         ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.700">{message}</Text>}</Stack>)}

@@ -17,8 +17,9 @@ from app.curriculum import publish_course
 from app.curriculum_schema import MissionDefinition
 from app.database import get_engine
 from app.models import (
-    Assignment, Chapter, Cohort, Course, CourseModule, CourseRelease, Enrollment, LearningObjective, Mission, User,
+    Assignment, BlockState, Chapter, Cohort, Course, CourseModule, CourseRelease, Enrollment, LearningObjective, Mission, User,
 )
+from app.auth import utcnow
 
 SLUG = "demo-shopflow-donnees"
 TITLE = "Démonstration — Données ShopFlow"
@@ -169,6 +170,13 @@ def run(db: Session) -> dict:
             db.add(Enrollment(cohort_id=cohort.id, user_id=student.id))
     if db.scalar(select(Assignment.id).where(Assignment.cohort_id == cohort.id, Assignment.course_release_id == release.id)) is None:
         db.add(Assignment(cohort_id=cohort.id, course_release_id=release.id))
+    # Demonstration fixture: its single block is open so the tests can play it at once
+    # (real blocks arrive closed and are opened by the teacher in "Ma classe").
+    opened = set(db.scalars(select(BlockState.chapter_id).where(BlockState.cohort_id == cohort.id)).all())
+    for module in release.student_snapshot.get("modules", []):
+        for chapter in module.get("chapters", []):
+            if chapter.get("id") not in opened:
+                db.add(BlockState(cohort_id=cohort.id, chapter_id=chapter["id"], opened_at=utcnow(), updated_by=teacher.id))
     db.commit()
     return {"course_id": course.id, "release_id": release.id, "cohort_id": cohort.id, "demo_students": len(students)}
 
