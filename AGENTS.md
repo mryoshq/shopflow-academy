@@ -49,7 +49,7 @@ React + TypeScript + Vite, FastAPI + SQLAlchemy + Alembic, PostgreSQL plateforme
 
 ## Skills du dépôt
 
-`$academy-architect` · `$mission-author` · `$curriculum-mapper` · `$grading-engine` · `$ui-ux` · `$qa-e2e` · `$deploy-ops` · `$session-handoff` · `$bounded-agent-loop`. Lire les SKILL.md appropriés, ne pas les invoquer décorativement. Consulter le MCP OpenAI Docs quand pertinent et vérifier les versions des bibliothèques avant modification majeure.
+`$academy-architect` · `$mission-author` · `$curriculum-mapper` · `$grading-engine` · `$ui-ux` · `$qa-e2e` · `$deploy-ops` · `$session-handoff` · `$bounded-agent-loop` · `$course-import`. Lire les SKILL.md appropriés, ne pas les invoquer décorativement. Consulter le MCP OpenAI Docs quand pertinent et vérifier les versions des bibliothèques avant modification majeure.
 
 ## Preuve de fin de lot
 

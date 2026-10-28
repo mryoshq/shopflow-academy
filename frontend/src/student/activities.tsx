@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react"
-import { Box, Button, Flex, NativeSelect, Stack, Table, Text, VisuallyHidden } from "@chakra-ui/react"
+import { Box, Button, Flex, NativeSelect, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
+import { CodeBlock, Comparison, DataTable, LineChart } from "./displays"
 import type { Choice, DisplayData } from "../studioTypes"
 import type { Answer, PlayerDefinition } from "./types"
 
@@ -16,6 +17,7 @@ export function emptyAnswer(definition: PlayerDefinition): Answer {
 }
 
 export function isAnswerComplete(definition: PlayerDefinition, answer: Answer): boolean {
+  if (definition.kind === "lesson" || definition.kind === "sql_challenge") return false
   if (definition.kind === "matching") return definition.choices.every((choice) => Boolean(answer.pairs[choice.id]))
   if (definition.kind === "reorder") return answer.choice_ids.length === definition.choices.length
   return answer.choice_ids.length > 0
@@ -110,22 +112,13 @@ export function Activity(props: ActivityProps) {
   return <ChoiceActivity {...props} />
 }
 
-function DataTable({ columns, rows, caption }: { columns: string[]; rows: (string | number | boolean | null)[][]; caption: string }) {
-  return <Box overflowX="auto" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
-    <Table.Root size="sm" variant="line" css={{ "& td, & th": { fontVariantNumeric: "tabular-nums" } }}>
-      <Table.Caption captionSide="top" textAlign="left" px="3" pt="2" color="app.muted" fontSize="sm">{caption}</Table.Caption>
-      <Table.Header><Table.Row bg="app.sunken">{columns.map((column, index) => <Table.ColumnHeader key={index} scope="col">{column}</Table.ColumnHeader>)}</Table.Row></Table.Header>
-      <Table.Body>{rows.map((row, rowIndex) => <Table.Row key={rowIndex}>{row.map((cell, index) =>
-        <Table.Cell key={index} color={cell === null ? "app.muted" : undefined}>{cell === null ? "vide" : String(cell)}</Table.Cell>)}</Table.Row>)}
-      </Table.Body>
-    </Table.Root>
-  </Box>
-}
-
 export function DataView({ data }: { data: DisplayData | null }) {
   const [asTable, setAsTable] = useState(false)
   if (!data) return null
-  if (data.kind === "table") return <DataTable columns={data.columns} rows={data.rows} caption="Extrait de données fictives" />
+  if (data.kind === "table") return <DataTable columns={data.columns} rows={data.rows} caption={data.title || "Extrait de données fictives"} />
+  if (data.kind === "line_chart") return <LineChart data={data} />
+  if (data.kind === "code") return <CodeBlock code={data.code} language={data.language} title={data.title} />
+  if (data.kind === "comparison") return <Comparison data={data} />
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3">
     {asTable ? <DataTable caption={data.title} columns={["Libellé", data.unit ? `Valeur (${data.unit})` : "Valeur"]}

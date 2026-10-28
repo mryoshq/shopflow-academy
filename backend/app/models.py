@@ -76,6 +76,7 @@ class CourseModule(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(200), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
 
 

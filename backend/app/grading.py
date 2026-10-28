@@ -40,6 +40,11 @@ def score(definition: MissionDefinition, raw_answer: dict) -> float:
     Pure function of (published definition, stored answer): scores can be replayed
     from the attempt log at any time and always give the same result.
     """
+    if definition.kind == "lesson":
+        return 0.0
+    if definition.kind == "sql_challenge":
+        # The verdict is computed by the lab runner (part C) and stored with the attempt.
+        return float(definition.max_points) if raw_answer.get("result_matches") is True else 0.0
     if definition.kind == "matching":
         pairs = raw_answer.get("pairs") or {}
         good = sum(1 for key, value in definition.correct_pairs.items() if pairs.get(key) == value)
@@ -65,6 +70,13 @@ def _unique(values: list[str]) -> bool:
 
 
 def evaluate(definition: MissionDefinition, version_id: int, answer: AnswerInput) -> Evaluation:
+    if definition.kind == "lesson":
+        # "J'ai compris": no answer to check, counted in progress, never in the grade.
+        if answer.choice_ids or answer.pairs:
+            raise InvalidAnswer("a lesson takes no answer")
+        return Evaluation(True, {"understood": True}, [])
+    if definition.kind == "sql_challenge":
+        raise InvalidAnswer("sql challenges are answered through the SQL runner")
     choice_ids = [choice.id for choice in definition.choices]
     choices = reverse_ids(version_id, "c", choice_ids)
     if definition.kind == "matching":

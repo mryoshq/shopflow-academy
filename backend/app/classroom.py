@@ -77,22 +77,30 @@ def get_main(response: Response, auth: AuthContext = Depends(require_teacher), d
     return main_state(db, auth)
 
 
+def setup_class(db: Session, teacher: User) -> Cohort:
+    """Find or create the class and enroll every active student (idempotent, not committed)."""
+    cohort = main_cohort(db)
+    if cohort is None:
+        cohort = Cohort(label=get_settings().class_label)
+        db.add(cohort)
+        db.flush()
+        db.add(AuditEvent(actor_id=teacher.id, action="cohort.create", resource_type="cohort", resource_id=cohort.id))
+    enrolled = set(db.scalars(select(Enrollment.user_id).where(Enrollment.cohort_id == cohort.id)).all())
+    for student in db.scalars(select(User).where(User.role == "student", User.enabled.is_(True)).order_by(User.id)):
+        if student.id not in enrolled:
+            db.add(Enrollment(cohort_id=cohort.id, user_id=student.id))
+    db.flush()
+    return cohort
+
+
 @router.post("/main/setup")
 def setup_main(auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     """Idempotent: find or create the class (every active student) and the empty main course draft."""
     settings = get_settings()
-    cohort = main_cohort(db)
-    if cohort is None:
-        cohort = Cohort(label=settings.class_label)
-        db.add(cohort)
-        db.flush()
-        db.add(AuditEvent(actor_id=auth.user.id, action="cohort.create", resource_type="cohort", resource_id=cohort.id))
-    enrolled = set(db.scalars(select(Enrollment.user_id).where(Enrollment.cohort_id == cohort.id)).all())
-    added = 0
-    for student in db.scalars(select(User).where(User.role == "student", User.enabled.is_(True)).order_by(User.id)):
-        if student.id not in enrolled:
-            db.add(Enrollment(cohort_id=cohort.id, user_id=student.id))
-            added += 1
+    before = main_cohort(db)
+    count_before = len(db.scalars(select(Enrollment.id).where(Enrollment.cohort_id == before.id)).all()) if before else 0
+    cohort = setup_class(db, auth.user)
+    added = len(db.scalars(select(Enrollment.id).where(Enrollment.cohort_id == cohort.id)).all()) - count_before
     course = main_course(db)
     if course is None:
         course = Course(slug=settings.main_course_slug, title=settings.main_course_title, created_by=auth.user.id,

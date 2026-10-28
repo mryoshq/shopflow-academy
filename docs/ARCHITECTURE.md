@@ -107,3 +107,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Blocs, classe unique et aide (sprint 2, partie A)
 
 `app/classroom.py` : `GET /api/v1/teacher/main`, `POST /main/setup|publish` (classe et cours uniques, `CLASS_LABEL`, `MAIN_COURSE_SLUG`) ; `POST /teacher/classes/{id}/blocks/open-next`, `/blocks/{chapter_id}/open|close` ; `GET /classes/{id}/timeline` ; `POST /teacher/help/{id}/handle` ; `POST /teacher/courses/cleanup`. Étudiant (`app/student.py`) : filtrage des blocs fermés (`visible_missions`), `POST /student/missions/{id}/help`, `GET /student/help`. Tables `block_states`, `help_requests` (migration 0007). Frontend : `src/teacher/TeacherHome.tsx` (Mon cours, Ma classe, Résultats), `ClassTimeline.tsx`, `Results.tsx`, `Cleanup.tsx`, `src/student/HelpRequest.tsx`. Voir ADR-0019.
+
+## Cours écrit en Markdown (sprint 2, partie D)
+
+`app/course_md.py` (compilateur et import du format `shopflow-course-md`, ADR-0020), `scripts/course_md.py` (côté Mac : envoie le dossier au conteneur backend par l'entrée standard, écrit `RETOURS-PLATEFORME.md`). `curriculum.reusable_version` : une mission inchangée garde sa version à la publication. `POST /api/v1/student/missions/{id}/understood` (leçon). Frontend : `src/student/displays.tsx` (courbes, code, comparaison, texte de leçon), `RunPanel.tsx`.

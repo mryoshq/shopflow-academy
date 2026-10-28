@@ -123,6 +123,7 @@ function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate:
   return <Stack gap="5">
     {course.modules!.map((module, moduleIndex) => <Stack key={moduleIndex} gap="3" as="section" aria-label={`Module : ${module.title}`}>
       {course.modules!.length > 1 || module.title ? <Text fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{module.title}</Text> : null}
+      {module.description && module.blocks.some((block) => block.open) && <Text color="app.muted">{module.description}</Text>}
       {module.blocks.map((block) => {
         const missions = block.mission_ids.map((id) => byId.get(id)).filter((item): item is DashboardMission => Boolean(item))
         const first = number

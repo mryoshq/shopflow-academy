@@ -14,7 +14,8 @@
 
 | Ordre | Partie | Branche | PR | État |
 |---|---|---|---|---|
-| 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | (voir PROGRESS) | ouverte |
+| 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | [#26](https://github.com/mryoshq/shopflow-academy/pull/26) | ouverte, CI verte |
+| 2 | D — chaîne d'import du cours Markdown | `claude/lucid-brahmagupta-htwgun-d` | (PR D, base : A) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit), puis changer la base de la suivante vers `main` si GitHub ne le fait pas.
 
@@ -24,6 +25,12 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit), puis 
 3. Redéployer : `git switch main && git pull && docker compose up -d --build --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080`, puis `python3 scripts/smoke_public.py`.
 4. Se connecter : « Mon cours » crée ou retrouve le cours unique (`python-data-engineering-sql`) et la classe « Classe B3 IA/Data » (les étudiants actifs, donc les 10 `@ynov.com`). Aucun cours n'est attribué tant que vous ne publiez pas.
 5. **Ménage** (simulation, puis exécution) : `docker compose exec -T backend python -m app.course_cleanup < .local/teacher-email.txt`, relire la liste, puis la même commande avec `--apply`. Rien n'est supprimé (archivage, audité). Également possible depuis « Mon cours » → Options avancées.
+
+### À faire en local après la PR D
+1. Sauvegarde manuelle (migration 0008), suffixe `avant-sprint2-d` ; redéployer comme pour A (`docker compose up -d --build --wait`, l'image backend installe PyYAML).
+2. Compiler le cours réel : `python3 scripts/course_md.py compile "<dossier du cours>/cours"` ; relire `<dossier du cours>/RETOURS-PLATEFORME.md` (erreurs avec fichier et ligne).
+3. À 0 erreur, importer en brouillon : `python3 scripts/course_md.py import "<dossier du cours>/cours" < .local/teacher-email.txt`, puis vérifier « Mon cours » → Aperçu.
+4. Sauvegarder le dossier (skill `course-import`). Publication (`--publish`) : seulement sur votre accord.
 
 ### Attend l'accord du propriétaire
 - Publication du cours réel pour la classe et ouverture des blocs (jamais faites par un agent).

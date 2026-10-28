@@ -3,10 +3,14 @@ export type User = { id: number; username: string; role: Role }
 export type CourseSummary = { id: number; slug: string; title: string; status: "draft" | "published" | "archived" }
 export type Objective = { id: number; code: string; statement: string }
 export type Choice = { id: string; label: string }
-export type TableDisplay = { kind: "table"; columns: string[]; rows: (string | number | boolean | null)[][] }
+export type TableDisplay = { kind: "table"; title?: string; columns: string[]; rows: (string | number | boolean | null)[][] }
 export type BarChartDisplay = { kind: "bar_chart"; title: string; labels: string[]; values: number[]; unit: string }
-export type DisplayData = TableDisplay | BarChartDisplay
-export type MissionKind = "single_choice" | "multiple_choice" | "true_false" | "reorder" | "matching" | "data_interpretation" | "scenario_choice" | "guided_simulation"
+export type LineChartDisplay = { kind: "line_chart"; title: string; labels: string[]; series: { name: string; values: (number | null)[] }[]; unit: string }
+export type CodeDisplay = { kind: "code"; language: "sql" | "python" | "text"; code: string; title?: string }
+export type ComparisonDisplay = { kind: "comparison"; items: (CodeDisplay | TableDisplay)[] }
+export type DisplayData = TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
+export type RunView = { id: string; label: string; language: "sql" | "python"; code: string }
+export type MissionKind = "single_choice" | "multiple_choice" | "true_false" | "reorder" | "matching" | "data_interpretation" | "scenario_choice" | "guided_simulation" | "lesson" | "sql_challenge"
 export type MissionDefinition = {
   schema_version: 1
   kind: MissionKind
@@ -28,8 +32,13 @@ export type MissionDefinition = {
   bonus: boolean
   explanation?: string
   scoring?: "all_or_nothing" | "partial"
+  body?: string
+  run?: unknown[]
+  starter_sql?: string
+  expected_sql?: string
+  compare?: "rows" | "rows_unordered" | "scalar"
 }
-export type StudentDefinition = Omit<MissionDefinition, "correct_ids" | "correct_pairs" | "action_id" | "feedback" | "max_points" | "explanation" | "scoring">
+export type StudentDefinition = Omit<MissionDefinition, "correct_ids" | "correct_pairs" | "action_id" | "feedback" | "max_points" | "explanation" | "scoring" | "run" | "expected_sql" | "compare"> & { run?: RunView[] }
 export type Mission = { id: number; slug: string; title: string; sort_order: number; definition: MissionDefinition | null }
 export type StudentMission = Omit<Mission, "definition"> & { definition: StudentDefinition | null; mission_version_id?: number }
 export type Chapter<T = Mission> = { id: number; title: string; sort_order: number; missions: T[] }

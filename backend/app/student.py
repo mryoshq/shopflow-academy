@@ -62,6 +62,7 @@ def flatten(snapshot: dict) -> list[dict]:
 def blocks_of(snapshot: dict) -> list[dict]:
     """Blocks (chapters) in course order, with their module title."""
     return [{"chapter_id": chapter.get("id"), "title": chapter.get("title", ""), "module": module.get("title", ""),
+             "module_description": module.get("description", ""),
              "missions": [m for m in chapter.get("missions", []) if isinstance(m.get("mission_version_id"), int)]}
             for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])]
 
@@ -235,7 +236,7 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
         modules: list[dict] = []
         for block in blocks_of(release.student_snapshot):
             if not modules or modules[-1]["title"] != block["module"]:
-                modules.append({"title": block["module"], "blocks": []})
+                modules.append({"title": block["module"], "description": block["module_description"], "blocks": []})
             ids = [m["mission_version_id"] for m in block["missions"]]
             core = [vid for vid in ids if not scores[vid].bonus] if ids else []
             is_open = block["chapter_id"] in opened
@@ -357,6 +358,18 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
         response.status_code = 200
         return attempt_response(db, existing, definition, replayed=True)
     return attempt_response(db, attempt, definition, replayed=False)
+
+
+@router.post("/missions/{version_id}/understood", status_code=201)
+def understood(version_id: int, response: Response, auth: AuthContext = Depends(require_student_csrf),
+               db: Session = Depends(get_db)) -> dict:
+    """"J'ai compris" on a lesson: one attempt per student and lesson (idempotent), 0 point."""
+    definition = private_definition(db, version_id)
+    if definition.kind != "lesson":
+        locate(db, auth.user.id, version_id)
+        raise HTTPException(status_code=422, detail="only lessons can be marked as understood")
+    payload = AttemptInput(idempotency_key=f"lesson-{version_id}", answer=AnswerInput())
+    return submit_attempt(version_id, payload, response, auth, db)
 
 
 @router.post("/missions/{version_id}/hints")

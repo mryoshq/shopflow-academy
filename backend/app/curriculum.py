@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, require_student, require_teacher, require_teacher_csrf
-from app.curriculum_schema import DisplayData, MissionDefinition, plain
+from app.curriculum_schema import DisplayData, MissionDefinition, plain, public_runs
 from app.database import get_db
 from app.projection import student_definition
 from app.models import (
@@ -26,6 +26,7 @@ PUBLIC_DEFINITION_FIELDS = {
     "schema_version", "kind", "scenario", "instructions", "objective_ids",
     "prerequisite_mission_ids", "choices", "match_targets", "display_data",
     "resources", "hint_count", "estimated_duration_minutes", "bonus",
+    "body", "run", "starter_sql",
 }
 display_adapter = TypeAdapter(DisplayData)
 
@@ -215,7 +216,8 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
         "modules": [],
     }
     for module in modules:
-        module_data = {"id": module.id, "title": module.title, "sort_order": module.sort_order, "chapters": []}
+        module_data = {"id": module.id, "title": module.title, "description": module.description or "",
+                       "sort_order": module.sort_order, "chapters": []}
         chapters = db.scalars(select(Chapter).where(Chapter.module_id == module.id).order_by(Chapter.sort_order, Chapter.id)).all()
         for chapter in chapters:
             chapter_data = {"id": chapter.id, "title": chapter.title, "sort_order": chapter.sort_order, "missions": []}
@@ -259,6 +261,8 @@ def student_safe_snapshot(snapshot: dict, private_by_version: dict[int, dict] | 
                         projected["display_data"] = display_adapter.validate_python(projected["display_data"]).model_dump()
                     except ValidationError:
                         projected.pop("display_data")
+                if "run" in projected:
+                    projected["run"] = public_runs(projected["run"])
                 version_id = mission.get("mission_version_id")
                 if isinstance(version_id, int):
                     projected = student_definition(projected, version_id, (private_by_version or {}).get(version_id))
@@ -523,6 +527,27 @@ def validate_course(course_id: int, auth: AuthContext = Depends(require_teacher_
     return {"valid": True, "mission_count": len(missions)}
 
 
+def canonical(definition: dict) -> str:
+    return json.dumps(definition, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def reusable_version(db: Session, mission_id: int, parsed: MissionDefinition) -> MissionVersion | None:
+    """Latest version of this mission when its definition is unchanged.
+
+    Reusing it keeps the students' attempts, best scores and progress on unchanged
+    missions when a new course version is published (e.g. a block added later).
+    """
+    latest = db.scalar(select(MissionVersion).where(MissionVersion.mission_id == mission_id)
+                       .order_by(MissionVersion.version.desc()).limit(1))
+    if latest is None:
+        return None
+    try:
+        stored = MissionDefinition.model_validate(latest.definition_private)
+    except ValidationError:
+        return None
+    return latest if canonical(stored.model_dump()) == canonical(parsed.model_dump()) else None
+
+
 @router.post("/teacher/courses/{course_id}/publish", status_code=201)
 def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     course = db.scalar(select(Course).where(Course.id == course_id).with_for_update())
@@ -543,11 +568,13 @@ def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_c
                     raise HTTPException(status_code=422, detail="all missions need a valid definition")
                 parsed = MissionDefinition.model_validate(definition)
                 check_objectives(db, course.id, parsed)
-                latest_mission = db.scalar(select(func.max(MissionVersion.version)).where(MissionVersion.mission_id == item["id"])) or 0
-                version = MissionVersion(mission_id=item["id"], version=latest_mission + 1,
-                                         definition_private=parsed.model_dump(), student_projection=parsed.student_projection())
-                db.add(version)
-                flush(db)
+                version = reusable_version(db, item["id"], parsed)
+                if version is None:
+                    latest_mission = db.scalar(select(func.max(MissionVersion.version)).where(MissionVersion.mission_id == item["id"])) or 0
+                    version = MissionVersion(mission_id=item["id"], version=latest_mission + 1,
+                                             definition_private=parsed.model_dump(), student_projection=parsed.student_projection())
+                    db.add(version)
+                    flush(db)
                 private_for_hash.append({"id": version.id, "definition": version.definition_private})
                 item["mission_version_id"] = version.id
                 item["definition"] = version.student_projection

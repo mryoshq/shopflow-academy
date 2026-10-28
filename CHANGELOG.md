@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie D : chaîne d'import du cours Markdown (`claude/lucid-brahmagupta-htwgun-d`)
+
+- `scripts/course_md.py compile|import [--publish]` et `app.course_md` : erreurs en français avec fichier et ligne, résumé par module et par bloc, couverture des objectifs, rapport `RETOURS-PLATEFORME.md` ; import en brouillon du cours (création ou mise à jour), publication facultative.
+- Publication : les missions inchangées gardent leur version, donc la progression et les notes des étudiants ; nouveaux blocs fermés.
+- Nouveaux contenus : leçon non notée (« J'ai compris »), graphique en courbes (points absents), code à lire, comparaison côte à côte ; `run` et `sql_challenge` acceptés et stockés (exécution en partie C) ; introduction de module (migration 0008).
+- Exemple `docs/examples/demo-course/` compilé en CI et importé sur la stack de test ; skill `course-import` ; `docs/COURSE-AUTHORING.md` à jour (journal des changements de syntaxe). ADR-0020.
+
 ## 2026-10-28 — Sprint 2, partie A : blocs, « Ma classe », aide (`claude/lucid-brahmagupta-htwgun`)
 
 - Journée en blocs de 15 minutes : état d'ouverture par classe et par bloc (migration 0007), blocs nouveaux fermés, aucun contenu exposé pour un bloc fermé ; « Ouvrir le bloc suivant », ouvrir/fermer un bloc, audit ; repère horaire réservé à l'enseignant.
