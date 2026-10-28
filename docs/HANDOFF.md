@@ -2,13 +2,13 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner, dans l'ordre, les PR du sprint 2 listées ci-dessous (accord et action du propriétaire), puis faire la section « À faire en local » de chacune.**
+**Prochaine tâche unique : faire « À faire en local après la PR C » (#29, fusionnée), puis relire et fusionner #30 (B) puis #31 (E) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** L'agent rebase la PR suivante sur `main` après chaque fusion.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
 - **Production** : `https://shopflow.rapidfox.io`, sur le Mac de l'enseignant (Docker Compose + Cloudflare Tunnel), déployée depuis `main`. Ce setup est définitif.
 - **Cours** : en cours de rédaction par un autre agent dans un **dossier local du Mac** (jamais sur GitHub : il contient les corrigés). Sauvegarde dans le dépôt privé `mryoshq/shopflow-courses` (ne pas y toucher depuis une session cloud).
-- **Sprint 2 en cours** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR empilée par partie.
+- **Sprint 2 terminé** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR par partie ; A, D, F, C fusionnées.
 
 ### PR du sprint 2, dans l'ordre de fusion
 
@@ -19,6 +19,7 @@
 | 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | [#28](https://github.com/mryoshq/shopflow-academy/pull/28) | **fusionnée** |
 | 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | [#29](https://github.com/mryoshq/shopflow-academy/pull/29) | **fusionnée** |
 | 5 | B — expérience simple et mode sombre | `claude/lucid-brahmagupta-htwgun-b` | [#30](https://github.com/mryoshq/shopflow-academy/pull/30) (base : `main`, rebasée) | ouverte |
+| 6 | E — `docs/SUGGESTIONS.md` | `claude/lucid-brahmagupta-htwgun-e` | [#31](https://github.com/mryoshq/shopflow-academy/pull/31) (base : B) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10)** : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -51,8 +52,19 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Con
 2. Fiches de connexion : `python3 scripts/login_sheets.py` (lit `.local/student-emails.txt`, un identifiant par ligne ; le créer s'il manque) ; ouvrir puis imprimer le fichier écrit dans `~/Developer/shopflow-notes/`. Mots de passe initiaux seulement sur demande : `--with-passwords` (lit `.local/student-credentials.json`).
 3. Mot de passe oublié en séance : « Ma classe » → « Détail » de l'étudiant → « Réinitialiser le mot de passe » (affiché une seule fois, à transmettre en personne).
 
+### À faire en local après la PR E
+Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenues.
+
 ### Attend l'accord du propriétaire
-- Publication du cours réel pour la classe et ouverture des blocs (jamais faites par un agent).
+- Fusion de #30 puis #31.
+- Publication du cours réel pour la classe (`course_md.py import … --publish` ou « Publier pour la classe ») et ouverture des blocs en séance : jamais faites par un agent.
+- Choix parmi `docs/SUGGESTIONS.md`.
+
+### NOT RUN pendant le sprint 2 (raison)
+- Redéploiement, `smoke_public.py` sur la production, sauvegardes avant migration : pas d'accès au Mac.
+- `docker compose up` de la stack complète dans la session : images non construites (limite de téléchargement Docker Hub) ; remplacée par une stack locale équivalente (PostgreSQL, base de laboratoire, uvicorn, nginx avec la configuration du gateway) ; la stack Compose complète est testée par la CI (`studio-e2e`).
+- Compilation et import du cours réel, fiches de connexion sur les vraies adresses : dossier du cours et `.local/` uniquement sur le Mac.
+- Image `runner/python` construite seulement via une variante locale (proxy de la session) ; l'image versionnée est construite en CI et sur le Mac.
 
 ## État courant — session de nuit Claude Code (27-28/10/2026)
 
