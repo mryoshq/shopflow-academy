@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session
 
 from app.curriculum_schema import MissionDefinition
 from app.grading import score
-from app.models import MissionAttempt, MissionVersion
+from app.models import Chapter, CourseModule, Mission, MissionAttempt, MissionVersion
 
 
 @dataclass
@@ -24,6 +24,7 @@ class MissionScore:
     bonus: bool
     attempts: int
     completed: bool
+    lesson: bool = False
 
 
 def attempt_points(attempt: MissionAttempt, definition: MissionDefinition) -> float:
@@ -45,17 +46,56 @@ def definitions(db: Session, version_ids: list[int]) -> dict[int, MissionDefinit
     return {row.id: MissionDefinition.model_validate(row.definition_private) for row in rows}
 
 
+def equivalents(db: Session, version_ids: list[int]) -> dict[int, set[int]]:
+    """Earlier published versions that count for each version (republication, same course and slug).
+
+    A lesson read in any version stays read; a graded mission keeps its success only when its
+    private definition is identical (same answers, same points). Read-time only: the stored
+    attempts are never copied or changed.
+    """
+    if not version_ids:
+        return {}
+    def key(row):
+        return (row.course_id, row.slug)
+    query = (select(MissionVersion.id, MissionVersion.definition_private, Mission.slug, CourseModule.course_id)
+             .join(Mission, Mission.id == MissionVersion.mission_id).join(Chapter, Chapter.id == Mission.chapter_id)
+             .join(CourseModule, CourseModule.id == Chapter.module_id))
+    targets = db.execute(query.where(MissionVersion.id.in_(version_ids))).all()
+    slugs = {row.slug for row in targets}
+    family: dict[tuple, list] = {}
+    for row in db.execute(query.where(Mission.slug.in_(slugs))).all() if slugs else []:
+        family.setdefault(key(row), []).append(row)
+    result = {vid: {vid} for vid in version_ids}
+    for row in targets:
+        lesson = (row.definition_private or {}).get("kind") == "lesson"
+        result[row.id] |= {other.id for other in family.get(key(row), [])
+                           if lesson or other.definition_private == row.definition_private}
+    return result
+
+
+def attempts_for(db: Session, user_ids: list[int], version_ids: list[int]) -> list[tuple[MissionAttempt, int]]:
+    """Attempts of these users counted for each version (its own and its equivalents): (attempt, version)."""
+    groups = equivalents(db, version_ids)
+    owners: dict[int, list[int]] = {}
+    for target, members in groups.items():
+        for member in members:
+            owners.setdefault(member, []).append(target)
+    if not owners or not user_ids:
+        return []
+    rows = db.scalars(select(MissionAttempt).where(MissionAttempt.user_id.in_(user_ids),
+                                                   MissionAttempt.mission_version_id.in_(list(owners))).order_by(MissionAttempt.id)).all()
+    return [(attempt, target) for attempt in rows for target in owners[attempt.mission_version_id]]
+
+
 def mission_scores(db: Session, user_id: int, version_ids: list[int]) -> dict[int, MissionScore]:
     defs = definitions(db, version_ids)
-    result = {vid: MissionScore(0.0, d.max_points, d.bonus, 0, False) for vid, d in defs.items()}
+    result = {vid: MissionScore(0.0, d.max_points, d.bonus, 0, False, d.kind == "lesson") for vid, d in defs.items()}
     if not defs:
         return result
-    attempts = db.scalars(select(MissionAttempt).where(MissionAttempt.user_id == user_id,
-                                                       MissionAttempt.mission_version_id.in_(list(defs)))).all()
-    for attempt in attempts:
-        item = result[attempt.mission_version_id]
+    for attempt, vid in attempts_for(db, [user_id], list(defs)):
+        item = result[vid]
         item.attempts += 1
-        item.best = max(item.best, attempt_points(attempt, defs[attempt.mission_version_id]))
+        item.best = max(item.best, attempt_points(attempt, defs[vid]))
         item.completed = item.completed or attempt.is_correct
     return result
 
@@ -63,11 +103,24 @@ def mission_scores(db: Session, user_id: int, version_ids: list[int]) -> dict[in
 def course_score(scores: dict[int, MissionScore]) -> dict:
     core = [item for item in scores.values() if not item.bonus]
     bonus = [item for item in scores.values() if item.bonus]
+    graded = [item for item in scores.values() if not item.lesson]
+    lessons = [item for item in scores.values() if item.lesson]
     return {
         "core_points": round(sum(item.best for item in core), 2), "core_possible": sum(item.possible for item in core),
         "bonus_points": round(sum(item.best for item in bonus), 2), "bonus_possible": sum(item.possible for item in bonus),
-        "completed": sum(1 for item in scores.values() if item.completed), "total": len(scores),
+        # Missions only; lessons are counted apart (« leçons lues x/y »).
+        "completed": sum(1 for item in graded if item.completed), "total": len(graded),
+        "lessons_read": sum(1 for item in lessons if item.completed), "lessons_total": len(lessons),
     }
+
+
+def block_done(scores: dict[int, MissionScore], version_ids: list[int]) -> bool:
+    """A block is done when every graded mission (not bonus, not lesson) is solved; lessons only if it has none."""
+    graded = [scores[vid] for vid in version_ids if vid in scores and not scores[vid].bonus and not scores[vid].lesson]
+    if graded:
+        return all(item.completed for item in graded)
+    lessons = [scores[vid] for vid in version_ids if vid in scores and scores[vid].lesson]
+    return bool(lessons) and all(item.completed for item in lessons)
 
 
 def replay(db: Session) -> list[int]:
