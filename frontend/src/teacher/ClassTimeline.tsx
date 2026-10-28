@@ -10,7 +10,8 @@ export type TimelineBlock = {
   mission_count: number; bonus_count: number; duration_minutes: number; completed_students: number; help_pending: number
 }
 export type HelpItem = { id: number; student: string; mission_version_id: number; mission: string; block: string; message: string; created_at: string }
-export type MissionStat = { mission_version_id: number; title: string; block: string; bonus: boolean; completed: number; attempts: number; hints: number; stuck: string[] }
+export type MissionStat = { mission_version_id: number; title: string; block: string; bonus: boolean; completed: number; attempts: number; hints: number; stuck: string[]
+  fast_attempts?: number; fast?: { student: string; count: number }[] }
 export type Timeline = {
   generated_at: string; assignment_id: number; student_count: number; block_minutes: number; next_block_id: number | null
   blocks: TimelineBlock[]; help: HelpItem[]; missions: MissionStat[]
@@ -153,7 +154,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
         <Text fontSize="sm" color="app.muted">« Bloqués » : plusieurs essais sans réussite.</Text></Box>
       <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des missions (défilement horizontal)">
         <Table.Root size="sm" variant="line" aria-label="Statistiques par mission">
-          <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+          <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués", "Clics rapides"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>
             <Table.Cell fontWeight="medium">{item.title}{item.bonus ? " (bonus)" : ""}</Table.Cell>
             <Table.Cell color="app.muted">{item.block}</Table.Cell>
@@ -161,6 +162,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.attempts}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.hints}</Table.Cell>
             <Table.Cell>{item.stuck.length ? item.stuck.join(", ") : "—"}</Table.Cell>
+            <Table.Cell>{item.fast?.length ? <Text fontSize="sm"><Badge colorPalette="saffron" variant="outline" rounded="full" mr="1">{item.fast_attempts}</Badge>{item.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ")}</Text> : "—"}</Table.Cell>
           </Table.Row>)}</Table.Body>
         </Table.Root>
       </Box>

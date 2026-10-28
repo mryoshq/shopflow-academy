@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie L : décourager le clic au hasard (`claude/lucid-brahmagupta-htwgun-l`)
+
+- « Mon cours » → « Règles » : points dégressifs (100/70/50 puis 30 %, missions principales seulement), pause après une erreur (10/20/30 s, 429 côté serveur), lecture minimale des leçons (200 mots/min, 10 à 60 s, vérifiée par le serveur), repérage des clics rapides (badge dans « Ma classe », sans sanction), annonce modifiable. Tout désactivé par défaut sauf le repérage ; réglages audités.
+- Pourcentage enregistré par essai, meilleur essai retenu, non rétroactif (date d'activation), rejouable. Migration 0010. ADR-0027.
+
 ## 2026-10-28 — Logo du propriétaire (`claude/lucid-brahmagupta-htwgun-logo`)
 
 - En-tête et page de connexion : logo complet à côté du nom « ShopFlow Academy » en texte ; variante verte du propriétaire en mode sombre.

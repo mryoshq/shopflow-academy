@@ -109,6 +109,7 @@ def overview(assignment_id: int, response: Response, auth: AuthContext = Depends
             "bonus_points": summary["bonus_points"], "attempts": len(attempts), "hints": len(hints),
             "current_mission": titles.get(last[1]) if last else None, "last_activity": last[0].isoformat() if last else None,
             "active": bool(last and now - last[0] <= ACTIVE_WINDOW), "needs_help": help_missions,
+            "fast_attempts": sum(1 for a in attempts if a.fast),
         })
     return {
         "generated_at": now.isoformat(), "assignment_id": assignment.id, "cohort": cohort.label,
@@ -150,9 +151,11 @@ def student_detail(assignment_id: int, user_id: int, response: Response, auth: A
             "block_open": next(item.get("chapter_id") for item in missions if item["mission_version_id"] == vid) in opened,
             "best_points": scores[vid].best, "possible": scores[vid].possible,
             "bonus": scores[vid].bonus, "attempts": scores[vid].attempts, "hints": sum(1 for h in hints if h.mission_version_id == vid),
+            "fast_attempts": sum(1 for a in attempts if a.mission_version_id == vid and a.fast),
         } for vid in ids],
         "attempts": [{"id": a.id, "mission": titles[a.mission_version_id], "created_at": iso(a.created_at),
-                      "correct": a.is_correct, "points": attempt_points(a, defs[a.mission_version_id])} for a in attempts],
+                      "correct": a.is_correct, "points": attempt_points(a, defs[a.mission_version_id]),
+                      "fast": a.fast, "percent": a.percent} for a in attempts],
     }
 
 
