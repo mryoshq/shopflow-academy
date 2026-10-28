@@ -17,6 +17,6 @@ Certaines missions doivent montrer le **vrai résultat** d'une requête SQL ou d
 
 ## Conséquences
 
-- Indisponibilité de `labdb` : les boutons « Exécuter » affichent un message (503), le reste du cours fonctionne (le backend ne dépend pas de `lab-init`).
+- Indisponibilité de `labdb` : les boutons « Exécuter » affichent un message (503), le reste du cours fonctionne. Le backend attend `lab-init` (`service_completed_successfully`, `required: false`) : si l'initialisation échoue, la plateforme démarre quand même et `docker compose up --wait` signale l'échec.
 - Le jeu de laboratoire n'est pas sauvegardé (il est rechargé à chaque import).
 - Les accès à `labdb` sont journalisés par PostgreSQL au minimum ; le contenu des requêtes des étudiants est conservé dans leurs tentatives (texte, 4000 caractères au plus).
