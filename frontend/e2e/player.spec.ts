@@ -105,7 +105,10 @@ test("a student completes the three demonstrations with the keyboard only", asyn
     let current = labels.findIndex((text) => text.includes(expected[target]))
     if (current <= target) continue
     const up = page.getByRole("button", { name: `Monter « ${expected[target]} »` })
-    await up.focus()
+    await expect(async () => {
+      await up.focus()
+      await expect(up).toBeFocused({ timeout: 300 })
+    }).toPass({ timeout: 10_000 })
     while (current > target) {
       // Focus follows the moved step, so a keyboard user simply presses Enter again.
       await expect(up).toBeFocused()
@@ -120,6 +123,8 @@ test("a student completes the three demonstrations with the keyboard only", asyn
   await expect(page.getByText("Bonne décision")).toBeVisible()
   await press(page, page.getByRole("button", { name: "Retour au tableau de bord" }).last())
   await expect(course.getByText("Réussie")).toHaveCount(3)
+  await expect(page.getByRole("img", { name: "30 points sur 30" })).toBeVisible()
+  await page.screenshot({ path: `${shots}/09-score.png`, fullPage: true, animations: "disabled" })
 
   // No answer key in any student payload.
   for (const path of ["/api/v1/student/dashboard"]) {
@@ -197,4 +202,19 @@ test("the login page is accessible", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Connexion" })).toBeVisible()
   expect(await seriousA11yViolations(page)).toEqual([])
   await page.screenshot({ path: `${shots}/00-connexion.png`, fullPage: true, animations: "disabled" })
+})
+
+test("best score and attempt history are kept per student", async ({ page }) => {
+  await keyboardLogin(page, "demo.etudiant03")
+  await openMission(page, "Frais de livraison après une jointure")
+  await expect(page.getByText("Meilleur score : 10 / 10 pts")).toBeVisible()
+  // A wrong answer after a success never lowers the best score.
+  await press(page, page.getByRole("radio", { name: /Supprimer les lignes/ }), "Space")
+  await press(page, page.getByRole("button", { name: "Tester ma décision" }))
+  await expect(page.getByText(/Meilleur score conservé : 10 pts/)).toBeVisible()
+  await press(page, page.getByRole("button", { name: /Historique de vos essais/ }))
+  await expect(page.getByText(/Réussi · 10 pts/).first()).toBeVisible()
+  await page.screenshot({ path: `${shots}/10-historique.png`, fullPage: true, animations: "disabled" })
+  const other = await page.request.get("/api/v1/student/dashboard")
+  expect(await other.text()).not.toMatch(/correct_ids|correct_pairs|"scoring"|max_points/)
 })

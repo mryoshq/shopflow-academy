@@ -54,3 +54,12 @@ export function LoadingState({ label }: { label: string }) {
     <Stack gap="3" mt="4" aria-hidden="true">{[70, 90, 55].map((width) => <Box key={width} h="3" w={`${width}%`} bg="app.sunken" rounded="full" />)}</Stack>
   </Panel>
 }
+
+export const formatPoints = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1).replace(".", ",")
+
+export function ScoreBar({ value, max, label }: { value: number; max: number; label: string }) {
+  const ratio = max > 0 ? Math.min(1, value / max) : 0
+  return <Box h="2" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={label}>
+    <Box h="full" bg="brand.solid" w={`${ratio * 100}%`} transition="width 300ms ease-out" />
+  </Box>
+}

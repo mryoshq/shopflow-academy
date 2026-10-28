@@ -26,7 +26,7 @@ function defaultDraft(objectiveId?: number): MissionDefinition {
     choices: [{ id: "option-1", label: "" }, { id: "option-2", label: "" }],
     correct_ids: ["option-1"], match_targets: [], correct_pairs: {}, action_id: null,
     display_data: null, resources: [], hints: [], feedback: {}, max_points: 10,
-    estimated_duration_minutes: 15, bonus: false,
+    estimated_duration_minutes: 15, bonus: false, explanation: "", scoring: "all_or_nothing",
   }
 }
 
@@ -123,18 +123,20 @@ export function MissionEditor({ mission, course, busy, onSave }: {
   const single = !["multiple_choice", "reorder", "matching"].includes(draft.kind)
 
   function setKind(kind: MissionKind) {
+    const scoring = ["multiple_choice", "reorder", "matching"].includes(kind) ? draft.scoring : "all_or_nothing"
+    const base = { ...draft, scoring }
     if (kind === "true_false") {
-      setDraft({ ...draft, kind, choices: [{ id: "true", label: "Vrai" }, { id: "false", label: "Faux" }], correct_ids: ["true"], match_targets: [], correct_pairs: {}, action_id: null, feedback: {} })
+      setDraft({ ...base, kind, choices: [{ id: "true", label: "Vrai" }, { id: "false", label: "Faux" }], correct_ids: ["true"], match_targets: [], correct_pairs: {}, action_id: null, feedback: {} })
       return
     }
     const choices = draft.kind === "true_false" ? defaultDraft().choices : draft.choices
     if (kind === "matching") {
       const targets = choices.map((_, index) => ({ id: `target-${index + 1}`, label: "" }))
-      setDraft({ ...draft, kind, choices, correct_ids: [], match_targets: targets,
+      setDraft({ ...base, kind, choices, correct_ids: [], match_targets: targets,
         correct_pairs: Object.fromEntries(choices.map((choice, index) => [choice.id, targets[index].id])), action_id: null })
       return
     }
-    setDraft({ ...draft, kind, choices, correct_ids: kind === "reorder" ? choices.map((choice) => choice.id) : [choices[0].id],
+    setDraft({ ...base, kind, choices, correct_ids: kind === "reorder" ? choices.map((choice) => choice.id) : [choices[0].id],
       match_targets: [], correct_pairs: {}, action_id: kind === "guided_simulation" ? actions[0].value : null })
   }
 
@@ -223,6 +225,8 @@ export function MissionEditor({ mission, course, busy, onSave }: {
     {draft.display_data?.kind === "table" && <TableEditor value={draft.display_data} onChange={(value) => setDraft({ ...draft, display_data: value })} />}
     {draft.display_data?.kind === "bar_chart" && <ChartEditor value={draft.display_data} onChange={(value) => setDraft({ ...draft, display_data: value })} />}
     <Flex gap="4" wrap="wrap"><Field.Root maxW="40" required><Field.Label>Points</Field.Label><Input type="number" min={1} max={100} value={draft.max_points} onChange={(event) => setDraft({ ...draft, max_points: Number(event.target.value) })} /></Field.Root><Field.Root maxW="40" required><Field.Label>Durée indicative (min)</Field.Label><Input type="number" min={1} max={120} value={draft.estimated_duration_minutes} onChange={(event) => setDraft({ ...draft, estimated_duration_minutes: Number(event.target.value) })} /></Field.Root><label style={{ alignSelf: "end", paddingBottom: 10 }}><input type="checkbox" checked={draft.bonus} onChange={(event) => setDraft({ ...draft, bonus: event.target.checked })} /> Activité bonus</label></Flex>
+    <Field.Root><Field.Label>Barème</Field.Label><NativeSelect.Root maxW="md"><NativeSelect.Field value={draft.scoring ?? "all_or_nothing"} onChange={(event) => setDraft({ ...draft, scoring: event.target.value as "all_or_nothing" | "partial" })}><option value="all_or_nothing">Tout ou rien : points seulement si la réponse est entièrement juste</option>{["multiple_choice", "reorder", "matching"].includes(draft.kind) && <option value="partial">Partiel : points au prorata des éléments justes</option>}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root><Field.HelperText>Le meilleur essai de l’étudiant est conservé. Les activités bonus sont comptées à part.</Field.HelperText></Field.Root>
+    <Field.Root><Field.Label>Explication</Field.Label><Textarea value={draft.explanation ?? ""} onChange={(event) => setDraft({ ...draft, explanation: event.target.value })} rows={3} placeholder="Pourquoi la bonne réponse est juste…" disabled={busy} /><Field.HelperText>Montrée à l’étudiant après une réponse juste ou après trois essais.</Field.HelperText></Field.Root>
     <Stack gap="2"><Heading as="h4" size="md">Indices progressifs</Heading>{draft.hints.map((hint, index) => <Flex key={index} gap="2"><Input aria-label={`Indice ${index + 1}`} value={hint} onChange={(event) => setDraft({ ...draft, hints: draft.hints.map((item, i) => i === index ? event.target.value : item) })} /><Button size="sm" variant="ghost" onClick={() => setDraft({ ...draft, hints: draft.hints.filter((_, i) => i !== index) })}>Retirer</Button></Flex>)}<Button size="sm" variant="outline" alignSelf="start" onClick={() => setDraft({ ...draft, hints: [...draft.hints, ""] })} disabled={draft.hints.length >= 5}>Ajouter un indice</Button></Stack>
     <Stack gap="2"><Heading as="h4" size="md">Feedback par proposition</Heading>{draft.choices.map((choice) => <Field.Root key={choice.id}><Field.Label>{choice.label || choice.id}</Field.Label><Textarea value={draft.feedback[choice.id] ?? ""} onChange={(event) => setDraft({ ...draft, feedback: { ...draft.feedback, [choice.id]: event.target.value } })} rows={2} /></Field.Root>)}</Stack>
     <Stack gap="2"><Heading as="h4" size="md">Ressources HTTPS</Heading>{draft.resources.map((url, index) => <Flex key={index} gap="2"><Input aria-label={`Ressource ${index + 1}`} value={url} onChange={(event) => setDraft({ ...draft, resources: draft.resources.map((item, i) => i === index ? event.target.value : item) })} placeholder="https://…" /><Button size="sm" variant="ghost" onClick={() => setDraft({ ...draft, resources: draft.resources.filter((_, i) => i !== index) })}>Retirer</Button></Flex>)}<Button size="sm" variant="outline" alignSelf="start" onClick={() => setDraft({ ...draft, resources: [...draft.resources, ""] })} disabled={draft.resources.length >= 10}>Ajouter une ressource</Button></Stack>

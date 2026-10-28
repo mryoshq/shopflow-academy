@@ -26,8 +26,10 @@ export type MissionDefinition = {
   max_points: number
   estimated_duration_minutes: number
   bonus: boolean
+  explanation?: string
+  scoring?: "all_or_nothing" | "partial"
 }
-export type StudentDefinition = Omit<MissionDefinition, "correct_ids" | "correct_pairs" | "action_id" | "feedback" | "max_points">
+export type StudentDefinition = Omit<MissionDefinition, "correct_ids" | "correct_pairs" | "action_id" | "feedback" | "max_points" | "explanation" | "scoring">
 export type Mission = { id: number; slug: string; title: string; sort_order: number; definition: MissionDefinition | null }
 export type StudentMission = Omit<Mission, "definition"> & { definition: StudentDefinition | null; mission_version_id?: number }
 export type Chapter<T = Mission> = { id: number; title: string; sort_order: number; missions: T[] }

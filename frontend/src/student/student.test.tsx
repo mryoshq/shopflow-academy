@@ -21,7 +21,7 @@ function mission(overrides: Partial<PlayerMission> = {}): PlayerMission {
     mission_version_id: 11, release_id: 3, course_title: "Démonstration — Données ShopFlow", is_demo: true,
     module: "Module", chapter: "Chapitre", title: "Frais de livraison", position: 1, total: 3, previous_id: null, next_id: 12,
     ai_enabled: false, status: "not_started", locked_by: [], definition: base, hints: [], hint_count: 2,
-    attempts_count: 0, last_attempt: null, explanation: null, ...overrides,
+    attempts_count: 0, last_attempt: null, explanation: null, score: { best: 0, possible: 10, bonus: false }, ...overrides,
   }
 }
 
@@ -89,10 +89,11 @@ it("charts always offer an accessible table", () => {
 it("dashboard shows courses, locked missions and a Continue target", async () => {
   const data: Dashboard = { display_name: "demo.etudiant01", ai_enabled: false, courses: [{
     release_id: 3, title: "Démonstration — Données ShopFlow", description: "", version: 1, is_demo: true, resources: [],
+    score: { core_points: 12.5, core_possible: 20, bonus_points: 0, bonus_possible: 5, completed: 1, total: 3 },
     missions: [
-      { mission_version_id: 11, title: "Frais", module: "M", chapter: "C", kind: "single_choice", estimated_duration_minutes: 10, status: "completed", locked_by: [] },
-      { mission_version_id: 12, title: "CSV", module: "M", chapter: "C", kind: "multiple_choice", estimated_duration_minutes: 10, status: "in_progress", locked_by: [] },
-      { mission_version_id: 13, title: "Ordre", module: "M", chapter: "C", kind: "reorder", estimated_duration_minutes: 8, status: "locked", locked_by: ["CSV"] },
+      { mission_version_id: 11, title: "Frais", module: "M", chapter: "C", kind: "single_choice", estimated_duration_minutes: 10, status: "completed", locked_by: [], best_points: 10, possible: 10, bonus: false },
+      { mission_version_id: 12, title: "CSV", module: "M", chapter: "C", kind: "multiple_choice", estimated_duration_minutes: 10, status: "in_progress", locked_by: [], best_points: 2.5, possible: 10, bonus: false },
+      { mission_version_id: 13, title: "Ordre", module: "M", chapter: "C", kind: "reorder", estimated_duration_minutes: 8, status: "locked", locked_by: ["CSV"], best_points: 0, possible: 5, bonus: true },
     ] }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(data)))
   const navigate = vi.fn()
@@ -101,7 +102,9 @@ it("dashboard shows courses, locked missions and a Continue target", async () =>
   expect(screen.getByText("Démonstration")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Verrouillée : Ordre" })).toBeDisabled()
   expect(screen.getByText("Se débloque après : CSV")).toBeInTheDocument()
-  expect(screen.getByText("Score et progression détaillée : bientôt disponibles.")).toBeInTheDocument()
+  expect(screen.getByRole("img", { name: "12,5 points sur 20" })).toBeInTheDocument()
+  expect(screen.getByText(/Bonus :/).parentElement).toHaveTextContent("Bonus : 0 / 5 pts, comptés à part.")
+  expect(screen.getByText(/2,5 \/ 10 pts/)).toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: /Continuer : CSV/ }))
   expect(navigate).toHaveBeenCalledWith("/mission/12")
   expect(continueTarget(data, 11)?.mission_version_id).toBe(12)
@@ -123,7 +126,7 @@ it("player submits with an idempotency key, shows server feedback and reuses the
     calls.push({ url, body: init?.body ? JSON.parse(String(init.body)) : undefined })
     if (url.endsWith("/attempts")) {
       if (failNext) { failNext = false; throw new TypeError("offline") }
-      return json({ attempt_id: 5, correct: false, replayed: false, attempts_count: 1, explanation: null,
+      return json({ attempt_id: 5, correct: false, replayed: false, attempts_count: 1, explanation: null, points: 0, score: { best: 0, possible: 10, bonus: false },
         feedback: [{ choice_id: "c2", text: "Juste ici par hasard." }] }, 201)
     }
     return json(mission())
@@ -149,7 +152,7 @@ it("player submits with an idempotency key, shows server feedback and reuses the
 
 it("player shows a correct result, explanation and next mission", async () => {
   vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => url.endsWith("/attempts")
-    ? json({ attempt_id: 6, correct: true, replayed: false, attempts_count: 1, feedback: [], explanation: "30 + 40 = 70 DH." }, 201)
+    ? json({ attempt_id: 6, correct: true, replayed: false, attempts_count: 1, feedback: [], explanation: "30 + 40 = 70 DH.", points: 10, score: { best: 10, possible: 10, bonus: false } }, 201)
     : json(mission())))
   const navigate = vi.fn()
   wrap(<MissionPlayer missionId={11} navigate={navigate} />)
@@ -157,6 +160,8 @@ it("player shows a correct result, explanation and next mission", async () => {
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tester ma décision" })) })
   expect(await screen.findByText("Bonne décision")).toBeInTheDocument()
   expect(screen.getByText("30 + 40 = 70 DH.")).toBeInTheDocument()
+  expect(screen.getByText(/Meilleur score conservé : 10 pts/)).toBeInTheDocument()
+  expect(screen.getByText("Meilleur score : 10 / 10 pts")).toBeInTheDocument()
   fireEvent.click(screen.getAllByRole("button", { name: /Mission suivante/ })[0])
   expect(navigate).toHaveBeenCalledWith("/mission/12")
 })
@@ -195,4 +200,16 @@ it("player reports a mission that is not assigned", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({ detail: "mission not found" }, 404)))
   wrap(<MissionPlayer missionId={99} navigate={vi.fn()} />)
   expect(await screen.findByRole("alert")).toHaveTextContent("ne vous est pas attribuée")
+})
+
+it("player shows the attempt history on demand", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => url.endsWith("/attempts")
+    ? json([{ id: 2, created_at: "2026-10-28T08:05:00Z", correct: true, points: 10 }, { id: 1, created_at: "2026-10-28T08:00:00Z", correct: false, points: 0 }])
+    : json(mission({ attempts_count: 2, status: "completed", score: { best: 10, possible: 10, bonus: false } }))))
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  const toggle = await screen.findByRole("button", { name: "Historique de vos essais (2)" })
+  await act(async () => { fireEvent.click(toggle) })
+  expect(await screen.findByText("Réussi · 10 pts")).toBeInTheDocument()
+  expect(screen.getByText("À revoir · 0 pts")).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Masquer l’historique" })).toHaveAttribute("aria-expanded", "true")
 })

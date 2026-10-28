@@ -20,7 +20,8 @@ from app.config import get_settings
 from app.curriculum import release_private_definitions, student_safe_snapshot
 from app.curriculum_schema import MissionDefinition
 from app.database import get_db
-from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation
+from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
+from app.progress import attempt_points, course_score, mission_scores
 from app.models import Assignment, Course, CourseRelease, Enrollment, HintReveal, MissionAttempt, MissionVersion
 
 router = APIRouter(prefix="/api/v1/student", tags=["student"])
@@ -139,6 +140,7 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
     for release in assigned_releases(db, auth.user.id):
         missions = flatten(release.student_snapshot)
         state = statuses(db, auth.user.id, missions)
+        scores = mission_scores(db, auth.user.id, [item["mission_version_id"] for item in missions])
         resources: list[str] = []
         for item in missions:
             for url in (item.get("definition") or {}).get("resources", []):
@@ -147,12 +149,14 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
         courses.append({
             "release_id": release.id, "title": release.student_snapshot.get("title", ""),
             "description": release.student_snapshot.get("description", ""), "version": release.version,
-            "is_demo": is_demo(release), "resources": resources,
+            "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
                 "module": item["module"], "chapter": item["chapter"],
                 "kind": (item.get("definition") or {}).get("kind"),
                 "estimated_duration_minutes": (item.get("definition") or {}).get("estimated_duration_minutes"),
+                "best_points": scores[item["mission_version_id"]].best, "possible": scores[item["mission_version_id"]].possible,
+                "bonus": scores[item["mission_version_id"]].bonus,
                 **state[item["mission_version_id"]],
             } for item in missions],
         })
@@ -174,6 +178,7 @@ def mission(version_id: int, response: Response, auth: AuthContext = Depends(req
         "next_id": missions[index + 1]["mission_version_id"] if index + 1 < len(missions) else None,
         "ai_enabled": ai_enabled(), **state,
         "definition": None, "hints": [], "hint_count": 0, "attempts_count": 0, "last_attempt": None, "explanation": None,
+        "score": None,
     }
     if state["status"] == "locked":
         return payload
@@ -188,8 +193,14 @@ def mission(version_id: int, response: Response, auth: AuthContext = Depends(req
         "attempts_count": count,
         "last_attempt": {"correct": last.is_correct, "created_at": last.created_at.isoformat()} if last else None,
         "explanation": reveal_explanation(definition, state["status"] == "completed", count),
+        "score": score_payload(db, auth.user.id, version_id),
     })
     return payload
+
+
+def score_payload(db: Session, user_id: int, version_id: int) -> dict:
+    item = mission_scores(db, user_id, [version_id])[version_id]
+    return {"best": item.best, "possible": item.possible, "bonus": item.bonus}
 
 
 def attempt_response(db: Session, attempt: MissionAttempt, definition: MissionDefinition, replayed: bool) -> dict:
@@ -201,6 +212,7 @@ def attempt_response(db: Session, attempt: MissionAttempt, definition: MissionDe
     count = attempt_count(db, attempt.user_id, attempt.mission_version_id)
     return {
         "attempt_id": attempt.id, "correct": attempt.is_correct, "replayed": replayed, "attempts_count": count,
+        "points": attempt_points(attempt, definition), "score": score_payload(db, attempt.user_id, attempt.mission_version_id),
         "feedback": feedback_for(definition, attempt.mission_version_id, evaluation),
         "explanation": reveal_explanation(definition, attempt.is_correct, count),
     }
@@ -230,7 +242,8 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
     except InvalidAnswer as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     attempt = MissionAttempt(user_id=auth.user.id, mission_version_id=version_id, course_release_id=release.id,
-                             idempotency_key=payload.idempotency_key, answer=evaluation.raw_answer, is_correct=evaluation.correct)
+                             idempotency_key=payload.idempotency_key, answer=evaluation.raw_answer, is_correct=evaluation.correct,
+                             points=score(definition, evaluation.raw_answer))
     db.add(attempt)
     try:
         db.commit()
@@ -262,3 +275,15 @@ def reveal_hint(version_id: int, response: Response, auth: AuthContext = Depends
             db.rollback()
         shown = revealed_hints(db, auth.user.id, version_id, definition)
     return {"hints": shown, "hint_count": len(definition.hints)}
+
+
+@router.get("/missions/{version_id}/attempts")
+def attempt_history(version_id: int, response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> list[dict]:
+    """The student's own attempts on one mission version, newest first (no answer echo)."""
+    response.headers["Cache-Control"] = "no-store"
+    locate(db, auth.user.id, version_id)
+    definition = private_definition(db, version_id)
+    attempts = db.scalars(select(MissionAttempt).where(MissionAttempt.user_id == auth.user.id, MissionAttempt.mission_version_id == version_id)
+                          .order_by(MissionAttempt.id.desc()).limit(50)).all()
+    return [{"id": item.id, "created_at": item.created_at.isoformat(), "correct": item.is_correct,
+             "points": attempt_points(item, definition)} for item in attempts]

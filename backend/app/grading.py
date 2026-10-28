@@ -34,6 +34,32 @@ class Evaluation:
     selected_raw: list[str]
 
 
+def score(definition: MissionDefinition, raw_answer: dict) -> float:
+    """Deterministic points for one answer expressed with authored IDs.
+
+    Pure function of (published definition, stored answer): scores can be replayed
+    from the attempt log at any time and always give the same result.
+    """
+    if definition.kind == "matching":
+        pairs = raw_answer.get("pairs") or {}
+        good = sum(1 for key, value in definition.correct_pairs.items() if pairs.get(key) == value)
+        ratio = good / len(definition.correct_pairs)
+    else:
+        selected = list(raw_answer.get("choice_ids") or [])
+        if definition.kind == "reorder":
+            ratio = sum(1 for a, b in zip(selected, definition.correct_ids) if a == b) / len(definition.correct_ids)
+        elif definition.kind == "multiple_choice":
+            expected = set(definition.correct_ids)
+            hits = len(expected & set(selected))
+            misses = len(set(selected) - expected)
+            ratio = max(0.0, (hits - misses) / len(expected))
+        else:
+            ratio = 1.0 if selected == definition.correct_ids else 0.0
+    if definition.scoring == "all_or_nothing":
+        ratio = 1.0 if ratio >= 1.0 else 0.0
+    return round(definition.max_points * ratio, 2)
+
+
 def _unique(values: list[str]) -> bool:
     return len(set(values)) == len(values)
 

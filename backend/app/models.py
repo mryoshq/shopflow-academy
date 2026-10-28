@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -175,6 +175,7 @@ class MissionAttempt(Base):
     idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
     answer: Mapped[dict] = mapped_column(JSON, nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    points: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 

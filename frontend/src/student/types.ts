@@ -11,7 +11,14 @@ export type DashboardMission = {
   estimated_duration_minutes: number | null
   status: MissionStatus
   locked_by: string[]
+  best_points: number
+  possible: number
+  bonus: boolean
 }
+
+export type CourseScore = { core_points: number; core_possible: number; bonus_points: number; bonus_possible: number; completed: number; total: number }
+export type MissionScore = { best: number; possible: number; bonus: boolean }
+export type AttemptHistoryItem = { id: number; created_at: string; correct: boolean; points: number }
 
 export type DashboardCourse = {
   release_id: number
@@ -20,6 +27,7 @@ export type DashboardCourse = {
   version: number
   is_demo: boolean
   resources: string[]
+  score: CourseScore
   missions: DashboardMission[]
 }
 
@@ -58,6 +66,7 @@ export type PlayerMission = {
   attempts_count: number
   last_attempt: { correct: boolean; created_at: string } | null
   explanation: string | null
+  score: MissionScore | null
 }
 
 export type Answer = { choice_ids: string[]; pairs: Record<string, string> }
@@ -67,6 +76,8 @@ export type AttemptResult = {
   correct: boolean
   replayed: boolean
   attempts_count: number
+  points: number
+  score: MissionScore
   feedback: { choice_id: string; text: string }[]
   explanation: string | null
 }

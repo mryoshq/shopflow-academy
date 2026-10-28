@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — P0-06 notation et progression (`feat/p0-06-grading-progress`)
+
+- Points par tentative (barème tout ou rien ou partiel), meilleur score conservé, bonus séparés, progression et totaux recalculés depuis le journal des tentatives (aucun double comptage), rejeu vérifiable ; migration 0005.
+- Historique personnel des essais ; score par mission et par cours dans le lecteur et le tableau de bord.
+- Studio : champs « Barème » et « Explication ».
+
 ## 2026-10-28 — P0-05 lecteur étudiant (`feat/p0-05-student-player`)
 
 - Tableau de bord étudiant : « Bonjour », cours attribués, états des missions (à faire, en cours, réussie, verrouillée), bouton « Continuer », ressources, emplacement score à venir.

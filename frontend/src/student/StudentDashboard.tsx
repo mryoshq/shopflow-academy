@@ -3,7 +3,7 @@ import { Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/
 import { api, ApiError } from "../api"
 import { lastMission } from "./storage"
 import type { Dashboard, DashboardMission } from "./types"
-import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge } from "./ui"
+import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
 
 type Props = { navigate: (path: string) => void }
 
@@ -32,8 +32,6 @@ export function StudentDashboard({ navigate }: Props) {
   if (!data) return <LoadingState label="Chargement de votre espace…" />
 
   const target = continueTarget(data, lastMission())
-  const done = data.courses.flatMap((course) => course.missions).filter((mission) => mission.status === "completed").length
-  const total = data.courses.reduce((sum, course) => sum + course.missions.length, 0)
 
   return <Stack gap="8">
     <Flex gap="6" justify="space-between" align={{ base: "start", md: "end" }} direction={{ base: "column", md: "row" }}>
@@ -67,13 +65,17 @@ export function StudentDashboard({ navigate }: Props) {
         </Panel>)}
       </Stack>
       <Stack gap="4" as="aside" aria-label="Suivi">
-        <Panel>
-          <Stack gap="2">
-            <Text fontWeight="semibold">Missions réussies</Text>
-            <Text fontSize="3xl" fontWeight="bold" lineHeight="1" css={{ fontVariantNumeric: "tabular-nums" }}>{done}<Text as="span" fontSize="lg" color="app.muted"> / {total}</Text></Text>
-            <Text fontSize="sm" color="app.muted">Score et progression détaillée : bientôt disponibles.</Text>
+        {data.courses.map((course) => <Panel key={course.release_id} aria-label={`Score : ${course.title}`}>
+          <Stack gap="3">
+            <Text fontWeight="semibold">{data.courses.length > 1 ? course.title : "Votre score"}</Text>
+            <Text fontSize="3xl" fontWeight="bold" lineHeight="1" css={{ fontVariantNumeric: "tabular-nums" }}>
+              {formatPoints(course.score.core_points)}<Text as="span" fontSize="lg" color="app.muted"> / {course.score.core_possible} pts</Text>
+            </Text>
+            <ScoreBar value={course.score.core_points} max={course.score.core_possible} label={`${formatPoints(course.score.core_points)} points sur ${course.score.core_possible}`} />
+            <Text fontSize="sm" color="app.muted">{course.score.completed} mission{course.score.completed > 1 ? "s" : ""} réussie{course.score.completed > 1 ? "s" : ""} sur {course.score.total}. Votre meilleur essai compte.</Text>
+            {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">Bonus :</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} pts, comptés à part.</Text>}
           </Stack>
-        </Panel>
+        </Panel>)}
         <Panel>
           <Stack gap="2">
             <Text fontWeight="semibold">Ressources</Text>
@@ -98,7 +100,7 @@ function MissionRow({ mission, index, navigate }: { mission: DashboardMission; i
         fontWeight="bold" flexShrink={0} aria-hidden="true">{locked ? <Icon name="lock" size={16} /> : index + 1}</Flex>
       <Stack gap="0.5" flex="1" minW="0">
         <Text fontWeight="semibold">{mission.title}</Text>
-        <Text fontSize="sm" color="app.muted">{locked ? `Se débloque après : ${mission.locked_by.join(", ")}` : `${mission.chapter} · environ ${mission.estimated_duration_minutes ?? "?"} min`}</Text>
+        <Text fontSize="sm" color="app.muted">{locked ? `Se débloque après : ${mission.locked_by.join(", ")}` : `${mission.chapter} · environ ${mission.estimated_duration_minutes ?? "?"} min · ${formatPoints(mission.best_points)} / ${mission.possible} pts${mission.bonus ? " (bonus)" : ""}`}</Text>
       </Stack>
       <StatusBadge status={mission.status} />
       <Button size="sm" variant={mission.status === "completed" ? "outline" : "solid"} colorPalette="brand" disabled={locked}
