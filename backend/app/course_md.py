@@ -54,7 +54,8 @@ HTTP_RE = re.compile(r"http://", re.IGNORECASE)
 # Kinds and data kinds the platform can play today. Others are refused with a clear message.
 KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching", "data_interpretation",
          "scenario_choice", "lesson", "sql_challenge", "review"}
-DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards", "image", "download"}
+DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards", "image", "download",
+              "experience"}
 MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt|png|jpg|jpeg|webp|svg)$")
 IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "svg"}
 DOWNLOAD_NAME = re.compile(r"^downloads/([A-Za-z0-9_.-]{1,120})$")
@@ -128,6 +129,7 @@ FRENCH = {
     "Invalid video file": "fichier vidéo invalide",
     "Invalid image file": "fichier image invalide",
     "Invalid download file": "fichier à télécharger invalide",
+    "Experience data too large": "données de l'expérience trop volumineuses (200 Ko et 8 niveaux au plus)",
     "An image needs an alt text": "une image demande un texte alternatif `alt`",
     "Invalid captions file": "fichier de sous-titres invalide",
 }
@@ -843,14 +845,42 @@ def attach_downloads(compiled: Compiled, item: Item, data: dict) -> None:
     data["files"] = result or [{"id": "0" * 16 + ".pdf", "name": "absent.pdf", "title": "absent", "size": 0}]
 
 
+def attach_experience(compiled: Compiled, item: Item, data: dict) -> None:
+    """``data.kind: experience`` with ``data_file: experiences/<nom>.json``: embed the course's exact values (ADR-0033)."""
+    name = data.pop("data_file", None)
+    if name is None:
+        return
+    line = line_for(item, ("data", "data_file"))
+    name = str(name)
+    if not re.fullmatch(r"experiences/[A-Za-z0-9_-]{1,80}\.json", name):
+        compiled.error(item.file, line, "`data_file` : chemin `experiences/<nom>.json` attendu (lettres, chiffres, - et _)")
+        return
+    content = compiled.media_in.get(name)
+    if content is None:
+        compiled.error(item.file, line, f"fichier introuvable dans le dossier du cours : `{name}`")
+        return
+    try:
+        value = json.loads(content.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        compiled.error(item.file, line, f"`{name}` n'est pas un JSON valide ({str(exc)[:120]})")
+        return
+    if not isinstance(value, dict):
+        compiled.error(item.file, line, f"`{name}` doit contenir un objet JSON {{…}}")
+        return
+    data["data"] = value
+
+
 def attach_media(compiled: Compiled, item: Item) -> None:
-    """``data.kind: video|image|download`` with files: check the course files and replace them by their content address."""
+    """``data.kind: video|image|download|experience`` with files: check the course files and embed or address them."""
     data = item.raw.get("data")
     if isinstance(data, dict) and data.get("kind") == "image":
         attach_image(compiled, item, data)
         return
     if isinstance(data, dict) and data.get("kind") == "download":
         attach_downloads(compiled, item, data)
+        return
+    if isinstance(data, dict) and data.get("kind") == "experience":
+        attach_experience(compiled, item, data)
         return
     if not isinstance(data, dict) or data.get("kind") != "video" or "file" not in data:
         if isinstance(data, dict) and data.get("kind") == "video" and data.get("captions") is not None:
@@ -940,6 +970,9 @@ def compile_dir(folder: Path) -> Compiled:
     media.update({f"downloads/{path.name}": path.read_bytes() for path in sorted((folder / "downloads").glob("*")) if path.is_file()})
     datasets = {f"datasets/{path.name}": path.read_text(encoding="utf-8") for path in sorted((folder / "datasets").glob("*.sql"))}
     return compile_files(files, media, dataset=datasets or None)
+    media.update({f"experiences/{path.name}": path.read_bytes() for path in sorted((folder / "experiences").glob("*.json"))})
+    dataset = folder / "datasets" / "shopflow-lab.sql"
+    return compile_files(files, media, dataset=dataset.read_text(encoding="utf-8") if dataset.is_file() else None)
 
 
 # Summary, document, report -------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { Suspense, useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"

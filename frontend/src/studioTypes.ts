@@ -23,8 +23,9 @@ export type Flashcard = { front: string; back: string }
 export type FlashcardsDisplay = { kind: "flashcards"; description?: string; title?: string; cards: Flashcard[] }
 export type DownloadFile = { id: string; name: string; title: string; size: number }
 export type DownloadDisplay = { kind: "download"; description?: string; title?: string; files: DownloadFile[] }
+export type ExperienceDisplay = { kind: "experience"; experience: "voyage"; description?: string; title?: string; scene?: number | null; data?: Record<string, unknown> | null }
 export type ImageDisplay = { kind: "image"; description?: string; src: string; alt: string; caption?: string }
-export type DisplayData = DownloadDisplay | ImageDisplay | TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay
+export type DisplayData = DownloadDisplay | ExperienceDisplay | ImageDisplay | TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay
 /** Not graded, validated with « J'ai compris » and counted like a lesson (ADR-0028). */
 export function isUngraded(kind: string): boolean {
   return kind === "lesson" || kind === "review"

@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from "react"
 
-/** Minimal hash router: "#/" and "#/mission/<id>". Survives reloads and re-login. */
-export function parseRoute(hash: string): { name: "home" } | { name: "mission"; id: number } {
+/** Minimal hash router: "#/", "#/mission/<id>" and "#/voyage[/<scene>]" (ADR-0033). Survives reloads and re-login. */
+export function parseRoute(hash: string): { name: "home" } | { name: "mission"; id: number } | { name: "voyage"; scene: number } {
+  const voyage = /^#\/voyage(?:\/([1-7]))?$/.exec(hash)
+  if (voyage) return { name: "voyage", scene: voyage[1] ? Number(voyage[1]) : 1 }
   const match = /^#\/mission\/(\d{1,9})$/.exec(hash)
   return match ? { name: "mission", id: Number(match[1]) } : { name: "home" }
 }

@@ -19,6 +19,7 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
     00-cours.md               en-tête du cours (titre, objectifs)
     10-module-sql.md          module SQL analytique
     20-module-python.md       module Python ingestion et qualité (peut être découpé en 20-, 21-, 22-…)
+    experiences/              données exactes des expériences interactives (`voyage.json`, `data.kind: experience`)
     media/                    vidéos .mp4 (≤ 50 Mo), sous-titres .vtt (§ 6, `data.kind: video`) et images png/jpg/webp/svg (≤ 2 Mo, `data.kind: image`)
     datasets/
       shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 7)
@@ -295,6 +296,11 @@ data:
       title: Fiche mémo des fonctions de fenêtre
     - file: downloads/commandes-octobre.csv
       title: Commandes d'octobre (jeu fictif)
+- `experience` (ADR-0033, leçons) : ouvre une expérience interactive de l'Academy. Aujourd'hui : `experience: voyage` (« Le voyage d'une donnée », 7 scènes), `scene` de départ facultative (1 à 7), `title` facultatif, `data_file: experiences/voyage.json` facultatif : valeurs exactes du cours (lignes CSV, rejets et motifs, événements, empreintes ; JSON objet, 200 Ko au plus), fusionnées avec les valeurs par défaut de l'expérience.
+  kind: experience
+  experience: voyage
+  scene: 3
+  data_file: experiences/voyage.json
 ```
 
 Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
@@ -354,6 +360,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
 | 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
 | 29/10/2026 (sprint 3, S) | En-tête `lab_schemas: [...]` et plusieurs `datasets/*.sql` (ordre des noms) ; `EXPLAIN (ANALYZE, BUFFERS, …)` ; nouveau `data.kind: download` (`cours/downloads/`, 20 Mo). ADR-0032. |
+| 29/10/2026 (sprint 3, Q) | `data.kind: experience` (`experience: voyage`, `scene`, `data_file: experiences/voyage.json`). ADR-0033. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |

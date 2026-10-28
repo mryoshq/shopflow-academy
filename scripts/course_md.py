@@ -70,6 +70,10 @@ def media_bundle(folder: Path) -> dict[str, str]:
             if path.stat().st_size > 20 * 1024 * 1024:
                 raise SystemExit(f"{path.name} : plus de 20 Mo")
             media[f"downloads/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
+    for path in sorted((folder / "experiences").glob("*.json")):  # ADR-0033: exact values of an experience
+        if path.stat().st_size > 200_000:
+            raise SystemExit(f"{path.name} : plus de 200 Ko")
+        media[f"experiences/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
     for path in sorted((folder / "media").glob("*")):
         if path.is_file() and path.suffix.lower() in {".mp4", ".vtt", ".png", ".jpg", ".jpeg", ".webp", ".svg"}:
             if path.stat().st_size > MAX_MEDIA:
