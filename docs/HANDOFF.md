@@ -25,6 +25,9 @@ Branche `feat/p0-06-grading-progress` (empilée sur P0-05 #18). ADR-0012 : score
 ### P0-07 — tableau de bord enseignant : livré
 Branche `feat/p0-07-teacher-dashboard` (empilée sur P0-06 #19). ADR-0013. Le « Suivi de classe » ne montre que les cours dont le compte est propriétaire : la classe de démonstration se consulte avec `demo.enseignant` (identifiants dans `.local/demo-credentials.json`).
 
+### P0-08 — administration de contenu : livré
+Branche `feat/p0-08-content-admin` (empilée sur P0-07 #20). ADR-0014. Les exports contiennent les corrigés : ne pas les déposer dans le dépôt public.
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).

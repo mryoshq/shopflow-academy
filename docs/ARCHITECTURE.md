@@ -99,3 +99,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Tableau de bord enseignant (P0-07)
 
 `app/teacher_dashboard.py` : `GET /api/v1/teacher/classes`, `/classes/{id}/overview`, `/classes/{id}/students/{user_id}`, `/classes/{id}/interventions`, `/classes/{id}/export.csv` ; `POST /classes/{id}/pause|resume|unlocks` (CSRF). Propriétaire du cours uniquement. Migration 0006 (`assignments.paused_at`, `mission_unlocks`, `audit_events.details`). Frontend `src/teacher/TeacherDashboard.tsx` (sondage 5 s). Voir ADR-0013.
+
+## Administration de contenu (P0-08)
+
+`app/course_io.py` : `GET /api/v1/teacher/course-search`, `/courses/{id}/export`, `/releases/{id}/export`, `/courses/{id}/history`, `/history/{event_id}/backup` ; `POST /courses/import[?dry_run=true]`, `/courses/{id}/restore` (CSRF). Format `shopflow-course` v1. Frontend `src/teacher/ContentAdmin.tsx`. Voir ADR-0014.
