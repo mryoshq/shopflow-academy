@@ -20,7 +20,7 @@
 - [x] **S2-A** Journée en blocs de 15 min ouverts par l'enseignant, « Ma classe » (frise, repère horaire enseignant, aide, difficultés), interface en trois zones, classe et cours uniques, ménage des cours de test, `APP_SECRET` obligatoire. ADR-0019. Preuves : pytest 71, Vitest 31, build, Playwright 12 (stack de test locale) — voir PROGRESS.
 - [x] **S2-D** Chaîne d'import Markdown (`course_md.py compile|import|--publish`), leçons, `line_chart`, `code`, `comparison`, schéma `run`/`sql_challenge`. ADR-0020. Preuves : pytest 94, Vitest 35, build, Playwright 13 (stack de test locale) — voir PROGRESS.
 - [x] **S2-F** Médias codés : animation, carte mentale, pipeline animé, vidéo (ADR-0018). Preuves : pytest 108, Vitest 40, build, Playwright 13 dont médias avec axe et mouvement réduit (stack de test locale) — voir PROGRESS.
-- [ ] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017).
+- [x] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017). Preuves : pytest 163 dont 55 sur la base de laboratoire, Vitest 42, Playwright (exécution, défi SQL réussi et refusé) — voir PROGRESS.
 - [ ] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion.
 - [ ] **S2-E** `docs/SUGGESTIONS.md`.
 
@@ -29,7 +29,7 @@
 - [ ] **P1-01** Adaptateur tuteur IA optionnel (none et OpenRouter configurable), indices statiques en fallback, plafond requêtes/coûts, confidentialité et journaux minimaux.
 - [ ] **P1-02** Scénarios métier SQL/Python prédéfinis pilotés par choix, datasets fictifs versionnés, tables/charts plus riches, simulateurs sandboxés sans Python arbitraire.
 - [ ] **P1-03** Ressources pédagogiques, mini-vidéos, glossaire, badges, activités pour les rapides, variantes de langue et accessibilité avancée.
-- [ ] **P1-04** Bonus SQL libre **optionnel**, revue sécurité, DB laboratoire lecture seule, isolation schémas, limites temps/mémoire/résultats et batterie de tests de contournement ; désactivé si non conforme.
+- [x] **P1-04** (livré par S2-C, ADR-0017) Bonus SQL libre **optionnel**, revue sécurité, DB laboratoire lecture seule, isolation schémas, limites temps/mémoire/résultats et batterie de tests de contournement ; désactivé si non conforme.
 - [ ] **P1-05** Qualité UX/analytics : statistiques agrégées de questions, repérage des difficultés, filtres, amélioration éditeur et expérience enseignant en classe.
 
 ## P2 — Intégration des cours **après** plateforme et studio

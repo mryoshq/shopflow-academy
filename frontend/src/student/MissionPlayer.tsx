@@ -6,8 +6,9 @@ import { clearDraft, loadDraft, newIdempotencyKey, rememberLastMission, saveDraf
 import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "./ui"
 import { HelpRequest } from "./HelpRequest"
-import { CodeBlock, LessonBody } from "./displays"
+import { LessonBody } from "./displays"
 import { RunPanel } from "./RunPanel"
+import { SqlChallenge } from "./SqlChallenge"
 
 type Props = { missionId: number; navigate: (path: string) => void }
 
@@ -168,7 +169,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Leçon</Text>
             <LessonBody body={definition.body ?? ""} />
             <DataView data={definition.display_data} />
-            <RunPanel runs={definition.run} />
+            <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
             {submitError && <Text role="alert" color="red.700">{submitError}</Text>}
             <Flex gap="3" wrap="wrap" align="center">
               {mission.status === "completed"
@@ -185,7 +186,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             <Text id="situation-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Situation</Text>
             <Text fontSize="lg" whiteSpace="pre-wrap">{definition.scenario}</Text>
             <DataView data={definition.display_data} />
-            <RunPanel runs={definition.run} />
+            <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
           </Stack>
         </Panel>
 
@@ -194,8 +195,12 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Votre décision</Text>
             <Text fontWeight="semibold" fontSize="lg" whiteSpace="pre-wrap">{definition.instructions}</Text>
             {definition.kind === "sql_challenge"
-              ? <Stack gap="2"><CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ" />
-                <Text fontSize="sm" color="app.muted">Défi bonus : l’éditeur SQL s’ouvrira avec la base de laboratoire. Il ne compte jamais dans la note principale.</Text></Stack>
+              ? <SqlChallenge missionId={mission.mission_version_id} starter={definition.starter_sql ?? ""} disabled={mission.paused}
+                onResult={(response) => setMission((current) => current && {
+                  ...current, attempts_count: response.attempts_count, score: response.score,
+                  status: response.correct || current.status === "completed" ? "completed" : "in_progress",
+                  explanation: response.explanation ?? current.explanation,
+                })} />
               : <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />}
             {mission.paused && <Alert.Root status="warning" variant="subtle" rounded="lg">
               <Alert.Indicator /><Alert.Content><Alert.Title>Séquence en pause</Alert.Title>

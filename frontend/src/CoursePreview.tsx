@@ -3,6 +3,7 @@ import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Text } from "@c
 import type { MissionDefinition, StudentMission, CourseModule } from "./studioTypes"
 import { DataView } from "./student/activities"
 import { CodeBlock, LessonBody } from "./student/displays"
+import { RunPanel } from "./student/RunPanel"
 
 export type PreviewTree = { title: string; description: string; modules: CourseModule<StudentMission>[] }
 
@@ -49,7 +50,7 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
     {definition.kind === "lesson" && definition.body && <LessonBody body={definition.body} />}
     {definition.scenario && <Text whiteSpace="pre-wrap">{definition.scenario}</Text>}
     <DataView data={definition.display_data} />
-    {(definition.run ?? []).map((run) => <CodeBlock key={run.id} code={run.code} language={run.language} title={run.label} />)}
+    <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
     {definition.instructions && <Text fontWeight="semibold" whiteSpace="pre-wrap">{definition.instructions}</Text>}
     {definition.kind === "lesson" ? <Text color="app.muted">Leçon non notée : l’étudiant clique « J’ai compris ».</Text>
       : definition.kind === "sql_challenge" ? <CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ (modifiable par l’étudiant)" />

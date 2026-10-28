@@ -115,3 +115,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Médias codés (sprint 2, partie F)
 
 Schéma `AnimationDisplay`, `MindmapDisplay`, `FlowDisplay`, `VideoDisplay` (`app/curriculum_schema.py`) ; vidéos du cours copiées à l'import dans le volume `media_data` (`MEDIA_DIR`, défaut `/srv/media`), servies par le gateway sous `/media/<empreinte>.mp4|vtt`. Frontend : `src/student/media.tsx`. Voir ADR-0018.
+
+## Exécution de code (sprint 2, partie C)
+
+`app/lab.py` (rôles, chargement du jeu, exécution en lecture seule, contrôle `sqlglot`, comparaison de résultats), `app/lab_api.py` (`POST /api/v1/student/missions/{id}/runs/{run_id}`, `POST /student/missions/{id}/sql`, `POST /teacher/missions/{id}/runs/{run_id}`). Services Compose `labdb` et `lab-init`, réseau interne `lab`. Exécutions Python et vérification des requêtes : côté Mac dans `scripts/course_md.py` (`runner/python`). Frontend : `src/student/RunPanel.tsx`, `SqlChallenge.tsx`. Voir ADR-0017.

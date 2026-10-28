@@ -167,6 +167,8 @@ class Compiled:
     media_in: dict[str, bytes] = field(default_factory=dict)
     # Content-addressed media to copy at import: "/media/<sha>.mp4" -> bytes.
     media_out: dict[str, bytes] = field(default_factory=dict)
+    run_results: dict | None = None
+    dataset: str | None = None
 
     @property
     def errors(self) -> list[Issue]:
@@ -588,13 +590,20 @@ def walk_strings(value: object, path: tuple = ()) -> list[tuple[tuple, str]]:
     return []
 
 
-def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None) -> Compiled:
+def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None, runs: dict | None = None,
+                  dataset: str | None = None) -> Compiled:
     """Compile a course from {file name: content}; names are sorted, reserved files ignored.
 
     ``media`` maps ``media/<name>.mp4|vtt`` to bytes (videos of the course folder).
+    ``runs`` holds the results of the preconfigured executions done on the Mac by
+    ``scripts/course_md.py`` ({slug: {run_id: {ok, output?, error?}}}, ``expected_sql``
+    and ``starter_sql`` of challenges under the ids ``expected_sql``/``starter_sql``).
+    ``dataset`` is ``datasets/shopflow-lab.sql`` (loaded into the lab database at import).
     """
     compiled = Compiled()
     compiled.media_in = dict(media or {})
+    compiled.run_results = runs
+    compiled.dataset = dataset
     names = sorted(name for name in files if name.lower().endswith(".md") and name.upper() not in RESERVED and "/" not in name)
     compiled.files = names
     if len(names) > MAX_FILES:
@@ -651,6 +660,7 @@ def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None) 
             duration = sum(int(i.raw.get("duration") or 0) for i in block.items if not i.raw.get("bonus"))
             if block.items and not 10 <= duration <= 20:
                 compiled.warn(block.file, block.line, f"bloc « {block.title} » : {duration} min de missions principales (environ 15 attendues)")
+    apply_run_results(compiled)
     covered = {code for item in compiled.items() for code in item.objective_codes}
     for objective in compiled.objectives:
         if objective["code"] not in covered:
@@ -695,12 +705,59 @@ def attach_media(compiled: Compiled, item: Item) -> None:
         data["src" if ext == "mp4" else "captions_src"] = src
 
 
+def executions(compiled: Compiled) -> dict:
+    """What the Mac must execute before compiling: SQL runs and challenge queries, Python runs."""
+    sql, python = [], []
+    for item in compiled.items():
+        definition = item.definition or {}
+        for index, run in enumerate(definition.get("run") or []):
+            entry = {"slug": item.slug, "id": run["id"], "file": item.file, "line": line_for(item, ("run", index))}
+            if run.get("sql"):
+                sql.append({**entry, "sql": run["sql"]})
+            elif run.get("python"):
+                python.append({**entry, "python": run["python"]})
+        if definition.get("kind") == "sql_challenge":
+            for key in ("expected_sql", "starter_sql"):
+                sql.append({"slug": item.slug, "id": key, "file": item.file, "line": line_for(item, (key,)), "sql": definition[key]})
+    return {"sql": sql, "python": python}
+
+
+def apply_run_results(compiled: Compiled) -> None:
+    """Report failed executions at the line of the run; store Python outputs in the definitions."""
+    plan = executions(compiled)
+    if not plan["sql"] and not plan["python"]:
+        return
+    results = compiled.run_results
+    if results is None:
+        compiled.warn(compiled.files[0] if compiled.files else HEADER_FILE, 1,
+                      f"{len(plan['sql'])} requête(s) SQL et {len(plan['python'])} extrait(s) Python non exécutés : "
+                      "compilez depuis le Mac avec Docker (scripts/course_md.py) pour les vérifier")
+        return
+    by_slug = {item.slug: item for item in compiled.items()}
+    for entry in plan["sql"] + plan["python"]:
+        outcome = (results.get(entry["slug"]) or {}).get(entry["id"])
+        language = "requête SQL" if "sql" in entry else "extrait Python"
+        if not isinstance(outcome, dict):
+            compiled.error(entry["file"], entry["line"], f"{language} `{entry['id']}` non exécuté(e)")
+        elif not outcome.get("ok"):
+            compiled.error(entry["file"], entry["line"], f"{language} `{entry['id']}` en échec : {str(outcome.get('error') or 'erreur inconnue')[:300]}")
+        elif "python" in entry:
+            output = str(outcome.get("output") or "")
+            if len(output) > 20_000:
+                output = output[:19_000] + "\n… (sortie tronquée)"
+            definition = by_slug[entry["slug"]].definition
+            for run in definition["run"]:
+                if run["id"] == entry["id"]:
+                    run["output"] = output
+
+
 def compile_dir(folder: Path) -> Compiled:
     files: dict[str, str] = {}
     for path in sorted(folder.glob("*.md")):
         files[path.name] = path.read_text(encoding="utf-8")
     media = {f"media/{path.name}": path.read_bytes() for path in sorted((folder / "media").glob("*")) if path.is_file()}
-    return compile_files(files, media)
+    dataset = folder / "datasets" / "shopflow-lab.sql"
+    return compile_files(files, media, dataset=dataset.read_text(encoding="utf-8") if dataset.is_file() else None)
 
 
 # Summary, document, report -------------------------------------------------------------
@@ -869,11 +926,12 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     for objective in stale:
         db.delete(objective)
     write_media(compiled)
+    lab_note = load_lab_dataset(compiled)
     db.add(AuditEvent(actor_id=owner.id, action="course.import_md", resource_type="course", resource_id=course.id,
                       details={"files": compiled.files, "missions": len(placed), "removed_drafts": len(removed)}))
     db.commit()
     result = {"course_id": course.id, "slug": course.slug, "created": created_course, "missions": len(placed),
-              "published": None, "assigned_to_class": False}
+              "published": None, "assigned_to_class": False, "lab": lab_note}
     if publish:
         auth = AuthContext(user=owner, session=None)  # type: ignore[arg-type]
         published = publish_course(course.id, auth, db)
@@ -886,6 +944,19 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
             db.commit()
             result["assigned_to_class"] = True
     return result
+
+
+def load_lab_dataset(compiled: Compiled) -> str:
+    """Load datasets/shopflow-lab.sql into the lab database (lab_owner role), when both exist."""
+    from app.config import get_settings
+    from app.lab import load_dataset
+
+    if not compiled.dataset:
+        return "aucun jeu de données dans le cours : base de laboratoire inchangée"
+    if not get_settings().lab_owner_url:
+        return "base de laboratoire non configurée : jeu de données non chargé"
+    tables = load_dataset(compiled.dataset)
+    return f"jeu de données chargé dans la base de laboratoire ({tables} tables)"
 
 
 def write_media(compiled: Compiled) -> None:
@@ -925,6 +996,7 @@ def main() -> None:
     one.add_argument("folder", type=Path)
     one.add_argument("--report", type=Path, help="chemin du rapport RETOURS-PLATEFORME.md")
     sub.add_parser("compile-bundle", help="compiler un lot JSON lu sur l'entrée standard")
+    sub.add_parser("list-runs", help="lister les exécutions à faire sur le Mac (lot JSON sur l'entrée standard)")
     bundle = sub.add_parser("import-bundle", help="importer un lot JSON lu sur l'entrée standard (brouillon)")
     bundle.add_argument("--publish", action="store_true", help="publier une nouvelle version pour la classe")
     args = parser.parse_args()
@@ -947,7 +1019,13 @@ def main() -> None:
     if not isinstance(raw_media, dict):
         raise SystemExit("lot invalide : \"media\" doit être un dictionnaire")
     media = {str(name): base64.b64decode(value) for name, value in raw_media.items() if isinstance(value, str)}
-    compiled = compile_files(files, media)
+    runs = payload.get("runs")
+    dataset = payload.get("dataset")
+    if args.command == "list-runs":
+        compiled = compile_files(files, media)
+        print(json.dumps(executions(compiled), ensure_ascii=False))
+        raise SystemExit(0)
+    compiled = compile_files(files, media, runs if isinstance(runs, dict) else None, dataset if isinstance(dataset, str) else None)
     output = {"summary": summary(compiled), "issues": [issue.__dict__ for issue in compiled.issues]}
     if args.command == "import-bundle" and not compiled.errors:
         from sqlalchemy.orm import Session
@@ -965,6 +1043,8 @@ def main() -> None:
     if "import" in output:
         done = output["import"]
         extra.append(f"brouillon {'créé' if done['created'] else 'mis à jour'} : {done['missions']} missions et leçons")
+        if done.get("lab"):
+            extra.append(done["lab"])
         if done["published"]:
             extra.append(f"version {done['published']['version']} publiée{' pour la classe (nouveaux blocs fermés)' if done['assigned_to_class'] else ''}")
     if "import_error" in output:

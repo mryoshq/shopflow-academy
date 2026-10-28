@@ -36,6 +36,9 @@ services:
       AI_PROVIDER: ${AI_PROVIDER:-none}
       MAIN_COURSE_SLUG: ${MAIN_COURSE_SLUG:-python-data-engineering-sql}
       CLASS_LABEL: ${CLASS_LABEL:-Classe B3 IA/Data}
+      # Laboratory database (ADR-0017): read-only role for students, owner role for the dataset.
+      LAB_READER_URL: postgresql://lab_reader:${LAB_READER_PASSWORD:?set LAB_READER_PASSWORD in .env (python3 scripts/init_lab_env.py)}@labdb:5432/shopflow_lab
+      LAB_OWNER_URL: postgresql://lab_owner:${LAB_OWNER_PASSWORD:?set LAB_OWNER_PASSWORD in .env (python3 scripts/init_lab_env.py)}@labdb:5432/shopflow_lab
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,7 +60,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [private]
+    networks: [private, lab]
 
   frontend:
     logging: *logging
@@ -105,8 +108,46 @@ services:
         condition: service_healthy
     networks: [private]
 
+  labdb:
+    # Laboratory database (ADR-0017): fictional ShopFlow data only, separate network,
+    # volume and credentials; no published port. Not backed up: the course dataset is
+    # reloaded at each import.
+    logging: *logging
+    image: postgres:16-alpine
+    restart: unless-stopped
+    command: ["postgres", "-c", "max_connections=40", "-c", "log_min_duration_statement=-1"]
+    environment:
+      POSTGRES_USER: lab_admin
+      POSTGRES_PASSWORD: ${LAB_POSTGRES_PASSWORD:?set LAB_POSTGRES_PASSWORD in .env (python3 scripts/init_lab_env.py)}
+      POSTGRES_DB: shopflow_lab
+    volumes:
+      - lab_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab_admin -d shopflow_lab"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [lab]
+
+  lab-init:
+    # One shot, idempotent: lab roles (read-only lab_reader, lab_owner) and demo dataset if empty.
+    logging: *logging
+    build: ./backend
+    command: ["python", "-m", "app.lab", "init"]
+    restart: "no"
+    environment:
+      LAB_ADMIN_URL: postgresql://lab_admin:${LAB_POSTGRES_PASSWORD:?}@labdb:5432/shopflow_lab
+      LAB_OWNER_PASSWORD: ${LAB_OWNER_PASSWORD:?}
+      LAB_READER_PASSWORD: ${LAB_READER_PASSWORD:?}
+      LAB_READER_URL: postgresql://lab_reader:${LAB_READER_PASSWORD:?}@labdb:5432/shopflow_lab
+      LAB_OWNER_URL: postgresql://lab_owner:${LAB_OWNER_PASSWORD:?}@labdb:5432/shopflow_lab
+    depends_on:
+      labdb:
+        condition: service_healthy
+    networks: [lab]
+
   mysql:
-    # Only needed when labs are developed: docker compose --profile labs up -d
+    # Not used: the SQL lab is the PostgreSQL service labdb (ADR-0017). Kept for a future need.
     profiles: ["labs"]
     image: mysql:8.4
     restart: unless-stopped
@@ -129,7 +170,10 @@ networks:
   edge:
   private:
     internal: true
+  lab:
+    internal: true
 volumes:
   pg_data:
   mysql_data:
   media_data:
+  lab_data:

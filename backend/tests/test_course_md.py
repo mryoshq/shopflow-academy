@@ -153,7 +153,7 @@ def test_student_projection_of_every_kind_has_no_answer_key(env):
         leaked = [path for path in walk(payload) if path.rsplit(".", 1)[-1] in SECRET_KEYS - {"explanation"}]
         assert leaked == [], leaked
     text = json.dumps(payloads, ensure_ascii=False)
-    assert "ORDER BY c.city" not in text  # expected_sql of the SQL challenge
+    assert "ORDER BY ca DESC" not in text  # expected_sql of the SQL challenge
     assert "Exactement, le grain" not in text and "Le total semble juste" not in text  # feedback
     for view in payloads[1:]:
         assert view["explanation"] is None  # nothing revealed before an answer
@@ -162,7 +162,7 @@ def test_student_projection_of_every_kind_has_no_answer_key(env):
     assert lesson["kind"] == "lesson" and lesson["body"].startswith("Le grain d'une table") and lesson["choices"] == []
     assert by_slug["demo-frais-livraison"]["definition"]["run"][0] == {
         "id": "requete-actuelle", "label": "Exécuter la requête actuelle", "language": "sql",
-        "code": "SELECT SUM(o.shipping_fee) AS total FROM orders o JOIN order_items i ON i.order_id = o.order_id;"}
+        "code": "SELECT SUM(o.shipping_fee) AS total\nFROM orders o JOIN order_items i ON i.order_id = o.order_id\nWHERE o.order_id IN ('C-101', 'C-102');"}
     challenge = by_slug["demo-defi-sql"]["definition"]
     assert challenge["starter_sql"].startswith("SELECT c.city") and "expected_sql" not in challenge
     assert by_slug["demo-courbe-rejets"]["definition"]["display_data"]["series"][0]["values"][3] is None

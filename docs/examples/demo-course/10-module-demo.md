@@ -107,11 +107,15 @@ run:
   - id: requete-actuelle
     label: Exécuter la requête actuelle
     sql: |
-      SELECT SUM(o.shipping_fee) AS total FROM orders o JOIN order_items i ON i.order_id = o.order_id;
+      SELECT SUM(o.shipping_fee) AS total
+      FROM orders o JOIN order_items i ON i.order_id = o.order_id
+      WHERE o.order_id IN ('C-101', 'C-102');
   - id: requete-corrigee
     label: Exécuter la version au grain commande
     sql: |
-      SELECT SUM(shipping_fee) AS total FROM orders;
+      SELECT SUM(shipping_fee) AS total
+      FROM orders
+      WHERE order_id IN ('C-101', 'C-102');
 choices:
   - id: a
     label: Agréger les frais au niveau commande avant la jointure.
@@ -270,6 +274,19 @@ scoring: partial
 scenario: |
   Le service client de ShopFlow envoie chaque soir un fichier clients.csv. Avant le chargement dans l'entrepôt, l'équipe Data doit décider quelles règles de qualité appliquer. L'extrait du jour montre des montants écrits en lettres, deux formats de date et un client présent deux fois avec le même identifiant.
 instructions: Quelles règles appliquez-vous avant le chargement ? Plusieurs réponses sont possibles.
+run:
+  - id: apercu-pandas
+    label: Exécuter l'aperçu pandas du fichier
+    python: |
+      import pandas as pd
+
+      clients = pd.read_csv("clients.csv", dtype=str)
+      print(clients.to_string(index=False))
+      print()
+      print("Doublons sur id :", int(clients.duplicated(subset=["id"]).sum()))
+      print("Villes manquantes :", int(clients["ville"].isna().sum()))
+      montants = pd.to_numeric(clients["montant_dh"], errors="coerce")
+      print("Montants non numériques :", int(montants.isna().sum()))
 data:
   kind: flow
   title: Import du fichier clients.csv de la nuit
@@ -370,9 +387,9 @@ duration: 10
 bonus: true
 scenario: |
   Défi facultatif pour aller plus loin. La direction de ShopFlow veut connaître le chiffre d'affaires par ville, calculé au bon grain, pour décider où ouvrir un nouveau point relais. Les villes sont fictives et les montants sont en dirhams. Modifiez la requête de départ jusqu'à obtenir le bon résultat.
-instructions: Écrivez une requête qui renvoie, pour chaque ville, la somme des totaux de commande, triée par ville.
+instructions: Corrigez la requête pour obtenir, pour chaque ville, la somme des totaux de commande, de la plus grande à la plus petite.
 starter_sql: |
-  SELECT c.city, SUM(o.total) AS ca
+  SELECT c.city, SUM(o.shipping_fee) AS ca
   FROM orders o
   JOIN customers c ON c.customer_id = o.customer_id
   GROUP BY c.city;
@@ -381,11 +398,12 @@ expected_sql: |
   FROM orders o
   JOIN customers c ON c.customer_id = o.customer_id
   GROUP BY c.city
-  ORDER BY c.city;
+  ORDER BY ca DESC;
 compare: rows
 hints:
-  - Le résultat attendu est trié par ville.
-explanation: Il manquait un ORDER BY pour obtenir un résultat stable.
+  - Le chiffre d'affaires se calcule sur total, pas sur les frais de livraison.
+  - Le résultat attendu est trié, du plus grand au plus petit.
+explanation: La requête de départ additionnait les frais de livraison ; il fallait additionner total et trier par chiffre d'affaires décroissant.
 ```
 
 ### Leçon : Vidéo facultative, le pipeline en quatre secondes

@@ -311,8 +311,53 @@ it("preconfigured runs show their code; a SQL challenge shows its starting query
   const challenge = mission({ definition: { ...base, kind: "sql_challenge", choices: [], starter_sql: "SELECT city FROM customers;" } })
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(challenge)))
   wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
-  expect(await screen.findByLabelText(/Requête de départ/)).toHaveTextContent("SELECT city FROM customers;")
+  expect(await screen.findByLabelText("Votre requête")).toHaveValue("SELECT city FROM customers;")
   expect(screen.queryByRole("button", { name: "Tester ma décision" })).not.toBeInTheDocument()
+})
+
+it("a preconfigured run shows its result table, and a timeout is explained", async () => {
+  const withRun = mission({ definition: { ...base, run: [{ id: "q1", label: "Exécuter la requête actuelle", language: "sql", code: "SELECT 1;" }] } })
+  let calls = 0
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/runs/q1") && init?.method === "POST") {
+      calls += 1
+      return calls === 1 ? json({ kind: "sql", columns: ["total"], rows: [[100]], truncated: false, elapsed_ms: 4 }) : json({ detail: "délai dépassé (3 secondes au plus)" }, 504)
+    }
+    return json(withRun)
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  fireEvent.click(await screen.findByRole("button", { name: "Exécuter : Exécuter la requête actuelle" }))
+  expect(await screen.findByRole("columnheader", { name: "total" })).toBeInTheDocument()
+  expect(screen.getByText(/Résultat : 1 ligne/)).toBeInTheDocument()
+  expect(fetchMock.mock.calls.find(([url]) => String(url).endsWith("/runs/q1"))?.[1].body).toBeUndefined()
+  fireEvent.click(screen.getByRole("button", { name: "Exécuter : Exécuter la requête actuelle" }))
+  expect(await screen.findByText("La requête a dépassé le délai de 3 secondes.")).toBeInTheDocument()
+})
+
+it("the SQL challenge sends the edited query, encourages after a miss and congratulates on success", async () => {
+  const challenge = mission({ definition: { ...base, kind: "sql_challenge", choices: [], starter_sql: "SELECT city FROM customers;" }, score: { best: 0, possible: 5, bonus: true } })
+  let attempt = 0
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/sql") && init?.method === "POST") {
+      attempt += 1
+      const correct = attempt === 2
+      return json({ attempt_id: attempt, correct, replayed: false, attempts_count: attempt, points: correct ? 5 : 0, score: { best: correct ? 5 : 0, possible: 5, bonus: true },
+        feedback: [], explanation: correct ? "Il fallait trier." : null, result: { columns: ["city"], rows: [["Tanzar"]], truncated: false, elapsed_ms: 3 } }, 201)
+    }
+    return json(challenge)
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  const editor = await screen.findByLabelText("Votre requête")
+  fireEvent.change(editor, { target: { value: "SELECT city FROM customers ORDER BY 1" } })
+  fireEvent.click(screen.getByRole("button", { name: "Exécuter et vérifier" }))
+  expect(await screen.findByText("Presque ! Le résultat diffère encore : réessayez.")).toBeInTheDocument()
+  const sent = JSON.parse(fetchMock.mock.calls.find(([url]) => String(url).endsWith("/sql"))![1].body)
+  expect(sent.sql).toBe("SELECT city FROM customers ORDER BY 1")
+  fireEvent.keyDown(editor, { key: "Enter", ctrlKey: true })
+  expect(await screen.findByText(/Bravo, c’est le résultat attendu \(\+5 pts bonus\)/)).toBeInTheDocument()
+  expect(screen.getByText("Il fallait trier.")).toBeInTheDocument()
 })
 
 it("the studio leaves Markdown-only activities to the course source", async () => {

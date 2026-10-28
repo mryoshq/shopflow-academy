@@ -9,6 +9,20 @@ permissions:
 jobs:
   backend:
     runs-on: ubuntu-latest
+    services:
+      # Disposable lab database for the execution and bypass tests (ADR-0017).
+      labdb:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: lab_admin
+          POSTGRES_PASSWORD: ci_lab_admin_placeholder
+          POSTGRES_DB: shopflow_lab
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lab_admin -d shopflow_lab"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+    env:
+      LAB_TEST_ADMIN_URL: postgresql://lab_admin:ci_lab_admin_placeholder@127.0.0.1:5432/shopflow_lab
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -41,6 +55,9 @@ jobs:
           POSTGRES_USER: academy_ci
           POSTGRES_PASSWORD: ci_placeholder_not_for_deployment
           POSTGRES_DB: academy_ci
+          LAB_POSTGRES_PASSWORD: ci_lab_admin_placeholder
+          LAB_OWNER_PASSWORD: ci_lab_owner_placeholder
+          LAB_READER_PASSWORD: ci_lab_reader_placeholder
         run: docker compose config --quiet
   studio-e2e:
     runs-on: ubuntu-latest
