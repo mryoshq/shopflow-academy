@@ -2,7 +2,7 @@ import { test, expect, type Page } from "@playwright/test"
 import { readFileSync } from "node:fs"
 
 /** P0-09 acceptance: the teacher publishes a demo, a student completes it, the grade persists, other accounts are isolated. */
-const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/demo-credentials.json"
+const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test-stack-credentials.json"
 const accounts = JSON.parse(readFileSync(credentialsPath, "utf8")) as { username: string; password: string }[]
 const account = (name: string) => accounts.find((item) => item.username === name)!
 const fixture = JSON.parse(readFileSync("e2e/fixtures/demo-course.json", "utf8"))

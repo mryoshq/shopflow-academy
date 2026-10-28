@@ -6,7 +6,7 @@ Le studio fonctionne dans le navigateur sur la stack Academy locale. Il permet d
 
 Lancer `docker compose up -d --build`, puis ouvrir `http://127.0.0.1:3080/`. Le script `python3 scripts/upsert_teacher.py` lit l'adresse depuis `.local/teacher-email.txt`, génère un mot de passe fort et le conserve uniquement dans `.local/teacher-credentials.json` (mode 0600). Il crée ou actualise le compte `teacher` sans doublon et n'envoie aucun e-mail. Ces fichiers ne doivent jamais entrer dans Git ; la commande est désactivée en production.
 
-Pour un parcours de test sans données personnelles, `python3 scripts/seed_demo.py` crée des comptes fictifs et place leurs identifiants dans `.local/demo-credentials.json`. Ne pas réexécuter ce script si le fichier existe déjà.
+Pour un parcours de test sans données personnelles, `python3 scripts/test_stack.py up` démarre la stack de test (`127.0.0.1:3180`, base jetable) avec des comptes fictifs dont les identifiants sont dans `.local/test-stack-credentials.json`. Les comptes fictifs ne sont jamais créés en production.
 
 ## Parcours d'édition
 
@@ -21,4 +21,4 @@ Le lecteur étudiant P0-04 affiche les cours attribués et leur contenu sans cor
 
 ## Vérification
 
-`backend: python -m pytest -q` vérifie les règles métier et les permissions. `frontend: npm run test -- --maxWorkers=1` vérifie l'interface. Après lancement local de Compose et seed fictif, `frontend: npm run test:e2e` vérifie le parcours de création, aperçu, publication, attribution et lecture étudiante à 1366 × 768. Les captures de test ne doivent contenir que des comptes et contenus fictifs.
+`backend: python -m pytest -q` vérifie les règles métier et les permissions. `frontend: npm run test -- --maxWorkers=1` vérifie l'interface. Après `python3 scripts/test_stack.py up`, `frontend: npm run test:e2e` (stack de test uniquement) vérifie le parcours de création, aperçu, publication, attribution et lecture étudiante à 1366 × 768. Les captures de test ne doivent contenir que des comptes et contenus fictifs.

@@ -224,7 +224,7 @@ def audit(db: Session, auth: AuthContext, action: str, course_id: int, details: 
 def search_courses(q: str = Query(default="", max_length=100), status: Literal["", "draft", "published", "archived"] = "",
                    sort: Literal["title", "recent"] = "recent", auth: AuthContext = Depends(require_teacher),
                    db: Session = Depends(get_db)) -> list[dict]:
-    query = select(Course)
+    query = select(Course).where(Course.created_by == auth.user.id)
     if q.strip():
         pattern = f"%{q.strip().lower()}%"
         query = query.where(or_(func.lower(Course.title).like(pattern), func.lower(Course.slug).like(pattern)))
@@ -239,7 +239,7 @@ def search_courses(q: str = Query(default="", max_length=100), status: Literal["
 
 @router.get("/courses/{course_id}/export")
 def export_course(course_id: int, response: Response, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
-    course = course_or_404(db, course_id)
+    course = course_or_404(db, course_id, auth)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Content-Disposition"] = f'attachment; filename="{course.slug}-brouillon.json"'
     return draft_document(db, course)
@@ -250,7 +250,7 @@ def export_release(release_id: int, response: Response, auth: AuthContext = Depe
     release = db.get(CourseRelease, release_id)
     if release is None:
         raise HTTPException(status_code=404, detail="release not found")
-    course = course_or_404(db, release.course_id)
+    course = course_or_404(db, release.course_id, auth)
     response.headers["Cache-Control"] = "no-store"
     response.headers["Content-Disposition"] = f'attachment; filename="{course.slug}-v{release.version}.json"'
     return release_document(db, course, release)
@@ -313,7 +313,7 @@ def restore_draft(course_id: int, payload: RestoreInput, auth: AuthContext = Dep
     Published releases are never modified. The current draft is saved in the audit
     log first, so the rollback itself can be undone by importing that saved draft.
     """
-    course = editable_course(db, course_id)
+    course = editable_course(db, course_id, auth)
     release = db.get(CourseRelease, payload.release_id)
     if release is None or release.course_id != course.id:
         raise HTTPException(status_code=404, detail="release not found")
@@ -336,7 +336,7 @@ def restore_draft(course_id: int, payload: RestoreInput, auth: AuthContext = Dep
 
 @router.get("/courses/{course_id}/history")
 def course_history(course_id: int, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> list[dict]:
-    course = course_or_404(db, course_id)
+    course = course_or_404(db, course_id, auth)
     module_ids = list(db.scalars(select(CourseModule.id).where(CourseModule.course_id == course.id)))
     chapter_ids = list(db.scalars(select(Chapter.id).where(Chapter.module_id.in_(module_ids)))) if module_ids else []
     mission_ids = list(db.scalars(select(Mission.id).where(Mission.chapter_id.in_(chapter_ids)))) if chapter_ids else []
@@ -356,7 +356,8 @@ def course_history(course_id: int, auth: AuthContext = Depends(require_teacher),
 @router.get("/history/{event_id}/backup")
 def history_backup(event_id: int, response: Response, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
     event = db.get(AuditEvent, event_id)
-    if event is None or not (event.details or {}).get("previous_draft"):
+    if event is None or event.resource_type != "course" or not (event.details or {}).get("previous_draft"):
         raise HTTPException(status_code=404, detail="backup not found")
+    course_or_404(db, event.resource_id, auth)
     response.headers["Content-Disposition"] = f'attachment; filename="sauvegarde-brouillon-{event.id}.json"'
     return event.details["previous_draft"]

@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """Scores, attempts and hints survive a restart and a container re-creation (P0-09).
 
-Reads the state of demo students through the API, then
-  1. ``docker compose restart postgres backend``
-  2. ``docker compose up -d --force-recreate postgres backend`` (volume kept, never ``-v``)
-and checks that every value is identical. Only the ``shopflow-academy`` Compose project
-of this repository is touched. Demo credentials are read from .local and never printed.
+Runs on the test stack only (Compose project ``shopflow-academy-test``, port 3180);
+the production project is never restarted. Reads the state of demo students through
+the API, then
+  1. ``restart postgres backend``
+  2. ``up -d --force-recreate postgres backend`` (volume kept, never ``-v``)
+and checks that every value is identical. Credentials of the test stack are read from
+.local and never printed.
 
-    python3 scripts/persistence_check.py [--base http://127.0.0.1:3080]
+    python3 scripts/persistence_check.py [--base http://127.0.0.1:3180]
 """
 
 from __future__ import annotations
@@ -23,6 +25,7 @@ from urllib.request import urlopen
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from load_test import Session  # noqa: E402
+from test_stack import BASE, COMPOSE, CREDENTIALS, refuse_production  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 STUDENTS = ["demo.etudiant03", "demo.etudiant05", "demo.etudiant06"]
@@ -58,14 +61,15 @@ def wait_ready(base: str, timeout: float = 120) -> None:
 
 
 def compose(*args: str) -> None:
-    subprocess.run(["docker", "compose", *args], cwd=ROOT, check=True, capture_output=True)
+    subprocess.run([*COMPOSE, *args], cwd=ROOT, check=True, capture_output=True)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base", default="http://127.0.0.1:3080")
-    parser.add_argument("--credentials", default=str(ROOT / ".local" / "demo-credentials.json"))
+    parser.add_argument("--base", default=BASE)
+    parser.add_argument("--credentials", default=str(CREDENTIALS))
     args = parser.parse_args()
+    refuse_production(args.base)
     accounts = {item["username"]: item for item in json.loads(Path(args.credentials).read_text())}
     before = snapshot(args.base, accounts)
     attempts = sum(m[2] for s in before.values() for m in s["missions"].values())

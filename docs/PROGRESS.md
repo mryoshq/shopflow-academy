@@ -1,6 +1,6 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
-**Date : 2026-10-27 · État : P0-04 implémenté et vérifié localement sur `feat/p0-04-course-studio`, [PR #14](https://github.com/mryoshq/shopflow-academy/pull/14) ouverte. Les PR [#11](https://github.com/mryoshq/shopflow-academy/pull/11), [#12](https://github.com/mryoshq/shopflow-academy/pull/12) et [#13](https://github.com/mryoshq/shopflow-academy/pull/13) restent ouvertes, non mergées.**
+**Date : 2026-10-28 · État : P0-01 à P0-10 livrés et vérifiés ; `https://shopflow.rapidfox.io` en ligne. PR #11 à #23 + PR des décisions du propriétaire ouvertes, empilées, non fusionnées.** (Ligne d'état précédente, 27/10 : P0-04 sur `feat/p0-04-course-studio`, PR #14.)
 
 ## Livré et vérifiable dans le ZIP
 
@@ -12,12 +12,14 @@
 - [x] Authentification, rôles et sessions locales ; seed fictif et import local séparé des dix adresses fournies, sans envoi.
 - [x] Référentiel pédagogique, versions figées, projection étudiante, cohortes et assignations, sans cours définitifs.
 - [x] Studio visuel enseignant et lecture initiale des cours attribués, sans corrigé ni notation.
-- [ ] Lecteur interactif complet, correcteur, progression et dashboards.
-- [ ] Déploiement public et vérification externe.
+- [x] Lecteur interactif complet, correcteur, progression et dashboards (P0-05 à P0-07).
+- [x] Déploiement public et vérification externe (28/10/2026, `smoke_public.py` 16/16 PASS sur l'URL publique).
 
 ## Prochain lot réel
 
-**28/10/2026 :** P0-05 à P0-09 livrés (PR #18 à #22), P0-10 partiel (#23). Prochaine tâche : finir P0-10 après création de la route Cloudflare par le propriétaire. Texte historique ci-dessous.
+**28/10/2026 (matin) :** P0-10 **terminé** : `https://shopflow.rapidfox.io` en ligne (smoke public 15/15 puis 16/16 PASS, n8n inchangé). Décisions du propriétaire appliquées (ADR-0016) : studio et suivi réservés au propriétaire du cours, un seul enseignant actif, seuls les étudiants `@ynov.com` actifs (11 comptes désactivés, aucun supprimé), stack de test séparée pour E2E/charge/persistance, sauvegardes inchangées. Tout le P0 (P0-01 à P0-10) est livré en PR empilées, **aucune fusionnée**. Prochaine étape : fusion de la pile (accord du propriétaire), puis P2 (cours réels).
+
+**28/10/2026 (nuit) :** P0-05 à P0-09 livrés (PR #18 à #22), P0-10 partiel (#23). Texte historique ci-dessous.
 
 **P0-05** — lecteur étudiant générique et tableau de bord initial, seulement après revue de P0-04. Aucun cours définitif avant P2. Intégrer manuellement les PR dans l'ordre #11 → #12 → #13 → #14 après revue et CI ; ne pas fusionner automatiquement.
 

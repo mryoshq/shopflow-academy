@@ -174,6 +174,9 @@ def run(db: Session) -> dict:
 
 
 def main() -> None:
+    from app.config import get_settings
+    if get_settings().app_env == "production":
+        raise SystemExit("Demo course is disabled in production (use the test stack, see docs/RUNBOOK.md)")
     with Session(get_engine(), expire_on_commit=False) as db:
         print(json.dumps(run(db)))
 

@@ -52,12 +52,8 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - name: Start isolated local Academy
-        run: |
-          python3 scripts/init_env.py
-          docker compose up -d --build --wait
-          python3 scripts/seed_demo.py
-          docker compose exec -T backend python -m app.demo_course
+      - name: Start the test stack (same procedure as on the Mac)
+        run: python3 scripts/test_stack.py up
       - run: npm ci
         working-directory: frontend
       - run: npx playwright install --with-deps chromium
@@ -69,7 +65,7 @@ jobs:
       - name: Persistence after restart and container re-creation
         run: python3 scripts/persistence_check.py
       - name: Automatic backup present and tested restore
-        run: python3 scripts/restore_check.py
+        run: python3 scripts/restore_check.py --test-stack
       - if: always()
         uses: actions/upload-artifact@v4
         with:

@@ -101,6 +101,13 @@ Créer après accord un **tunnel nommé dédié ShopFlow**, avec `cloudflared` s
 
 **Vérification après création :** `python3 scripts/smoke_public.py` (DNS, page, CSP, `/health/ready`, OpenAPI masqué, connexion d'un compte de démo, cookies `__Host-` `Secure`/`HttpOnly`, 403 étudiant sur l'API enseignant, origine étrangère refusée, déconnexion, n8n toujours en 302 vers Access). Puis test depuis un téléphone en 4G et connexion enseignant.
 
+**Publication effective — 28/10/2026 :** route créée par le propriétaire dans le tableau de bord (aucun *private hostname*, aucune application Access pour `shopflow`). Preuves exécutées depuis le Mac :
+
+- `python3 scripts/smoke_public.py` (avant les décisions sur les comptes) : **15/15 PASS** — DNS (2 adresses), page 200 sans redirection Access, CSP, `/health/ready` 200, OpenAPI 404, connexion, cookies `__Host-` Secure/HttpOnly, 403 sur l'API de l'autre rôle, origine étrangère 403, déconnexion 204, session révoquée 401, n8n 302 vers `mryoshq.cloudflareaccess.com`.
+- Après désactivation des comptes de démo, le smoke test se connecte avec le compte du propriétaire (`.local/teacher-credentials.json`, jamais affiché) et vérifie qu'un compte `demo.*` est refusé : **16/16 PASS**.
+- Test depuis un téléphone en 4G : à confirmer par le propriétaire (non exécutable depuis le Mac).
+- `cloudflared`, son jeton, la route et le DNS de n8n : non touchés.
+
 **Retour arrière :** supprimer la seule route `shopflow.rapidfox.io` du tunnel (et le CNAME `shopflow` s'il reste) ; `docker compose stop` dans `~/Developer/shopflow-academy` ; rétablir `.env` depuis `~/Developer/shopflow-backups/env-avant-publication` si nécessaire. n8n, son conteneur et le connecteur ne sont jamais redémarrés.
 
 **Risque accepté :** le jeton du connecteur est apparu dans une sortie d'outil Codex. Décision du propriétaire le 27/10/2026 : on le garde pour l'instant. Action future : rotation du jeton (tableau de bord → tunnel → Refresh token, puis mise à jour du LaunchDaemon), à planifier hors cours.
