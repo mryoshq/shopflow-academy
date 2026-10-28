@@ -24,7 +24,7 @@ from app.curriculum import BLOCK_CATEGORY, objective_category, release_private_d
 from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
-from app.progress import attempt_points, course_score, decayed, mission_scores
+from app.progress import block_done, attempt_points, course_score, decayed, mission_scores
 from app.models import (
     Assignment, BlockState, Course, CourseRelease, Enrollment, HelpRequest, HintReveal, MissionAttempt, MissionUnlock, MissionVersion,
 )
@@ -144,19 +144,16 @@ def visible_snapshot(db: Session, user_id: int, release: CourseRelease) -> dict:
 
 
 def completed_versions(db: Session, user_id: int, version_ids: list[int]) -> set[int]:
-    if not version_ids:
-        return set()
-    return set(db.scalars(select(MissionAttempt.mission_version_id).where(
-        MissionAttempt.user_id == user_id, MissionAttempt.mission_version_id.in_(version_ids), MissionAttempt.is_correct.is_(True)
-    ).distinct()).all())
+    """Solved versions, counting the same mission solved before a republication (``progress.equivalents``)."""
+    from app.progress import attempts_for
+
+    return {vid for attempt, vid in attempts_for(db, [user_id], version_ids) if attempt.is_correct}
 
 
 def attempted_versions(db: Session, user_id: int, version_ids: list[int]) -> set[int]:
-    if not version_ids:
-        return set()
-    return set(db.scalars(select(MissionAttempt.mission_version_id).where(
-        MissionAttempt.user_id == user_id, MissionAttempt.mission_version_id.in_(version_ids)
-    ).distinct()).all())
+    from app.progress import attempts_for
+
+    return {vid for _, vid in attempts_for(db, [user_id], version_ids)}
 
 
 def statuses(db: Session, user_id: int, missions: list[dict], visible: set[int] | None = None) -> dict[int, dict]:
@@ -275,16 +272,19 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             if not modules or modules[-1]["title"] != block["module"]:
                 modules.append({"title": block["module"], "description": block["module_description"], "blocks": []})
             ids = [m["mission_version_id"] for m in block["missions"]]
-            core = [vid for vid in ids if not scores[vid].bonus] if ids else []
+            # Graded missions only: lessons are counted apart, bonuses never count for « terminé ».
+            core = [vid for vid in ids if not scores[vid].bonus and not scores[vid].lesson] if ids else []
+            lessons = [vid for vid in ids if scores[vid].lesson]
             is_open = block["chapter_id"] in opened
             shown = [vid for vid in ids if vid in visible_ids]
             modules[-1]["blocks"].append({
                 "id": block["chapter_id"], "title": block["title"], "open": is_open,
                 # ADR-0023: opened by the teacher for this student only (« ouvert pour vous »).
                 "for_you": is_open and block["chapter_id"] not in class_open,
-                "mission_count": len(core), "bonus_count": len(ids) - len(core),
+                "mission_count": len(core), "bonus_count": sum(1 for vid in ids if scores[vid].bonus),
                 "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
-                "done": is_open and bool(core) and all(scores[vid].completed for vid in core),
+                "lesson_count": len(lessons), "lessons_read": sum(1 for vid in lessons if scores[vid].completed) if is_open else 0,
+                "done": is_open and block_done(scores, ids),
                 "mission_ids": shown,
                 # Closed blocks expose their title only.
                 "objective": block_objective(release.student_snapshot, block["missions"]) if is_open else "",

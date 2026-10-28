@@ -38,7 +38,7 @@ def test_scoring_rules_all_or_nothing_and_partial():
 
 def test_course_score_keeps_bonus_separate():
     scores = {1: MissionScore(10, 10, False, 2, True), 2: MissionScore(4, 10, False, 1, False), 3: MissionScore(5, 5, True, 1, True)}
-    assert course_score(scores) == {"core_points": 14, "core_possible": 20, "bonus_points": 5, "bonus_possible": 5, "completed": 2, "total": 3}
+    assert course_score(scores) == {"core_points": 14, "core_possible": 20, "bonus_points": 5, "bonus_possible": 5, "completed": 2, "total": 3, "lessons_read": 0, "lessons_total": 0}
 
 
 def test_best_score_is_kept_and_never_double_counted(env):
@@ -56,7 +56,7 @@ def test_best_score_is_kept_and_never_double_counted(env):
     later = attempt(clients["a"], first, "best-score-03", choice_ids=[wrong]).json()
     assert later["points"] == 0 and later["score"]["best"] == 10
     course = clients["a"].get("/api/v1/student/dashboard").json()["courses"][0]
-    assert course["score"] == {"core_points": 10, "core_possible": 30, "bonus_points": 0, "bonus_possible": 0, "completed": 1, "total": 3}
+    assert course["score"] == {"core_points": 10, "core_possible": 30, "bonus_points": 0, "bonus_possible": 0, "completed": 1, "total": 3, "lessons_read": 0, "lessons_total": 0}
     assert course["missions"][0]["best_points"] == 10 and course["missions"][0]["possible"] == 10
     history = clients["a"].get(f"/api/v1/student/missions/{first}/attempts").json()
     assert [(item["correct"], item["points"]) for item in history] == [(False, 0), (True, 10), (False, 0)]

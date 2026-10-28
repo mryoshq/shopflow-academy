@@ -8,6 +8,7 @@ export const TIMELINE_REFRESH_MS = 5000
 export type TimelineBlock = {
   chapter_id: number; position: number; module: string; title: string; open: boolean; opened_at: string | null
   mission_count: number; bonus_count: number; duration_minutes: number; completed_students: number; help_pending: number
+  lesson_count?: number; lessons_read_students?: number
 }
 export type HelpItem = { id: number; student: string; mission_version_id: number; mission: string; block: string; message: string; created_at: string }
 export type MissionStat = { mission_version_id: number; title: string; block: string; bonus: boolean; completed: number; attempts: number; hints: number; stuck: string[]
@@ -119,6 +120,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
                 </Stack>
                 <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? "Ouvert" : "Fermé"}</Badge>
                 <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_students} / {data.student_count} terminé</Text>
+                {(block.lesson_count ?? 0) > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>leçons lues {block.lessons_read_students ?? 0}/{data.student_count}</Text>}
                 {block.help_pending > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full">{block.help_pending} demande{block.help_pending > 1 ? "s" : ""} d’aide</Badge>}
                 {block.open
                   ? <Button size="xs" variant="outline" loading={busy} aria-label={`Fermer le bloc ${block.title}`}

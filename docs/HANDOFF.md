@@ -79,6 +79,10 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Redéployer **hors d'un bloc ouvert** (à la pause) : `git switch main && git pull && docker compose up -d --build --wait` (le service `migrate` applique 0010), puis `python3 scripts/smoke_public.py`. Rien ne change pour les étudiants tant que les règles ne sont pas activées.
 3. Au moment choisi : « Mon cours » → « Règles », cocher les mesures voulues (points dégressifs, pause, lecture minimale), relire le texte de l'annonce, « Enregistrer les règles ». La date d'activation s'affiche ; les essais antérieurs gardent leurs points. Le repérage des clics rapides est actif dès le déploiement (visible dans « Ma classe » seulement).
 
+### À faire en local après le correctif leçons (prioritaire)
+1. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait`, puis `python3 scripts/smoke_public.py`. **Pas de migration** : les « J'ai compris » de la version 1 comptent immédiatement (calcul à la lecture).
+2. Vérifier dans « Ma classe » : bloc SQL 01, « terminé » attendu pour les 7 étudiants ayant réussi toutes les missions notées, et « leçons lues x/10 » à côté.
+
 ### Attend l'accord du propriétaire
 - Fusion de #35 (variante verte), puis #36 (logo), puis #38 (L).
 - Publication du cours réel pour la classe (`course_md.py import … --publish` ou « Publier pour la classe ») et ouverture des blocs en séance : jamais faites par un agent.

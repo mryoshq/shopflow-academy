@@ -26,7 +26,7 @@ from app.database import get_db
 from app.models import (
     Assignment, AuditEvent, BlockState, Cohort, Course, CourseRelease, Enrollment, HelpRequest, HintReveal, MissionAttempt, User,
 )
-from app.progress import definitions
+from app.progress import attempts_for, definitions
 from app.student import blocks_of, flatten
 from app.teacher_dashboard import HELP_AFTER_FAILURES, audit, class_students, iso, owned_class
 
@@ -251,6 +251,10 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
             solved[item.mission_version_id].add(item.user_id)
         else:
             failures[(item.mission_version_id, item.user_id)] = failures.get((item.mission_version_id, item.user_id), 0) + 1
+    # Successes before a republication count too (same slug: lesson read, or unchanged mission).
+    for item, vid in attempts_for(db, student_ids, ids):
+        if item.is_correct:
+            solved[vid].add(item.user_id)
     hint_count: dict[int, int] = {vid: 0 for vid in ids}
     for item in hints:
         hint_count[item.mission_version_id] += 1
@@ -264,16 +268,20 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
         state = states.get(block["chapter_id"])
         is_open = bool(state and state.opened_at)
         vids = [m["mission_version_id"] for m in block["missions"]]
-        core = [vid for vid in vids if vid in defs and not defs[vid].bonus] or vids
+        # « Terminé » = every graded mission solved (not bonus, not lesson); lessons are counted apart.
+        lessons = [vid for vid in vids if vid in defs and defs[vid].kind == "lesson"]
+        core = [vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind != "lesson"] or lessons
         done = sum(1 for sid in student_ids if core and all(sid in solved[vid] for vid in core))
+        lessons_done = sum(1 for sid in student_ids if lessons and all(sid in solved[vid] for vid in lessons))
         if not is_open and next_block is None:
             next_block = block["chapter_id"]
         blocks.append({
             "chapter_id": block["chapter_id"], "position": position, "module": block["module"], "title": block["title"],
             "open": is_open, "opened_at": iso(state.opened_at) if is_open else None,
-            "mission_count": len([vid for vid in vids if vid in defs and not defs[vid].bonus]), "bonus_count": len([vid for vid in vids if vid in defs and defs[vid].bonus]),
+            "mission_count": len([vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind != "lesson"]),
+            "bonus_count": len([vid for vid in vids if vid in defs and defs[vid].bonus]), "lesson_count": len(lessons),
             "duration_minutes": sum(defs[vid].estimated_duration_minutes for vid in vids if vid in defs and not defs[vid].bonus),
-            "completed_students": done, "help_pending": sum(1 for h in pending if h.mission_version_id in vids),
+            "completed_students": done, "lessons_read_students": lessons_done, "help_pending": sum(1 for h in pending if h.mission_version_id in vids),
         })
     now = utcnow()
     return {
