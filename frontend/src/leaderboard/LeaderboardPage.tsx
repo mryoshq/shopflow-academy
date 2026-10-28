@@ -38,14 +38,13 @@ function RankingTable({ rows, daily }: { rows: (LeaderboardRow | DailyRow)[]; da
         {daily ? <Table.ColumnHeader scope="col" textAlign="end">Blocs aujourd’hui</Table.ColumnHeader> : <>
           <Table.ColumnHeader scope="col" textAlign="end">Points principaux</Table.ColumnHeader>
           <Table.ColumnHeader scope="col" textAlign="end">Points bonus</Table.ColumnHeader>
-          <Table.ColumnHeader scope="col" textAlign="end">Blocs terminés</Table.ColumnHeader>
         </>}
       </Table.Row></Table.Header>
       <Table.Body>{rows.map((row, index) => <Table.Row key={index} bg={row.is_self ? "brand.subtle" : "app.surface"} color="app.ink" fontWeight={row.is_self ? "semibold" : "normal"}>
         <Table.Cell whiteSpace="nowrap"><Rank value={row.rank} /></Table.Cell>
         <Table.Cell minW="36" overflowWrap="anywhere">{row.display_name}{row.is_self && <Text as="span" color="brand.fg"> · Vous</Text>}</Table.Cell>
         {daily ? <Table.Cell textAlign="end">{row.today_blocks}</Table.Cell> : "core_points" in row && <>
-          <Table.Cell textAlign="end">{number.format(row.core_points)}</Table.Cell><Table.Cell textAlign="end">{number.format(row.bonus_points)}</Table.Cell><Table.Cell textAlign="end">{row.completed_blocks}</Table.Cell>
+          <Table.Cell textAlign="end">{number.format(row.core_points)}</Table.Cell><Table.Cell textAlign="end">{number.format(row.bonus_points)}</Table.Cell>
         </>}
       </Table.Row>)}</Table.Body>
     </Table.Root>
