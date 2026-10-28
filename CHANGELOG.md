@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Correctifs de revue P0-01 à P0-04 (`fix/revue-p0-01-04`)
+
+- Bloquant B1 : la vue étudiante utilise des identifiants de choix opaques par version de mission et un ordre mélangé déterministe ; les réponses d'ordre et d'association ne sont plus lisibles.
+- Test de réversibilité de la chaîne Alembic.
+
 ## 2026-10-27 — Publication préparée (`ops/publication-shopflow`)
 
 - Production : OpenAPI masqué, origines autorisées explicites (`APP_EXTRA_ORIGINS`), CSP et `Permissions-Policy` dans le gateway.
