@@ -42,7 +42,7 @@ const config = defineConfig({
           emphasized: { value: "{colors.brand.200}" }, focusRing: { value: "{colors.brand.500}" },
         },
         saffron: {
-          solid: { value: "{colors.saffron.600}" }, contrast: { value: "white" }, fg: { value: "{colors.saffron.800}" },
+          solid: { value: "{colors.saffron.700}" }, contrast: { value: "white" }, fg: { value: "{colors.saffron.800}" },
           muted: { value: "{colors.saffron.100}" }, subtle: { value: "{colors.saffron.50}" },
           emphasized: { value: "{colors.saffron.200}" }, focusRing: { value: "{colors.saffron.500}" },
         },

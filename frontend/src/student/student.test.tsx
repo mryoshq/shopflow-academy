@@ -20,7 +20,7 @@ function mission(overrides: Partial<PlayerMission> = {}): PlayerMission {
   return {
     mission_version_id: 11, release_id: 3, course_title: "Démonstration — Données ShopFlow", is_demo: true,
     module: "Module", chapter: "Chapitre", title: "Frais de livraison", position: 1, total: 3, previous_id: null, next_id: 12,
-    ai_enabled: false, status: "not_started", locked_by: [], definition: base, hints: [], hint_count: 2,
+    ai_enabled: false, paused: false, status: "not_started", locked_by: [], definition: base, hints: [], hint_count: 2,
     attempts_count: 0, last_attempt: null, explanation: null, score: { best: 0, possible: 10, bonus: false }, ...overrides,
   }
 }
@@ -89,7 +89,7 @@ it("charts always offer an accessible table", () => {
 it("dashboard shows courses, locked missions and a Continue target", async () => {
   const data: Dashboard = { display_name: "demo.etudiant01", ai_enabled: false, courses: [{
     release_id: 3, title: "Démonstration — Données ShopFlow", description: "", version: 1, is_demo: true, resources: [],
-    score: { core_points: 12.5, core_possible: 20, bonus_points: 0, bonus_possible: 5, completed: 1, total: 3 },
+    score: { core_points: 12.5, core_possible: 20, bonus_points: 0, bonus_possible: 5, completed: 1, total: 3 }, paused: false,
     missions: [
       { mission_version_id: 11, title: "Frais", module: "M", chapter: "C", kind: "single_choice", estimated_duration_minutes: 10, status: "completed", locked_by: [], best_points: 10, possible: 10, bonus: false },
       { mission_version_id: 12, title: "CSV", module: "M", chapter: "C", kind: "multiple_choice", estimated_duration_minutes: 10, status: "in_progress", locked_by: [], best_points: 2.5, possible: 10, bonus: false },

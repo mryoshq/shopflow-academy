@@ -73,7 +73,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
       if (error instanceof ApiError && error.status === 429) setSubmitError("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer.")
-      else if (error instanceof ApiError && error.status === 409) setSubmitError("Cette mission est verrouillée pour le moment.")
+      else if (error instanceof ApiError && error.status === 409) {
+        setSubmitError(error.message === "sequence paused" ? "La séquence est en pause : réessayez à la reprise." : "Cette mission est verrouillée pour le moment.")
+        if (error.message === "sequence paused") setMission((current) => current && { ...current, paused: true })
+      }
       else if (error instanceof ApiError && error.status === 422) setSubmitError("Votre réponse est incomplète. Vérifiez chaque élément.")
       else setSubmitError("Connexion interrompue : votre réponse n’a pas pu être envoyée.")
     } finally {
@@ -154,6 +157,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Votre décision</Text>
             <Text fontWeight="semibold" fontSize="lg" whiteSpace="pre-wrap">{definition.instructions}</Text>
             <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />
+            {mission.paused && <Alert.Root status="warning" variant="subtle" rounded="lg">
+              <Alert.Indicator /><Alert.Content><Alert.Title>Séquence en pause</Alert.Title>
+                <Alert.Description>Votre enseignant a suspendu les réponses. Vous pouvez relire la mission ; rechargez la page à la reprise.</Alert.Description></Alert.Content>
+            </Alert.Root>}
             {mission.status === "completed" && !result && <Alert.Root status="info" variant="subtle" rounded="lg">
               <Alert.Indicator /><Alert.Content><Alert.Title>Vous avez déjà réussi cette mission.</Alert.Title>
                 <Alert.Description>Vous pouvez la refaire pour vous entraîner.</Alert.Description></Alert.Content>
@@ -163,7 +170,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                 <Alert.Description>Votre sélection est conservée.</Alert.Description></Alert.Content>
             </Alert.Root>}
             <Flex gap="3" wrap="wrap" align="center">
-              {!result && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete}>
+              {!result && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused}>
                 {submitError ? "Renvoyer ma décision" : "Tester ma décision"}
               </Button>}
               {!complete && !result && <Text fontSize="sm" color="app.muted">Complétez votre réponse pour la tester.</Text>}
@@ -207,7 +214,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               <Flex flexShrink={0} w="6" h="6" rounded="full" bg="saffron.subtle" color="saffron.fg" fontSize="xs" fontWeight="bold" align="center" justify="center" aria-hidden="true">{index + 1}</Flex>
               <Text><VisuallyHidden>Indice {index + 1} : </VisuallyHidden>{hint}</Text></Flex>)}</Stack>}
             {mission.hints.length > 0 && <Text fontSize="xs" color="app.muted">{mission.hints.length === 1 ? "Indice déjà consulté." : `${mission.hints.length} indices déjà consultés.`} Ils restent affichés.</Text>}
-            {mission.hint_count > mission.hints.length && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void revealHint()} loading={hintBusy}>
+            {mission.hint_count > mission.hints.length && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void revealHint()} loading={hintBusy} disabled={mission.paused}>
               {mission.hints.length === 0 ? "Afficher un indice" : "Indice suivant"} ({mission.hints.length + 1}/{mission.hint_count})
             </Button>}
             {mission.hint_count > 0 && mission.hint_count === mission.hints.length && <Text fontSize="xs" color="app.muted">Tous les indices sont affichés.</Text>}

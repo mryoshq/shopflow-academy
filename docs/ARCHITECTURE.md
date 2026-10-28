@@ -95,3 +95,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Notation et progression (P0-06)
 
 `app/grading.py::score` (fonction pure), `app/progress.py` (meilleur score, totaux cœur/bonus, rejeu), colonne `mission_attempts.points` (migration 0005), `GET /api/v1/student/missions/{id}/attempts` (historique personnel). Voir ADR-0012.
+
+## Tableau de bord enseignant (P0-07)
+
+`app/teacher_dashboard.py` : `GET /api/v1/teacher/classes`, `/classes/{id}/overview`, `/classes/{id}/students/{user_id}`, `/classes/{id}/interventions`, `/classes/{id}/export.csv` ; `POST /classes/{id}/pause|resume|unlocks` (CSRF). Propriétaire du cours uniquement. Migration 0006 (`assignments.paused_at`, `mission_unlocks`, `audit_events.details`). Frontend `src/teacher/TeacherDashboard.tsx` (sondage 5 s). Voir ADR-0013.

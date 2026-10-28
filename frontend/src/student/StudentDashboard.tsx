@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react"
-import { Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
+import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { lastMission } from "./storage"
 import type { Dashboard, DashboardMission } from "./types"
@@ -54,7 +54,8 @@ export function StudentDashboard({ navigate }: Props) {
         {data.courses.map((course) => <Panel as="section" key={course.release_id} aria-labelledby={`course-${course.release_id}`}>
           <Stack gap="5">
             <Stack gap="2">
-              <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}<Text fontSize="sm" color="app.muted">Version {course.version}</Text></Flex>
+              <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}{course.paused && <Badge colorPalette="saffron" variant="solid" rounded="full">En pause</Badge>}<Text fontSize="sm" color="app.muted">Version {course.version}</Text></Flex>
+              {course.paused && <Text fontSize="sm" color="saffron.fg">Votre enseignant a mis cette séquence en pause : vous pouvez relire les missions, les réponses reprendront à son signal.</Text>}
               <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
               {course.description && <Text color="app.muted">{course.description}</Text>}
             </Stack>

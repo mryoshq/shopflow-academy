@@ -6,6 +6,7 @@ from app.database import database_is_ready
 from app.auth import router as auth_router
 from app.curriculum import router as curriculum_router
 from app.student import router as student_router
+from app.teacher_dashboard import router as teacher_dashboard_router
 
 
 class Health(BaseModel):
@@ -27,6 +28,7 @@ app = FastAPI(
 app.include_router(auth_router)
 app.include_router(curriculum_router)
 app.include_router(student_router)
+app.include_router(teacher_dashboard_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])

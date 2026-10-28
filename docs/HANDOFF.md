@@ -22,12 +22,17 @@ Branche `feat/p0-05-student-player`, empilée sur `fix/revue-p0-01-04` (#17). AD
 ### P0-06 — notation et progression : livré
 Branche `feat/p0-06-grading-progress` (empilée sur P0-05 #18). ADR-0012 : scores dérivés du journal des tentatives, sans cache. La stack locale tourne sur cette branche (migration 0005).
 
+### P0-07 — tableau de bord enseignant : livré
+Branche `feat/p0-07-teacher-dashboard` (empilée sur P0-06 #19). ADR-0013. Le « Suivi de classe » ne montre que les cours dont le compte est propriétaire : la classe de démonstration se consulte avec `demo.enseignant` (identifiants dans `.local/demo-credentials.json`).
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).
 - Réglages anti-veille proposés dans `OPERATIONS.md`, non appliqués.
 - Empilement : chaque lot part de la branche précédente (#15 publication → #17 correctifs → P0-05 → …) pour que la stack publiée contienne tout ; la base de #15 reste #14.
 - Option A d'ADR-0011 retenue (recommandée) ; vouvoiement ; `@axe-core/playwright` ajouté en dépendance de développement.
+- Accès propriétaire strict pour le suivi de classe (404 pour un autre enseignant) ; studio laissé partagé (à trancher, revue I3).
+- Playwright limité à un worker : les tests partagent la base (pause de classe).
 - Le classificateur a refusé l'affichage de `.local/verify_teacher.py` ; le script a été exécuté sans être lu (sortie : une ligne PASS).
 
 ## Historique Codex

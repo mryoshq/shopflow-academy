@@ -22,7 +22,7 @@ from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
 from app.progress import attempt_points, course_score, mission_scores
-from app.models import Assignment, Course, CourseRelease, Enrollment, HintReveal, MissionAttempt, MissionVersion
+from app.models import Assignment, Course, CourseRelease, Enrollment, HintReveal, MissionAttempt, MissionUnlock, MissionVersion
 
 router = APIRouter(prefix="/api/v1/student", tags=["student"])
 ATTEMPTS_PER_MINUTE = 20
@@ -76,6 +76,8 @@ def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]
     ids = [item["mission_version_id"] for item in missions]
     done = completed_versions(db, user_id, ids)
     tried = attempted_versions(db, user_id, ids)
+    unlocked = set(db.scalars(select(MissionUnlock.mission_version_id).where(
+        MissionUnlock.user_id == user_id, MissionUnlock.mission_version_id.in_(ids))).all()) if ids else set()
     by_mission_id = {item["id"]: item for item in missions}
     result: dict[int, dict] = {}
     for item in missions:
@@ -86,6 +88,8 @@ def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]
             if other is None or other["mission_version_id"] not in done:
                 blockers.append(other["title"] if other else "Mission indisponible")
         version_id = item["mission_version_id"]
+        if version_id in unlocked:
+            blockers = []
         if blockers:
             status = "locked"
         elif version_id in done:
@@ -94,7 +98,7 @@ def statuses(db: Session, user_id: int, missions: list[dict]) -> dict[int, dict]
             status = "in_progress"
         else:
             status = "not_started"
-        result[version_id] = {"status": status, "locked_by": blockers}
+        result[version_id] = {"status": status, "locked_by": blockers, "unlocked_by_teacher": version_id in unlocked}
     return result
 
 
@@ -112,6 +116,20 @@ def private_definition(db: Session, version_id: int) -> MissionDefinition:
     if version is None:
         raise HTTPException(status_code=404, detail="mission not found")
     return MissionDefinition.model_validate(version.definition_private)
+
+
+def is_paused(db: Session, user_id: int, release_id: int) -> bool:
+    """A release is paused for a student when every assignment giving access to it is paused."""
+    pauses = db.scalars(select(Assignment.paused_at).join(Enrollment, Enrollment.cohort_id == Assignment.cohort_id)
+                        .where(Enrollment.user_id == user_id, Assignment.course_release_id == release_id)).all()
+    return bool(pauses) and all(item is not None for item in pauses)
+
+
+def ensure_open(db: Session, user_id: int, release: CourseRelease, missions: list[dict], version_id: int) -> None:
+    if statuses(db, user_id, missions)[version_id]["status"] == "locked":
+        raise HTTPException(status_code=409, detail="mission locked")
+    if is_paused(db, user_id, release.id):
+        raise HTTPException(status_code=409, detail="sequence paused")
 
 
 def is_demo(release: CourseRelease) -> bool:
@@ -150,6 +168,7 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             "release_id": release.id, "title": release.student_snapshot.get("title", ""),
             "description": release.student_snapshot.get("description", ""), "version": release.version,
             "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
+            "paused": is_paused(db, auth.user.id, release.id),
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
                 "module": item["module"], "chapter": item["chapter"],
@@ -176,7 +195,7 @@ def mission(version_id: int, response: Response, auth: AuthContext = Depends(req
         "position": index + 1, "total": len(missions),
         "previous_id": missions[index - 1]["mission_version_id"] if index > 0 else None,
         "next_id": missions[index + 1]["mission_version_id"] if index + 1 < len(missions) else None,
-        "ai_enabled": ai_enabled(), **state,
+        "ai_enabled": ai_enabled(), "paused": is_paused(db, auth.user.id, release.id), **state,
         "definition": None, "hints": [], "hint_count": 0, "attempts_count": 0, "last_attempt": None, "explanation": None,
         "score": None,
     }
@@ -223,8 +242,6 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
                    auth: AuthContext = Depends(require_student_csrf), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
     release, missions, _ = locate(db, auth.user.id, version_id)
-    if statuses(db, auth.user.id, missions)[version_id]["status"] == "locked":
-        raise HTTPException(status_code=409, detail="mission locked")
     definition = private_definition(db, version_id)
     existing = db.scalar(select(MissionAttempt).where(MissionAttempt.user_id == auth.user.id,
                                                       MissionAttempt.idempotency_key == payload.idempotency_key))
@@ -233,6 +250,7 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
             raise HTTPException(status_code=409, detail="idempotency key already used")
         response.status_code = 200
         return attempt_response(db, existing, definition, replayed=True)
+    ensure_open(db, auth.user.id, release, missions, version_id)
     recent = db.scalar(select(func.count(MissionAttempt.id)).where(
         MissionAttempt.user_id == auth.user.id, MissionAttempt.created_at >= utcnow() - timedelta(minutes=1))) or 0
     if recent >= ATTEMPTS_PER_MINUTE:
@@ -262,9 +280,8 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
 def reveal_hint(version_id: int, response: Response, auth: AuthContext = Depends(require_student_csrf),
                 db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    _, missions, _ = locate(db, auth.user.id, version_id)
-    if statuses(db, auth.user.id, missions)[version_id]["status"] == "locked":
-        raise HTTPException(status_code=409, detail="mission locked")
+    release, missions, _ = locate(db, auth.user.id, version_id)
+    ensure_open(db, auth.user.id, release, missions, version_id)
     definition = private_definition(db, version_id)
     shown = revealed_hints(db, auth.user.id, version_id, definition)
     if len(shown) < len(definition.hints):

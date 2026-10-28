@@ -11,6 +11,7 @@ export type DashboardMission = {
   estimated_duration_minutes: number | null
   status: MissionStatus
   locked_by: string[]
+  unlocked_by_teacher?: boolean
   best_points: number
   possible: number
   bonus: boolean
@@ -28,6 +29,7 @@ export type DashboardCourse = {
   is_demo: boolean
   resources: string[]
   score: CourseScore
+  paused: boolean
   missions: DashboardMission[]
 }
 
@@ -58,6 +60,7 @@ export type PlayerMission = {
   previous_id: number | null
   next_id: number | null
   ai_enabled: boolean
+  paused: boolean
   status: MissionStatus
   locked_by: string[]
   definition: PlayerDefinition | null

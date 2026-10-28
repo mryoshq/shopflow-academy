@@ -15,7 +15,7 @@ function DisplayData({ data }: { data: StudentDefinition["display_data"] }) {
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3" p="4" borderWidth="1px" rounded="md" bg="white" aria-label={data.title}>
     <Text fontWeight="semibold">{data.title}</Text>
-    {data.labels.map((label, index) => <Flex key={index} align="center" gap="3"><Text minW="28">{label}</Text><Box flex="1" bg="gray.100" rounded="sm"><Box bg="teal.500" h="5" width={`${Math.max(2, Math.abs(data.values[index]) / max * 100)}%`} rounded="sm" /></Box><Text minW="20" textAlign="right">{data.values[index]} {data.unit}</Text></Flex>)}
+    {data.labels.map((label, index) => <Flex key={index} align="center" gap="3"><Text minW="28">{label}</Text><Box flex="1" bg="gray.100" rounded="sm"><Box bg="brand.solid" h="5" width={`${Math.max(2, Math.abs(data.values[index]) / max * 100)}%`} rounded="sm" /></Box><Text minW="20" textAlign="right">{data.values[index]} {data.unit}</Text></Flex>)}
   </Stack>
 }
 
@@ -58,7 +58,7 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
   }
 
   return <Stack gap="5" p="6" bg="white" borderWidth="1px" rounded="xl" aria-label={`Aperçu de ${mission.title}`}>
-    <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="teal" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
+    <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="brand" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
     <Text whiteSpace="pre-wrap">{definition.scenario}</Text>
     <DisplayData data={definition.display_data} />
     <Text fontWeight="semibold" whiteSpace="pre-wrap">{definition.instructions}</Text>
@@ -66,7 +66,7 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
       : definition.kind === "matching" ? <Stack gap="3">{definition.choices.map((choice) => <Flex key={choice.id} align="center" gap="3"><Text flex="1">{choice.label}</Text><NativeSelect.Root maxW="52"><NativeSelect.Field aria-label={`Associer ${choice.label}`} value={pairs[choice.id] ?? ""} onChange={(event) => { setPairs({ ...pairs, [choice.id]: event.target.value }); setMessage("") }}><option value="">Choisir une cible</option>{definition.match_targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Flex>)}</Stack>
         : <Stack gap="2">{definition.choices.map((choice) => <label key={choice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, border: "1px solid #d8dfd9", borderRadius: 8 }}><input type={definition.kind === "multiple_choice" ? "checkbox" : "radio"} name={`preview-${mission.id}`} checked={selected.includes(choice.id)} onChange={() => { setSelected(definition.kind === "multiple_choice" ? selected.includes(choice.id) ? selected.filter((id) => id !== choice.id) : [...selected, choice.id] : [choice.id]); setMessage("") }} />{choice.label}</label>)}</Stack>}
     {definition.hints.length > 0 && <Box><Text fontWeight="semibold">Indices disponibles</Text><Stack gap="1" mt="2">{definition.hints.map((hint, index) => <Text key={index}>{index + 1}. {hint}</Text>)}</Stack></Box>}
-    {definition.resources.length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "#0f766e", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
+    {definition.resources.length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "#0F5047", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
     {correction ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="gray.600">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
   </Stack>
 }
