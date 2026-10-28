@@ -64,7 +64,7 @@ export function HelpRequest({ missionId, initial }: Props) {
         <Textarea id={`help-message-${missionId}`} value={message} maxLength={MAX} rows={3} onChange={(event) => setMessage(event.target.value)}
           placeholder="Par exemple : je ne vois pas pourquoi le total change." />
         <Text fontSize="xs" color="app.muted">{message.length} / {MAX} caractères</Text>
-        {error && <Text role="alert" fontSize="sm" color="red.700">{error}</Text>}
+        {error && <Text role="alert" fontSize="sm" color="red.fg">{error}</Text>}
         <Flex gap="2" wrap="wrap">
           <Button size="sm" colorPalette="brand" loading={busy} onClick={() => void send()}>Envoyer la demande</Button>
           <Button size="sm" variant="ghost" onClick={() => { setWriting(false); setError("") }}>Annuler</Button>

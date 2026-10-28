@@ -27,6 +27,7 @@ const ACTIONS: Record<string, string> = {
   "mission.unlock": "Mission débloquée", "class.export": "Export CSV des notes",
   "block.open": "Bloc ouvert", "block.close": "Bloc fermé", "help.handled": "Demande d’aide traitée",
   "release.assign": "Version donnée à la classe", "release.move": "Classe passée à la nouvelle version",
+  "student.password_reset": "Mot de passe réinitialisé",
 }
 
 function since(iso: string | null, now: number): string {
@@ -51,6 +52,8 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
   const [notice, setNotice] = useState("")
   const [now, setNow] = useState(() => Date.now())
   const detailId = useRef<number | null>(null)
+  const [reset, setReset] = useState<{ student: string; password: string; sessions_revoked: number } | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const loadClasses = useCallback(async () => {
     setError(null)
@@ -111,6 +114,21 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
     }
   }
 
+  async function resetPassword(id: number, name: string) {
+    if (!selected || !window.confirm(`Créer un nouveau mot de passe pour ${name} ? L’ancien ne fonctionnera plus et ses sessions ouvertes seront fermées.`)) return
+    setBusy(true)
+    setNotice("")
+    setCopied(false)
+    try {
+      setReset(await api<{ student: string; password: string; sessions_revoked: number }>(`/teacher/classes/${selected}/students/${id}/reset-password`, "POST"))
+      await refresh(selected)
+    } catch (reason) {
+      setNotice(reason instanceof ApiError ? `Action impossible : ${reason.message}` : "Connexion interrompue. Réessayez.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function openStudent(id: number) {
     if (!selected) return
     detailId.current = id
@@ -138,7 +156,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
         </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
       </Stack>}
       <Flex gap="2" wrap="wrap" align="center">
-        <Text fontSize="sm" color={stale ? "red.700" : "app.muted"} aria-live="polite">
+        <Text fontSize="sm" color={stale ? "red.fg" : "app.muted"} aria-live="polite">
           {stale ? "Connexion perdue : données possiblement anciennes" : `Actualisé ${since(new Date(generated).toISOString(), now)}`}
         </Text>
         <Button size="sm" variant="ghost" onClick={() => setAutoRefresh(!autoRefresh)} aria-pressed={autoRefresh}>
@@ -150,7 +168,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
     {!overview ? <LoadingState label="Chargement de la classe…" /> : <>
       <Flex gap="4" wrap="wrap">
         <Panel flex="1" minW="56"><Text fontSize="sm" color="app.muted">Étudiants actifs (5 dernières min)</Text><Text fontSize="3xl" fontWeight="bold">{activeCount} / {overview.students.length}</Text></Panel>
-        <Panel flex="1" minW="56" borderColor={helpCount ? "saffron.400" : "app.border"}><Text fontSize="sm" color="app.muted">Besoin d’aide</Text><Text fontSize="3xl" fontWeight="bold" color={helpCount ? "saffron.800" : undefined}>{helpCount}</Text></Panel>
+        <Panel flex="1" minW="56" borderColor={helpCount ? "saffron.400" : "app.border"}><Text fontSize="sm" color="app.muted">Besoin d’aide</Text><Text fontSize="3xl" fontWeight="bold" color={helpCount ? "saffron.fg" : undefined}>{helpCount}</Text></Panel>
         <Panel flex="2" minW="72">
           <Stack gap="2">
             <Flex gap="2" align="center"><Text fontWeight="semibold">Séquence</Text>
@@ -190,7 +208,17 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
       {detail && <Panel as="section" aria-labelledby="student-detail-title">
         <Stack gap="4">
           <Flex justify="space-between" align="center"><Heading as="h3" size="md" id="student-detail-title">Détail : {detail.display_name}</Heading>
-            <Button size="sm" variant="ghost" onClick={() => { setDetail(null); detailId.current = null }}>Fermer</Button></Flex>
+            <Flex gap="2"><Button size="sm" variant="outline" colorPalette="saffron" loading={busy} onClick={() => void resetPassword(detail.id, detail.display_name)}>Réinitialiser le mot de passe</Button>
+            <Button size="sm" variant="ghost" onClick={() => { setDetail(null); setReset(null); detailId.current = null }}>Fermer</Button></Flex></Flex>
+          {reset && reset.student === detail.display_name && <Box role="status" p="4" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
+            <Text fontWeight="semibold">Nouveau mot de passe de {reset.student}</Text>
+            <Flex gap="3" align="center" wrap="wrap" mt="2">
+              <Box as="code" fontSize="xl" fontWeight="bold" letterSpacing="0.06em" px="3" py="1" rounded="md" bg="app.surface" aria-label="Nouveau mot de passe">{reset.password}</Box>
+              <Button size="sm" variant="outline" onClick={() => { void navigator.clipboard?.writeText(reset.password).then(() => setCopied(true)).catch(() => setCopied(false)) }}>{copied ? "Copié" : "Copier"}</Button>
+              <Button size="sm" colorPalette="brand" onClick={() => setReset(null)}>J’ai noté le mot de passe</Button>
+            </Flex>
+            <Text fontSize="sm" mt="2">Il ne sera plus affiché. {reset.sessions_revoked ? "Les sessions ouvertes de l’étudiant ont été fermées." : ""} Transmettez-le en personne.</Text>
+          </Box>}
           <Stack gap="2" as="ul" listStyleType="none" p="0" m="0">
             {detail.missions.map((mission) => <Flex as="li" key={mission.mission_version_id} gap="3" align="center" wrap="wrap" p="3" borderWidth="1px" borderColor="app.border" rounded="lg">
               <Text flex="1" fontWeight="medium">{mission.title}</Text>
@@ -214,7 +242,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
           <Heading as="h3" size="sm" id="interventions-title">Journal des interventions</Heading>
           {log.length === 0 ? <Text color="app.muted" fontSize="sm">Aucune intervention enregistrée.</Text>
             : <Stack as="ul" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{log.slice(0, 20).map((item) => <Flex as="li" key={item.id} gap="3" justify="space-between">
-              <Text>{ACTIONS[item.action] ?? item.action}{item.details.block ? ` : « ${item.details.block} »` : ""}{item.details.mission ? ` : « ${item.details.mission} » pour ${item.details.student}` : ""}</Text>
+              <Text>{ACTIONS[item.action] ?? item.action}{item.action === "student.password_reset" ? ` : ${item.details.student}` : ""}{item.details.block ? ` : « ${item.details.block} »` : ""}{item.details.mission ? ` : « ${item.details.mission} » pour ${item.details.student}` : ""}</Text>
               <Text color="app.muted">{item.actor} · {new Date(item.created_at).toLocaleString("fr-FR", { dateStyle: "short", timeStyle: "short" })}</Text>
             </Flex>)}</Stack>}
         </Stack>

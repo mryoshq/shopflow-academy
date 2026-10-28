@@ -25,7 +25,7 @@ export function isAnswerComplete(definition: PlayerDefinition, answer: Answer): 
 }
 
 const optionStyles = {
-  display: "flex", alignItems: "flex-start", gap: "3", p: "3.5", borderWidth: "1px", borderColor: "app.border",
+  display: "flex", alignItems: "stretch", gap: "0", p: "0", borderWidth: "1px", borderColor: "app.border",
   rounded: "lg", bg: "app.surface", cursor: "pointer", transition: "border-color 120ms, background 120ms",
   _hover: { borderColor: "brand.300" },
   "&:has(input:checked)": { borderColor: "brand.solid", bg: "brand.subtle", boxShadow: "0 0 0 1px var(--chakra-colors-brand-solid)" },
@@ -43,11 +43,14 @@ export function ChoiceActivity({ definition, answer, onChange, disabled, name }:
   return <Box as="fieldset" border="0" p="0" m="0">
     <VisuallyHidden as="legend">{multiple ? "Choisissez une ou plusieurs réponses" : "Choisissez une réponse"}</VisuallyHidden>
     <Stack gap="2.5" role={multiple ? "group" : "radiogroup"} aria-label={multiple ? "Propositions, plusieurs réponses possibles" : "Propositions"}>
-      {definition.choices.map((choice) => <Box as="label" key={choice.id} css={optionStyles}>
-        <input type={multiple ? "checkbox" : "radio"} name={name} value={choice.id} disabled={disabled}
-          checked={answer.choice_ids.includes(choice.id)} onChange={() => toggle(choice.id)}
-          style={{ marginTop: 4, width: 18, height: 18, accentColor: "#146457", flexShrink: 0 }} />
-        <Text>{choice.label}</Text>
+      {definition.choices.map((choice, index) => <Box key={choice.id} css={optionStyles}>
+        <Box as="label" display="flex" alignItems="flex-start" gap="3" flex="1" p="3.5" cursor="inherit">
+          <input type={multiple ? "checkbox" : "radio"} name={name} value={choice.id} disabled={disabled}
+            checked={answer.choice_ids.includes(choice.id)} onChange={() => toggle(choice.id)}
+            style={{ marginTop: 4, width: 18, height: 18, accentColor: "var(--chakra-colors-brand-solid)", flexShrink: 0 }} />
+          <Text>{choice.label}</Text>
+        </Box>
+        {index < 9 && <Box as="kbd" aria-hidden="true" alignSelf="center" mr="3.5" fontSize="xs" color="app.muted" borderWidth="1px" borderColor="app.border" rounded="sm" px="1.5" lineHeight="1.6" fontFamily="inherit">{index + 1}</Box>}
       </Box>)}
     </Stack>
     {multiple && <Text mt="2" fontSize="sm" color="app.muted">Plusieurs réponses peuvent être justes.</Text>}

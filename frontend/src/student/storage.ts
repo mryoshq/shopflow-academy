@@ -35,3 +35,7 @@ export function newIdempotencyKey(): string {
   try { if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID().replaceAll("-", "") } catch { /* fallback */ }
   return Array.from({ length: 32 }, () => Math.floor(Math.random() * 16).toString(16)).join("")
 }
+
+const HELP = "shopflow:help-folded"
+export function helpFolded(): boolean { return read(() => localStorage, HELP) === "1" }
+export function rememberHelpFolded(folded: boolean) { write(() => localStorage, HELP, folded ? "1" : null) }

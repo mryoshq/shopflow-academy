@@ -103,7 +103,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
           </Box>
         </Box>}
         {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
-        {stale && <Text fontSize="sm" color="red.700">Connexion perdue : données possiblement anciennes.</Text>}
+        {stale && <Text fontSize="sm" color="red.fg">Connexion perdue : données possiblement anciennes.</Text>}
         <Stack as="ol" gap="2" listStyleType="none" p="0" m="0" aria-label="Blocs de la journée">
           {data.blocks.map((block, index) => {
             const newModule = index === 0 || data.blocks[index - 1].module !== block.module

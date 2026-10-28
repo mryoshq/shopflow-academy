@@ -77,3 +77,31 @@ it("explains the empty state", async () => {
   wrap()
   expect(await screen.findByText("Aucune classe à suivre")).toBeInTheDocument()
 })
+
+it("resets a student's password once, with CSRF, after confirmation", async () => {
+  const { render, screen, fireEvent, cleanup } = await import("@testing-library/react")
+  cleanup()
+  const { ChakraProvider } = await import("@chakra-ui/react")
+  const { system } = await import("../theme")
+  const { TeacherDashboard } = await import("./TeacherDashboard")
+  document.cookie = `academy_csrf=${"D".repeat(43)}; Path=/`
+  vi.stubGlobal("confirm", () => true)
+  const overview = { generated_at: new Date().toISOString(), assignment_id: 4, cohort: "Classe", course_title: "Cours", version: 1, paused: false,
+    missions: [], students: [{ id: 9, display_name: "salma", completed: 0, total: 1, core_points: 0, core_possible: 5, bonus_points: 0, attempts: 0, hints: 0, current_mission: null, last_activity: null, active: false, needs_help: [] }] }
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/reset-password") && init?.method === "POST") return { status: 200, ok: true, json: async () => ({ student: "salma", password: "abcd-EFGH-3467", sessions_revoked: 1 }) }
+    if (url.includes("/students/9")) return { status: 200, ok: true, json: async () => ({ id: 9, display_name: "salma", missions: [], attempts: [] }) }
+    if (url.endsWith("/interventions")) return { status: 200, ok: true, json: async () => [] }
+    if (url.endsWith("/classes")) return { status: 200, ok: true, json: async () => [{ id: 4, cohort: "Classe", course_title: "Cours", version: 1, paused: false, student_count: 1 }] }
+    return { status: 200, ok: true, json: async () => overview }
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  render(<ChakraProvider value={system}><TeacherDashboard assignmentId={4} /></ChakraProvider>)
+  fireEvent.click(await screen.findByRole("button", { name: "Détail de salma" }))
+  fireEvent.click(await screen.findByRole("button", { name: "Réinitialiser le mot de passe" }))
+  expect(await screen.findByLabelText("Nouveau mot de passe")).toHaveTextContent("abcd-EFGH-3467")
+  const call = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/reset-password"))!
+  expect(call[1].headers["X-CSRF-Token"]).toBe("D".repeat(43))
+  fireEvent.click(screen.getByRole("button", { name: "J’ai noté le mot de passe" }))
+  expect(screen.queryByText("abcd-EFGH-3467")).not.toBeInTheDocument()
+})

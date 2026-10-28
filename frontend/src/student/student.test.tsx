@@ -140,7 +140,7 @@ it("player submits with an idempotency key, shows server feedback and reuses the
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tester ma décision" })) })
   expect(await screen.findByText("Connexion interrompue : votre réponse n’a pas pu être envoyée.")).toBeInTheDocument()
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Renvoyer ma décision" })) })
-  expect(await screen.findByText("À revoir")).toBeInTheDocument()
+  expect(await screen.findByText("Presque ! Réessayez")).toBeInTheDocument()
   expect(screen.getByText("Juste ici par hasard.")).toBeInTheDocument()
   const attempts = calls.filter((call) => call.url.endsWith("/attempts"))
   expect(attempts).toHaveLength(2)
@@ -210,7 +210,7 @@ it("player shows the attempt history on demand", async () => {
   const toggle = await screen.findByRole("button", { name: "Historique de vos essais (2)" })
   await act(async () => { fireEvent.click(toggle) })
   expect(await screen.findByText("Réussi · 10 pts")).toBeInTheDocument()
-  expect(screen.getByText("À revoir · 0 pts")).toBeInTheDocument()
+  expect(screen.getByText("Pas encore · 0 pts")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Masquer l’historique" })).toHaveAttribute("aria-expanded", "true")
 })
 
