@@ -18,6 +18,6 @@
 
 ## Conséquences
 
-- Migration **0011** (tables nouvelles seulement). Dépendance `cryptography` (signature VAPID).
+- Migration **0012** (après `0011_leaderboard`, tables nouvelles seulement). Dépendance `cryptography` (signature VAPID).
 - Charge mesurée : 10 étudiants + enseignant, p95 le plus lent 938 ms, message reçu par 10/10 (`scripts/load_test.py`).
 - Autorisation : routes « self-service » (présence, notifications, push) ajoutées au modèle de la matrice ; routes de classe réservées au propriétaire du cours (matrice d'appartenance).

@@ -1,7 +1,7 @@
 """Live tracking (sprint 2, part H, ADR-0023).
 
-Revision ID: 0011_live_tracking
-Revises: 0010_attempt_rules
+Revision ID: 0012_live_tracking
+Revises: 0011_leaderboard
 
 New tables only: presence, notifications (students and teacher), per-student block
 unlocks, push subscriptions, notification settings and the automatic opening plan.
@@ -11,8 +11,8 @@ Nothing existing is modified.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0011_live_tracking"
-down_revision = "0010_attempt_rules"
+revision = "0012_live_tracking"
+down_revision = "0011_leaderboard"
 branch_labels = None
 depends_on = None
 

@@ -1,8 +1,28 @@
 # HANDOFF — reprise ShopFlow Academy
 
+## K — Classement facultatif (Codex, 28/10/2026)
+
+Branche `codex/k-classement`, créée sur `main` `14017c2`, puis mise à jour par merge de `main` `52079c8` (logo et L), [PR #37](https://github.com/mryoshq/shopflow-academy/pull/37) vers `main`, sans fusion de PR ni déploiement. ADR `docs/DECISIONS/0026-classement.md`. API, modèles, migration, page et tests propres à K ; seules l’inclusion du routeur, la déclaration des modèles Alembic et la navigation App touchent des fichiers partagés. Ne pas modifier le chantier H/L. Si `main` avance, le fusionner dans cette branche sans force-push, et vérifier la tête de migration (actuellement `0011_leaderboard` après `0010_attempt_rules`, tête unique vérifiée ; tests ciblés repassés après le merge).
+
+Livré : off par défaut, accès aux inscrits et au propriétaire seulement, pseudonymes sans login/e-mail, principaux/bonus séparés, rangs `1, 1, 3`, top 3 avec tous les ex æquo et sa position, masquage serveur si bloc ouvert, onglet du jour (`Africa/Casablanca`), polling 5 s, podium SVG original, clavier/AA/clair/sombre/mouvement réduit. Ni notation ni export modifiés.
+
+Tests ciblés : pytest classement + migrations + matrice + propriété **27 PASS** ; Vitest classement + App **11 PASS** ; TypeScript **PASS** ; une spec Playwright classement **PASS**, avec axe sans violation sur vues testées, captures enseignant/clair/sombre et actualisation ≤ 10 s. Le navigateur utilise uniquement des réponses fictives ; l’API et les migrations sont réellement exercées dans pytest sur SQLite. Suites complètes/Compose/PostgreSQL/production **NOT RUN localement**, laissées à la CI pour les suites et au propriétaire pour le déploiement.
+
+Suivi CI : les échecs initiaux sur `cba066b` ont été reproduits (propriété avant validation d’un corps invalide, navigation mobile avec libellés longs). Correctifs et régressions dans K seulement, tests ciblés repassés. Attendre tous les contrôles verts sur le dernier commit. Un suivi automatique dans la conversation prévient alors le propriétaire, puis relit en lecture seule la PR de l’autre agent sur le compteur « terminé », suivie de H ; aucun commentaire GitHub ni modification de ces PR.
+
+Compatibilité L vérifiée explicitement : 7 points retenus après essais réels à 70 % puis 50 %, ancien score de 10 conservé ; aucun recalcul des notes. Test de chaîne depuis `0010_attempt_rules` peuplée, aller-retour K/L/K, préserve réglages L et tentatives. Tête unique `0011_leaderboard` ; aucune migration exécutée en production dans cette session.
+
+### K — À faire en local après revue et fusion par le propriétaire
+
+1. Sauvegarder la base selon `docs/RUNBOOK.md`, suffixe `avant-sprint2-k` ; vérifier la tête Alembic si H/L a été fusionné entre-temps.
+2. À une pause, redéployer par la procédure habituelle (service migrate compris), puis smoke test selon le runbook. Cette session n’a exécuté ni migration ni redéploiement en production.
+3. Ouvrir « Classement » comme enseignant : vérifier qu’il est désactivé, puis activer seulement si souhaité. Vérifier avec un compte étudiant autorisé le pseudonyme, les ex æquo, les deux options et le retour 404 après désactivation. Ne pas utiliser de vrais étudiants comme comptes de test automatisés.
+
+Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusion automatique.
+
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis #40 (H, suivi en direct ; migration 0011), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
+**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis #40 (H, suivi en direct ; migration 0012), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -86,7 +106,7 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Vérifier dans « Ma classe » : bloc SQL 01, « terminé » attendu pour les 7 étudiants ayant réussi toutes les missions notées, et « leçons lues x/10 » à côté.
 
 ### À faire en local après la PR H
-1. **Sauvegarde manuelle** (migration **0011** : tables `presences`, `notifications`, `block_unlocks`, `push_subscriptions`, `notification_settings`, `block_plans` ; rien d'existant n'est modifié), suffixe `avant-sprint2-h`.
+1. **Sauvegarde manuelle** (migration **0012** (après `0011_leaderboard`) : tables `presences`, `notifications`, `block_unlocks`, `push_subscriptions`, `notification_settings`, `block_plans` ; rien d'existant n'est modifié), suffixe `avant-sprint2-h`.
 2. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait` (nouvelle dépendance `cryptography`, nouveau réseau `push` sortant pour le backend), puis `python3 scripts/smoke_public.py`.
 3. Facultatif, Web Push : `docker compose run --rm --no-deps -v "$PWD:/repo" -w /repo backend python scripts/vapid_keys.py` (écrit les clés dans `.env`, n'affiche pas la clé privée), puis `docker compose up -d --wait backend`. Sans clés, les notifications dans la page fonctionnent.
 4. Dans « Ma classe » : « Réglages des notifications » (types, seuil) ; l'ouverture automatique reste désactivée tant que vous ne l'activez pas.

@@ -5,6 +5,7 @@ import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
 import { Logo } from "./Logo"
 import { NotificationBell, NotificationProvider } from "./live/notifications"
+import { LeaderboardNavigation } from "./leaderboard/LeaderboardPage"
 import type { User } from "./studioTypes"
 
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
@@ -100,7 +101,7 @@ export function App() {
             </Flex>
             <Flex align="center" gap="3" wrap="wrap" justify="end">
             <ThemeSwitch />
-            {state === "authenticated" && user ? <Flex align="center" gap="3">
+            {state === "authenticated" && user ? <Flex align="center" gap="3" wrap="wrap" justify="end">
               <NotificationBell />
               <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
               <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
@@ -140,7 +141,7 @@ export function App() {
             </Box>
           </Flex>
         )}
-        {state === "authenticated" && user && (user.role === "teacher" ? (
+        {state === "authenticated" && user && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
           <Stack gap="8">
             <Stack gap="2">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
@@ -149,7 +150,7 @@ export function App() {
             <TeacherHome />
             {message && <Text role="alert" color="red.fg">{message}</Text>}
           </Stack>
-        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>)}
+        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}</LeaderboardNavigation>}
       </Container>
     </Box>
   )

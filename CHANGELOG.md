@@ -3,7 +3,14 @@
 ## 2026-10-28 — Sprint 2, partie H : suivi en direct (`claude/lucid-brahmagupta-htwgun-h`)
 
 - Présence (30 s), grille étudiants × blocs dans « Ma classe », message aux étudiants (280 caractères, accusés de lecture), notifications automatiques, centre de notifications de l'enseignant (aide, blocage, bloc terminé à X %, ouverture automatique, déconnexion ; réglages par type), cloche et historique, notifications système et Web Push facultatif.
-- Déblocage d'un bloc pour un seul étudiant (« Ouvert pour vous »), ouverture automatique des blocs selon le temps restant (planning pondéré, rattrapage, pause, décalage, avance, recalcul, jamais de fermeture). Migration 0011. ADR-0023.
+- Déblocage d'un bloc pour un seul étudiant (« Ouvert pour vous »), ouverture automatique des blocs selon le temps restant (planning pondéré, rattrapage, pause, décalage, avance, recalcul, jamais de fermeture). Migration 0012. ADR-0023.
+
+## 2026-10-28 — Sprint 2, partie K : classement facultatif (`codex/k-classement`)
+
+- Page « Classement » et onglet « Progression du jour », actualisation toutes les 5 secondes, points principaux et bonus distincts, ex æquo au même rang, ligne personnelle marquée « Vous ».
+- Réglages enseignant : désactivé par défaut, top 3 avec ex æquo et position personnelle, masquage pendant un bloc ouvert. Filtrage serveur, inscription/propriété, CSRF, aucun identifiant de connexion exposé. Pseudonyme choisi (24 caractères), nom neutre en attendant.
+- Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0011_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
+- Retours CI K : propriété vérifiée avant validation des réglages (404 pour une autre classe même avec un corps invalide), navigation sans débordement mobile avec libellés longs ; régressions ciblées ajoutées.
 
 ## 2026-10-28 — Correctif : blocs terminés et republication (`claude/lucid-brahmagupta-htwgun-lecons`)
 
