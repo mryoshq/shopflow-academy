@@ -32,7 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner #53 (P, report des réussites, sans migration), redéployer, puis lancer `python -m app.carryover --course <slug>` avant toute nouvelle publication — accord et action du propriétaire.** Ensuite : PR O (interface enseignant en application à une page).
+**Prochaine tâche unique : relire et fusionner dans l'ordre #53 (P), #54 (S), #55 (Q, cadre), #56 (R, migration `0014_project`), puis la PR O (interface enseignant), et faire leurs « À faire en local » — accord et action du propriétaire.** Ensuite : intégration du voyage à réception de l'archive.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -64,6 +64,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
+| 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -138,6 +139,11 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde nécessaire** : rien n'est écrit, le report se fait à la lecture.
 2. Vérifier dans « Ma classe » ou « Résultats » que les réussites des missions dont seul le texte avait changé sont revenues.
 3. Avant chaque publication : `docker compose exec -T backend python -m app.carryover --course <slug>` (code 1 et liste si des réussites seraient perdues).
+### À faire en local après la PR S
+1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).
+2. Dans le dossier du cours : ajouter `lab_schemas: [shopflow, support, perf]` à `00-cours.md`, déposer les fichiers SQL du kit dans `cours/datasets/` en préfixant les noms pour l'ordre (`01-…`, `02-…`), les documents dans `cours/downloads/`.
+3. `python3 scripts/course_md.py compile "<dossier>/cours"` (vérifie les requêtes sur une base jetable avec les mêmes schémas), puis import en brouillon. **L'import remplace tout le contenu de la base de laboratoire.**
+4. Vérifier un `run` `EXPLAIN (ANALYZE, BUFFERS)` dans l'aperçu, et un téléchargement depuis un compte étudiant de démonstration.
 
 ### À faire en local après la PR J
 

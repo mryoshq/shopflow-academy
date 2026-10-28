@@ -54,9 +54,11 @@ HTTP_RE = re.compile(r"http://", re.IGNORECASE)
 # Kinds and data kinds the platform can play today. Others are refused with a clear message.
 KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching", "data_interpretation",
          "scenario_choice", "lesson", "sql_challenge", "review"}
-DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards", "image"}
+DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards", "image", "download"}
 MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt|png|jpg|jpeg|webp|svg)$")
 IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "svg"}
+DOWNLOAD_NAME = re.compile(r"^downloads/([A-Za-z0-9_.-]{1,120})$")
+DOWNLOAD_EXTS = {"pdf", "docx", "zip", "csv", "sql", "py", "md"}
 MAX_IMAGE_BYTES = 2 * 1024 * 1024
 # SVG pictures are drawings only: no script, event handler, external link, embedded HTML or entity (ADR-0029).
 SVG_FORBIDDEN = re.compile(rb"<\s*script|<\s*foreignObject|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:text/html|href\s*=\s*[\"']\s*(?!#)", re.I)
@@ -69,7 +71,7 @@ MISSION_KEYS = {"slug", "kind", "objectives", "prerequisites", "points", "scorin
 LESSON_LAYOUT_KEYS = ("objective", "hook", "key_terms", "example", "practice")
 # A paragraph longer than this reads as a wall of text: the compiler suggests splitting it.
 MAX_PARAGRAPH_WORDS = 80
-HEADER_KEYS = {"format", "version", "slug", "title", "description", "objectives"}
+HEADER_KEYS = {"format", "version", "slug", "title", "description", "objectives", "lab_schemas"}
 # Definition field → Markdown key, to point pydantic errors at the right line.
 FIELD_TO_KEY = {"max_points": "points", "estimated_duration_minutes": "duration", "display_data": "data",
                 "correct_ids": "choices", "match_targets": "targets", "correct_pairs": "pairs", "feedback": "choices",
@@ -125,6 +127,7 @@ FRENCH = {
     "Captions files are for course videos only": "`captions` seulement avec une vidéo `file` du cours",
     "Invalid video file": "fichier vidéo invalide",
     "Invalid image file": "fichier image invalide",
+    "Invalid download file": "fichier à télécharger invalide",
     "An image needs an alt text": "une image demande un texte alternatif `alt`",
     "Invalid captions file": "fichier de sous-titres invalide",
 }
@@ -185,6 +188,11 @@ class Compiled:
     media_out: dict[str, bytes] = field(default_factory=dict)
     run_results: dict | None = None
     dataset: str | None = None
+    # ADR-0032: the course SQL files [(name, sql)] in name order, and the lab schemas they may create.
+    datasets: list[tuple[str, str]] = field(default_factory=list)
+    # Files to download, by id "<sha16>.<ext>": stored outside the public media folder (ADR-0032).
+    downloads_out: dict[str, bytes] = field(default_factory=dict)
+    lab_schemas: list[str] = field(default_factory=list)
 
     @property
     def errors(self) -> list[Issue]:
@@ -297,6 +305,15 @@ def parse_header(compiled: Compiled, name: str, text: str) -> None:
     if len(description) > 5000:
         compiled.error(name, where.get(("description",), 2), "`description` trop longue (5000 caractères au plus)")
     compiled.course = {"slug": slug, "title": title, "description": description}
+    schemas = data.get("lab_schemas")
+    if schemas is not None:
+        from app.lab import valid_schema
+
+        if not isinstance(schemas, list) or len(schemas) > 8 or not all(isinstance(item, str) and valid_schema(item) for item in schemas):
+            compiled.error(name, where.get(("lab_schemas",), 2), "`lab_schemas` : liste de 8 schémas au plus (minuscules, chiffres, _ ; "
+                           "ni public, ni lab, ni pg_…), par exemple `[shopflow, support, perf]`")
+        else:
+            compiled.lab_schemas = list(dict.fromkeys(schemas))
     objectives = data.get("objectives")
     if not isinstance(objectives, list) or not objectives:
         compiled.error(name, where.get(("objectives",), 2), "`objectives` : liste obligatoire de `{code, statement}`")
@@ -645,19 +662,25 @@ def walk_strings(value: object, path: tuple = ()) -> list[tuple[tuple, str]]:
 
 
 def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None, runs: dict | None = None,
-                  dataset: str | None = None) -> Compiled:
+                  dataset: str | dict[str, str] | None = None) -> Compiled:
     """Compile a course from {file name: content}; names are sorted, reserved files ignored.
 
     ``media`` maps ``media/<name>.mp4|vtt`` to bytes (videos of the course folder).
     ``runs`` holds the results of the preconfigured executions done on the Mac by
     ``scripts/course_md.py`` ({slug: {run_id: {ok, output?, error?}}}, ``expected_sql``
     and ``starter_sql`` of challenges under the ids ``expected_sql``/``starter_sql``).
-    ``dataset`` is ``datasets/shopflow-lab.sql`` (loaded into the lab database at import).
+    ``dataset`` is the course SQL: one script (``datasets/shopflow-lab.sql``) or {``datasets/<nom>.sql``: text},
+    run in name order at import (ADR-0032). ``media`` also carries ``downloads/<nom>`` files.
     """
     compiled = Compiled()
     compiled.media_in = dict(media or {})
     compiled.run_results = runs
-    compiled.dataset = dataset
+    if isinstance(dataset, dict):
+        compiled.datasets = sorted((str(name), str(text)) for name, text in dataset.items()
+                                   if re.fullmatch(r"datasets/[A-Za-z0-9_.-]{1,80}\.sql", str(name)))
+    elif isinstance(dataset, str):
+        compiled.datasets = [("datasets/shopflow-lab.sql", dataset)]
+    compiled.dataset = "\n".join(text for _, text in compiled.datasets) or None
     names = sorted(name for name in files if name.lower().endswith(".md") and name.upper() not in RESERVED and "/" not in name)
     compiled.files = names
     if len(names) > MAX_FILES:
@@ -771,11 +794,63 @@ def attach_image(compiled: Compiled, item: Item, data: dict) -> None:
         compiled.error(item.file, line_for(item, ("data",)), "une image demande un texte alternatif `alt` (ce que montre l'image)")
 
 
+def download_problem(name: str, ext: str, content: bytes) -> str | None:
+    """Why a file to download is refused, in French; None when its format matches its extension."""
+    from app.curriculum_schema import MAX_DOWNLOAD_BYTES
+
+    if len(content) > MAX_DOWNLOAD_BYTES:
+        return f"`{name}` trop volumineux ({len(content) / (1024 * 1024):.1f} Mo, maximum 20 Mo)"
+    if ext == "pdf" and not content.startswith(b"%PDF-"):
+        return f"`{name}` n'est pas un PDF"
+    if ext in {"docx", "zip"} and not content.startswith(b"PK\x03\x04"):
+        return f"`{name}` n'est pas un fichier {ext.upper()} valide"
+    if ext in {"csv", "sql", "py", "md"}:
+        try:
+            content.decode("utf-8")
+        except UnicodeDecodeError:
+            return f"`{name}` doit être un texte UTF-8"
+    return None
+
+
+def attach_downloads(compiled: Compiled, item: Item, data: dict) -> None:
+    """``data.kind: download``: files: [{file: downloads/<nom>, title}] become {id, name, title, size} (ADR-0032)."""
+    import hashlib
+
+    entries = data.get("files")
+    if not isinstance(entries, list) or not entries:
+        compiled.error(item.file, line_for(item, ("data",)), "un téléchargement demande `files` : liste de `{file: downloads/<nom>, title}`")
+        return
+    result = []
+    for index, entry in enumerate(entries):
+        line = line_for(item, ("data", "files", index))
+        if not isinstance(entry, dict) or set(entry) - {"file", "title"} or "file" not in entry:
+            compiled.error(item.file, line, "un fichier s'écrit `{file: downloads/<nom>, title}`")
+            continue
+        name = str(entry["file"])
+        match = DOWNLOAD_NAME.fullmatch(name)
+        ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+        if not match or ext not in DOWNLOAD_EXTS:
+            compiled.error(item.file, line, "`file` : chemin `downloads/<nom>.pdf|docx|zip|csv|sql|py|md` attendu (lettres, chiffres, . - _)")
+            continue
+        content = compiled.media_in.get(name)
+        problem = f"fichier introuvable dans le dossier du cours : `{name}`" if content is None else download_problem(name, ext, content)
+        if problem:
+            compiled.error(item.file, line, problem)
+            continue
+        file_id = f"{hashlib.sha256(content).hexdigest()[:16]}.{ext}"
+        compiled.downloads_out[file_id] = content
+        result.append({"id": file_id, "name": match.group(1), "title": str(entry.get("title") or match.group(1)).strip()[:200], "size": len(content)})
+    data["files"] = result or [{"id": "0" * 16 + ".pdf", "name": "absent.pdf", "title": "absent", "size": 0}]
+
+
 def attach_media(compiled: Compiled, item: Item) -> None:
-    """``data.kind: video|image`` with ``file``: check the course file and replace it by its content address."""
+    """``data.kind: video|image|download`` with files: check the course files and replace them by their content address."""
     data = item.raw.get("data")
     if isinstance(data, dict) and data.get("kind") == "image":
         attach_image(compiled, item, data)
+        return
+    if isinstance(data, dict) and data.get("kind") == "download":
+        attach_downloads(compiled, item, data)
         return
     if not isinstance(data, dict) or data.get("kind") != "video" or "file" not in data:
         if isinstance(data, dict) and data.get("kind") == "video" and data.get("captions") is not None:
@@ -825,7 +900,7 @@ def executions(compiled: Compiled) -> dict:
         if definition.get("kind") == "sql_challenge":
             for key in ("expected_sql", "starter_sql"):
                 sql.append({"slug": item.slug, "id": key, "file": item.file, "line": line_for(item, (key,)), "sql": definition[key]})
-    return {"sql": sql, "python": python}
+    return {"sql": sql, "python": python, "lab_schemas": compiled.lab_schemas}
 
 
 def apply_run_results(compiled: Compiled) -> None:
@@ -862,8 +937,9 @@ def compile_dir(folder: Path) -> Compiled:
     for path in sorted(folder.glob("*.md")):
         files[path.name] = path.read_text(encoding="utf-8")
     media = {f"media/{path.name}": path.read_bytes() for path in sorted((folder / "media").glob("*")) if path.is_file()}
-    dataset = folder / "datasets" / "shopflow-lab.sql"
-    return compile_files(files, media, dataset=dataset.read_text(encoding="utf-8") if dataset.is_file() else None)
+    media.update({f"downloads/{path.name}": path.read_bytes() for path in sorted((folder / "downloads").glob("*")) if path.is_file()})
+    datasets = {f"datasets/{path.name}": path.read_text(encoding="utf-8") for path in sorted((folder / "datasets").glob("*.sql"))}
+    return compile_files(files, media, dataset=datasets or None)
 
 
 # Summary, document, report -------------------------------------------------------------
@@ -1035,6 +1111,7 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     for objective in stale:
         db.delete(objective)
     write_media(compiled)
+    write_downloads(compiled)
     lab_note = load_lab_dataset(compiled)
     db.add(AuditEvent(actor_id=owner.id, action="course.import_md", resource_type="course", resource_id=course.id,
                       details={"files": compiled.files, "missions": len(placed), "removed_drafts": len(removed)}))
@@ -1056,16 +1133,33 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
 
 
 def load_lab_dataset(compiled: Compiled) -> str:
-    """Load datasets/shopflow-lab.sql into the lab database (lab_owner role), when both exist."""
+    """Load datasets/*.sql (name order) into the lab database (lab_owner role), with the declared schemas."""
     from app.config import get_settings
     from app.lab import load_dataset
 
-    if not compiled.dataset:
+    if not compiled.datasets:
         return "aucun jeu de données dans le cours : base de laboratoire inchangée"
     if not get_settings().lab_owner_url:
         return "base de laboratoire non configurée : jeu de données non chargé"
-    tables = load_dataset(compiled.dataset)
-    return f"jeu de données chargé dans la base de laboratoire ({tables} tables)"
+    tables = load_dataset(compiled.datasets, schemas=compiled.lab_schemas)
+    schemas = ", ".join([*compiled.lab_schemas, "lab"])
+    return f"jeu de données chargé dans la base de laboratoire ({len(compiled.datasets)} fichier(s), {tables} tables ; schémas : {schemas})"
+
+
+def write_downloads(compiled: Compiled) -> None:
+    """Copy the files to download outside the public media folder (content-addressed, idempotent)."""
+    from app.config import get_settings
+
+    if not compiled.downloads_out:
+        return
+    folder = Path(get_settings().downloads_dir)
+    folder.mkdir(parents=True, exist_ok=True)
+    for file_id, content in compiled.downloads_out.items():
+        target = folder / file_id
+        if not target.exists():
+            temporary = target.with_suffix(target.suffix + ".part")
+            temporary.write_bytes(content)
+            temporary.replace(target)
 
 
 def write_media(compiled: Compiled) -> None:
@@ -1134,7 +1228,7 @@ def main() -> None:
         compiled = compile_files(files, media)
         print(json.dumps(executions(compiled), ensure_ascii=False))
         raise SystemExit(0)
-    compiled = compile_files(files, media, runs if isinstance(runs, dict) else None, dataset if isinstance(dataset, str) else None)
+    compiled = compile_files(files, media, runs if isinstance(runs, dict) else None, dataset if isinstance(dataset, (str, dict)) else None)
     output = {"summary": summary(compiled), "issues": [issue.__dict__ for issue in compiled.issues]}
     if args.command == "import-bundle" and not compiled.errors:
         from sqlalchemy.orm import Session

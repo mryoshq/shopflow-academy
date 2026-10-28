@@ -4,7 +4,8 @@ The lab is a separate PostgreSQL 16 (Compose service ``labdb``) on its own inter
 network, with its own volume and credentials. No platform database is reachable from
 it, and nothing written by a student ever runs with more than the ``lab_reader`` role:
 
-* ``lab_reader``: SELECT on schema ``lab`` only, ``default_transaction_read_only``,
+* ``lab_reader``: SELECT on schema ``lab`` and on the schemas declared by the course
+  (``lab_schemas``, ADR-0032: e.g. shopflow, support, perf) only, ``default_transaction_read_only``,
   ``statement_timeout`` 3 s, bounded ``work_mem`` and ``temp_file_limit``, few connections;
 * ``lab_owner``: owns schema ``lab``, loads the course dataset at import (not superuser);
 * the superuser of ``labdb`` is used only by ``python -m app.lab init`` (roles, idempotent).
@@ -50,7 +51,19 @@ DENIED_FUNCTIONS = re.compile(r"^(pg_|lo_|dblink|set_config|current_setting|quer
                               r"txid|version|inet_|has_|current_user|session_user)", re.IGNORECASE)
 FORBIDDEN_NODES = (exp.Insert, exp.Update, exp.Delete, exp.Merge, exp.Create, exp.Drop, exp.Alter, exp.Command,
                    exp.Into, exp.Lock, exp.Copy, exp.Set, exp.Transaction, exp.Commit, exp.Rollback, exp.Use, exp.Grant)
-EXPLAIN = re.compile(r"^\s*explain(\s+\(\s*analyze\s*(true)?\s*\)|\s+analyze)?\s+", re.IGNORECASE)
+# EXPLAIN, EXPLAIN ANALYZE [VERBOSE], EXPLAIN (ANALYZE, BUFFERS, …): options from a fixed list only (ADR-0032).
+EXPLAIN_OPTION = r"(analyze|buffers|costs|verbose|timing|summary|settings|wal)(\s+(true|false|on|off))?"
+EXPLAIN = re.compile(r"^\s*explain(\s*\(\s*" + EXPLAIN_OPTION + r"(\s*,\s*" + EXPLAIN_OPTION + r")*\s*\)|\s+analyze(\s+verbose)?|\s+verbose)?\s+",
+                     re.IGNORECASE)
+SCHEMA_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,40}$")
+RESERVED_SCHEMAS = {"public", "information_schema", "lab"}
+CATALOG_TTL = 30.0
+_catalog_cache: dict[str, tuple[float, list[str], set[str]]] = {}
+
+
+def valid_schema(name: str) -> bool:
+    """A course schema: lower-case identifier, not a system or reserved one."""
+    return bool(SCHEMA_NAME.fullmatch(name)) and name not in RESERVED_SCHEMAS and not name.startswith("pg_")
 
 
 class LabError(Exception):
@@ -92,11 +105,17 @@ def connect(url: str):
     return psycopg.connect(url.replace("postgresql+psycopg://", "postgresql://"), connect_timeout=3, autocommit=False)
 
 
-def run_query(sql: str, *, url: str | None = None, timeout_ms: int = TIMEOUT_MS, max_rows: int = MAX_ROWS) -> Result:
-    """Run one query with the read-only role, in a READ ONLY transaction always rolled back."""
+def run_query(sql: str, *, url: str | None = None, timeout_ms: int = TIMEOUT_MS, max_rows: int = MAX_ROWS,
+              search_path: list[str] | None = None) -> Result:
+    """Run one query with the read-only role, in a READ ONLY transaction always rolled back.
+
+    ``search_path`` defaults to the one recorded by the course dataset (declared schemas, then lab)."""
     import psycopg
 
     url = url or get_settings().lab_reader_url
+    if url and search_path is None:
+        search_path = lab_catalog(url)[0]
+    path = ", ".join(name for name in (search_path or [SCHEMA]) if name == SCHEMA or valid_schema(name))
     if not url:
         raise LabError("la base de laboratoire n'est pas configurée")
     started = clock.monotonic()
@@ -105,7 +124,7 @@ def run_query(sql: str, *, url: str | None = None, timeout_ms: int = TIMEOUT_MS,
             with connection.cursor() as cursor:
                 cursor.execute("SET TRANSACTION READ ONLY")
                 cursor.execute(f"SET LOCAL statement_timeout = {int(timeout_ms)}")
-                cursor.execute(f"SET LOCAL search_path = {SCHEMA}")
+                cursor.execute(f"SET LOCAL search_path = {path}")
                 cursor.execute(sql.encode("utf-8"))  # type: ignore[arg-type]
                 if cursor.description is None:
                     connection.rollback()
@@ -122,13 +141,40 @@ def run_query(sql: str, *, url: str | None = None, timeout_ms: int = TIMEOUT_MS,
     return Result(columns, rows, len(fetched) > max_rows, int((clock.monotonic() - started) * 1000))
 
 
+def lab_catalog(url: str | None = None) -> tuple[list[str], set[str]]:
+    """(search path, readable tables as « schema.table ») of the lab, as seen by lab_reader (cached 30 s).
+
+    information_schema only lists the tables the role may read: the schemas granted at import are the whitelist.
+    """
+    url = url or get_settings().lab_reader_url or ""
+    cached = _catalog_cache.get(url)
+    if cached and clock.monotonic() - cached[0] < CATALOG_TTL:
+        return cached[1], cached[2]
+    tables = run_query("SELECT table_schema, table_name FROM information_schema.tables "
+                       "WHERE table_schema NOT IN ('pg_catalog', 'information_schema') ORDER BY 1, 2",
+                       url=url, search_path=[SCHEMA], max_rows=5000)
+    readable = {f"{str(row[0]).lower()}.{str(row[1]).lower()}" for row in tables.rows}
+    comment = run_query("SELECT obj_description(oid, 'pg_namespace') FROM pg_namespace WHERE nspname = 'lab'", url=url, search_path=[SCHEMA])
+    path = [SCHEMA]
+    text = str(comment.rows[0][0] or "") if comment.rows else ""
+    if text.startswith("search_path="):
+        path = [name for name in text.split("=", 1)[1].split(",") if name == SCHEMA or valid_schema(name)] or [SCHEMA]
+    _catalog_cache[url] = (clock.monotonic(), path, readable)
+    return path, readable
+
+
 def lab_tables(url: str | None = None) -> set[str]:
-    result = run_query(f"SELECT table_name FROM information_schema.tables WHERE table_schema = '{SCHEMA}'", url=url)
-    return {str(row[0]).lower() for row in result.rows}
+    """Readable lab tables, « schema.table »."""
+    return lab_catalog(url)[1]
 
 
-def check_challenge_sql(sql: str, tables: set[str]) -> str:
-    """Accept one SELECT / WITH … SELECT / EXPLAIN [ANALYZE] SELECT on lab tables only; raise LabRefused otherwise."""
+def check_challenge_sql(sql: str, tables: set[str], search_path: list[str] | None = None) -> str:
+    """Accept one SELECT / WITH … SELECT / EXPLAIN [ANALYZE, BUFFERS…] SELECT on readable lab tables only.
+
+    ``tables`` holds « schema.table » names (a bare name means lab.<name>); an unqualified table must
+    exist in one schema of ``search_path``. Raise LabRefused otherwise."""
+    tables = {name if "." in name else f"{SCHEMA}.{name}" for name in tables}
+    search_path = search_path or [SCHEMA]
     if not sql.strip():
         raise LabRefused("écrivez une requête")
     if len(sql) > MAX_SQL:
@@ -156,7 +202,10 @@ def check_challenge_sql(sql: str, tables: set[str]) -> str:
     for table in tree.find_all(exp.Table):
         name = table.name.lower()
         schema = (table.db or "").lower()
-        if table.catalog or schema not in ("", SCHEMA) or (name not in tables and not (schema == "" and name in ctes)):
+        if schema == "" and name in ctes:
+            continue
+        allowed = f"{schema}.{name}" in tables if schema else any(f"{path}.{name}" in tables for path in search_path)
+        if table.catalog or not allowed:
             raise LabRefused(f"table non permise : {table.sql(dialect='postgres')}")
     return sql
 
@@ -223,28 +272,56 @@ def bootstrap(admin_url: str, owner_password: str, reader_password: str) -> None
                 cursor.execute(sql.SQL(statement).format(db=sql.Identifier(database)))
 
 
-def load_dataset(dataset_sql: str, url: str | None = None) -> int:
-    """Replace the lab schema content with a dataset (run as lab_owner, one transaction). Returns the table count."""
+def load_dataset(dataset_sql: str | list[tuple[str, str]], url: str | None = None, schemas: list[str] | None = None) -> int:
+    """Replace the lab content with the course dataset (run as lab_owner, one transaction). Returns the table count.
+
+    ``dataset_sql`` is one script or the course files ``[(name, sql)]`` run in that order (ADR-0032). Every schema
+    owned by lab_owner is dropped first; the files may create the declared ``schemas`` (``lab`` always exists).
+    lab_reader then gets USAGE and SELECT on lab and the declared schemas only; a schema created but not declared
+    refuses the whole dataset. The search path (declared schemas, then lab) is recorded on schema lab."""
     import psycopg
+    from psycopg import sql as pgsql
 
     url = url or get_settings().lab_owner_url
     if not url:
         raise LabError("la base de laboratoire n'est pas configurée")
+    schemas = list(dict.fromkeys(schemas or []))
+    bad = [name for name in schemas if not valid_schema(name)]
+    if bad:
+        raise LabError(f"schéma non permis : {', '.join(bad)}")
+    files = [("datasets/shopflow-lab.sql", dataset_sql)] if isinstance(dataset_sql, str) else list(dataset_sql)
+    current = "jeu de données"
     try:
         with connect(url) as connection:
             with connection.cursor() as cursor:
-                cursor.execute("SET LOCAL statement_timeout = '60s'")
-                cursor.execute("DROP SCHEMA IF EXISTS lab CASCADE")
+                cursor.execute("SET LOCAL statement_timeout = '120s'")
+                owned = [row[0] for row in cursor.execute(
+                    "SELECT nspname FROM pg_namespace WHERE nspowner = (SELECT oid FROM pg_roles WHERE rolname = current_user) "
+                    "AND nspname <> 'public'").fetchall()]
+                for name in owned:
+                    cursor.execute(pgsql.SQL("DROP SCHEMA IF EXISTS {} CASCADE").format(pgsql.Identifier(name)))
                 cursor.execute("CREATE SCHEMA lab")
-                cursor.execute("SET LOCAL search_path = lab")
-                cursor.execute(dataset_sql.encode("utf-8"))  # type: ignore[arg-type]
-                cursor.execute("GRANT USAGE ON SCHEMA lab TO lab_reader")
-                cursor.execute("GRANT SELECT ON ALL TABLES IN SCHEMA lab TO lab_reader")
-                count = cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = 'lab'").fetchone()[0]
+                for current, text in files:
+                    cursor.execute("SET LOCAL search_path = lab")
+                    cursor.execute(text.encode("utf-8"))  # type: ignore[arg-type]
+                current = "jeu de données"
+                created = {row[0] for row in cursor.execute(
+                    "SELECT nspname FROM pg_namespace WHERE nspowner = (SELECT oid FROM pg_roles WHERE rolname = current_user) "
+                    "AND nspname <> 'public'").fetchall()}
+                undeclared = sorted(created - set(schemas) - {SCHEMA})
+                if undeclared:
+                    raise LabError(f"jeu de données refusé : schéma non déclaré dans `lab_schemas` (00-cours.md) : {', '.join(undeclared)}")
+                for name in [SCHEMA, *schemas]:
+                    cursor.execute(pgsql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(pgsql.Identifier(name)))
+                    cursor.execute(pgsql.SQL("GRANT USAGE ON SCHEMA {} TO lab_reader").format(pgsql.Identifier(name)))
+                    cursor.execute(pgsql.SQL("GRANT SELECT ON ALL TABLES IN SCHEMA {} TO lab_reader").format(pgsql.Identifier(name)))
+                cursor.execute(pgsql.SQL("COMMENT ON SCHEMA lab IS {}").format(pgsql.Literal("search_path=" + ",".join([*schemas, SCHEMA]))))
+                count = cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = ANY(%s)", ([SCHEMA, *schemas],)).fetchone()[0]
             connection.commit()
     except psycopg.Error as exc:
         message = (exc.diag.message_primary if getattr(exc, "diag", None) and exc.diag.message_primary else str(exc)).splitlines()[0]
-        raise LabError(f"jeu de données refusé : {message[:300]}") from exc
+        raise LabError(f"jeu de données refusé ({current}) : {message[:300]}") from exc
+    _catalog_cache.clear()
     return int(count)
 
 
