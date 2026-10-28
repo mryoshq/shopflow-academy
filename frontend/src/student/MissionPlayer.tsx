@@ -6,7 +6,8 @@ import { clearDraft, helpFolded, loadDraft, newIdempotencyKey, rememberHelpFolde
 import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "./ui"
 import { HelpRequest } from "./HelpRequest"
-import { LessonBody } from "./displays"
+import { LessonView } from "./Lesson"
+import { RichText } from "./RichText"
 import { RunPanel } from "./RunPanel"
 import { SqlChallenge } from "./SqlChallenge"
 
@@ -209,9 +210,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         {definition.kind === "lesson" ? <Panel as="section" aria-labelledby="lesson-title">
           <Stack gap="4">
             <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Leçon</Text>
-            <LessonBody body={definition.body ?? ""} />
-            <DataView data={definition.display_data} />
-            <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
+            <LessonView definition={definition} media={<>
+              <DataView data={definition.display_data} />
+              <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
+            </>} />
             {submitError && <Text role="alert" color="red.fg">{submitError}</Text>}
             <Flex gap="3" wrap="wrap" align="center">
               {mission.status === "completed"
@@ -226,7 +228,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         <Panel as="section" aria-labelledby="situation-title">
           <Stack gap="4">
             <Text id="situation-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Situation</Text>
-            <Text fontSize="lg" whiteSpace="pre-wrap">{definition.scenario}</Text>
+            <RichText text={definition.scenario} fontSize="lg" />
             <DataView data={definition.display_data} />
             <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
           </Stack>
@@ -235,7 +237,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         <Panel as="section" aria-labelledby="question-title">
           <Stack gap="4">
             <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Votre décision</Text>
-            <Text fontWeight="semibold" fontSize="lg" whiteSpace="pre-wrap">{definition.instructions}</Text>
+            <RichText text={definition.instructions} fontSize="lg" fontWeight="semibold" />
             {definition.kind === "sql_challenge"
               ? <SqlChallenge missionId={mission.mission_version_id} starter={definition.starter_sql ?? ""} disabled={mission.paused}
                 onResult={(response) => setMission((current) => current && {
@@ -281,7 +283,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                   <Text fontSize="sm" color="app.muted">« {labelOf(item.choice_id)} »</Text><Text>{item.text}</Text>
                 </Box>)}
               </Stack>}
-              {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">Explication</Text><Text>{result.explanation}</Text></Box>}
+              {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">Explication</Text><RichText text={result.explanation} /></Box>}
               <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>Essai n° {result.attempts_count}{result.replayed ? " (déjà enregistré)" : ""} : {formatPoints(result.points)} / {result.score.possible} pts. Meilleur score conservé : {formatPoints(result.score.best)} pts.</Text>
               <Flex gap="3" wrap="wrap">
                 {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry}><Icon name="retry" />Réessayer</Button>}
@@ -290,7 +292,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               </Flex>
             </Stack>
           </Panel>}
-          {!result && mission.explanation && <Panel><Text fontWeight="semibold" mb="1">Explication</Text><Text>{mission.explanation}</Text></Panel>}
+          {!result && mission.explanation && <Panel><Text fontWeight="semibold" mb="1">Explication</Text><RichText text={mission.explanation} /></Panel>}
         </Box>
         </>}
       </Stack>

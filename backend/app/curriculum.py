@@ -26,7 +26,7 @@ PUBLIC_DEFINITION_FIELDS = {
     "schema_version", "kind", "scenario", "instructions", "objective_ids",
     "prerequisite_mission_ids", "choices", "match_targets", "display_data",
     "resources", "hint_count", "estimated_duration_minutes", "bonus",
-    "body", "run", "starter_sql",
+    "body", "run", "starter_sql", "objective", "hook", "key_terms", "example", "practice",
 }
 display_adapter = TypeAdapter(DisplayData)
 

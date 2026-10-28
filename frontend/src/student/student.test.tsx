@@ -266,7 +266,8 @@ it("player shows a handled help request and lets the student ask again", async (
 
 it("renders a line chart with gaps, a table alternative, code, comparison and lesson lists", async () => {
   const { DataView } = await import("./activities")
-  const { LessonBody, tokenize } = await import("./displays")
+  const { tokenize } = await import("./displays")
+  const { RichText } = await import("./RichText")
   wrap(<DataView data={{ kind: "line_chart", title: "Rejets", labels: ["Lun", "Mar", "Mer"], unit: "lignes",
     series: [{ name: "Avant", values: [40, null, 42] }, { name: "Après", values: [10, null, 9] }] }} />)
   expect(screen.getByText("Rejets")).toBeInTheDocument()
@@ -283,7 +284,7 @@ it("renders a line chart with gaps, a table alternative, code, comparison and le
   expect(screen.getByText("Résultat")).toBeInTheDocument()
   expect(tokenize("SELECT 'a' -- c", "sql").map((token) => token.kind)).toEqual(["keyword", "plain", "string", "plain", "comment"])
   cleanup()
-  wrap(<LessonBody body={"Le grain d'une table.\n\nDans ShopFlow :\n- orders : une commande ;\n- order_items : un article."} />)
+  wrap(<RichText text={"Le grain d'une table.\n\nDans ShopFlow :\n- orders : une commande ;\n- order_items : un article."} />)
   expect(screen.getAllByRole("listitem")).toHaveLength(2)
 })
 

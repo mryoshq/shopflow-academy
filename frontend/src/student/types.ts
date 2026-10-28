@@ -53,6 +53,11 @@ export type Dashboard = { display_name: string; ai_enabled: boolean; courses: Da
 
 export type PlayerDefinition = {
   kind: MissionKind
+  objective?: string
+  hook?: string
+  key_terms?: { term: string; definition: string }[]
+  example?: string
+  practice?: string
   scenario: string
   instructions: string
   choices: Choice[]

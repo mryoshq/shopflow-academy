@@ -146,15 +146,3 @@ export function Comparison({ data }: { data: ComparisonDisplay }) {
 }
 
 /** Lesson text: paragraphs separated by a blank line, "- " lists. Plain text only. */
-export function LessonBody({ body }: { body: string }) {
-  const blocks = body.split(/\n\s*\n/).map((block) => block.split("\n").filter((line) => line.trim()))
-  const out: ReactNode[] = []
-  blocks.forEach((lines, index) => {
-    const items = lines.filter((line) => line.trim().startsWith("- "))
-    const text = lines.filter((line) => !line.trim().startsWith("- "))
-    if (text.length) out.push(<Text key={`p${index}`} fontSize="lg" whiteSpace="pre-wrap">{text.join("\n")}</Text>)
-    if (items.length) out.push(<Stack as="ul" key={`l${index}`} gap="1" pl="6" m="0" fontSize="lg">
-      {items.map((line, position) => <li key={position}>{line.trim().slice(2)}</li>)}</Stack>)
-  })
-  return <Stack gap="3">{out}</Stack>
-}

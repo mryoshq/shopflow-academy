@@ -68,7 +68,7 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
   await expect(student.getByText("Chaque article pointe vers sa commande. C-101 a deux articles.")).toBeVisible()
   await expect(student.locator("figure svg path[marker-end]")).toHaveCount(3)
   await student.getByRole("button", { name: "Étape suivante" }).click()
-  await expect(student.getByText("100 DH", { exact: true })).toBeVisible()
+  await expect(student.locator("figure").getByText("100 DH", { exact: true })).toBeVisible()
   await student.getByRole("button", { name: "Description textuelle de toutes les étapes" }).click()
   await expect(student.getByText(/Erreur : Les frais de C-101 sont comptés deux fois/)).toBeVisible()
   expect(await serious(student)).toEqual([])
@@ -170,3 +170,40 @@ test("every mission of the Markdown course passes axe in the dark theme", async 
   await student.screenshot({ path: `${shots}/09-sombre-derniere-mission.png`, fullPage: true, animations: "disabled" })
   await context.close()
 })
+
+for (const theme of ["light", "dark"] as const) {
+  test(`structured lesson (ADR-0022) in the ${theme} theme: reading order, media description on request, axe`, async ({ browser }) => {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
+    await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
+    const student = await context.newPage()
+    await login(student, "demo.etudiant10")
+    const dashboard = await (await student.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string }[] }[] }
+    const course = dashboard.courses.find((item) => item.title === TITLE)
+    test.skip(!course, "course not given to demo.etudiant10 (run the first test of this file first)")
+    const lesson = course!.missions.find((item) => item.title === "La jointure pas à pas")!
+    await student.goto(`/#/mission/${lesson.mission_version_id}`)
+    await expect(student.getByRole("heading", { level: 1, name: "La jointure pas à pas" })).toBeVisible()
+    await expect(student.locator("html")).toHaveClass(new RegExp(theme))
+
+    await expect(student.getByText(/^Objectif :/)).toBeVisible()
+    await expect(student.getByRole("definition").first()).toContainText("Ce que représente une ligne")
+    await expect(student.getByRole("region", { name: "Exemple résolu" }).locator("ol li")).toHaveCount(3)
+    await expect(student.getByRole("region", { name: "Exemple résolu" }).locator("code")).toHaveText("JOIN order_items")
+    // Reading order: objective, hook, vocabulary, example, media, « À vous ».
+    const text = await student.locator("main").innerText()
+    const order = ["Objectif :", "La comptabilité attend", "Vocabulaire", "Exemple résolu", "Jointure orders et order_items", "À vous"].map((part) => text.indexOf(part))
+    expect(order.every((position) => position >= 0)).toBe(true)
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+
+    // The media description is never in the lesson text; screen readers get it, sighted readers open it.
+    const media = student.getByRole("group", { name: "Média : Jointure orders et order_items : 70 DH deviennent 100 DH" })
+    await expect(media).toHaveAccessibleDescription(/Animation en quatre étapes/)
+    await expect(student.getByText(/Animation en quatre étapes/)).toBeHidden()
+    expect(await serious(student)).toEqual([])
+    await student.screenshot({ path: `${shots}/10-lecon-structuree-${theme === "light" ? "clair" : "sombre"}.png`, fullPage: true, animations: "disabled" })
+    await student.getByRole("button", { name: "Description du média" }).click()
+    await expect(student.getByText(/Animation en quatre étapes/)).toBeVisible()
+    expect(await serious(student)).toEqual([])
+    await context.close()
+  })
+}

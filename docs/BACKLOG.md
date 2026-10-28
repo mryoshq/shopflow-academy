@@ -23,6 +23,7 @@
 - [x] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017). Preuves : pytest 163 dont 55 sur la base de laboratoire, Vitest 42, Playwright (exécution, défi SQL réussi et refusé) — voir PROGRESS.
 - [x] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion. ADR-0021. Preuves : pytest 198 (avec base de laboratoire), Vitest 43, build, Playwright (thèmes clair et sombre avec axe, 390×844, raccourcis, réinitialisation) — voir PROGRESS.
 - [x] **S2-E** `docs/SUGGESTIONS.md` : 14 suggestions classées par valeur et effort, décisions du propriétaire attendues.
+- [x] **S2-G** Mise en page des leçons (objectif, accroche, vocabulaire, exemple résolu, « À vous »), description des médias, mise en forme légère. ADR-0022. Preuves : pytest 214 (avec base de laboratoire), Vitest 48, build, Playwright (leçon structurée en clair et en sombre avec axe) — voir PROGRESS.
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
