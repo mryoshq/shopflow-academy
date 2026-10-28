@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     class_label: str = "Classe B3 IA/Data"
     # Course videos copied at import, served read-only by the gateway under /media/.
     media_dir: str = "/srv/media"
+    # Project files of the teams (ADR-0034): same volume, sub-folder never served by the gateway.
+    project_dir: str = "/srv/media/project"
     # Laboratory database (service labdb, ADR-0017). Empty = SQL execution unavailable.
     lab_reader_url: str = ""
     lab_owner_url: str = ""

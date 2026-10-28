@@ -42,6 +42,22 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"code": "INTRUS", "statement": "Objectif ajouté par un autre enseignant"}
     if path.endswith("/missions"):
         return {"title": "Intrusion", "slug": "intrusion"}
+    if path.endswith("/project/teams"):
+        return {"user_ids": [extra["student_id"]]}
+    if path.endswith("/project/milestones"):
+        return {"title": "Intrusion"}
+    if path.endswith("/project/slots"):
+        return {"starts_at": "2026-11-23T10:00:00+01:00", "ends_at": "2026-11-23T10:20:00+01:00"}
+    if path.endswith("/grade"):
+        return {"sql": 4}
+    if path.endswith("/comments"):
+        return {"text": "Commentaire d’un autre enseignant"}
+    if "/project/teams/" in path and method == "PUT":
+        return {"user_ids": [extra["student_id"]]}
+    if "/project/slots/" in path and method == "PATCH":
+        return {"clear_team": True}
+    if "/project/milestones/" in path and method == "PATCH":
+        return {"title": "Intrusion"}
     if "/observers/" in path and method == "PATCH":
         return {"enabled": False}  # ADR-0025: an intruder tries to disable another teacher's observer
     if path.endswith(("/modules", "/chapters")) or method == "PATCH":
@@ -60,8 +76,10 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
     return {}
 
 
-def test_second_teacher_cannot_reach_any_owned_course_object(env):
+def test_second_teacher_cannot_reach_any_owned_course_object(env, monkeypatch, tmp_path):
     clients, engine = env
+    from app.config import get_settings
+    monkeypatch.setattr(get_settings(), "project_dir", str(tmp_path / "project"))
     owner = clients["teacher"]
     # Give the course a history event with a saved draft, so the backup route has a real target.
     ids = owner_ids(engine)
@@ -73,7 +91,17 @@ def test_second_teacher_cannot_reach_any_owned_course_object(env):
     before = owner.get(f"/api/v1/teacher/courses/{ids['course_id']}").json()
     intruder = other_teacher(engine)
     help_id = post(clients["a"], f"/api/v1/student/missions/{extra['version_id']}/help", {"message": "Je bloque"}).json()["id"]
-    values = {**ids, "assignment_id": klass["id"], "user_id": me["id"], "help_id": help_id, "run_id": "requete"}
+    # ADR-0034: one team, milestone and slot of the owner's class project, and a file of that team.
+    base = f"/api/v1/teacher/classes/{klass['id']}/project"
+    team_id = post(owner, f"{base}/teams", {"user_ids": [me["id"]]}).json()["team_id"]
+    milestone_id = post(owner, f"{base}/milestones", {"title": "Conception"}).json()["id"]
+    slot_id = post(owner, f"{base}/slots", {"starts_at": "2026-11-23T09:00:00+01:00", "ends_at": "2026-11-23T09:20:00+01:00"}).json()["id"]
+    uploaded = clients["a"].post("/api/v1/student/project/files?name=plan.md", content=b"# Plan",
+                                 headers={"X-CSRF-Token": clients["a"].cookies["academy_csrf"]})
+    assert uploaded.status_code == 201, uploaded.text
+    file_id = uploaded.json()["id"]
+    values = {**ids, "assignment_id": klass["id"], "user_id": me["id"], "help_id": help_id, "run_id": "requete",
+              "team_id": team_id, "milestone_id": milestone_id, "slot_id": slot_id, "file_id": file_id}
     checked, failures = 0, []
     for path, method in api_routes():
         if not path.startswith("/api/v1/teacher/") or "{" not in path or NOT_COURSE_SCOPED.match(path):

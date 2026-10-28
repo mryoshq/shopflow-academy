@@ -348,4 +348,118 @@ class Observer(Base):
     owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     show_answers: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     named: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    # ADR-0034: the project space stays hidden from the observer unless the teacher allows it.
+    project_access: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+# Project space (ADR-0034): teams of one or two students, milestones, versioned submissions, grades, defence slots.
+
+class ProjectTeam(Base):
+    __tablename__ = "project_teams"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectMember(Base):
+    """One person belongs to one team per class (unique cohort + user)."""
+    __tablename__ = "project_members"
+    __table_args__ = (UniqueConstraint("cohort_id", "user_id", name="uq_project_member"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False)
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+
+
+class ProjectInvitation(Base):
+    __tablename__ = "project_invitations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    invited_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectMilestone(Base):
+    __tablename__ = "project_milestones"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    instructions: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    deliverables: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectFile(Base):
+    """A file uploaded by a team, stored on disk outside the database (content-addressed)."""
+    __tablename__ = "project_files"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    stored: Mapped[str] = mapped_column(String(80), nullable=False)
+    size: Mapped[int] = mapped_column(Integer, nullable=False)
+    uploaded_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectSubmission(Base):
+    """One version of a team's work for a milestone; every submission is a new timestamped version."""
+    __tablename__ = "project_submissions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    milestone_id: Mapped[int] = mapped_column(ForeignKey("project_milestones.id", ondelete="CASCADE"), nullable=False, index=True)
+    version: Mapped[int] = mapped_column(Integer, nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    link: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    file_ids: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    late: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    submitted_by: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectComment(Base):
+    __tablename__ = "project_comments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
+    milestone_id: Mapped[int | None] = mapped_column(ForeignKey("project_milestones.id", ondelete="CASCADE"), nullable=True)
+    author_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectGrade(Base):
+    """Project grade on 20, apart from the course grade: common points + individual understanding (/4 each)."""
+    __tablename__ = "project_grades"
+
+    team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), primary_key=True)
+    sql: Mapped[float | None] = mapped_column(Float, nullable=True)
+    python: Mapped[float | None] = mapped_column(Float, nullable=True)
+    nosql: Mapped[float | None] = mapped_column(Float, nullable=True)
+    airflow: Mapped[float | None] = mapped_column(Float, nullable=True)
+    reproducibility: Mapped[float | None] = mapped_column(Float, nullable=True)
+    individual: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    comment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectSlot(Base):
+    __tablename__ = "project_slots"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    label: Mapped[str] = mapped_column(String(120), nullable=False, default="")
+    team_id: Mapped[int | None] = mapped_column(ForeignKey("project_teams.id", ondelete="SET NULL"), nullable=True)

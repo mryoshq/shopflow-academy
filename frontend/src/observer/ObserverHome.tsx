@@ -4,9 +4,10 @@ import { api, ApiError } from "../api"
 import { CoursePreview, type PreviewTree } from "../CoursePreview"
 import type { MissionDefinition } from "../studioTypes"
 import { Results } from "../teacher/Results"
+import { TeacherProject } from "../project/TeacherProject"
 import { ErrorState, LoadingState } from "../student/ui"
 
-type Me = { owner: string; named: boolean; show_answers: boolean }
+type Me = { owner: string; named: boolean; show_answers: boolean; project_access?: boolean }
 type ObservedClass = { id: number; cohort: string; course_title: string; version: number; paused: boolean; student_count: number }
 type ObservedCourse = PreviewTree & { show_answers: boolean; corrections: Record<string, MissionDefinition> }
 type ProgressRow = { position: number; display_name: string; completed: number; total: number; lessons_read: number; lessons_total: number
@@ -57,10 +58,12 @@ export function ObserverHome() {
           <Tabs.Trigger value="cours">Aperçu du cours</Tabs.Trigger>
           <Tabs.Trigger value="progression">Progression</Tabs.Trigger>
           <Tabs.Trigger value="resultats">Résultats</Tabs.Trigger>
+          {me.data.project_access && <Tabs.Trigger value="projet">Projet</Tabs.Trigger>}
         </Tabs.List>
         <Tabs.Content value="cours" pt="6"><ObservedCoursePanel assignmentId={current.id} /></Tabs.Content>
         <Tabs.Content value="progression" pt="6"><ProgressPanel assignmentId={current.id} /></Tabs.Content>
         <Tabs.Content value="resultats" pt="6"><Results assignmentId={current.id} scope="observer" /></Tabs.Content>
+        {me.data.project_access && <Tabs.Content value="projet" pt="6"><TeacherProject assignmentId={current.id} readOnly /></Tabs.Content>}
       </Tabs.Root>
     </>}
   </Stack>

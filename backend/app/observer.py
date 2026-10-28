@@ -57,7 +57,8 @@ def pseudonyms(names: list[str], named: bool) -> dict[str, str]:
 def observer_me(response: Response, auth: AuthContext = Depends(require_observer), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
     row, owner = observer_scope(db, auth)
-    return {"owner": owner.user.username.split("@", 1)[0], "named": row.named, "show_answers": row.show_answers}
+    return {"owner": owner.user.username.split("@", 1)[0], "named": row.named, "show_answers": row.show_answers,
+            "project_access": row.project_access}
 
 
 @router.get("/observer/classes", tags=["observer"])
@@ -165,6 +166,7 @@ class ObserverUpdate(BaseModel):
     enabled: bool | None = None
     show_answers: bool | None = None
     named: bool | None = None
+    project_access: bool | None = None
 
 
 def owned_observer(db: Session, auth: AuthContext, user_id: int) -> tuple[Observer, User]:
@@ -177,7 +179,7 @@ def owned_observer(db: Session, auth: AuthContext, user_id: int) -> tuple[Observ
 
 def observer_out(row: Observer, user: User) -> dict:
     return {"id": user.id, "username": user.username, "enabled": user.enabled, "show_answers": row.show_answers, "named": row.named,
-            "created_at": row.created_at.isoformat() if row.created_at else None}
+            "project_access": row.project_access, "created_at": row.created_at.isoformat() if row.created_at else None}
 
 
 def teacher_audit(db: Session, auth: AuthContext, action: str, user_id: int, details: dict | None = None) -> None:
@@ -232,6 +234,8 @@ def update_observer(user_id: int, payload: ObserverUpdate, response: Response, a
         row.show_answers = changes["show_answers"]
     if "named" in changes:
         row.named = changes["named"]
+    if "project_access" in changes:
+        row.project_access = changes["project_access"]
     teacher_audit(db, auth, "observer.update", user.id, changes)
     db.commit()
     return observer_out(row, user)

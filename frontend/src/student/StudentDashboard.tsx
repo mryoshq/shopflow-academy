@@ -52,6 +52,11 @@ export function StudentDashboard({ navigate }: Props) {
         Continuer : {target.title}<Icon name="arrow-right" />
       </Button>}
     </Flex>
+    {data.courses.length > 0 && <Flex as="nav" aria-label="Projet" gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">Projet CampusEquip</Text>
+        <Text fontSize="sm" color="app.muted">Binôme, jalons, dépôts et soutenance.</Text></Stack>
+      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/projet")}>Ouvrir l’espace projet<Icon name="arrow-right" /></Button>
+    </Flex>}
 
     {data.courses.length === 0 ? <Panel>
       <Stack gap="2"><Text fontWeight="semibold">Aucun cours pour le moment</Text>

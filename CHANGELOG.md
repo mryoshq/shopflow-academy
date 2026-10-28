@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 — Sprint 3, partie R : espace projet CampusEquip (`claude/lucid-brahmagupta-htwgun-r`)
+
+- Binômes par invitation (ou seul), une personne par binôme ; l'enseignant corrige la composition.
+- Jalons (consignes, date limite, livrables) et dépôts versionnés : texte avec tableaux, lien HTTPS, fichiers (pdf, png, jpg, md, zip ; 20 Mo) stockés hors base ; retard signalé.
+- Enseignant : dépôts par jalon, commentaires visibles du binôme, grille sur 20 séparée du cours, export CSV, planning des soutenances visible des étudiants. Observateur : rien sans autorisation. Tout est audité. Migration `0014_project`. ADR-0034.
+
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
 - Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.

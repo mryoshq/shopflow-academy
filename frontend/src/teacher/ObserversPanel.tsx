@@ -3,7 +3,7 @@ import { Badge, Box, Button, Field, Flex, Heading, Input, Stack, Table, Text, ch
 import { api, ApiError } from "../api"
 import { Panel } from "../student/ui"
 
-type ObserverAccount = { id: number; username: string; enabled: boolean; show_answers: boolean; named: boolean; created_at: string | null }
+type ObserverAccount = { id: number; username: string; enabled: boolean; show_answers: boolean; named: boolean; project_access?: boolean; created_at: string | null }
 type View = { id: number; observer: string; view: string; assignment_id: number | null; details: Record<string, unknown>; created_at: string | null }
 const VIEW_LABEL: Record<string, string> = {
   classes: "Liste des classes", course: "Aperçu du cours", progress: "Progression", results: "Résultats", "results.csv": "Export CSV des résultats",
@@ -52,7 +52,7 @@ export function ObserversPanel() {
       setBusy(false)
     }
   }
-  async function change(observer: ObserverAccount, patch: Partial<Pick<ObserverAccount, "enabled" | "show_answers" | "named">>) {
+  async function change(observer: ObserverAccount, patch: Partial<Pick<ObserverAccount, "enabled" | "show_answers" | "named" | "project_access">>) {
     setMessage("")
     try {
       await api(`/teacher/observers/${observer.id}`, "PATCH", patch)
@@ -107,6 +107,7 @@ export function ObserversPanel() {
         <Flex gap="4" wrap="wrap" mt="2">
           <Toggle label="Noms des étudiants visibles" checked={observer.named} onChange={(value) => void change(observer, { named: value })} />
           <Toggle label="Corrigés visibles dans l’aperçu" checked={observer.show_answers} onChange={(value) => void change(observer, { show_answers: value })} />
+          <Toggle label="Espace projet visible" checked={Boolean(observer.project_access)} onChange={(value) => void change(observer, { project_access: value })} />
         </Flex>
       </Panel>)}</Stack>)}
     <Stack gap="2" as="section" aria-label="Consultations des observateurs">
