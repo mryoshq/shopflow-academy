@@ -54,6 +54,8 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
       - name: Start the test stack (same procedure as on the Mac)
         run: python3 scripts/test_stack.py up
+      - name: Import the Markdown demonstration course (compile, draft, publish)
+        run: echo demo.enseignant | python3 scripts/course_md.py import docs/examples/demo-course --test-stack --publish
       - run: npm ci
         working-directory: frontend
       - run: npx playwright install --with-deps chromium

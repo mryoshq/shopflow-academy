@@ -1,4 +1,4 @@
-import type { Choice, DisplayData, MissionKind } from "../studioTypes"
+import type { Choice, DisplayData, MissionKind, RunView } from "../studioTypes"
 
 export type MissionStatus = "locked" | "not_started" | "in_progress" | "completed"
 
@@ -28,7 +28,7 @@ export type DashboardBlock = {
   done: boolean
   mission_ids: number[]
 }
-export type DashboardModule = { title: string; blocks: DashboardBlock[] }
+export type DashboardModule = { title: string; description?: string; blocks: DashboardBlock[] }
 
 export type HelpRequestState = { id: number; status: "pending" | "handled"; message: string; created_at: string; handled_at: string | null }
 
@@ -61,6 +61,9 @@ export type PlayerDefinition = {
   resources: string[]
   hint_count: number
   estimated_duration_minutes: number
+  body?: string
+  run?: RunView[]
+  starter_sql?: string
 }
 
 export type PlayerMission = {

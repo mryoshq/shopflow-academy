@@ -17,7 +17,7 @@ REQUIRED = [
 SKILLS = [
     'academy-architect', 'curriculum-mapper', 'mission-author',
     'grading-engine', 'ui-ux', 'qa-e2e', 'deploy-ops',
-    'session-handoff', 'bounded-agent-loop'
+    'session-handoff', 'bounded-agent-loop', 'course-import'
 ]
 
 def main():

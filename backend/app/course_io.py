@@ -71,6 +71,7 @@ class ChapterDoc(BaseModel):
 class ModuleDoc(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: str = Field(min_length=1, max_length=200)
+    description: str = Field(default="", max_length=1000)
     sort_order: int = Field(default=0, ge=0, le=10_000)
     chapters: list[ChapterDoc] = Field(default_factory=list, max_length=50)
 
@@ -78,6 +79,11 @@ class ModuleDoc(BaseModel):
     @classmethod
     def safe(cls, value: str) -> str:
         return plain(value)
+
+    @field_validator("description")
+    @classmethod
+    def safe_description(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
 
 
 class CourseInfo(BaseModel):
@@ -190,7 +196,7 @@ def export_tree(tree: dict, definitions: dict[int, dict], source: dict) -> dict:
                 missions.append({"slug": mission["slug"], "title": mission["title"], "sort_order": mission["sort_order"],
                                  "objective_codes": codes, "prerequisite_slugs": prerequisites, "definition": body})
             chapters.append({"title": chapter["title"], "sort_order": chapter["sort_order"], "missions": missions})
-        modules.append({"title": module["title"], "sort_order": module["sort_order"], "chapters": chapters})
+        modules.append({"title": module["title"], "description": module.get("description", ""), "sort_order": module["sort_order"], "chapters": chapters})
     return {
         "format": FORMAT, "format_version": 1, "exported_at": datetime.now(timezone.utc).isoformat(), "source": source,
         "course": {"slug": tree["slug"], "title": tree["title"], "description": tree.get("description", "")},
@@ -281,7 +287,7 @@ def import_course(payload: ImportRequest, response: Response, dry_run: bool = Qu
         objective_ids[item.code] = objective.id
     created: list[tuple[Mission, MissionDoc]] = []
     for module_doc in document.modules:
-        module = CourseModule(course_id=course.id, title=module_doc.title, sort_order=module_doc.sort_order)
+        module = CourseModule(course_id=course.id, title=module_doc.title, description=module_doc.description, sort_order=module_doc.sort_order)
         db.add(module)
         db.flush()
         for chapter_doc in module_doc.chapters:

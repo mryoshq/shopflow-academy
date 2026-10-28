@@ -1,23 +1,10 @@
 import { useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Text } from "@chakra-ui/react"
-import type { MissionDefinition, StudentDefinition, StudentMission, CourseModule } from "./studioTypes"
+import type { MissionDefinition, StudentMission, CourseModule } from "./studioTypes"
+import { DataView } from "./student/activities"
+import { CodeBlock, LessonBody } from "./student/displays"
 
 export type PreviewTree = { title: string; description: string; modules: CourseModule<StudentMission>[] }
-
-function DisplayData({ data }: { data: StudentDefinition["display_data"] }) {
-  if (!data) return null
-  if (data.kind === "table") return <Box overflowX="auto" borderWidth="1px" rounded="md" bg="white">
-    <table style={{ borderCollapse: "collapse", width: "100%" }}>
-      <thead><tr>{data.columns.map((column, index) => <th key={index} style={{ textAlign: "left", padding: 10, borderBottom: "1px solid #d8dfd9" }}>{column}</th>)}</tr></thead>
-      <tbody>{data.rows.map((row, rowIndex) => <tr key={rowIndex}>{row.map((cell, index) => <td key={index} style={{ padding: 10, borderBottom: "1px solid #edf0ec" }}>{cell === null ? "—" : String(cell)}</td>)}</tr>)}</tbody>
-    </table>
-  </Box>
-  const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
-  return <Stack gap="3" p="4" borderWidth="1px" rounded="md" bg="white" aria-label={data.title}>
-    <Text fontWeight="semibold">{data.title}</Text>
-    {data.labels.map((label, index) => <Flex key={index} align="center" gap="3"><Text minW="28">{label}</Text><Box flex="1" bg="gray.100" rounded="sm"><Box bg="brand.solid" h="5" width={`${Math.max(2, Math.abs(data.values[index]) / max * 100)}%`} rounded="sm" /></Box><Text minW="20" textAlign="right">{data.values[index]} {data.unit}</Text></Flex>)}
-  </Stack>
-}
 
 function sameSet(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value) => b.includes(value))
@@ -59,15 +46,19 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
 
   return <Stack gap="5" p="6" bg="white" borderWidth="1px" rounded="xl" aria-label={`Aperçu de ${mission.title}`}>
     <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="brand" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
-    <Text whiteSpace="pre-wrap">{definition.scenario}</Text>
-    <DisplayData data={definition.display_data} />
-    <Text fontWeight="semibold" whiteSpace="pre-wrap">{definition.instructions}</Text>
-    {definition.kind === "reorder" ? <Stack gap="2">{selected.map((id, index) => <Flex key={id} gap="2" align="center"><Text flex="1">{index + 1}. {definition.choices.find((choice) => choice.id === id)?.label}</Text><Button size="sm" variant="outline" onClick={() => moveChoice(index, -1)} disabled={index === 0}>Monter</Button><Button size="sm" variant="outline" onClick={() => moveChoice(index, 1)} disabled={index === selected.length - 1}>Descendre</Button></Flex>)}</Stack>
+    {definition.kind === "lesson" && definition.body && <LessonBody body={definition.body} />}
+    {definition.scenario && <Text whiteSpace="pre-wrap">{definition.scenario}</Text>}
+    <DataView data={definition.display_data} />
+    {(definition.run ?? []).map((run) => <CodeBlock key={run.id} code={run.code} language={run.language} title={run.label} />)}
+    {definition.instructions && <Text fontWeight="semibold" whiteSpace="pre-wrap">{definition.instructions}</Text>}
+    {definition.kind === "lesson" ? <Text color="app.muted">Leçon non notée : l’étudiant clique « J’ai compris ».</Text>
+      : definition.kind === "sql_challenge" ? <CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ (modifiable par l’étudiant)" />
+      : definition.kind === "reorder" ? <Stack gap="2">{selected.map((id, index) => <Flex key={id} gap="2" align="center"><Text flex="1">{index + 1}. {definition.choices.find((choice) => choice.id === id)?.label}</Text><Button size="sm" variant="outline" onClick={() => moveChoice(index, -1)} disabled={index === 0}>Monter</Button><Button size="sm" variant="outline" onClick={() => moveChoice(index, 1)} disabled={index === selected.length - 1}>Descendre</Button></Flex>)}</Stack>
       : definition.kind === "matching" ? <Stack gap="3">{definition.choices.map((choice) => <Flex key={choice.id} align="center" gap="3"><Text flex="1">{choice.label}</Text><NativeSelect.Root maxW="52"><NativeSelect.Field aria-label={`Associer ${choice.label}`} value={pairs[choice.id] ?? ""} onChange={(event) => { setPairs({ ...pairs, [choice.id]: event.target.value }); setMessage("") }}><option value="">Choisir une cible</option>{definition.match_targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Flex>)}</Stack>
         : <Stack gap="2">{definition.choices.map((choice) => <label key={choice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, border: "1px solid #d8dfd9", borderRadius: 8 }}><input type={definition.kind === "multiple_choice" ? "checkbox" : "radio"} name={`preview-${mission.id}`} checked={selected.includes(choice.id)} onChange={() => { setSelected(definition.kind === "multiple_choice" ? selected.includes(choice.id) ? selected.filter((id) => id !== choice.id) : [...selected, choice.id] : [choice.id]); setMessage("") }} />{choice.label}</label>)}</Stack>}
     {definition.hints.length > 0 && <Box><Text fontWeight="semibold">Indices disponibles</Text><Stack gap="1" mt="2">{definition.hints.map((hint, index) => <Text key={index}>{index + 1}. {hint}</Text>)}</Stack></Box>}
     {definition.resources.length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "#0F5047", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
-    {correction ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="gray.600">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
+    {correction && definition.kind !== "lesson" && definition.kind !== "sql_challenge" ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="gray.600">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
   </Stack>
 }
 

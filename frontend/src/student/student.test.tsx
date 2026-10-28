@@ -263,3 +263,65 @@ it("player shows a handled help request and lets the student ask again", async (
   expect(await screen.findByText("Demande traitée")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "J’ai besoin d’une explication" })).toBeInTheDocument()
 })
+
+it("renders a line chart with gaps, a table alternative, code, comparison and lesson lists", async () => {
+  const { DataView } = await import("./activities")
+  const { LessonBody, tokenize } = await import("./displays")
+  wrap(<DataView data={{ kind: "line_chart", title: "Rejets", labels: ["Lun", "Mar", "Mer"], unit: "lignes",
+    series: [{ name: "Avant", values: [40, null, 42] }, { name: "Après", values: [10, null, 9] }] }} />)
+  expect(screen.getByText("Rejets")).toBeInTheDocument()
+  expect(screen.getByText(/donnée absente \(ce n’est pas zéro\)/)).toBeInTheDocument()
+  expect(screen.getByText(/Avant : Lun 40 lignes, Mar donnée absente/)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Afficher les données en tableau" }))
+  expect(screen.getByRole("columnheader", { name: "Après (lignes)" })).toBeInTheDocument()
+  cleanup()
+  wrap(<DataView data={{ kind: "comparison", items: [
+    { kind: "code", language: "sql", title: "Script de Hamza", code: "INSERT INTO orders VALUES (1, 'a'); -- simple" },
+    { kind: "table", title: "Résultat", columns: ["total"], rows: [[70]] }] }} />)
+  expect(screen.getByRole("group", { name: "Comparaison côte à côte" })).toBeInTheDocument()
+  expect(screen.getByLabelText("Script de Hamza (SQL, 1 ligne)")).toHaveTextContent("INSERT INTO orders VALUES (1, 'a'); -- simple")
+  expect(screen.getByText("Résultat")).toBeInTheDocument()
+  expect(tokenize("SELECT 'a' -- c", "sql").map((token) => token.kind)).toEqual(["keyword", "plain", "string", "plain", "comment"])
+  cleanup()
+  wrap(<LessonBody body={"Le grain d'une table.\n\nDans ShopFlow :\n- orders : une commande ;\n- order_items : un article."} />)
+  expect(screen.getAllByRole("listitem")).toHaveLength(2)
+})
+
+it("a lesson is marked as understood once and offers the next mission", async () => {
+  const lesson = mission({ definition: { ...base, kind: "lesson", scenario: "", instructions: "", choices: [], body: "Le grain d'une table.", hint_count: 0 }, hint_count: 0 })
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/understood") && init?.method === "POST") return json({ attempt_id: 1, correct: true, replayed: false, attempts_count: 1, points: 0, score: { best: 0, possible: 0, bonus: false }, feedback: [], explanation: null }, 201)
+    return json(lesson)
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  expect(await screen.findByText("Le grain d'une table.")).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: "Tester ma décision" })).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "J’ai compris" }))
+  expect(await screen.findByText("Leçon comprise")).toBeInTheDocument()
+  expect(screen.getAllByRole("button", { name: /Mission suivante/ }).length).toBeGreaterThan(0)
+})
+
+it("preconfigured runs show their code; a SQL challenge shows its starting query", async () => {
+  const withRun = mission({ definition: { ...base, run: [{ id: "q1", label: "Exécuter la requête actuelle", language: "sql", code: "SELECT SUM(total) FROM orders;" }] } })
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(withRun)))
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  expect(await screen.findByLabelText(/Exécuter la requête actuelle \(SQL/)).toHaveTextContent("SELECT SUM(total) FROM orders;")
+  cleanup()
+  const challenge = mission({ definition: { ...base, kind: "sql_challenge", choices: [], starter_sql: "SELECT city FROM customers;" } })
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(challenge)))
+  wrap(<MissionPlayer missionId={11} navigate={vi.fn()} />)
+  expect(await screen.findByLabelText(/Requête de départ/)).toHaveTextContent("SELECT city FROM customers;")
+  expect(screen.queryByRole("button", { name: "Tester ma décision" })).not.toBeInTheDocument()
+})
+
+it("the studio leaves Markdown-only activities to the course source", async () => {
+  const { isMarkdownOnly } = await import("../MissionEditor")
+  const choice = { schema_version: 1 as const, kind: "single_choice" as const, scenario: "s", instructions: "i", objective_ids: [1], prerequisite_mission_ids: [],
+    choices: [], correct_ids: [], match_targets: [], correct_pairs: {}, action_id: null, display_data: null, resources: [], hints: [], feedback: {},
+    max_points: 5, estimated_duration_minutes: 10, bonus: false }
+  expect(isMarkdownOnly(choice)).toBe(false)
+  expect(isMarkdownOnly({ ...choice, kind: "lesson" })).toBe(true)
+  expect(isMarkdownOnly({ ...choice, display_data: { kind: "code", language: "sql", code: "SELECT 1" } })).toBe(true)
+  expect(isMarkdownOnly({ ...choice, run: [{ id: "q", label: "q", sql: "SELECT 1" }] })).toBe(true)
+})

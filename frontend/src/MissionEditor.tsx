@@ -107,10 +107,29 @@ function ChartEditor({ value, onChange }: { value: BarChartDisplay; onChange: (v
   </Stack>
 }
 
-export function MissionEditor({ mission, course, busy, onSave }: {
+type EditorProps = {
   mission: Mission; course: CourseTree; busy: boolean;
   onSave: (title: string, definition: MissionDefinition) => Promise<void>;
-}) {
+}
+
+/** Activities written in the Markdown course (lessons, SQL challenges, runs, charts, code) are edited in the source file. */
+export function isMarkdownOnly(definition: MissionDefinition | null): boolean {
+  if (!definition) return false
+  return !kinds.some((kind) => kind.value === definition.kind) || (definition.run?.length ?? 0) > 0
+    || (definition.display_data !== null && !["table", "bar_chart"].includes(definition.display_data.kind))
+}
+
+export function MissionEditor(props: EditorProps) {
+  if (isMarkdownOnly(props.mission.definition)) return <Stack gap="3">
+    <Heading as="h4" size="md">{props.mission.title}</Heading>
+    <Badge alignSelf="start" colorPalette="saffron" variant="subtle">Écrite dans le cours Markdown</Badge>
+    <Text>Cette activité ({props.mission.definition?.kind.replaceAll("_", " ")}) utilise des éléments du format Markdown (leçon, défi SQL, exécution de code, graphique ou code).
+      Modifiez-la dans le fichier source du cours, puis réimportez-le. Consultez-la dans l’onglet « Aperçu ».</Text>
+  </Stack>
+  return <ChoiceMissionEditor {...props} />
+}
+
+function ChoiceMissionEditor({ mission, course, busy, onSave }: EditorProps) {
   const [title, setTitle] = useState(mission.title)
   const [draft, setDraft] = useState<MissionDefinition>(mission.definition ?? defaultDraft(course.objectives[0]?.id))
   const [importError, setImportError] = useState("")

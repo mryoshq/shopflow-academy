@@ -52,6 +52,14 @@ const config = defineConfig({
           canvas: { value: "#F7F4EE" }, surface: { value: "#FFFFFF" }, sunken: { value: "#F1EDE4" },
           border: { value: "#E2DDD3" }, ink: { value: "#14211F" }, muted: { value: "#4A5A56" },
         },
+        // Code blocks: light syntax colours, each at least 4.5:1 on code.bg.
+        code: {
+          bg: { value: "#F4F1EA" }, fg: { value: "#14211F" }, keyword: { value: "#0F5047" }, string: { value: "#7A4A12" },
+          comment: { value: "#566460" }, number: { value: "#6B2C91" }, border: { value: "#E2DDD3" },
+        },
+        chart: {
+          grid: { value: "#E2DDD3" }, axis: { value: "#4A5A56" }, one: { value: "{colors.brand.600}" }, two: { value: "{colors.saffron.700}" },
+        },
       },
       shadows: {
         card: { value: "0 1px 2px rgba(20, 33, 31, 0.06), 0 4px 16px rgba(20, 33, 31, 0.04)" },

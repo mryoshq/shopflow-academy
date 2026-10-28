@@ -6,6 +6,8 @@ import { clearDraft, loadDraft, newIdempotencyKey, rememberLastMission, saveDraf
 import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "./ui"
 import { HelpRequest } from "./HelpRequest"
+import { CodeBlock, LessonBody } from "./displays"
+import { RunPanel } from "./RunPanel"
 
 type Props = { missionId: number; navigate: (path: string) => void }
 
@@ -87,6 +89,20 @@ export function MissionPlayer({ missionId, navigate }: Props) {
     }
   }
 
+  async function markUnderstood() {
+    if (!mission || busy) return
+    setBusy(true)
+    setSubmitError(null)
+    try {
+      const response = await api<AttemptResult>(`/student/missions/${missionId}/understood`, "POST")
+      setMission((current) => current && { ...current, status: "completed", attempts_count: response.attempts_count, score: response.score })
+    } catch (error) {
+      if (!(error instanceof ApiError && error.status === 401)) setSubmitError(error instanceof ApiError && error.status === 409 ? "La séquence est en pause : réessayez à la reprise." : "Connexion interrompue. Réessayez.")
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function revealHint() {
     if (!mission || hintBusy) return
     setHintBusy(true)
@@ -147,11 +163,29 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       </Stack>
     </Panel> : <Flex gap="6" align="start" direction={{ base: "column", lg: "row" }}>
       <Stack gap="5" flex="1" minW="0">
+        {definition.kind === "lesson" ? <Panel as="section" aria-labelledby="lesson-title">
+          <Stack gap="4">
+            <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Leçon</Text>
+            <LessonBody body={definition.body ?? ""} />
+            <DataView data={definition.display_data} />
+            <RunPanel runs={definition.run} />
+            {submitError && <Text role="alert" color="red.700">{submitError}</Text>}
+            <Flex gap="3" wrap="wrap" align="center">
+              {mission.status === "completed"
+                ? <Flex gap="2" align="center" color="green.800" fontWeight="semibold" role="status"><Icon name="check" />Leçon comprise</Flex>
+                : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused} onClick={() => void markUnderstood()}>J’ai compris</Button>}
+              {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
+              {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
+            </Flex>
+            <Text fontSize="sm" color="app.muted">Une leçon ne compte pas dans la note : elle aide à réussir les missions suivantes.</Text>
+          </Stack>
+        </Panel> : <>
         <Panel as="section" aria-labelledby="situation-title">
           <Stack gap="4">
             <Text id="situation-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Situation</Text>
             <Text fontSize="lg" whiteSpace="pre-wrap">{definition.scenario}</Text>
             <DataView data={definition.display_data} />
+            <RunPanel runs={definition.run} />
           </Stack>
         </Panel>
 
@@ -159,7 +193,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
           <Stack gap="4">
             <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Votre décision</Text>
             <Text fontWeight="semibold" fontSize="lg" whiteSpace="pre-wrap">{definition.instructions}</Text>
-            <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />
+            {definition.kind === "sql_challenge"
+              ? <Stack gap="2"><CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ" />
+                <Text fontSize="sm" color="app.muted">Défi bonus : l’éditeur SQL s’ouvrira avec la base de laboratoire. Il ne compte jamais dans la note principale.</Text></Stack>
+              : <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />}
             {mission.paused && <Alert.Root status="warning" variant="subtle" rounded="lg">
               <Alert.Indicator /><Alert.Content><Alert.Title>Séquence en pause</Alert.Title>
                 <Alert.Description>Votre enseignant a suspendu les réponses. Vous pouvez relire la mission ; rechargez la page à la reprise.</Alert.Description></Alert.Content>
@@ -173,10 +210,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                 <Alert.Description>Votre sélection est conservée.</Alert.Description></Alert.Content>
             </Alert.Root>}
             <Flex gap="3" wrap="wrap" align="center">
-              {!result && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused}>
+              {!result && definition.kind !== "sql_challenge" && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused}>
                 {submitError ? "Renvoyer ma décision" : "Tester ma décision"}
               </Button>}
-              {!complete && !result && <Text fontSize="sm" color="app.muted">Complétez votre réponse pour la tester.</Text>}
+              {!complete && !result && definition.kind !== "sql_challenge" && <Text fontSize="sm" color="app.muted">Complétez votre réponse pour la tester.</Text>}
             </Flex>
           </Stack>
         </Panel>
@@ -206,6 +243,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
           </Panel>}
           {!result && mission.explanation && <Panel><Text fontWeight="semibold" mb="1">Explication</Text><Text>{mission.explanation}</Text></Panel>}
         </Box>
+        </>}
       </Stack>
 
       <Stack gap="4" w={{ base: "full", lg: "80" }} flexShrink={0} as="aside" aria-label="Aide">
