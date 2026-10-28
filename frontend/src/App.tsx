@@ -1,10 +1,11 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react"
+import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text } from "@chakra-ui/react"
 import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
 import { Logo } from "./Logo"
 import { NotificationBell, NotificationProvider } from "./live/notifications"
+import { ComfortButton } from "./comfort/Comfort"
 import { LeaderboardNavigation } from "./leaderboard/LeaderboardPage"
 import type { User } from "./studioTypes"
 
@@ -92,6 +93,9 @@ export function App() {
 
   const page = (
     <Box minH="100vh" bg="app.canvas" color="app.ink">
+      {/* ADR-0024: keyboard users skip the header. */}
+      <Link href="#contenu" position="absolute" left="2" top="-12" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
+        fontWeight="semibold" _focus={{ top: "2" }}>Aller au contenu</Link>
       <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
         <Container maxW="7xl" py="3.5">
           <Flex align="center" justify="space-between" gap="3" wrap="wrap">
@@ -102,6 +106,7 @@ export function App() {
             <Flex align="center" gap="3" wrap="wrap" justify="end">
             <ThemeSwitch />
             {state === "authenticated" && user ? <Flex align="center" gap="3" wrap="wrap" justify="end">
+              {user.role === "student" && <ComfortButton />}
               <NotificationBell />
               <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
               <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
@@ -110,7 +115,7 @@ export function App() {
           </Flex>
         </Container>
       </Box>
-      <Container as="main" maxW="7xl" py={{ base: "8", md: "12" }}>
+      <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW="7xl" py={{ base: "8", md: "12" }}>
         {state === "loading" && <Text role="status" color="app.muted">Chargement de votre espace…</Text>}
         {state === "network_error" && <Box role="alert" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" p="6">L’Academy est momentanément indisponible. Rechargez la page dans quelques instants.</Box>}
         {state === "anonymous" && (

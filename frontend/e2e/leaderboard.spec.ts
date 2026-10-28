@@ -39,6 +39,7 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
       }
     } else if (path.endsWith("/notifications")) body = { unread: 0, items: [] } // ADR-0023: polled on every page
     else if (path.endsWith("/presence")) body = { interval_seconds: 30, unread: 0 } // ADR-0023: student heartbeat
+    else if (path.endsWith("/radio")) body = { streams: [] } // ADR-0024: student comfort panel
     else { unexpected.push(path); status = 500; body = { detail: "Unexpected fixture request" } }
     await route.fulfill({ status, json: body })
   })
