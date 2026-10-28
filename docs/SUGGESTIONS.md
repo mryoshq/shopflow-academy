@@ -12,7 +12,7 @@ Classement par **valeur pour la classe** puis par **effort** (S : moins d'une de
 | D | Cours écrit en Markdown, compilé avec erreurs localisées, importé sans perdre la progression | #27 (fusionnée) |
 | F | Animations, carte mentale, pipeline animé, vidéo | #28 (fusionnée) |
 | C | Base de laboratoire, requêtes exécutables, défi SQL bonus, sorties Python à l'import | #29 (fusionnée) |
-| B | Mode sombre, lecteur en une colonne, raccourcis, réinitialisation de mot de passe, fiches de connexion | #30 |
+| B | Mode sombre, lecteur en une colonne, raccourcis, réinitialisation de mot de passe, fiches de connexion | #30 (fusionnée) |
 
 ## Suggestions classées
 

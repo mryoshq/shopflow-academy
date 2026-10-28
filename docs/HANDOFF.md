@@ -2,13 +2,13 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : faire les sections « À faire en local » des PR déjà fusionnées (A, D, F, C) si ce n'est pas fait, puis relire et fusionner #30 (B) puis #31 (E) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** L'agent rebase la PR suivante sur `main` après chaque fusion.
+**Prochaine tâche unique : faire les sections « À faire en local » des PR déjà fusionnées (A, D, F, C, B) si ce n'est pas fait, puis relire et fusionner #31 (E) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** L'agent rebase la PR suivante sur `main` après chaque fusion.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
 - **Production** : `https://shopflow.rapidfox.io`, sur le Mac de l'enseignant (Docker Compose + Cloudflare Tunnel), déployée depuis `main`. Ce setup est définitif.
 - **Cours** : en cours de rédaction par un autre agent dans un **dossier local du Mac** (jamais sur GitHub : il contient les corrigés). Sauvegarde dans le dépôt privé `mryoshq/shopflow-courses` (ne pas y toucher depuis une session cloud).
-- **Sprint 2 terminé** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR par partie ; A, D, F, C fusionnées.
+- **Sprint 2 terminé** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR par partie ; A, D, F, C, B fusionnées.
 
 ### PR du sprint 2, dans l'ordre de fusion
 
@@ -18,8 +18,8 @@
 | 2 | D — chaîne d'import du cours Markdown | `claude/lucid-brahmagupta-htwgun-d` | [#27](https://github.com/mryoshq/shopflow-academy/pull/27) | **fusionnée** |
 | 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | [#28](https://github.com/mryoshq/shopflow-academy/pull/28) | **fusionnée** |
 | 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | [#29](https://github.com/mryoshq/shopflow-academy/pull/29) | **fusionnée** |
-| 5 | B — expérience simple et mode sombre | `claude/lucid-brahmagupta-htwgun-b` | [#30](https://github.com/mryoshq/shopflow-academy/pull/30) (base : `main`, rebasée) | ouverte |
-| 6 | E — `docs/SUGGESTIONS.md` | `claude/lucid-brahmagupta-htwgun-e` | [#31](https://github.com/mryoshq/shopflow-academy/pull/31) (base : B) | ouverte |
+| 5 | B — expérience simple et mode sombre | `claude/lucid-brahmagupta-htwgun-b` | [#30](https://github.com/mryoshq/shopflow-academy/pull/30) | **fusionnée** |
+| 6 | E — `docs/SUGGESTIONS.md` | `claude/lucid-brahmagupta-htwgun-e` | [#31](https://github.com/mryoshq/shopflow-academy/pull/31) (base : `main`, rebasée) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10)** : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -56,7 +56,7 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Con
 Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenues.
 
 ### Attend l'accord du propriétaire
-- Fusion de #30 puis #31.
+- Fusion de #31.
 - Publication du cours réel pour la classe (`course_md.py import … --publish` ou « Publier pour la classe ») et ouverture des blocs en séance : jamais faites par un agent.
 - Choix parmi `docs/SUGGESTIONS.md`.
 
