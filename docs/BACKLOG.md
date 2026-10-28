@@ -33,6 +33,10 @@
 - [x] **S2-N** Confort et finitions : session persistante, code Catppuccin, images, passe mobile (ADR-0029). Preuves : voir PROGRESS.
 - [x] **S2-J** Observateur en lecture seule (ADR-0025). Preuves : voir PROGRESS.
 
+### Sprint 3 (ordre fixé par le propriétaire)
+- [x] **S3-P** Report des réussites quand seul le texte change + vérification avant publication (ADR-0030). Preuves : voir PROGRESS.
+- [ ] **S3-O** Interface enseignant en application à une page : barre latérale, vues avec adresses, « Aujourd'hui », Cmd+K, panneaux latéraux (ADR-0031).
+
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
 - [ ] **P1-01** Adaptateur tuteur IA optionnel (none et OpenRouter configurable), indices statiques en fallback, plafond requêtes/coûts, confidentialité et journaux minimaux.
