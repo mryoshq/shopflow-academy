@@ -2,7 +2,7 @@
 
 ## K — Classement facultatif (Codex, 28/10/2026)
 
-Branche `codex/k-classement`, issue de `main` `14017c2`, une PR vers `main`, sans fusion ni déploiement. ADR `docs/DECISIONS/0026-classement.md`. API, modèles, migration, page et tests propres à K ; seules l’inclusion du routeur, la déclaration des modèles Alembic et la navigation App touchent des fichiers partagés. Ne pas modifier le chantier H/L. Si `main` avance, le fusionner dans cette branche sans force-push, et vérifier la tête de migration (actuellement `0010_leaderboard` après `0009_objective_category`).
+Branche `codex/k-classement`, issue de `main` `14017c2`, [PR #37](https://github.com/mryoshq/shopflow-academy/pull/37) vers `main`, sans fusion ni déploiement. ADR `docs/DECISIONS/0026-classement.md`. API, modèles, migration, page et tests propres à K ; seules l’inclusion du routeur, la déclaration des modèles Alembic et la navigation App touchent des fichiers partagés. Ne pas modifier le chantier H/L. Si `main` avance, le fusionner dans cette branche sans force-push, et vérifier la tête de migration (actuellement `0010_leaderboard` après `0009_objective_category`).
 
 Livré : off par défaut, accès aux inscrits et au propriétaire seulement, pseudonymes sans login/e-mail, principaux/bonus séparés, rangs `1, 1, 3`, top 3 avec tous les ex æquo et sa position, masquage serveur si bloc ouvert, onglet du jour (`Africa/Casablanca`), polling 5 s, podium SVG original, clavier/AA/clair/sombre/mouvement réduit. Ni notation ni export modifiés.
 

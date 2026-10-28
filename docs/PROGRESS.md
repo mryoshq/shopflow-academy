@@ -2,7 +2,7 @@
 
 ## K — Classement facultatif, 28/10/2026
 
-Branche `codex/k-classement`, basée sur `main` `14017c2`, une PR vers `main`, sans fusion ni déploiement. ADR-0026, migration `0010_leaderboard` (deux nouvelles tables de préférences uniquement). Nouveaux fichiers dédiés pour API, modèles, page, tests ; fichiers partagés limités à l’enregistrement du routeur, des modèles Alembic et à l’entrée de navigation App. Les écrans « Ma classe » et le moteur de notation ne sont pas modifiés.
+Branche `codex/k-classement`, basée sur `main` `14017c2`, [PR #37](https://github.com/mryoshq/shopflow-academy/pull/37) vers `main`, sans fusion ni déploiement. ADR-0026, migration `0010_leaderboard` (deux nouvelles tables de préférences uniquement). Nouveaux fichiers dédiés pour API, modèles, page, tests ; fichiers partagés limités à l’enregistrement du routeur, des modèles Alembic et à l’entrée de navigation App. Les écrans « Ma classe » et le moteur de notation ne sont pas modifiés.
 
 Critères couverts : opt-in enseignant, 404 étudiant si désactivé, droits par classe/propriétaire, pseudonyme distinct du login, absence d’adresses et de détail par mission, tri principaux puis bonus et ex æquo, top 3 avec ex æquo/position personnelle, masquage serveur des deux onglets pendant un bloc ouvert, progression du jour au fuseau Maroc, rafraîchissement 5 s, clavier/clair/sombre/mouvement réduit, podium SVG et axe.
 
