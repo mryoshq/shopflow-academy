@@ -48,6 +48,13 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"release_id": ids["release_id"]}
     if path.endswith("/unlocks"):
         return {"user_id": extra["student_id"], "mission_version_id": extra["version_id"]}
+    if path.endswith("/messages"):
+        return {"text": "Message d’un autre enseignant"}
+    if path.endswith(("/auto/activate", "/auto/preview")):
+        from datetime import datetime, timedelta, timezone
+        return {"end_at": (datetime.now(timezone.utc) + timedelta(hours=2)).isoformat()}
+    if path.endswith("/auto/shift"):
+        return {"minutes": 5}
     return {}
 
 

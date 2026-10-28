@@ -5,7 +5,9 @@ Runs on the test stack only (scripts/test_stack.py up); a production address is
 refused before any request. Uses the fictitious accounts of the test stack
 (.local/test-stack-credentials.json, never printed) and the demonstration course. Each student: login, dashboard, opens the three missions,
 reveals a hint, submits answers (including the same idempotency key twice in
-parallel) and reads history; meanwhile the teacher polls the class overview.
+parallel) and reads history, with the presence heartbeat and notification polling
+of part H (ADR-0023); meanwhile the teacher polls the class overview and the live
+grid, and sends one message to the class that every student must receive.
 
     python3 scripts/load_test.py [--base http://127.0.0.1:3180] [--rounds 2]
 
@@ -32,6 +34,8 @@ from test_stack import BASE, CREDENTIALS, refuse_production  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = "Démonstration — Données ShopFlow"
 P95_LIMIT_MS = 1500
+MESSAGE = f"Test de charge {uuid.uuid4().hex[:6]} : message à toute la classe."
+message = threading.Event()
 
 lock = threading.Lock()
 timings: dict[str, list[float]] = {}
@@ -88,6 +92,8 @@ def student_flow(base: str, account: dict, rounds: int) -> dict:
                 s.request("mission (verrouillée)", "GET", f"/api/v1/student/missions/{mission['mission_version_id']}")
                 continue
             vid = mission["mission_version_id"]
+            s.request("présence", "POST", "/api/v1/presence", {"mission_version_id": vid})
+            s.request("notifications", "GET", "/api/v1/notifications")
             _, view = s.request("mission", "GET", f"/api/v1/student/missions/{vid}")
             s.request("indice", "POST", f"/api/v1/student/missions/{vid}/hints")
             first_choice = view["definition"]["choices"][0]["id"]
@@ -101,6 +107,9 @@ def student_flow(base: str, account: dict, rounds: int) -> dict:
                 result["duplicates_ok"] = False
             result["attempt_ids"].extend(ids)
             s.request("historique", "GET", f"/api/v1/student/missions/{vid}/attempts")
+    message.wait(30)
+    _, feed = s.request("notifications", "GET", "/api/v1/notifications")
+    result["message_ok"] = any(item["text"] == MESSAGE for item in (feed or {}).get("items", []))
     return result
 
 
@@ -110,8 +119,15 @@ def teacher_flow(base: str, account: dict, stop: threading.Event) -> int:
     _, classes = s.request("classes enseignant", "GET", "/api/v1/teacher/classes")
     target = next((c for c in classes or [] if c["course_title"] == COURSE and "démonstration" in c["cohort"].lower()), None)
     polls = 0
+    main = s.request("cours principal", "GET", "/api/v1/teacher/main")[1] or {}
+    if main.get("assignment_id"):
+        s.request("message à la classe", "POST", f"/api/v1/teacher/classes/{main['assignment_id']}/messages", {"text": MESSAGE}, expect=(201,))
+    message.set()
     while target and not stop.is_set():
         s.request("vue de classe", "GET", f"/api/v1/teacher/classes/{target['id']}/overview")
+        if main.get("assignment_id"):
+            s.request("suivi en direct", "GET", f"/api/v1/teacher/classes/{main['assignment_id']}/live")
+        s.request("notifications", "GET", "/api/v1/notifications")
         polls += 1
         stop.wait(1.0)
     return polls
@@ -148,7 +164,9 @@ def main() -> int:
         p95 = percentile(values, 0.95)
         worst = max(worst, p95)
         print(f"{label:24} {len(values):>4} {statistics.median(values):>8.0f} {p95:>8.0f} {max(values):>8.0f}")
-    ok = not problems and duplicates == 0 and all(r["duplicates_ok"] for r in results) and worst <= P95_LIMIT_MS
+    received = sum(1 for r in results if r.get("message_ok"))
+    ok = not problems and duplicates == 0 and all(r["duplicates_ok"] for r in results) and worst <= P95_LIMIT_MS and received == len(results)
+    print(f"Message de l'enseignant reçu : {received} / {len(results)}")
     print(f"Erreurs inattendues : {len(problems)}{' — ' + '; '.join(sorted(set(problems))[:5]) if problems else ''}")
     print(f"Doublons de tentative : {duplicates} ; double envoi même clé → 1 tentative : {'PASS' if all(r['duplicates_ok'] for r in results) else 'FAIL'}")
     print(f"p95 le plus lent : {worst:.0f} ms (limite {P95_LIMIT_MS} ms)")

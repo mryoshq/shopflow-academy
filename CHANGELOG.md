@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie H : suivi en direct (`claude/lucid-brahmagupta-htwgun-h`)
+
+- Présence (30 s), grille étudiants × blocs dans « Ma classe », message aux étudiants (280 caractères, accusés de lecture), notifications automatiques, centre de notifications de l'enseignant (aide, blocage, bloc terminé à X %, ouverture automatique, déconnexion ; réglages par type), cloche et historique, notifications système et Web Push facultatif.
+- Déblocage d'un bloc pour un seul étudiant (« Ouvert pour vous »), ouverture automatique des blocs selon le temps restant (planning pondéré, rattrapage, pause, décalage, avance, recalcul, jamais de fermeture). Migration 0012. ADR-0023.
+
 ## 2026-10-28 — Résultats et accompagnement (`codex/resultats`)
 
 - Résultats : points principaux et bonus séparés, pourcentage principal, missions principales réussies/non réussies et détail par étudiant ; icône et texte « À accompagner » sous un seuil réglable (50 % par défaut), tri et filtre, top 5 des missions les moins réussies sur la classe entière.

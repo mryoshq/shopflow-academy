@@ -3,7 +3,7 @@ import { Badge, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import type { MissionStatus } from "./types"
 
 export type IconName = "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock" | "target" | "pencil"
-  | "book" | "list" | "sort" | "link" | "chart" | "code" | "play" | "star" | "search" | "chevron" | "layers"
+  | "book" | "list" | "sort" | "link" | "chart" | "code" | "play" | "star" | "search" | "chevron" | "layers" | "bell" | "send" | "user"
 
 /** Small inline icons (no icon font, no emoji). Always paired with text. */
 export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | IconName; size?: number }) {
@@ -29,6 +29,9 @@ export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "
     search: <><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></>,
     chevron: <path d="M9 6l6 6-6 6" />,
     layers: <><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>,
+    bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
+    send: <><path d="M21 3L10 14" /><path d="M21 3l-7 18-4-7-7-4z" /></>,
+    user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
   }
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>
 }

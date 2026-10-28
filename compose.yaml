@@ -34,6 +34,9 @@ services:
       APP_EXTRA_ORIGINS: ${APP_EXTRA_ORIGINS:-}
       APP_SECRET: ${APP_SECRET:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
+      # Web Push (ADR-0023): generated locally by scripts/vapid_keys.py into .env. Empty = off.
+      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
+      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       MAIN_COURSE_SLUG: ${MAIN_COURSE_SLUG:-python-data-engineering-sql}
       CLASS_LABEL: ${CLASS_LABEL:-Classe B3 IA/Data}
       # Laboratory database (ADR-0017): read-only role for students, owner role for the dataset.
@@ -65,7 +68,8 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [private, lab]
+    # push: outgoing HTTPS to the Web Push services only (allow-list in app/webpush.py, ADR-0023).
+    networks: [private, lab, push]
 
   frontend:
     logging: *logging
@@ -173,6 +177,8 @@ services:
 
 networks:
   edge:
+  # Outgoing only, for Web Push (ADR-0023); no port is published on it.
+  push:
   private:
     internal: true
   lab:

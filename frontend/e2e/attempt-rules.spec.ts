@@ -104,8 +104,11 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
 test("« Ma classe » shows fast clicks", async ({ page }) => {
   await login(page, "demo.enseignant")
   await page.getByRole("tab", { name: "Ma classe" }).click()
-  const row = page.getByRole("row").filter({ hasText: STUDENT })
-  await expect(row.getByText(/Clics rapides : \d+/)).toBeVisible()
+  // Shown in the class progress table and in the live grid (ADR-0023).
+  for (const table of [/^Progression de la classe/, "Étudiants par blocs"]) {
+    const row = page.getByRole("table", { name: table }).getByRole("row").filter({ hasText: STUDENT })
+    await expect(row.getByText(/Clics rapides : \d+/)).toBeVisible()
+  }
   await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
   await page.screenshot({ path: `${shots}/43-ma-classe-clics-rapides.png`, fullPage: true, animations: "disabled" })
 })

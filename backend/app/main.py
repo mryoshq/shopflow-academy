@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
@@ -12,6 +14,8 @@ from app.classroom import router as classroom_router
 from app.lab_api import router as lab_router
 from app.leaderboard import router as leaderboard_router
 from app.attempt_rules import router as attempt_rules_router
+from app.live import router as live_router
+from app.autoplan import router as autoplan_router, start_background
 from app.results import router as results_router
 
 
@@ -26,7 +30,18 @@ def openapi_url_for(app_env: str) -> str | None:
 
 check_secure_settings(get_settings())
 
+
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    """Automatic block opening and time-based teacher events (ADR-0023), every few seconds."""
+    stop = start_background(get_settings().live_tick_seconds) if get_settings().database_url else None
+    yield
+    if stop is not None:
+        stop.set()
+
+
 app = FastAPI(
+    lifespan=lifespan,
     title="ShopFlow Academy API",
     version="0.1.0",
     openapi_url=openapi_url_for(get_settings().app_env),
@@ -42,6 +57,8 @@ app.include_router(classroom_router)
 app.include_router(lab_router)
 app.include_router(leaderboard_router)
 app.include_router(attempt_rules_router)
+app.include_router(live_router)
+app.include_router(autoplan_router)
 app.include_router(results_router)
 
 

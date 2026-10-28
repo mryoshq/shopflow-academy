@@ -260,3 +260,80 @@ class HelpRequest(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     handled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     handled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+
+# Live tracking (sprint 2, part H, ADR-0023) ------------------------------------------------
+
+class Presence(Base):
+    """Last heartbeat of a user (every 30 s while a page is open)."""
+
+    __tablename__ = "presences"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    online_since: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    mission_version_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class Notification(Base):
+    """A message to one user: from the teacher, automatic, or a teacher event (help, block, ...)."""
+
+    __tablename__ = "notifications"
+    __table_args__ = (UniqueConstraint("recipient_id", "dedup_key", name="uq_notification_dedup"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    recipient_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    sender_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    text: Mapped[str] = mapped_column(String(280), nullable=False)
+    data: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    dedup_key: Mapped[str | None] = mapped_column(String(160), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class BlockUnlock(Base):
+    """One block opened for one student only (« ouvert pour vous »)."""
+
+    __tablename__ = "block_unlocks"
+    __table_args__ = (UniqueConstraint("cohort_id", "chapter_id", "user_id", name="uq_block_unlock"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False)
+    chapter_id: Mapped[int] = mapped_column(ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    unlocked_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class PushSubscription(Base):
+    """Web Push endpoint of one browser (no payload is ever sent: the page fetches its notifications)."""
+
+    __tablename__ = "push_subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    endpoint: Mapped[str] = mapped_column(String(600), nullable=False, unique=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    failures: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+
+
+class NotificationSetting(Base):
+    __tablename__ = "notification_settings"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    data: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+
+class BlockPlan(Base):
+    """Automatic opening of the remaining blocks of a class (never closes anything)."""
+
+    __tablename__ = "block_plans"
+
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id", ondelete="CASCADE"), primary_key=True)
+    enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    end_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

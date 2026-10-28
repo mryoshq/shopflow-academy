@@ -3,6 +3,7 @@ import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@cha
 import { api, ApiError } from "../api"
 import { lastMission } from "./storage"
 import type { Dashboard, DashboardBlock, DashboardCourse, DashboardMission } from "./types"
+import { useNotificationFeed } from "../live/notifications"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
 
 type Props = { navigate: (path: string) => void }
@@ -29,6 +30,12 @@ export function StudentDashboard({ navigate }: Props) {
     }
   }, [])
   useEffect(() => { void load() }, [load])
+  // ADR-0023: a block opened for the class or for this student arrives as a notification: reload quietly.
+  useEffect(() => {
+    const refresh = () => { void api<Dashboard>("/student/dashboard").then(setData).catch(() => { /* next notification retries */ }) }
+    window.addEventListener("academy:refresh", refresh)
+    return () => window.removeEventListener("academy:refresh", refresh)
+  }, [])
 
   if (error) return <ErrorState message={error} onRetry={() => void load()} />
   if (!data) return <LoadingState label="Chargement de votre espace…" />
@@ -82,6 +89,7 @@ export function StudentDashboard({ navigate }: Props) {
             {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">Bonus :</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} pts, comptés à part.</Text>}
           </Stack>
         </Panel>)}
+        <TeacherMessages />
         <Panel>
           <Stack gap="2">
             <Text fontWeight="semibold">Ressources</Text>
@@ -137,6 +145,7 @@ function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate:
 
 function BlockCard({ block, missions, offset, navigate }: { block: DashboardBlock; missions: DashboardMission[]; offset: number; navigate: (path: string) => void }) {
   const state = block.done ? { label: "Terminé", palette: "green", variant: "solid" as const }
+    : block.open && block.for_you ? { label: "Ouvert pour vous", palette: "brand", variant: "solid" as const }
     : block.open ? { label: "Ouvert", palette: "brand", variant: "subtle" as const }
       : { label: "Bientôt disponible", palette: "gray", variant: "subtle" as const }
   return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={`Bloc : ${block.title}`} role="group">
@@ -163,4 +172,22 @@ function RulesNotice({ releaseId, notice }: { releaseId: number; notice: { text:
     <Text flex="1" minW="48" fontWeight="medium">{notice.text}</Text>
     <Button size="sm" variant="outline" colorPalette="saffron" onClick={() => { try { window.localStorage.setItem(key, "1") } catch { /* not remembered */ } setSeen(true) }}>J’ai compris</Button>
   </Flex>
+}
+
+/** ADR-0023: the teacher's last messages (full history under the bell in the header). */
+function TeacherMessages() {
+  const { items, markRead } = useNotificationFeed()
+  const messages = items.filter((item) => item.kind === "message").slice(0, 3)
+  if (messages.length === 0) return null
+  const unread = messages.filter((item) => !item.read_at).map((item) => item.id)
+  return <Panel as="section" aria-labelledby="teacher-messages" borderColor={unread.length ? "brand.solid" : "app.border"}>
+    <Stack gap="2">
+      <Flex gap="2" align="center"><Icon name="bell" size={16} /><Text fontWeight="semibold" id="teacher-messages">Messages de votre enseignant</Text></Flex>
+      <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">{messages.map((item) => <Box as="li" key={item.id} fontSize="sm">
+        <Text fontWeight={item.read_at ? "normal" : "semibold"}>{item.text}</Text>
+        <Text fontSize="xs" color="app.muted">{new Date(item.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}{item.read_at ? "" : " · non lu"}</Text>
+      </Box>)}</Stack>
+      {unread.length > 0 && <Button size="xs" variant="outline" colorPalette="brand" alignSelf="start" onClick={() => void markRead(unread)}>J’ai lu</Button>}
+    </Stack>
+  </Panel>
 }
