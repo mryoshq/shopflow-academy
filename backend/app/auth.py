@@ -202,3 +202,14 @@ def teacher_student(user_id: int, response: Response, auth: AuthContext = Depend
         raise HTTPException(status_code=404, detail="student not found")
     response.headers["Cache-Control"] = "no-store"
     return UserOut(id=student.id, username=student.username, role=student.role)
+
+
+def require_student_csrf(auth: AuthContext = Depends(require_csrf)) -> AuthContext:
+    if auth.user.role != "student":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return auth
+
+
+def display_name(username: str) -> str:
+    """Never greet with a full e-mail address."""
+    return username.split("@", 1)[0]

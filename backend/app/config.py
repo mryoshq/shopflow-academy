@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     app_extra_origins: str = ""
     # Optional key for opaque student choice IDs; derived from DATABASE_URL when empty.
     app_secret: str = ""
+    ai_provider: str = "none"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

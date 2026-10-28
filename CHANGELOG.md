@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-28 — P0-05 lecteur étudiant (`feat/p0-05-student-player`)
+
+- Tableau de bord étudiant : « Bonjour », cours attribués, états des missions (à faire, en cours, réussie, verrouillée), bouton « Continuer », ressources, emplacement score à venir.
+- Lecteur de mission : situation, tableau ou graphique avec alternative en tableau, choix simple/multiple, vrai/faux, ordre (boutons monter/descendre), association (listes), feedback serveur, explication, réessai, indices progressifs, navigation, états erreur réseau, session expirée (brouillon conservé), IA désactivée.
+- API `student/dashboard`, `student/missions/{id}`, tentatives idempotentes en ajout seul, indices un par un, limitation 20/min ; migration 0004.
+- Cours de démonstration idempotent (frais de livraison 70 DH / 100 DH, validation CSV, ordre d'un pipeline) réservé aux comptes `demo.*`.
+- Thème Chakra UI v3 unique (`theme.ts`, `docs/DESIGN.md`), écran de connexion et en-tête redessinés.
+
 ## 2026-10-28 — Correctifs de revue P0-01 à P0-04 (`fix/revue-p0-01-04`)
 
 - Bloquant B1 : la vue étudiante utilise des identifiants de choix opaques par version de mission et un ordre mélangé déterministe ; les réponses d'ordre et d'association ne sont plus lisibles.

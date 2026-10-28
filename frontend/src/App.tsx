@@ -87,58 +87,60 @@ export function App() {
   }
 
   return (
-    <Box minH="100vh" bg="#f6f5f1" color="#132624">
-      <Box as="header" borderBottomWidth="1px" borderColor="#d8dfd9" bg="white">
-        <Container maxW="6xl" py="5">
+    <Box minH="100vh" bg="app.canvas" color="app.ink">
+      <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
+        <Container maxW="7xl" py="3.5">
           <Flex align="center" justify="space-between" gap="4">
-            <Text fontWeight="bold" letterSpacing="0.08em">SHOPFLOW / ACADEMY</Text>
-            <Badge colorPalette="teal" variant="subtle">Espace pédagogique</Badge>
+            <Flex align="center" gap="2.5">
+              <Box w="8" h="8" rounded="lg" bg="brand.solid" color="white" display="grid" placeItems="center" fontWeight="bold" fontSize="sm" aria-hidden="true">SF</Box>
+              <Text fontWeight="bold" letterSpacing="0.02em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>
+            </Flex>
+            {state === "authenticated" && user ? <Flex align="center" gap="3">
+              <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
+              <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
+            </Flex> : <Text fontSize="sm" color="app.muted" display={{ base: "none", sm: "block" }}>Python Data Engineering & SQL avancé</Text>}
           </Flex>
         </Container>
       </Box>
-      <Container as="main" maxW="6xl" py={{ base: "12", md: "20" }}>
-        {state === "loading" && <Text role="status">Chargement de votre espace…</Text>}
-        {state === "network_error" && <Text role="alert">L’Academy est momentanément indisponible. Rechargez la page.</Text>}
+      <Container as="main" maxW="7xl" py={{ base: "8", md: "12" }}>
+        {state === "loading" && <Text role="status" color="app.muted">Chargement de votre espace…</Text>}
+        {state === "network_error" && <Box role="alert" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" p="6">L’Academy est momentanément indisponible. Rechargez la page dans quelques instants.</Box>}
         {state === "anonymous" && (
-          <Flex gap="12" align="start" direction={{ base: "column", md: "row" }}>
+          <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
-              <Text fontWeight="semibold" color="#306f65" textTransform="uppercase" letterSpacing="0.12em">Python Data Engineering & SQL avancé</Text>
-              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1">Apprendre en agissant sur des données.</Heading>
-              <Text fontSize="lg" color="#405550" lineHeight="1.7">Connectez-vous pour accéder à vos cours ou au studio de création.</Text>
+              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">Module B3 IA/Data</Text>
+              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">Apprendre en décidant sur de vraies situations de données.</Heading>
+              <Text fontSize="lg" color="app.muted" lineHeight="1.7">Des missions courtes autour de ShopFlow : vous observez les données, vous choisissez, et vous recevez un retour immédiat. Aucun code à écrire pour avancer.</Text>
             </Stack>
-            <Box as="section" bg="white" borderWidth="1px" borderColor="#d8dfd9" rounded="xl" p="8" w="full" maxW="md" aria-label="Connexion">
+            <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label="Connexion">
               <form onSubmit={onLogin}>
               <Stack gap="5">
-                <Heading as="h2" size="lg">Connexion</Heading>
+                <Stack gap="1"><Heading as="h2" size="xl">Connexion</Heading><Text color="app.muted" fontSize="sm">Utilisez l’identifiant transmis par votre enseignant.</Text></Stack>
                 <Field.Root required>
                   <Field.Label>Identifiant</Field.Label>
-                  <Input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required />
+                  <Input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required size="lg" />
                 </Field.Root>
                 <Field.Root required>
                   <Field.Label>Mot de passe</Field.Label>
-                  <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+                  <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
-                {message && <Text role="alert" color="red.700">{message}</Text>}
-                <Button type="submit" colorPalette="teal" loading={busy}>Se connecter</Button>
+                {message && <Text role="alert" color="red.700" fontSize="sm">{message}</Text>}
+                <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText="Connexion…">Se connecter</Button>
               </Stack>
               </form>
             </Box>
           </Flex>
         )}
-        {state === "authenticated" && user && (
+        {state === "authenticated" && user && (user.role === "teacher" ? (
           <Stack gap="8">
-            <Flex justify="space-between" align="center" gap="4" wrap="wrap">
-              <Badge colorPalette="teal" variant="subtle">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
-              <Button variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
-            </Flex>
-            <Stack gap="4">
-              <Heading as="h1" size={{ base: "3xl", md: "4xl" }}>Bonjour, {user.username}</Heading>
-              <Text fontSize="lg" color="#405550">{user.role === "teacher" ? "Construisez vos cours et missions depuis le navigateur." : "Retrouvez les cours qui vous sont attribués."}</Text>
+            <Stack gap="2">
+              <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
+              <Text fontSize="lg" color="app.muted">Construisez vos cours et missions depuis le navigateur.</Text>
             </Stack>
-            {user.role === "teacher" ? <TeacherStudio /> : <StudentHome />}
+            <TeacherStudio />
             {message && <Text role="alert" color="red.700">{message}</Text>}
           </Stack>
-        )}
+        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.700">{message}</Text>}</Stack>)}
       </Container>
     </Box>
   )

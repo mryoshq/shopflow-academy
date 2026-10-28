@@ -16,10 +16,15 @@ Branche `ops/publication-shopflow` (PR empilée sur #14). Cas A (tunnel géré p
 ### Phase 4 — revue #11 à #14
 Rapport : `~/Developer/shopflow-notes/REVUE-P0-01-04.md`. Un bloquant (B1, réponse lisible pour ordre/association) corrigé sur `fix/revue-p0-01-04` (PR empilée sur #15). Importants I1-I2 traités en P0-05.
 
+### P0-05 — lecteur étudiant : livré
+Branche `feat/p0-05-student-player`, empilée sur `fix/revue-p0-01-04` (#17). ADR-0011 (option A). Cours de démonstration installé dans la base locale/publiée (`docker compose exec -T backend python -m app.demo_course`, idempotent, comptes `demo.*` seulement). La stack locale tourne sur cette branche.
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).
 - Réglages anti-veille proposés dans `OPERATIONS.md`, non appliqués.
+- Empilement : chaque lot part de la branche précédente (#15 publication → #17 correctifs → P0-05 → …) pour que la stack publiée contienne tout ; la base de #15 reste #14.
+- Option A d'ADR-0011 retenue (recommandée) ; vouvoiement ; `@axe-core/playwright` ajouté en dépendance de développement.
 - Le classificateur a refusé l'affichage de `.local/verify_teacher.py` ; le script a été exécuté sans être lu (sortie : une ligne PASS).
 
 ## Historique Codex

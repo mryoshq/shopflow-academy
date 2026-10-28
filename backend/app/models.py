@@ -160,3 +160,30 @@ class AuditEvent(Base):
     resource_type: Mapped[str] = mapped_column(String(64), nullable=False)
     resource_id: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class MissionAttempt(Base):
+    """Append-only: rows are never updated or deleted by the application."""
+
+    __tablename__ = "mission_attempts"
+    __table_args__ = (UniqueConstraint("user_id", "idempotency_key", name="uq_attempt_idempotency"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
+    course_release_id: Mapped[int] = mapped_column(ForeignKey("course_releases.id", ondelete="RESTRICT"), nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    answer: Mapped[dict] = mapped_column(JSON, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class HintReveal(Base):
+    __tablename__ = "hint_reveals"
+    __table_args__ = (UniqueConstraint("user_id", "mission_version_id", "level", name="uq_hint_reveal"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
+    level: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

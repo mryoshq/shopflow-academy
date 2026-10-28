@@ -25,6 +25,8 @@ services:
       APP_ENV: ${APP_ENV:-development}
       APP_BASE_URL: ${APP_BASE_URL:-http://127.0.0.1:3080}
       APP_EXTRA_ORIGINS: ${APP_EXTRA_ORIGINS:-}
+      APP_SECRET: ${APP_SECRET:-}
+      AI_PROVIDER: ${AI_PROVIDER:-none}
     depends_on:
       postgres:
         condition: service_healthy

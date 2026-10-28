@@ -70,7 +70,8 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   const learner = await browser.newContext({ viewport: { width: 1366, height: 768 } })
   const learnerPage = await learner.newPage()
   await login(learnerPage, student)
-  await expect(learnerPage.getByRole("button", { name: `${courseTitle} · version 1` })).toBeVisible()
+  const learnerCourse = learnerPage.getByRole("region", { name: courseTitle })
+  await expect(learnerCourse).toBeVisible()
   const courseList = await learnerPage.request.get("/api/v1/student/courses")
   const releases = await courseList.json() as { id: number; title: string }[]
   const release = releases.find((item) => item.title === courseTitle)
@@ -78,7 +79,7 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   const courseResponse = await learnerPage.request.get(`/api/v1/student/courses/${release!.id}`)
   const text = await courseResponse.text()
   expect(text).not.toMatch(/correct_ids|correct_pairs|feedback|action_id|max_points/)
-  await learnerPage.getByRole("button", { name: `${courseTitle} · version 1` }).click()
+  await learnerCourse.getByRole("button", { name: "Ouvrir : Comparer deux valeurs" }).click()
   await expect(learnerPage.getByText("Dans un tableau SQL, A < B et B > A.")).toBeVisible()
   await expect(learnerPage.getByRole("button", { name: "Simuler cette réponse" })).toHaveCount(0)
   await learnerPage.screenshot({ path: process.env.SHOPFLOW_SCREENSHOT_DIR ? `${process.env.SHOPFLOW_SCREENSHOT_DIR}/p0-04-student.png` : "test-results/p0-04-student.png", fullPage: true })
