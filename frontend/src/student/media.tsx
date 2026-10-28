@@ -234,7 +234,7 @@ export function FlowDiagram({ data }: { data: FlowDisplay }) {
               borderColor={index === position && !done ? "saffron.solid" : index < step ? "brand.solid" : "app.border"}
               bg={index < step ? "brand.subtle" : "app.surface"} aria-current={index === position && !done ? "step" : undefined}>
               <Text fontWeight="semibold" fontSize="sm">{item.label}</Text>
-              {item.rejects > 0 && <Text fontSize="xs" color={index < step ? "red.700" : "app.muted"} fontWeight={index < step ? "bold" : undefined}>− {format(item.rejects)} rejetée{item.rejects > 1 ? "s" : ""}</Text>}
+              {item.rejects > 0 && <Text fontSize="xs" color={index < step ? "red.fg" : "app.muted"} fontWeight={index < step ? "bold" : undefined}>− {format(item.rejects)} rejetée{item.rejects > 1 ? "s" : ""}</Text>}
               {item.note && <Text fontSize="xs" color="app.muted">{item.note}</Text>}
             </Stack>
             {index < data.steps.length - 1 && <Flex align="center" justify="center" px="1" py={{ base: "1", md: "0" }} color="app.muted" aria-hidden="true">

@@ -8,6 +8,8 @@ import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react"
 const config = defineConfig({
   globalCss: {
     "html, body": { background: "app.canvas", color: "app.ink" },
+    html: { colorScheme: "light" },
+    "html.dark": { colorScheme: "dark" },
     body: { lineHeight: "1.6" },
     "*:focus-visible": { outline: "3px solid", outlineColor: "brand.focusRing", outlineOffset: "2px" },
     "*, *::before, *::after": {
@@ -35,34 +37,61 @@ const config = defineConfig({
       radii: { card: { value: "14px" } },
     },
     semanticTokens: {
+      // Every colour has a light value and a `_dark` value (docs/DESIGN.md). Pairs meet WCAG AA in both.
       colors: {
         brand: {
-          solid: { value: "{colors.brand.600}" }, contrast: { value: "white" }, fg: { value: "{colors.brand.700}" },
-          muted: { value: "{colors.brand.100}" }, subtle: { value: "{colors.brand.50}" },
-          emphasized: { value: "{colors.brand.200}" }, focusRing: { value: "{colors.brand.500}" },
+          solid: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.500}" } },
+          contrast: { value: { base: "white", _dark: "white" } },
+          fg: { value: { base: "{colors.brand.700}", _dark: "{colors.brand.300}" } },
+          muted: { value: { base: "{colors.brand.100}", _dark: "{colors.brand.800}" } },
+          subtle: { value: { base: "{colors.brand.50}", _dark: "#10302A" } },
+          emphasized: { value: { base: "{colors.brand.200}", _dark: "{colors.brand.700}" } },
+          focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.300}" } },
         },
         saffron: {
-          solid: { value: "{colors.saffron.700}" }, contrast: { value: "white" }, fg: { value: "{colors.saffron.800}" },
-          muted: { value: "{colors.saffron.100}" }, subtle: { value: "{colors.saffron.50}" },
-          emphasized: { value: "{colors.saffron.200}" }, focusRing: { value: "{colors.saffron.500}" },
+          solid: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
+          contrast: { value: { base: "white", _dark: "#1B1206" } },
+          fg: { value: { base: "{colors.saffron.800}", _dark: "{colors.saffron.300}" } },
+          muted: { value: { base: "{colors.saffron.100}", _dark: "{colors.saffron.900}" } },
+          subtle: { value: { base: "{colors.saffron.50}", _dark: "#2A1F10" } },
+          emphasized: { value: { base: "{colors.saffron.200}", _dark: "{colors.saffron.800}" } },
+          focusRing: { value: { base: "{colors.saffron.500}", _dark: "{colors.saffron.400}" } },
         },
-        // Default green.solid (600) fails AA with white text; use 700 everywhere.
-        green: { solid: { value: "{colors.green.700}" } },
+        // Default green.solid (600) fails AA with white text; use 700 everywhere. `_light`, not `base`:
+        // Chakra's own token has a `_light` value that would win over `base`.
+        green: { solid: { value: { _light: "{colors.green.700}", _dark: "{colors.green.700}" } } },
+        // Chakra's own surfaces (tables, inputs, menus) follow the app surfaces, not pure black.
+        bg: {
+          DEFAULT: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
+          panel: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
+        },
         app: {
-          canvas: { value: "#F7F4EE" }, surface: { value: "#FFFFFF" }, sunken: { value: "#F1EDE4" },
-          border: { value: "#E2DDD3" }, ink: { value: "#14211F" }, muted: { value: "#4A5A56" },
+          canvas: { value: { base: "#F7F4EE", _dark: "#0D1513" } },
+          surface: { value: { base: "#FFFFFF", _dark: "#151F1D" } },
+          sunken: { value: { base: "#F1EDE4", _dark: "#1B2724" } },
+          border: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
+          ink: { value: { base: "#14211F", _dark: "#E6EEEB" } },
+          muted: { value: { base: "#4A5A56", _dark: "#A9B8B4" } },
         },
-        // Code blocks: light syntax colours, each at least 4.5:1 on code.bg.
+        // Code blocks: syntax colours at least 4.5:1 on code.bg in both themes.
         code: {
-          bg: { value: "#F4F1EA" }, fg: { value: "#14211F" }, keyword: { value: "#0F5047" }, string: { value: "#7A4A12" },
-          comment: { value: "#566460" }, number: { value: "#6B2C91" }, border: { value: "#E2DDD3" },
+          bg: { value: { base: "#F4F1EA", _dark: "#101917" } },
+          fg: { value: { base: "#14211F", _dark: "#E6EEEB" } },
+          keyword: { value: { base: "#0F5047", _dark: "#7FD1BE" } },
+          string: { value: { base: "#7A4A12", _dark: "#F2C27A" } },
+          comment: { value: { base: "#566460", _dark: "#9DAEA9" } },
+          number: { value: { base: "#6B2C91", _dark: "#D9AEF2" } },
+          border: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
         },
         chart: {
-          grid: { value: "#E2DDD3" }, axis: { value: "#4A5A56" }, one: { value: "{colors.brand.600}" }, two: { value: "{colors.saffron.700}" },
+          grid: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
+          axis: { value: { base: "#4A5A56", _dark: "#A9B8B4" } },
+          one: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.300}" } },
+          two: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
         },
       },
       shadows: {
-        card: { value: "0 1px 2px rgba(20, 33, 31, 0.06), 0 4px 16px rgba(20, 33, 31, 0.04)" },
+        card: { value: { base: "0 1px 2px rgba(20, 33, 31, 0.06), 0 4px 16px rgba(20, 33, 31, 0.04)", _dark: "0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25)" } },
       },
     },
   },

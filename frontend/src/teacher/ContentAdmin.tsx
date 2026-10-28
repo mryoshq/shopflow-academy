@@ -105,7 +105,7 @@ export function CourseImport({ onImported }: { onImported: (id: number) => void 
     <Heading as="h4" size="sm">Importer un cours (JSON)</Heading>
     <Text fontSize="sm" color="app.muted">Le fichier est vérifié avant toute création. L’import crée toujours un nouveau brouillon.</Text>
     <input type="file" accept=".json,application/json" aria-label="Fichier de cours JSON" onChange={(event) => { void onFile(event.target.files?.[0]); event.target.value = "" }} />
-    {problem && <Box role="alert" bg="red.50" color="red.800" p="3" rounded="md" fontSize="sm">
+    {problem && <Box role="alert" bg="red.subtle" color="red.fg" p="3" rounded="md" fontSize="sm">
       <Text fontWeight="semibold">{problem.message}</Text>
       {problem.errors.length > 0 && <Stack as="ul" gap="1" mt="2" pl="4">{problem.errors.slice(0, 12).map((item, index) =>
         <Text as="li" key={index}><Text as="span" fontFamily="mono">{item.path || "document"}</Text> : {item.message}</Text>)}</Stack>}

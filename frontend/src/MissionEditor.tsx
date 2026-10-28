@@ -79,15 +79,15 @@ function TableEditor({ value, onChange }: { value: TableDisplay; onChange: (valu
     rows[rowIndex][columnIndex] = text
     onChange({ ...value, rows })
   }
-  return <Stack gap="3" p="4" bg="gray.50" rounded="md" borderWidth="1px">
+  return <Stack gap="3" p="4" bg="app.sunken" rounded="md" borderWidth="1px">
     <Text fontWeight="semibold">Tableau de démonstration</Text>
     <Flex gap="2" wrap="wrap">
-      {value.columns.map((column, index) => <Input key={index} aria-label={`Nom de la colonne ${index + 1}`} value={column} onChange={(event) => updateColumn(index, event.target.value)} maxW="44" bg="white" />)}
+      {value.columns.map((column, index) => <Input key={index} aria-label={`Nom de la colonne ${index + 1}`} value={column} onChange={(event) => updateColumn(index, event.target.value)} maxW="44" bg="app.surface" />)}
       <Button size="sm" variant="outline" onClick={() => onChange({ ...value, columns: [...value.columns, ""], rows: value.rows.map((row) => [...row, ""]) })} disabled={value.columns.length >= 12}>Ajouter une colonne</Button>
       {value.columns.length > 1 && <Button size="sm" variant="ghost" onClick={() => onChange({ ...value, columns: value.columns.slice(0, -1), rows: value.rows.map((row) => row.slice(0, -1)) })}>Retirer la dernière colonne</Button>}
     </Flex>
     {value.rows.map((row, rowIndex) => <Flex key={rowIndex} gap="2" wrap="wrap">
-      {row.map((cell, columnIndex) => <Input key={columnIndex} aria-label={`Ligne ${rowIndex + 1}, colonne ${columnIndex + 1}`} value={cell === null ? "" : String(cell)} onChange={(event) => updateCell(rowIndex, columnIndex, event.target.value)} maxW="44" bg="white" />)}
+      {row.map((cell, columnIndex) => <Input key={columnIndex} aria-label={`Ligne ${rowIndex + 1}, colonne ${columnIndex + 1}`} value={cell === null ? "" : String(cell)} onChange={(event) => updateCell(rowIndex, columnIndex, event.target.value)} maxW="44" bg="app.surface" />)}
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...value, rows: value.rows.filter((_, index) => index !== rowIndex) })} disabled={value.rows.length <= 1}>Retirer la ligne</Button>
     </Flex>)}
     <Button size="sm" variant="outline" alignSelf="start" onClick={() => onChange({ ...value, rows: [...value.rows, value.columns.map(() => "")] })} disabled={value.rows.length >= 100}>Ajouter une ligne</Button>
@@ -95,12 +95,12 @@ function TableEditor({ value, onChange }: { value: TableDisplay; onChange: (valu
 }
 
 function ChartEditor({ value, onChange }: { value: BarChartDisplay; onChange: (value: BarChartDisplay) => void }) {
-  return <Stack gap="3" p="4" bg="gray.50" rounded="md" borderWidth="1px">
-    <Field.Root><Field.Label>Titre du graphique</Field.Label><Input value={value.title} onChange={(event) => onChange({ ...value, title: event.target.value })} bg="white" /></Field.Root>
-    <Field.Root><Field.Label>Unité</Field.Label><Input value={value.unit} onChange={(event) => onChange({ ...value, unit: event.target.value })} placeholder="DH" bg="white" /></Field.Root>
+  return <Stack gap="3" p="4" bg="app.sunken" rounded="md" borderWidth="1px">
+    <Field.Root><Field.Label>Titre du graphique</Field.Label><Input value={value.title} onChange={(event) => onChange({ ...value, title: event.target.value })} bg="app.surface" /></Field.Root>
+    <Field.Root><Field.Label>Unité</Field.Label><Input value={value.unit} onChange={(event) => onChange({ ...value, unit: event.target.value })} placeholder="DH" bg="app.surface" /></Field.Root>
     {value.labels.map((label, index) => <Flex key={index} gap="2" align="end" wrap="wrap">
-      <Field.Root maxW="52"><Field.Label>Catégorie {index + 1}</Field.Label><Input value={label} onChange={(event) => onChange({ ...value, labels: value.labels.map((item, i) => i === index ? event.target.value : item) })} bg="white" /></Field.Root>
-      <Field.Root maxW="40"><Field.Label>Valeur {index + 1}</Field.Label><Input type="number" value={value.values[index] ?? 0} onChange={(event) => onChange({ ...value, values: value.values.map((item, i) => i === index ? Number(event.target.value) : item) })} bg="white" /></Field.Root>
+      <Field.Root maxW="52"><Field.Label>Catégorie {index + 1}</Field.Label><Input value={label} onChange={(event) => onChange({ ...value, labels: value.labels.map((item, i) => i === index ? event.target.value : item) })} bg="app.surface" /></Field.Root>
+      <Field.Root maxW="40"><Field.Label>Valeur {index + 1}</Field.Label><Input type="number" value={value.values[index] ?? 0} onChange={(event) => onChange({ ...value, values: value.values.map((item, i) => i === index ? Number(event.target.value) : item) })} bg="app.surface" /></Field.Root>
       <Button size="sm" variant="ghost" onClick={() => onChange({ ...value, labels: value.labels.filter((_, i) => i !== index), values: value.values.filter((_, i) => i !== index) })} disabled={value.labels.length <= 1}>Retirer</Button>
     </Flex>)}
     <Button size="sm" variant="outline" alignSelf="start" onClick={() => onChange({ ...value, labels: [...value.labels, ""], values: [...value.values, 0] })} disabled={value.labels.length >= 20}>Ajouter une catégorie</Button>
@@ -227,10 +227,10 @@ function ChoiceMissionEditor({ mission, course, busy, onSave }: EditorProps) {
 
   return <Stack gap="6" as="section" aria-label="Éditeur de mission">
     <Flex align="center" justify="space-between" wrap="wrap" gap="3"><Heading as="h3" size="lg">Éditer une mission</Heading><Badge colorPalette="brand">Brouillon</Badge></Flex>
-    <Box bg="gray.50" p="4" rounded="md"><Stack gap="2"><Text fontWeight="semibold">Définition JSON facultative</Text><Text fontSize="sm">Importez un brouillon existant ou exportez celui-ci. Le serveur vérifie le contenu à l’enregistrement.</Text><input type="file" accept=".json,application/json" aria-label="Importer une définition JSON" onChange={(event) => { void importDefinition(event.target.files?.[0]); event.target.value = "" }} /><Button size="sm" variant="outline" alignSelf="start" onClick={exportDefinition}>Exporter la définition JSON</Button>{importError && <Text role="alert" color="red.700">{importError}</Text>}</Stack></Box>
+    <Box bg="app.sunken" p="4" rounded="md"><Stack gap="2"><Text fontWeight="semibold">Définition JSON facultative</Text><Text fontSize="sm">Importez un brouillon existant ou exportez celui-ci. Le serveur vérifie le contenu à l’enregistrement.</Text><input type="file" accept=".json,application/json" aria-label="Importer une définition JSON" onChange={(event) => { void importDefinition(event.target.files?.[0]); event.target.value = "" }} /><Button size="sm" variant="outline" alignSelf="start" onClick={exportDefinition}>Exporter la définition JSON</Button>{importError && <Text role="alert" color="red.fg">{importError}</Text>}</Stack></Box>
     <Field.Root required><Field.Label>Titre de la mission</Field.Label><Input value={title} onChange={(event) => setTitle(event.target.value)} disabled={busy} /></Field.Root>
     <Field.Root required><Field.Label>Type d’activité</Field.Label><NativeSelect.Root disabled={busy}><NativeSelect.Field value={draft.kind} onChange={(event) => setKind(event.target.value as MissionKind)}>{kinds.map((kind) => <option key={kind.value} value={kind.value}>{kind.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>
-    <Box><Text fontWeight="semibold" mb="2">Objectifs pédagogiques</Text>{course.objectives.length === 0 ? <Text color="orange.700">Créez un objectif dans l’onglet Structure avant de compléter cette mission.</Text> : <Flex gap="4" wrap="wrap">{course.objectives.map((objective) => <label key={objective.id}><input type="checkbox" checked={draft.objective_ids.includes(objective.id)} onChange={() => toggleObjective(objective.id)} /> {objective.code} — {objective.statement}</label>)}</Flex>}</Box>
+    <Box><Text fontWeight="semibold" mb="2">Objectifs pédagogiques</Text>{course.objectives.length === 0 ? <Text color="orange.fg">Créez un objectif dans l’onglet Structure avant de compléter cette mission.</Text> : <Flex gap="4" wrap="wrap">{course.objectives.map((objective) => <label key={objective.id}><input type="checkbox" checked={draft.objective_ids.includes(objective.id)} onChange={() => toggleObjective(objective.id)} /> {objective.code} — {objective.statement}</label>)}</Flex>}</Box>
     {otherMissions.length > 0 && <Box><Text fontWeight="semibold" mb="2">Missions préalables</Text><Flex gap="4" wrap="wrap">{otherMissions.map((item) => <label key={item.id}><input type="checkbox" checked={draft.prerequisite_mission_ids.includes(item.id)} onChange={() => setDraft({ ...draft, prerequisite_mission_ids: draft.prerequisite_mission_ids.includes(item.id) ? draft.prerequisite_mission_ids.filter((id) => id !== item.id) : [...draft.prerequisite_mission_ids, item.id] })} /> {item.title}</label>)}</Flex></Box>}
     <Field.Root required><Field.Label>Situation</Field.Label><Textarea value={draft.scenario} onChange={(event) => setDraft({ ...draft, scenario: event.target.value })} rows={4} placeholder="Une commande fictive arrive à Rabat…" disabled={busy} /></Field.Root>
     <Field.Root required><Field.Label>Consigne</Field.Label><Textarea value={draft.instructions} onChange={(event) => setDraft({ ...draft, instructions: event.target.value })} rows={3} placeholder="Que doit faire l’équipe ?" disabled={busy} /></Field.Root>

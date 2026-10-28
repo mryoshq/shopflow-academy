@@ -42,7 +42,7 @@ export function Panel({ children, ...rest }: { children: ReactNode } & Record<st
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
   return <Panel role="alert">
     <Stack gap="3" align="start">
-      <Flex gap="2" align="center" color="red.700"><Icon name="alert" /><Text fontWeight="semibold">{message}</Text></Flex>
+      <Flex gap="2" align="center" color="red.fg"><Icon name="alert" /><Text fontWeight="semibold">{message}</Text></Flex>
       <Text color="app.muted">Vérifiez votre connexion. Votre sélection en cours est conservée.</Text>
       <Button onClick={onRetry} colorPalette="brand"><Icon name="retry" />Réessayer</Button>
     </Stack>

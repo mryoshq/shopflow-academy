@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react"
 import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
+import { ThemeSwitch } from "./ThemeSwitch"
 import type { User } from "./studioTypes"
 
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
@@ -90,15 +91,18 @@ export function App() {
     <Box minH="100vh" bg="app.canvas" color="app.ink">
       <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
         <Container maxW="7xl" py="3.5">
-          <Flex align="center" justify="space-between" gap="4">
+          <Flex align="center" justify="space-between" gap="3" wrap="wrap">
             <Flex align="center" gap="2.5">
-              <Box w="8" h="8" rounded="lg" bg="brand.solid" color="white" display="grid" placeItems="center" fontWeight="bold" fontSize="sm" aria-hidden="true">SF</Box>
+              <Box w="8" h="8" rounded="lg" bg="brand.solid" color="brand.contrast" display="grid" placeItems="center" fontWeight="bold" fontSize="sm" aria-hidden="true">SF</Box>
               <Text fontWeight="bold" letterSpacing="0.02em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>
             </Flex>
+            <Flex align="center" gap="3" wrap="wrap" justify="end">
+            <ThemeSwitch />
             {state === "authenticated" && user ? <Flex align="center" gap="3">
               <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
               <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
-            </Flex> : <Text fontSize="sm" color="app.muted" display={{ base: "none", sm: "block" }}>Python Data Engineering & SQL avancé</Text>}
+            </Flex> : <Text fontSize="sm" color="app.muted" display={{ base: "none", md: "block" }}>Python Data Engineering & SQL avancé</Text>}
+            </Flex>
           </Flex>
         </Container>
       </Box>
@@ -124,7 +128,7 @@ export function App() {
                   <Field.Label>Mot de passe</Field.Label>
                   <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
-                {message && <Text role="alert" color="red.700" fontSize="sm">{message}</Text>}
+                {message && <Text role="alert" color="red.fg" fontSize="sm">{message}</Text>}
                 <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText="Connexion…">Se connecter</Button>
               </Stack>
               </form>
@@ -138,9 +142,9 @@ export function App() {
               <Text fontSize="lg" color="app.muted">Préparez votre cours, ouvrez les blocs et suivez votre classe.</Text>
             </Stack>
             <TeacherHome />
-            {message && <Text role="alert" color="red.700">{message}</Text>}
+            {message && <Text role="alert" color="red.fg">{message}</Text>}
           </Stack>
-        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.700">{message}</Text>}</Stack>)}
+        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>)}
       </Container>
     </Box>
   )

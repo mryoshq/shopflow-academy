@@ -51,7 +51,7 @@ export function SqlChallenge({ missionId, starter, disabled, onResult }: Props) 
       {error && <Alert.Root status="warning" variant="subtle" rounded="lg" role="alert"><Alert.Indicator /><Alert.Content>
         <Alert.Title>Requête non exécutée</Alert.Title><Alert.Description>{error}</Alert.Description></Alert.Content></Alert.Root>}
       {outcome && <Stack gap="3">
-        <Flex gap="2" align="center" fontWeight="bold" color={outcome.attempt.correct ? "green.800" : "saffron.800"}>
+        <Flex gap="2" align="center" fontWeight="bold" color={outcome.attempt.correct ? "green.fg" : "saffron.fg"}>
           <Icon name={outcome.attempt.correct ? "check" : "retry"} />
           {outcome.attempt.correct ? `Bravo, c’est le résultat attendu (+${formatPoints(outcome.attempt.points)} pts bonus)` : "Presque ! Le résultat diffère encore : réessayez."}
         </Flex>

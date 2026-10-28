@@ -58,7 +58,8 @@ export function CodeBlock({ code, language, title, label }: { code: string; lang
 }
 
 export function DataTable({ columns, rows, caption }: { columns: string[]; rows: (string | number | boolean | null)[][]; caption: string }) {
-  return <Box overflowX="auto" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
+  // Focusable named region: a narrow screen can scroll the table with the keyboard (WCAG 2.1.1).
+  return <Box overflowX="auto" tabIndex={0} role="region" aria-label={caption} borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
     <Table.Root size="sm" variant="line" css={{ "& td, & th": { fontVariantNumeric: "tabular-nums" } }}>
       <Table.Caption captionSide="top" textAlign="left" px="3" pt="2" color="app.muted" fontSize="sm">{caption}</Table.Caption>
       <Table.Header><Table.Row bg="app.sunken">{columns.map((column, index) => <Table.ColumnHeader key={index} scope="col">{column}</Table.ColumnHeader>)}</Table.Row></Table.Header>

@@ -31,7 +31,7 @@ export function Results({ assignmentId }: { assignmentId: number }) {
       </Flex>
     </Flex>
     <Panel p="0" overflow="hidden">
-      <Box overflowX="auto">
+      <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des notes (défilement horizontal)">
         <Table.Root size="sm" variant="line" aria-label="Notes de la classe">
           <Table.Header><Table.Row bg="app.sunken">{["Étudiant", "Note", "Bonus", "Missions réussies"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{rows.map((row) => <Table.Row key={row.id}>

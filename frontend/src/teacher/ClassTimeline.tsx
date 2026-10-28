@@ -87,7 +87,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
             <Heading as="h3" size="md" id="timeline-title">Déroulé de la journée</Heading>
             <Text fontSize="sm" color="app.muted">{openBlocks.length} bloc{openBlocks.length > 1 ? "s" : ""} ouvert{openBlocks.length > 1 ? "s" : ""} sur {data.blocks.length}. Les blocs ouverts restent accessibles.</Text>
           </Stack>
-          <Button colorPalette="brand" size="lg" loading={busy} disabled={!next}
+          <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" loading={busy} disabled={!next}
             onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/open-next`, (result) => `Bloc « ${result.title} » ouvert pour toute la classe.`)}>
             {next ? `Ouvrir le bloc suivant : ${next.title}` : "Tous les blocs sont ouverts"}
           </Button>
@@ -103,7 +103,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
           </Box>
         </Box>}
         {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
-        {stale && <Text fontSize="sm" color="red.700">Connexion perdue : données possiblement anciennes.</Text>}
+        {stale && <Text fontSize="sm" color="red.fg">Connexion perdue : données possiblement anciennes.</Text>}
         <Stack as="ol" gap="2" listStyleType="none" p="0" m="0" aria-label="Blocs de la journée">
           {data.blocks.map((block, index) => {
             const newModule = index === 0 || data.blocks[index - 1].module !== block.module
@@ -151,7 +151,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
     <Panel as="section" aria-labelledby="stats-title" p="0" overflow="hidden">
       <Box p={{ base: "5", md: "6" }} pb="3"><Heading as="h3" size="md" id="stats-title">Missions : réussites et difficultés</Heading>
         <Text fontSize="sm" color="app.muted">« Bloqués » : plusieurs essais sans réussite.</Text></Box>
-      <Box overflowX="auto">
+      <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des missions (défilement horizontal)">
         <Table.Root size="sm" variant="line" aria-label="Statistiques par mission">
           <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>

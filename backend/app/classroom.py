@@ -327,3 +327,41 @@ def run_cleanup(db: Session, owner: User, apply: bool) -> dict:
 def cleanup(payload: CleanupInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     """Archive leftover E2E courses in one go. Dry run unless ``apply`` is true; nothing is deleted."""
     return run_cleanup(db, auth.user, payload.apply)
+
+
+# Password reset of a student (shown once) -----------------------------------------------
+
+READABLE = "abcdefghjkmnpqrstuvwxyzACDEFGHJKMNPQRTUVWXY34679"
+
+
+def readable_password() -> str:
+    """Three groups of four unambiguous characters (about 67 bits), easy to read aloud."""
+    import secrets
+
+    return "-".join("".join(secrets.choice(READABLE) for _ in range(4)) for _ in range(3))
+
+
+@router.post("/classes/{assignment_id}/students/{user_id}/reset-password")
+def reset_password(assignment_id: int, user_id: int, response: Response, auth: AuthContext = Depends(require_teacher_csrf),
+                   db: Session = Depends(get_db)) -> dict:
+    """New password for one student of the class: returned once, never stored in clear, sessions revoked, audited."""
+    from sqlalchemy import update
+
+    from app.auth import digest, password_hash
+    from app.models import LoginThrottle, UserSession
+
+    response.headers["Cache-Control"] = "no-store"
+    assignment, _, cohort = owned_class(db, auth, assignment_id)
+    student = next((item for item in class_students(db, cohort.id) if item.id == user_id), None)
+    if student is None or not student.enabled:
+        raise HTTPException(status_code=404, detail="student not found")
+    password = readable_password()
+    student.password_hash = password_hash.hash(password)
+    revoked = db.execute(update(UserSession).where(UserSession.user_id == student.id, UserSession.revoked_at.is_(None))
+                         .values(revoked_at=utcnow())).rowcount
+    throttle = db.get(LoginThrottle, digest(student.username))
+    if throttle is not None:
+        db.delete(throttle)
+    audit(db, auth, "student.password_reset", assignment.id, {"student": display_name(student.username), "sessions_revoked": revoked})
+    db.commit()
+    return {"student": display_name(student.username), "password": password, "sessions_revoked": revoked}

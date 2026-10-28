@@ -15,6 +15,8 @@ from app.config import Settings, check_secure_settings, get_settings
 from app.models import AuditEvent, BlockState, Cohort, Course, Enrollment, User
 from test_student import attempt, choice_id, env, missions_of, post  # noqa: F401  (fixture reuse)
 from test_teacher_dashboard import other_teacher
+from fastapi.testclient import TestClient
+from app.main import app
 
 
 def definition(objective_id: int, label: str, *, bonus: bool = False) -> dict:
@@ -308,3 +310,31 @@ def test_migration_opens_the_blocks_of_existing_assignments(tmp_path):
         assert sorted((r.cohort_id, r.chapter_id) for r in rows) == [(1, 1), (1, 2)]
         assert all(r.opened_at is not None for r in rows)
     engine.dispose()
+
+
+def test_password_reset_is_shown_once_revokes_sessions_and_is_audited(env):
+    clients, engine = env
+    teacher, a = clients["teacher"], clients["a"]
+    klass = teacher.get("/api/v1/teacher/classes").json()[0]
+    me = a.get("/api/v1/auth/me").json()
+    assert a.post(f"/api/v1/teacher/classes/{klass['id']}/students/{me['id']}/reset-password",
+                  headers={"X-CSRF-Token": a.cookies["academy_csrf"]}).status_code == 403
+    assert post(other_teacher(engine), f"/api/v1/teacher/classes/{klass['id']}/students/{me['id']}/reset-password").status_code == 404
+    with Session(engine) as db:
+        outsider = db.scalar(select(User.id).where(User.username == "prenom.nom@example.com"))
+    assert post(teacher, f"/api/v1/teacher/classes/{klass['id']}/students/{outsider}/reset-password").status_code == 404
+    reset = post(teacher, f"/api/v1/teacher/classes/{klass['id']}/students/{me['id']}/reset-password")
+    assert reset.status_code == 200 and reset.headers["cache-control"] == "no-store"
+    body = reset.json()
+    assert body["student"] == "demo.etudiant01" and body["sessions_revoked"] >= 1
+    assert len(body["password"]) == 14 and body["password"].count("-") == 2
+    # The old session is closed; the old password no longer works; the new one does.
+    assert a.get("/api/v1/student/dashboard").status_code == 401
+    fresh = TestClient(app)
+    assert fresh.post("/api/v1/auth/login", json={"username": "demo.etudiant01", "password": "student-a-pass"}).status_code == 401
+    assert fresh.post("/api/v1/auth/login", json={"username": "demo.etudiant01", "password": body["password"]}).status_code == 200
+    log = teacher.get(f"/api/v1/teacher/classes/{klass['id']}/interventions").json()
+    assert log[0]["action"] == "student.password_reset" and body["password"] not in str(log)
+    with Session(engine) as db:
+        events = db.scalars(select(AuditEvent).where(AuditEvent.action == "student.password_reset")).all()
+        assert len(events) == 1 and body["password"] not in str(events[0].details)
