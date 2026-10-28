@@ -16,6 +16,7 @@ async function login(page: Page) {
 
 test("course roundtrip: export, import, validate, preview, publish, search and restore", async ({ page }) => {
   await login(page)
+  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
   const search = await (await page.request.get("/api/v1/teacher/course-search?q=demo-shopflow-donnees")).json() as { id: number }[]
   const exported = await (await page.request.get(`/api/v1/teacher/courses/${search[0].id}/export`)).json()
   const suffix = Date.now().toString(36)

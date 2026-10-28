@@ -34,6 +34,8 @@ services:
       APP_EXTRA_ORIGINS: ${APP_EXTRA_ORIGINS:-}
       APP_SECRET: ${APP_SECRET:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
+      MAIN_COURSE_SLUG: ${MAIN_COURSE_SLUG:-python-data-engineering-sql}
+      CLASS_LABEL: ${CLASS_LABEL:-Classe B3 IA/Data}
     depends_on:
       postgres:
         condition: service_healthy

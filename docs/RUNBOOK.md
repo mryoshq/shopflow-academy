@@ -20,7 +20,7 @@ E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test
 1. Mac sur secteur, Docker Desktop lancé. La veille système est réglée sur « jamais » (`pmset -g` : `sleep 0`) ; sinon garder un terminal avec `caffeinate -dimsu` ouvert pendant le cours.
 2. `python3 scripts/ops_status.py` → « Prêt pour le cours. » (conteneurs, santé, sauvegarde < 7 h, disque, URL publique, n8n inchangé).
 3. Depuis un téléphone en 4G : ouvrir `https://shopflow.rapidfox.io` et se connecter.
-4. Dans « Suivi de classe », vérifier que la séquence est « Ouverte » et que la cohorte attendue est attribuée.
+4. Dans « Ma classe », vérifier que la séquence est « Ouverte » ; pendant le cours, « Ouvrir le bloc suivant » toutes les ~15 minutes (repère visible par vous seul, rien ne se ferme automatiquement) et traiter les demandes d'aide.
 
 ## Démarrer, arrêter, redéployer
 

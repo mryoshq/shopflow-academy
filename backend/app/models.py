@@ -204,3 +204,36 @@ class MissionUnlock(Base):
     mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
     unlocked_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class BlockState(Base):
+    """Opening state of one block (chapter) for one class (cohort), kept across releases.
+
+    No row, or ``opened_at`` NULL, means closed: newly imported blocks arrive closed.
+    """
+
+    __tablename__ = "block_states"
+    __table_args__ = (UniqueConstraint("cohort_id", "chapter_id", name="uq_block_state"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    chapter_id: Mapped[int] = mapped_column(ForeignKey("chapters.id", ondelete="CASCADE"), nullable=False)
+    opened_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+
+class HelpRequest(Base):
+    """A student's "I need an explanation" request on one mission (pending, then handled)."""
+
+    __tablename__ = "help_requests"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
+    course_release_id: Mapped[int] = mapped_column(ForeignKey("course_releases.id", ondelete="RESTRICT"), nullable=False)
+    message: Mapped[str] = mapped_column(Text, nullable=False, server_default="")
+    status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    handled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    handled_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)

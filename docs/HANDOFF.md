@@ -1,24 +1,32 @@
 # HANDOFF — reprise ShopFlow Academy
 
-## Reprise unique (28/10/2026, matin — décisions du propriétaire appliquées)
+## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusion de la pile, sur accord écrit du propriétaire** (#11 → #23 puis #24 (`feat/p0-10-owner-decisions`), merge commit, dans l'ordre, en changeant la base de chaque PR après la précédente : `docs/INTEGRATION-PLAN.md`). Ensuite seulement : phase P2 (cours réels, fichiers fournis par le propriétaire).
+**Prochaine tâche unique : relire et fusionner, dans l'ordre, les PR du sprint 2 listées ci-dessous (accord et action du propriétaire), puis faire la section « À faire en local » de chacune.**
 
-**État** : P0-01 à P0-10 livrés. `https://shopflow.rapidfox.io` en ligne via la route créée par le propriétaire ; `python3 scripts/smoke_public.py` 16/16 PASS ; n8n toujours 302 vers Access. Stack de production sur la branche `feat/p0-10-owner-decisions`.
+**État réel (vérifié dans Git le 28/10/2026)** :
+- Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
+- **Production** : `https://shopflow.rapidfox.io`, sur le Mac de l'enseignant (Docker Compose + Cloudflare Tunnel), déployée depuis `main`. Ce setup est définitif.
+- **Cours** : en cours de rédaction par un autre agent dans un **dossier local du Mac** (jamais sur GitHub : il contient les corrigés). Sauvegarde dans le dépôt privé `mryoshq/shopflow-courses` (ne pas y toucher depuis une session cloud).
+- **Sprint 2 en cours** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR empilée par partie.
 
-**Décisions du propriétaire du 28/10 (ADR-0016), appliquées** :
-1. Route Cloudflare créée par lui ; pas de *private hostname* ni d'application Access pour `shopflow`.
-2. Un seul enseignant : le compte de `.local/teacher-email.txt` (adresse jamais écrite dans le dépôt). Les 59 cours lui sont rattachés ; studio et suivi réservés au propriétaire (404 sinon, `backend/tests/test_ownership.py`) ; `demo.enseignant` désactivé.
-3. Étudiants : seuls les `@ynov.com` restent actifs (10). 11 comptes désactivés (tous `demo.*`), aucun supprimé, sessions révoquées. Sauvegarde manuelle avant : `~/Developer/shopflow-backups/academy-20261028-052641-avant-comptes.dump` (vérifiée, 19 tables). Outil : `python -m app.account_policy` (simulation par défaut).
-4. E2E, charge et persistance sur la **stack de test** séparée (`scripts/test_stack.py`, projet `shopflow-academy-test`, port 3180, base jetable). Les scripts et Playwright refusent une adresse de production. La production n'a pas bougé pendant les tests (comptage avant/après, voir PROGRESS).
-5. Sauvegardes inchangées (automatique toutes les 6 h, pas de copie hors du Mac).
-6. `cloudflared` et son jeton non touchés. Aucune fusion.
+### PR du sprint 2, dans l'ordre de fusion
 
-**À savoir** :
-- Sur les 59 cours de production, environ 40 sont des restes d'anciens tests E2E (slugs `e2e`, `test`, `demo`) : le propriétaire peut les archiver depuis le studio. Rien n'a été supprimé.
-- Les cohortes et l'annuaire des étudiants n'ont pas de propriétaire en base : sans effet avec un seul enseignant ; à revoir si un second enseignant arrive.
-- Le test sur téléphone en 4G reste à faire par le propriétaire.
-- Échec E2E intermittent de la nuit : cause trouvée. Le contrôle axe-core mesurait le contraste d'un bouton « Descendre » pendant son fondu de désactivé à actif (4,22 au lieu de 4,5). Ce n'est pas un défaut de couleur, et le contrôle attend désormais la fin des animations (`e2e/player.spec.ts`). Ça n'apparaissait que lorsque l'ordre de départ amenait une étape de la dernière place à la deuxième, c'est-à-dire sur une base déjà utilisée.
+| Ordre | Partie | Branche | PR | État |
+|---|---|---|---|---|
+| 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | (voir PROGRESS) | ouverte |
+
+Chaque PR part de la précédente : fusionner dans l'ordre (merge commit), puis changer la base de la suivante vers `main` si GitHub ne le fait pas.
+
+### À faire en local après la PR A (Mac, clone `~/Developer/shopflow-academy`)
+1. **Sauvegarde manuelle** (migration 0007) : commande « Manuelle » de `docs/RUNBOOK.md`, suffixe `avant-sprint2-a`.
+2. **`APP_SECRET`** : la production refuse désormais de démarrer sans lui. Vérifier sans afficher : `grep -c '^APP_SECRET=.\{32,\}' .env` doit afficher `1`. Sinon : `python3 -c "import secrets; print('APP_SECRET=' + secrets.token_urlsafe(48))" >> .env` (les tentatives déjà enregistrées restent valides ; les brouillons de réponse ouverts dans un navigateur sont à refaire).
+3. Redéployer : `git switch main && git pull && docker compose up -d --build --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080`, puis `python3 scripts/smoke_public.py`.
+4. Se connecter : « Mon cours » crée ou retrouve le cours unique (`python-data-engineering-sql`) et la classe « Classe B3 IA/Data » (les étudiants actifs, donc les 10 `@ynov.com`). Aucun cours n'est attribué tant que vous ne publiez pas.
+5. **Ménage** (simulation, puis exécution) : `docker compose exec -T backend python -m app.course_cleanup < .local/teacher-email.txt`, relire la liste, puis la même commande avec `--apply`. Rien n'est supprimé (archivage, audité). Également possible depuis « Mon cours » → Options avancées.
+
+### Attend l'accord du propriétaire
+- Publication du cours réel pour la classe et ouverture des blocs (jamais faites par un agent).
 
 ## État courant — session de nuit Claude Code (27-28/10/2026)
 

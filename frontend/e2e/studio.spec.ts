@@ -15,12 +15,23 @@ async function login(page: import("@playwright/test").Page, account: { username:
   await expect(page.getByRole("heading", { name: `Bonjour, ${account.username}` })).toBeVisible()
 }
 
+/** Blocks arrive closed: open the first block of the class given to this cohort. */
+async function openFirstBlock(page: import("@playwright/test").Page, cohort: string) {
+  const classes = await (await page.request.get("/api/v1/teacher/classes")).json() as { id: number; cohort: string }[]
+  const klass = classes.find((item) => item.cohort === cohort)!
+  const token = (await page.context().cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
+  const response = await page.request.post(`/api/v1/teacher/classes/${klass.id}/blocks/open-next`, { headers: { "X-CSRF-Token": token } })
+  expect(response.status()).toBe(200)
+}
+
 test("studio: create, validate, preview, publish, assign and read without leaking answers", async ({ page, browser }) => {
   const suffix = Date.now().toString(36)
   const courseTitle = `Démonstration SQL ${suffix}`
   const cohortTitle = `Cohorte démo ${suffix}`
   await login(page, teacher)
   await expect(page.getByRole("heading", { name: "Studio de cours" })).toBeVisible()
+  // Other courses live in the advanced options: the studio opens the single course first.
+  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
   const sidebar = page.locator("aside")
   await sidebar.getByLabel("Titre").fill(courseTitle)
   await sidebar.getByLabel("Description").fill("Exercice fictif pour vérifier le studio.")
@@ -66,6 +77,7 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   await expect(row.getByText("Inscrit")).toBeVisible()
   await page.getByRole("button", { name: "Attribuer à la cohorte" }).click()
   await expect(page.getByRole("button", { name: "Déjà attribuée" })).toBeDisabled()
+  await openFirstBlock(page, cohortTitle)
 
   const learner = await browser.newContext({ viewport: { width: 1366, height: 768 } })
   const learnerPage = await learner.newPage()

@@ -284,7 +284,11 @@ def test_published_student_view_uses_opaque_ids(curriculum_env):
     with Session(engine) as db:
         student_id = db.scalar(select(User.id).where(User.username == "student.a"))
     post(teacher, f"/api/v1/teacher/cohorts/{cohort}/enrollments", {"user_id": student_id})
-    post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": release})
+    assignment = post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": release}).json()["id"]
+    # Blocks arrive closed: the closed block exposes its title only.
+    closed = student_a.get(f"/api/v1/student/courses/{release}").json()
+    assert closed["modules"][0]["chapters"][0]["missions"] == [] and "Étape" not in str(closed)
+    assert post(teacher, f"/api/v1/teacher/classes/{assignment}/blocks/{chapter}/open").json()["open"] is True
     text = student_a.get(f"/api/v1/student/courses/{release}").text
     assert "option-1" not in text
     view = student_a.get(f"/api/v1/student/courses/{release}").json()

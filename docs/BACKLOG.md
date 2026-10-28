@@ -15,6 +15,15 @@
 - [x] **P0-09** **Expérience complète de démonstration**, CI fiable et qualité : 3 missions démonstratives isolées des cours réels, tests pytest/Vitest/Playwright, authz/IDOR, a11y de base, charge 10, restart et persistance. **AC :** enseignant publie une démo, étudiant la termine, note persistante et test cross-account. [Issue #9](https://github.com/mryoshq/shopflow-academy/issues/9) · PR P0-09 empilée sur #21, non mergée. Preuves : `docs/QUALITY.md` (pytest 56 dont matrice d'autorisation générée, Vitest 25, Playwright 9 dont parcours complet, charge 10 PASS, persistance PASS).
 - [x] **P0-10** **Déploiement Mac + Cloudflare Tunnel EXCLUSIVEMENT**, sauvegarde/restauration, logs/health, runbook et smoke test externe une fois autorisé ; n8n existant préservé. **AC :** Docker local vérifié, route `shopflow.rapidfox.io` validée seulement après accord, test distant et non-régression n8n. **Terminé le 28/10/2026** (PR empilée sur #23) : route `shopflow.rapidfox.io` créée par le propriétaire ; `python3 scripts/smoke_public.py` sur l'URL publique 15/15 PASS puis 16/16 PASS après la politique de comptes (DNS, HTTPS, cookies `__Host-`, rôles, origine, n8n toujours 302 vers Access) ; sauvegarde automatique, restauration testée, `ops_status.py`, `docs/RUNBOOK.md`, ADR-0015 et ADR-0016 (propriété des cours, comptes `@ynov.com` seuls, stack de test séparée). Test sur téléphone 4G : à confirmer par le propriétaire.
 
+## Sprint 2 — décisions du propriétaire du 28/10/2026 (une PR empilée par partie, ordre A, D, F, C, B, E)
+
+- [x] **S2-A** Journée en blocs de 15 min ouverts par l'enseignant, « Ma classe » (frise, repère horaire enseignant, aide, difficultés), interface en trois zones, classe et cours uniques, ménage des cours de test, `APP_SECRET` obligatoire. ADR-0019. Preuves : pytest 71, Vitest 31, build, Playwright 12 (stack de test locale) — voir PROGRESS.
+- [ ] **S2-D** Chaîne d'import Markdown (`course_md.py compile|import|--publish`), leçons, `line_chart`, `code`, `comparison`, schéma `run`/`sql_challenge`.
+- [ ] **S2-F** Médias codés : animation, carte mentale, pipeline animé, vidéo (ADR-0018).
+- [ ] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017).
+- [ ] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion.
+- [ ] **S2-E** `docs/SUGGESTIONS.md`.
+
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
 - [ ] **P1-01** Adaptateur tuteur IA optionnel (none et OpenRouter configurable), indices statiques en fallback, plafond requêtes/coûts, confidentialité et journaux minimaux.
