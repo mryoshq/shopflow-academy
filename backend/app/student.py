@@ -18,11 +18,13 @@ from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, display_name, require_student, require_student_csrf, utcnow
 from app.config import get_settings
+from app.attempt_rules import (is_fast, next_attempt, notice, pause_remaining, reading_remaining, record_opening,
+                                rules_for_release, student_state)
 from app.curriculum import BLOCK_CATEGORY, objective_category, release_private_definitions, student_safe_snapshot
 from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
-from app.progress import attempt_points, course_score, mission_scores
+from app.progress import attempt_points, course_score, decayed, mission_scores
 from app.models import (
     Assignment, BlockState, Course, CourseRelease, Enrollment, HelpRequest, HintReveal, MissionAttempt, MissionUnlock, MissionVersion,
 )
@@ -281,6 +283,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             "description": release.student_snapshot.get("description", ""), "version": release.version,
             "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
             "paused": is_paused(db, auth.user.id, release.id), "modules": modules,
+            # ADR-0027: banner announcing the rules against random clicking, once the teacher turned them on.
+            "rules_notice": notice(rules_for_release(db, release)),
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
                 "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),
@@ -319,7 +323,10 @@ def mission(version_id: int, response: Response, auth: AuthContext = Depends(req
     count = attempt_count(db, auth.user.id, version_id)
     last = db.scalar(select(MissionAttempt).where(MissionAttempt.user_id == auth.user.id, MissionAttempt.mission_version_id == version_id)
                      .order_by(MissionAttempt.id.desc()).limit(1))
+    now = utcnow()
+    record_opening(db, auth.user.id, version_id, now)
     payload.update({
+        "rules": student_state(db, rules_for_release(db, release), definition, auth.user.id, version_id, now),
         "hints": revealed_hints(db, auth.user.id, version_id, definition), "hint_count": len(definition.hints),
         "attempts_count": count,
         "last_attempt": {"correct": last.is_correct, "created_at": last.created_at.isoformat()} if last else None,
@@ -341,8 +348,11 @@ def attempt_response(db: Session, attempt: MissionAttempt, definition: MissionDe
     selected = raw.get("choice_ids") or sorted((raw.get("pairs") or {}).keys())
     evaluation = Evaluation(attempt.is_correct, raw, list(selected))
     count = attempt_count(db, attempt.user_id, attempt.mission_version_id)
+    release = db.get(CourseRelease, attempt.course_release_id)
+    rules = student_state(db, rules_for_release(db, release), definition, attempt.user_id, attempt.mission_version_id, utcnow())
     return {
         "attempt_id": attempt.id, "correct": attempt.is_correct, "replayed": replayed, "attempts_count": count,
+        "percent": attempt.percent, "attempt_number": attempt.attempt_number, "rules": rules,
         "points": attempt_points(attempt, definition), "score": score_payload(db, attempt.user_id, attempt.mission_version_id),
         "feedback": feedback_for(definition, attempt.mission_version_id, evaluation),
         "explanation": reveal_explanation(definition, attempt.is_correct, count),
@@ -367,13 +377,26 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
         MissionAttempt.user_id == auth.user.id, MissionAttempt.created_at >= utcnow() - timedelta(minutes=1))) or 0
     if recent >= ATTEMPTS_PER_MINUTE:
         raise HTTPException(status_code=429, detail="too many attempts")
+    rules = rules_for_release(db, release)
+    now = utcnow()
+    # ADR-0027: after a wrong answer, the next attempt waits (checked here, not only in the browser).
+    wait = pause_remaining(db, rules, auth.user.id, version_id, now) if definition.kind != "lesson" else 0
+    if wait:
+        raise HTTPException(status_code=429, detail={"code": "pause", "retry_after": wait,
+                                                     "message": "Pause après une erreur : relisez la situation."},
+                            headers={"Retry-After": str(wait)})
     try:
         evaluation = evaluate(definition, version_id, payload.answer)
     except InvalidAnswer as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+    number, percent = next_attempt(db, rules, definition, auth.user.id, version_id)
+    raw_points = score(definition, evaluation.raw_answer)
     attempt = MissionAttempt(user_id=auth.user.id, mission_version_id=version_id, course_release_id=release.id,
                              idempotency_key=payload.idempotency_key, answer=evaluation.raw_answer, is_correct=evaluation.correct,
-                             points=score(definition, evaluation.raw_answer))
+                             points=decayed(raw_points, percent), attempt_number=number, percent=percent,
+                             fast=is_fast(db, rules, auth.user.id, version_id, now),
+                             # Set here (not by the database) so the rank is exact even within one second.
+                             created_at=now)
     db.add(attempt)
     try:
         db.commit()
@@ -396,7 +419,17 @@ def understood(version_id: int, response: Response, auth: AuthContext = Depends(
     if definition.kind != "lesson":
         locate(db, auth.user.id, version_id)
         raise HTTPException(status_code=422, detail="only lessons can be marked as understood")
-    payload = AttemptInput(idempotency_key=f"lesson-{version_id}", answer=AnswerInput())
+    key = f"lesson-{version_id}"
+    done = db.scalar(select(MissionAttempt).where(MissionAttempt.user_id == auth.user.id, MissionAttempt.idempotency_key == key))
+    if done is None:
+        # ADR-0027: minimum reading time, counted from the last opening of the lesson.
+        release = locate(db, auth.user.id, version_id)[0]
+        left = reading_remaining(db, rules_for_release(db, release), definition, auth.user.id, version_id, utcnow())
+        if left:
+            raise HTTPException(status_code=429, detail={"code": "reading", "retry_after": left,
+                                                         "message": "Prenez le temps de lire la leçon."},
+                                headers={"Retry-After": str(left)})
+    payload = AttemptInput(idempotency_key=key, answer=AnswerInput())
     return submit_attempt(version_id, payload, response, auth, db)
 
 

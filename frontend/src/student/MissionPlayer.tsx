@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Alert, Box, Button, Flex, Grid, Heading, Link, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
-import { api, ApiError } from "../api"
+import { api, ApiError, retryAfter } from "../api"
 import { Activity, DataView, emptyAnswer, isAnswerComplete } from "./activities"
 import { clearDraft, helpFolded, loadDraft, newIdempotencyKey, rememberHelpFolded, rememberLastMission, saveDraft } from "./storage"
 import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
@@ -26,6 +26,18 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   const pendingKey = useRef<string | null>(null)
   const feedbackRef = useRef<HTMLDivElement | null>(null)
   const headingRef = useRef<HTMLHeadingElement | null>(null)
+  // ADR-0027: pause after an error and minimum reading time, as deadlines (ms since epoch).
+  const [pauseUntil, setPauseUntil] = useState(0)
+  const [readingUntil, setReadingUntil] = useState(0)
+  const [clock, setClock] = useState(() => Date.now())
+  const pauseLeft = Math.max(0, Math.ceil((pauseUntil - clock) / 1000))
+  const readingLeft = Math.max(0, Math.ceil((readingUntil - clock) / 1000))
+  useEffect(() => {
+    if (pauseUntil <= Date.now() && readingUntil <= Date.now()) return
+    const timer = setInterval(() => setClock(Date.now()), 250)
+    return () => clearInterval(timer)
+  }, [pauseUntil, readingUntil])
+  const startPause = (seconds: number) => { setClock(Date.now()); setPauseUntil(seconds > 0 ? Date.now() + seconds * 1000 : 0) }
 
   const load = useCallback(async () => {
     setLoadError(null)
@@ -37,6 +49,8 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       const data = await api<PlayerMission>(`/student/missions/${missionId}`)
       setMission(data)
       if (data.definition) setAnswer(loadDraft(missionId) ?? emptyAnswer(data.definition))
+      startPause(data.rules?.pause_remaining ?? 0)
+      setReadingUntil(data.rules?.reading_remaining ? Date.now() + data.rules.reading_remaining * 1000 : 0)
       rememberLastMission(missionId)
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
@@ -107,8 +121,9 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       pendingKey.current = null
       setResult(response)
       if (response.correct) clearDraft(missionId)
+      startPause(response.rules?.pause_remaining ?? 0)
       setMission((current) => current && {
-        ...current, attempts_count: response.attempts_count,
+        ...current, attempts_count: response.attempts_count, rules: response.rules ?? current.rules,
         status: response.correct || current.status === "completed" ? "completed" : "in_progress",
         last_attempt: { correct: response.correct, created_at: new Date().toISOString() },
         explanation: response.explanation ?? current.explanation, score: response.score,
@@ -116,7 +131,9 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       setHistory(null)
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
-      if (error instanceof ApiError && error.status === 429) setSubmitError("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer.")
+      const wait = retryAfter(error, "pause")
+      if (wait !== null) { pendingKey.current = null; startPause(wait) }
+      else if (error instanceof ApiError && error.status === 429) setSubmitError("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer.")
       else if (error instanceof ApiError && error.status === 409) {
         setSubmitError(error.message === "sequence paused" ? "La séquence est en pause : réessayez à la reprise." : "Cette mission est verrouillée pour le moment.")
         if (error.message === "sequence paused") setMission((current) => current && { ...current, paused: true })
@@ -141,6 +158,8 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       const response = await api<AttemptResult>(`/student/missions/${missionId}/understood`, "POST")
       setMission((current) => current && { ...current, status: "completed", attempts_count: response.attempts_count, score: response.score })
     } catch (error) {
+      const wait = retryAfter(error, "reading")
+      if (wait !== null) { setClock(Date.now()); setReadingUntil(Date.now() + wait * 1000); return }
       if (!(error instanceof ApiError && error.status === 401)) setSubmitError(error instanceof ApiError && error.status === 409 ? "La séquence est en pause : réessayez à la reprise." : "Connexion interrompue. Réessayez.")
     } finally {
       setBusy(false)
@@ -215,10 +234,11 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
             </>} />
             {submitError && <Text role="alert" color="red.fg">{submitError}</Text>}
+            {mission.status !== "completed" && readingLeft > 0 && mission.rules?.reading_seconds ? <ReadingBar left={readingLeft} total={mission.rules.reading_seconds} /> : null}
             <Flex gap="3" wrap="wrap" align="center">
               {mission.status === "completed"
                 ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />Leçon comprise</Flex>
-                : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused} onClick={() => void markUnderstood()}>J’ai compris</Button>}
+                : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused || readingLeft > 0} onClick={() => void markUnderstood()}>J’ai compris</Button>}
               {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
               {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
             </Flex>
@@ -260,8 +280,12 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               <Alert.Indicator /><Alert.Content><Alert.Title>{submitError}</Alert.Title>
                 <Alert.Description>Votre sélection est conservée.</Alert.Description></Alert.Content>
             </Alert.Root>}
+            {pauseLeft > 0 && <PauseNotice seconds={pauseLeft} canHint={mission.hint_count > mission.hints.length && !mission.paused}
+              hintBusy={hintBusy} onHint={() => { if (!helpOpen) toggleHelp(); void revealHint() }} />}
+            {!result && mission.rules?.next_percent != null && mission.rules.next_attempt != null && definition.kind !== "sql_challenge" &&
+              <Text fontSize="sm" fontWeight="semibold" color="saffron.fg" role="note">Essai {mission.rules.next_attempt} : jusqu’à {mission.rules.next_percent} % des points</Text>}
             <Flex gap="3" wrap="wrap" align="center">
-              {!result && definition.kind !== "sql_challenge" && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused}>
+              {!result && definition.kind !== "sql_challenge" && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused || pauseLeft > 0}>
                 {submitError ? "Renvoyer ma décision" : "Tester ma décision"}
               </Button>}
               {!complete && !result && definition.kind !== "sql_challenge" && <Text fontSize="sm" color="app.muted">Complétez votre réponse pour la tester.</Text>}
@@ -286,7 +310,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">Explication</Text><RichText text={result.explanation} /></Box>}
               <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>Essai n° {result.attempts_count}{result.replayed ? " (déjà enregistré)" : ""} : {formatPoints(result.points)} / {result.score.possible} pts. Meilleur score conservé : {formatPoints(result.score.best)} pts.</Text>
               <Flex gap="3" wrap="wrap">
-                {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry}><Icon name="retry" />Réessayer</Button>}
+                {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry} disabled={pauseLeft > 0}><Icon name="retry" />{pauseLeft > 0 ? `Réessayer dans ${pauseLeft} s` : "Réessayer"}</Button>}
                 {result.correct && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
                 {result.correct && !mission.next_id && <Button colorPalette="brand" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
               </Flex>
@@ -350,4 +374,24 @@ export function MissionPlayer({ missionId, navigate }: Props) {
 
 function BackLink({ navigate }: { navigate: (path: string) => void }) {
   return <Button variant="ghost" size="sm" alignSelf="start" px="2" onClick={() => navigate("/")}><Icon name="arrow-left" size={16} />Tableau de bord</Button>
+}
+
+/** ADR-0027: countdown after a wrong answer, with the hint button put forward. */
+function PauseNotice({ seconds, canHint, hintBusy, onHint }: { seconds: number; canHint: boolean; hintBusy: boolean; onHint: () => void }) {
+  return <Flex role="status" gap="3" align="center" wrap="wrap" p="3" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
+    <Box color="saffron.fg"><Icon name="clock" /></Box>
+    <Text flex="1" minW="48"><Text as="span" fontWeight="semibold">Pause de {seconds} s : relisez la situation.</Text> Un indice peut vous aider avant le prochain essai.</Text>
+    {canHint && <Button size="sm" colorPalette="brand" onClick={onHint} loading={hintBusy}><Icon name="bulb" size={16} />Afficher un indice</Button>}
+  </Flex>
+}
+
+/** ADR-0027: discreet reading bar before « J'ai compris » becomes available. */
+function ReadingBar({ left, total }: { left: number; total: number }) {
+  const done = Math.min(100, Math.round(((total - left) / total) * 100))
+  return <Stack gap="1">
+    <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="progressbar" aria-label="Temps de lecture" aria-valuemin={0} aria-valuemax={100} aria-valuenow={done}>
+      <Box h="full" w={`${done}%`} bg="brand.solid" transition="width 250ms linear" />
+    </Box>
+    <Text fontSize="xs" color="app.muted">Prenez le temps de lire : « J’ai compris » s’active dans {left} s.</Text>
+  </Stack>
 }

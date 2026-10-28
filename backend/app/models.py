@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, false, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -58,6 +58,8 @@ class Course(Base):
     status: Mapped[str] = mapped_column(String(16), nullable=False, server_default="draft")
     created_by: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    # Rules against random clicking (ADR-0027), see app.attempt_rules. NULL = defaults, all off.
+    attempt_rules: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class LearningObjective(Base):
@@ -182,6 +184,24 @@ class MissionAttempt(Base):
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
     points: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    # ADR-0027: rank of the attempt since the rule was activated, and the percentage then in force
+    # (NULL = 100 %, rule off or attempt older than the rule). ``points`` already includes it.
+    attempt_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    percent: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Marked « rapide »: < 5 s after opening the mission, or 3 attempts within 30 s.
+    fast: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+
+
+class MissionOpening(Base):
+    """Last time a student opened a mission (ADR-0027: fast clicks, minimum reading time)."""
+
+    __tablename__ = "mission_openings"
+    __table_args__ = (UniqueConstraint("user_id", "mission_version_id", name="uq_mission_opening"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    mission_version_id: Mapped[int] = mapped_column(ForeignKey("mission_versions.id", ondelete="RESTRICT"), nullable=False)
+    opened_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class HintReveal(Base):

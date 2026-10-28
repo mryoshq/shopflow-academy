@@ -49,6 +49,8 @@ export type DashboardCourse = {
   paused: boolean
   modules?: DashboardModule[]
   missions: DashboardMission[]
+  /** ADR-0027: announcement of the rules against random clicking. */
+  rules_notice?: { text: string; since: string } | null
 }
 
 export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[] }
@@ -97,11 +99,24 @@ export type PlayerMission = {
   explanation: string | null
   score: MissionScore | null
   help_request?: HelpRequestState | null
+  /** ADR-0027, when the teacher turned the rules on. */
+  rules?: AttemptRules
+}
+
+export type AttemptRules = {
+  next_attempt: number | null
+  next_percent: number | null
+  pause_remaining: number
+  reading_seconds: number | null
+  reading_remaining: number
 }
 
 export type Answer = { choice_ids: string[]; pairs: Record<string, string> }
 
 export type AttemptResult = {
+  percent?: number | null
+  attempt_number?: number | null
+  rules?: AttemptRules
   attempt_id: number
   correct: boolean
   replayed: boolean
