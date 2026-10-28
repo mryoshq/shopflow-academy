@@ -21,6 +21,7 @@ test-results/
 *.key
 *.p12
 *.pfx
+.claude/settings.local.json
 .backups/
 *.dump
 .backups-test/

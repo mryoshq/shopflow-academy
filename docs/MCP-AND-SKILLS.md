@@ -32,3 +32,13 @@ Les automations Codex/GitHub programmées sont facultatives. Ne jamais créer un
 - https://github.com/github/github-mcp-server
 - https://docs.github.com/en/actions
 - https://developers.openai.com/blog/run-long-horizon-tasks-with-codex
+
+## Claude Code (agent principal depuis le 27/10/2026)
+
+- **`CLAUDE.md`** importe `AGENTS.md` (`@AGENTS.md`) et n'ajoute que les règles propres à Claude Code : ordre de lecture, interdits, commandes de test, preuve, fin de lot, économie de tokens.
+- **Skills** : les neuf skills de `.agents/skills/` sont exposés sous `.claude/skills/<nom>` par **liens symboliques relatifs** (source unique). La documentation officielle indique qu'une entrée `<skill-name>` de projet peut être un lien vers un dossier ; `scripts/verify_kit.py` échoue si un lien manque ou pointe ailleurs.
+- **`.claude/settings.json`** (committé) : `deny` force-push, suppression de branche distante, `docker compose down -v`, `wrangler`, `upsert_teacher.py`, lecture de `.env*` (sauf `.env.example`), `.local/**`, `~/.cloudflared/**` ; `ask` pour `cloudflared`, `gh pr merge|edit`, `git push`, `docker volume rm`, actions sur n8n/`wordpress`, `seed_demo.py`, `sudo` ; `allow` pour tests et lectures courantes. Ordre officiel : deny → ask → allow ; les règles `ask` s'appliquent aussi en mode auto. Ces règles visent l'usage courant et ne sont pas une frontière de sécurité (une commande écrite autrement peut y échapper). `.claude/settings.local.json` est ignoré par Git.
+- **Outils complémentaires (installation côté utilisateur, non effectuée — accord requis)** :
+  - Context7 MCP pour la documentation à jour (Chakra UI v3, FastAPI, SQLAlchemy 2, Playwright) : `claude mcp add --transport http context7 https://mcp.context7.com/mcp` (vérifier la commande dans la doc Context7 avant).
+  - Plugin `frontend-design` depuis le marketplace officiel Anthropic via `/plugin`, s'il y est listé.
+  - Pas de Playwright MCP par défaut (coûteux en contexte), pas de MCP Cloudflare ni base de données, pas de skills tiers non audités.
