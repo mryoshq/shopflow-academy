@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
-import { TeacherHome } from "./teacher/TeacherHome"
+import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"
 import { ObserverHome } from "./observer/ObserverHome"
 import { ThemeSwitch } from "./ThemeSwitch"
@@ -29,6 +29,8 @@ export function App() {
   const [remember, setRemember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
+  // ADR-0031: a resumed session reopens the teacher's last view; a fresh login starts on « Aujourd’hui ».
+  const [resumed, setResumed] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -37,6 +39,7 @@ export function App() {
         if (response.status === 401) return setState("anonymous")
         if (!response.ok) throw new Error("API unavailable")
         setUser(await response.json() as User)
+        setResumed(true)
         setState("authenticated")
       })
       .catch((error: unknown) => {
@@ -65,6 +68,7 @@ export function App() {
       if (response.status === 429) return setMessage("Trop de tentatives. Réessayez dans une minute.")
       if (!response.ok) return setMessage("Identifiant ou mot de passe incorrect.")
       setUser(await response.json() as User)
+      setResumed(false)
       setPassword("")
       setState("authenticated")
     } catch {
@@ -156,19 +160,17 @@ export function App() {
           </Flex>
         )}
         {state === "authenticated" && user?.role === "observer" && <Stack gap="4"><ObserverHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}
-        {state === "authenticated" && user && user.role !== "observer" && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
-          <Stack gap="8">
-            <Stack gap="2">
-              <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
-              <Text fontSize="lg" color="app.muted">Préparez votre cours, ouvrez les blocs et suivez votre classe.</Text>
-            </Stack>
-            <TeacherHome />
-            {message && <Text role="alert" color="red.fg">{message}</Text>}
-          </Stack>
-        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}</LeaderboardNavigation>}
+        {state === "authenticated" && user?.role === "student" && <LeaderboardNavigation key={user.id} role={user.role}>
+          <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack></LeaderboardNavigation>}
       </Container>
     </Box>
   )
+  if (state === "authenticated" && user?.role === "teacher") {
+    return <NotificationProvider key={user.id}>
+      <TeacherApp username={user.username} onLogout={() => void onLogout()} busy={busy} resumed={resumed} />
+      {message && <Text role="alert" color="red.fg" position="fixed" bottom="4" left="50%" transform="translateX(-50%)" bg="app.surface" px="4" py="2" rounded="md" boxShadow="card">{message}</Text>}
+    </NotificationProvider>
+  }
   // ADR-0023: notifications for the signed-in user; students also send a presence heartbeat.
   return state === "authenticated" && user && user.role !== "observer"
     ? <NotificationProvider key={user.id} heartbeat={user.role === "student"}>{page}</NotificationProvider>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { Icon, Panel } from "../student/ui"
+import { SidePanel } from "./SidePanel"
 
 export const TIMELINE_REFRESH_MS = 5000
 
@@ -32,8 +33,13 @@ function waited(iso: string, now: number): string {
  * Teacher only: the day in blocks, "Ouvrir le bloc suivant", a 15-minute landmark (never
  * an automatic close, never shown to students), pending help requests and difficulties.
  */
-export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
+export type TimelineSection = "frise" | "aide" | "difficultes"
+
+export function ClassTimeline({ assignmentId, section }: { assignmentId: number; section?: TimelineSection }) {
   const [data, setData] = useState<Timeline | null>(null)
+  const [helpOpen, setHelpOpen] = useState<HelpItem | null>(null)
+  const [missionOpen, setMissionOpen] = useState<MissionStat | null>(null)
+  const shows = (part: TimelineSection) => section === undefined || section === part
   const [stale, setStale] = useState(false)
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState("")
@@ -82,7 +88,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
   const over = elapsed >= data.block_minutes
 
   return <Stack gap="5">
-    <Panel as="section" aria-labelledby="timeline-title">
+    {shows("frise") && <Panel as="section" aria-labelledby="timeline-title">
       <Stack gap="4">
         <Flex gap="3" justify="space-between" align={{ base: "start", md: "center" }} direction={{ base: "column", md: "row" }}>
           <Stack gap="1">
@@ -133,9 +139,9 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
         </Stack>
         {data.blocks.length === 0 && <Text color="app.muted">Ce cours n’a pas encore de bloc.</Text>}
       </Stack>
-    </Panel>
+    </Panel>}
 
-    <Panel as="section" aria-labelledby="help-title" borderColor={data.help.length ? "saffron.400" : "app.border"}>
+    {shows("aide") && <Panel as="section" aria-labelledby="help-title" borderColor={data.help.length ? "saffron.400" : "app.border"}>
       <Stack gap="3">
         <Heading as="h3" size="md" id="help-title">Demandes d’aide en attente ({data.help.length})</Heading>
         {data.help.length === 0 ? <Text color="app.muted" fontSize="sm">Aucune demande pour le moment.</Text>
@@ -145,20 +151,25 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
               <Text fontSize="sm" color="app.muted">{item.block} · {waited(item.created_at, now)}</Text>
               {item.message && <Text fontSize="sm" mt="1">« {item.message} »</Text>}
             </Stack>
-            <Button size="sm" colorPalette="brand" loading={busy}
-              onClick={() => void act(`/teacher/help/${item.id}/handle`, () => `Demande de ${item.student} marquée comme traitée.`)}>Marquer comme traitée</Button>
+            <Flex gap="2" wrap="wrap">
+              <Button size="sm" variant="ghost" onClick={() => setHelpOpen(item)} aria-label={`Voir la demande de ${item.student}`}>Voir</Button>
+              <Button size="sm" colorPalette="brand" loading={busy}
+                onClick={() => void act(`/teacher/help/${item.id}/handle`, () => `Demande de ${item.student} marquée comme traitée.`)}>Marquer comme traitée</Button>
+            </Flex>
           </Flex>)}</Stack>}
+        {section === "aide" && notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
       </Stack>
-    </Panel>
+    </Panel>}
 
-    <Panel as="section" aria-labelledby="stats-title" p="0" overflow="hidden">
+    {shows("difficultes") && <Panel as="section" aria-labelledby="stats-title" p="0" overflow="hidden">
       <Box p={{ base: "5", md: "6" }} pb="3"><Heading as="h3" size="md" id="stats-title">Missions : réussites et difficultés</Heading>
         <Text fontSize="sm" color="app.muted">« Bloqués » : plusieurs essais sans réussite.</Text></Box>
       <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des missions (défilement horizontal)">
         <Table.Root size="sm" variant="line" aria-label="Statistiques par mission">
           <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués", "Clics rapides"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>
-            <Table.Cell fontWeight="medium">{item.title}{item.bonus ? " (bonus)" : ""}</Table.Cell>
+            <Table.Cell fontWeight="medium"><Button variant="plain" size="sm" p="0" h="auto" minH="0" color="brand.fg" textDecoration="underline" whiteSpace="normal" textAlign="start"
+              onClick={() => setMissionOpen(item)} aria-label={`Détail de la mission ${item.title}`}>{item.title}</Button>{item.bonus ? " (bonus)" : ""}</Table.Cell>
             <Table.Cell color="app.muted">{item.block}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.completed} / {data.student_count}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.attempts}</Table.Cell>
@@ -168,6 +179,29 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
           </Table.Row>)}</Table.Body>
         </Table.Root>
       </Box>
-    </Panel>
+    </Panel>}
+
+    <SidePanel open={helpOpen !== null} title={helpOpen ? `Demande d’aide : ${helpOpen.student}` : "Demande d’aide"} onClose={() => setHelpOpen(null)}>
+      {helpOpen && <Stack gap="3">
+        <Text><strong>Mission :</strong> {helpOpen.mission}</Text>
+        <Text><strong>Bloc :</strong> {helpOpen.block}</Text>
+        <Text color="app.muted">Demandée {waited(helpOpen.created_at, now)}</Text>
+        <Box p="3" rounded="lg" bg="app.sunken">{helpOpen.message ? `« ${helpOpen.message} »` : "Sans message."}</Box>
+        <Button alignSelf="start" colorPalette="brand" loading={busy} onClick={() => {
+          const item = helpOpen
+          setHelpOpen(null)
+          void act(`/teacher/help/${item.id}/handle`, () => `Demande de ${item.student} marquée comme traitée.`)
+        }}>Marquer comme traitée</Button>
+      </Stack>}
+    </SidePanel>
+    <SidePanel open={missionOpen !== null} title={missionOpen ? `Mission : ${missionOpen.title}` : "Mission"} onClose={() => setMissionOpen(null)}>
+      {missionOpen && <Stack gap="3">
+        <Text color="app.muted">{missionOpen.block}{missionOpen.bonus ? " · bonus" : ""}</Text>
+        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>Réussites :</strong> {missionOpen.completed} / {data.student_count}</Text>
+        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>Essais :</strong> {missionOpen.attempts} · <strong>Indices :</strong> {missionOpen.hints}</Text>
+        <Text><strong>Bloqués :</strong> {missionOpen.stuck.length ? missionOpen.stuck.join(", ") : "personne"}</Text>
+        <Text><strong>Clics rapides :</strong> {missionOpen.fast?.length ? missionOpen.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ") : "aucun"}</Text>
+      </Stack>}
+    </SidePanel>
   </Stack>
 }
