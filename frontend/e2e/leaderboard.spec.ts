@@ -19,7 +19,10 @@ test("K: teacher settings, student name, tied ranks, refresh, daily tab, AA and 
     let body: unknown
     let status = 200
     if (path.endsWith("/auth/me")) body = { id: 1, username: "fixture-account", role }
-    else if (path.endsWith("/leaderboard/classes")) body = role === "teacher" || enabled ? [{ assignment_id: 4, label: "Classe fictive K" }] : []
+    else if (path.endsWith("/leaderboard/classes")) body = role === "teacher" || enabled ? [
+      { assignment_id: 4, label: "Classe fictive K" },
+      { assignment_id: 5, label: "Cohorte de démonstration avec un intitulé volontairement très long pour le petit écran" },
+    ] : []
     else if (path.endsWith("/leaderboard/settings")) {
       const value = route.request().postDataJSON()
       enabled = value.enabled; topThree = value.top_three; hideOpen = value.hide_open_block
@@ -70,6 +73,7 @@ test("K: teacher settings, student name, tied ranks, refresh, daily tab, AA and 
     await page.evaluate(value => { document.documentElement.classList.toggle("dark", value === "dark") }, theme)
     await page.emulateMedia({ reducedMotion: "reduce", colorScheme: theme })
     await page.setViewportSize({ width: theme === "light" ? 1366 : 390, height: 844 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     await expect(page.locator(".leaderboard-podium")).toHaveCSS("animation-name", "none")
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([])
     await page.screenshot({ path: testInfo.outputPath(`classement-${theme}.png`), fullPage: true, animations: "disabled" })

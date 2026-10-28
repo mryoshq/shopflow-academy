@@ -173,11 +173,11 @@ export function LeaderboardNavigation({ role, children }: { role: Role; children
     void refresh()
     return () => { active = false; clearTimeout(timer) }
   }, [load])
-  return <Stack gap="6">
-    {(classes.length > 0 || selected !== null) && <Flex as="nav" aria-label="Navigation de l’espace" gap="2" wrap="wrap">
+  return <Stack gap="6" minW="0" maxW="full">
+    {(classes.length > 0 || selected !== null) && <Flex as="nav" aria-label="Navigation de l’espace" gap="2" wrap="wrap" minW="0" maxW="full">
       <Button variant={selected === null ? "solid" : "outline"} colorPalette="brand" aria-current={selected === null ? "page" : undefined} onClick={() => navigate(null)}>Mon espace</Button>
-      {classes.map(item => <Button key={item.assignment_id} colorPalette="brand" variant={selected === item.assignment_id ? "solid" : "outline"} aria-current={selected === item.assignment_id ? "page" : undefined} onClick={() => navigate(item.assignment_id)}>{classes.length === 1 ? "Classement" : `Classement · ${item.label}`}</Button>)}
+      {classes.map(item => <Button key={item.assignment_id} colorPalette="brand" variant={selected === item.assignment_id ? "solid" : "outline"} minW="0" maxW="full" height="auto" py="2" whiteSpace="normal" overflowWrap="anywhere" textAlign="start" aria-current={selected === item.assignment_id ? "page" : undefined} onClick={() => navigate(item.assignment_id)}>{classes.length === 1 ? "Classement" : `Classement · ${item.label}`}</Button>)}
     </Flex>}
-    {selected === null ? children : <LeaderboardPage key={`${role}-${selected}`} role={role} assignmentId={selected} />}
+    <Box minW="0" maxW="full">{selected === null ? children : <LeaderboardPage key={`${role}-${selected}`} role={role} assignmentId={selected} />}</Box>
   </Stack>
 }

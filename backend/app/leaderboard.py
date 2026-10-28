@@ -178,11 +178,19 @@ def teacher_board(assignment_id: int, response: Response, auth: AuthContext = De
     return board(db, auth, assignment, release)
 
 
+def settings_class(assignment_id: int, auth: AuthContext = Depends(require_teacher_csrf),
+                   db: Session = Depends(get_db)) -> tuple[Assignment, CourseRelease, Cohort]:
+    # Resolve ownership before validating the write body: another teacher must
+    # receive 404 even if their payload is empty or malformed.
+    return owned_class(db, auth, assignment_id)
+
+
 @router.put("/api/v1/teacher/classes/{assignment_id}/leaderboard/settings")
 def update_settings(assignment_id: int, payload: SettingsInput, response: Response,
+                    owned: tuple[Assignment, CourseRelease, Cohort] = Depends(settings_class),
                     auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     no_store(response)
-    assignment, release, _ = owned_class(db, auth, assignment_id)
+    assignment, release, _ = owned
     row = settings_for(db, assignment, release)
     if row is None:
         row = LeaderboardSettings(cohort_id=assignment.cohort_id, course_id=release.course_id)

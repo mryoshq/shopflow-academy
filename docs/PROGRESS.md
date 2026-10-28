@@ -8,13 +8,15 @@ Critères couverts : opt-in enseignant, 404 étudiant si désactivé, droits par
 
 Vérifications locales ciblées, copie isolée et données fictives :
 
-- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_leaderboard.py tests/test_security_matrix.py` : 20 tests, dont droits de toutes les nouvelles routes, migration SQLite, points stockés inchangés, leçon requise, minuit marocain, nouvelle publication et retrait d’inscription.
+- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_leaderboard.py tests/test_security_matrix.py tests/test_ownership.py` : 23 tests, dont droits de toutes les nouvelles routes, migration SQLite, points stockés inchangés, leçon requise, minuit marocain, nouvelle publication et retrait d’inscription.
 - **PASS** `cd frontend && npm run test -- src/leaderboard/LeaderboardPage.test.tsx src/App.test.tsx --maxWorkers=1` : 11 tests.
 - **PASS** `cd frontend && ./node_modules/.bin/tsc --noEmit`.
 - **PASS** `cd frontend && SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3185 npx playwright test e2e/leaderboard.spec.ts` : une spec ; actualisation observée dans la limite de 10 s ; axe WCAG A/AA sans violation sur les vues testées, 1366 px et 390 px ; captures enseignant/clair/sombre dans `frontend/test-results/` (ignorées par Git), relues visuellement.
 - **NOT RUN localement** : suites complètes, build de distribution, stack Compose/PostgreSQL complète et production, conformément à la demande de tests ciblés seulement ; suites complètes confiées à la CI. E2E navigateur avec API simulée ; accès et scores testés sur API réelle avec base migrée par pytest.
 
 À faire après revue : fusion par le propriétaire, sauvegarde/migration/redéploiement autorisés, puis activation facultative par l’enseignant. Aucun fichier du cours privé n’est intégré à la PR.
+
+Retour CI de #37 sur `cba066b` : contrôle de propriété attendu avant validation du corps (autre enseignant : 422 au lieu de 404), et débordement de la navigation à 390 px avec plusieurs libellés de classe longs. Reproduits localement, corrigés uniquement dans les fichiers K : dépendance de propriété avant validation, boutons à texte multiligne et conteneur réductible. Tests ciblés ci-dessus repassés ; spec K enrichie avec libellé long et absence de débordement. CI complète à attendre sur le nouveau commit.
 
 **Date : 2026-10-28 · État : P0 entièrement fusionné dans `main` (PR #11 à #25), production `https://shopflow.rapidfox.io` sur `main`. Sprint 2 (session cloud) : A, D, F, C, B, E, G fusionnées (#26 à #32) ; G2 (#33 : plan du cours, objectifs, icônes) en PR ; puis K, H, I, J.** (Ligne d'état précédente : P0-01 à P0-10 livrés en PR empilées non fusionnées.)
 

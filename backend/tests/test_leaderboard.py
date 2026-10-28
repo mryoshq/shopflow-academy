@@ -89,6 +89,8 @@ def test_another_teacher_cannot_read_or_change_class(env):
     assert other.get("/api/v1/teacher/leaderboard/classes").json() == []
     assert read(other, aid, teacher=True).status_code == 404
     assert put(other, f"/api/v1/teacher/classes/{aid}/leaderboard/settings", {"enabled": True, "top_three": False, "hide_open_block": False}).status_code == 404
+    assert put(other, f"/api/v1/teacher/classes/{aid}/leaderboard/settings", {}).status_code == 404
+    assert put(clients["teacher"], f"/api/v1/teacher/classes/{aid}/leaderboard/settings", {}).status_code == 422
 
 
 @pytest.mark.parametrize("name", ["a@b.test", "a＠b.test", "\u202ePseudo", "\x00Pseudo", " ", "x" * 25])
