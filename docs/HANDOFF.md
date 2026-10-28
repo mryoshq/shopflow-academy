@@ -60,7 +60,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | [#40](https://github.com/mryoshq/shopflow-academy/pull/40) (base : `main`, contient #39 par fusion) | **fusionnée** |
 | 15 | Correctifs de relecture (#39, #40) | `claude/lucid-brahmagupta-htwgun-relecture` | [#44](https://github.com/mryoshq/shopflow-academy/pull/44) | **fusionnée** |
 | 16 | I — PWA, confort (pomodoro, radio), couleurs (ADR-0024) | `claude/lucid-brahmagupta-htwgun-i` | [#47](https://github.com/mryoshq/shopflow-academy/pull/47) | **fusionnée** |
-| 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | PR M (base : `main`) | ouverte |
+| 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
