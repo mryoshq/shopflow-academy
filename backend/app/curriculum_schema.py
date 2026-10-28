@@ -45,7 +45,17 @@ def code_text(value: str, limit: int = 6000) -> str:
 Cell = str | int | float | bool | None
 
 
-class TableDisplay(BaseModel):
+class Described(BaseModel):
+    """Every media accepts a text description: read by screen readers, shown only on request."""
+    description: str = Field(default="", max_length=3000)
+
+    @field_validator("description")
+    @classmethod
+    def safe_description(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
+class TableDisplay(Described):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["table"]
     title: str = Field(default="", max_length=200)
@@ -77,7 +87,7 @@ class TableDisplay(BaseModel):
         return self
 
 
-class BarChartDisplay(BaseModel):
+class BarChartDisplay(Described):
     model_config = ConfigDict(extra="forbid")
     kind: Literal["bar_chart"]
     title: str = Field(min_length=1, max_length=200)
@@ -118,7 +128,7 @@ class LineSeries(BaseModel):
         return plain(value)
 
 
-class LineChartDisplay(BaseModel):
+class LineChartDisplay(Described):
     """One or two series over the same labels; ``null`` is a missing point (a gap, not zero)."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["line_chart"]
@@ -154,7 +164,7 @@ class LineChartDisplay(BaseModel):
         return self
 
 
-class CodeDisplay(BaseModel):
+class CodeDisplay(Described):
     """Code to read, never executed in the browser."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["code"]
@@ -176,7 +186,7 @@ class CodeDisplay(BaseModel):
 ComparisonItem = Annotated[CodeDisplay | TableDisplay, Field(discriminator="kind")]
 
 
-class ComparisonDisplay(BaseModel):
+class ComparisonDisplay(Described):
     """Two code or table blocks side by side, each with a title."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["comparison"]
@@ -310,7 +320,7 @@ class AnimationStep(BaseModel):
         return plain(value)
 
 
-class AnimationDisplay(BaseModel):
+class AnimationDisplay(Described):
     """Step-by-step animation drawn by the platform (no video file)."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["animation"]
@@ -338,7 +348,7 @@ MINDMAP_DEPTH = 3
 MINDMAP_NODES = 40
 
 
-class MindmapDisplay(BaseModel):
+class MindmapDisplay(Described):
     """Mind map: a root and up to three levels of children, 40 nodes at most."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["mindmap"]
@@ -386,7 +396,7 @@ class FlowStep(BaseModel):
         return plain(value) if value.strip() else ""
 
 
-class FlowDisplay(BaseModel):
+class FlowDisplay(Described):
     """Animated pipeline: a token goes through the steps; some steps reject rows."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["flow"]
@@ -415,7 +425,7 @@ VIDEO_HOSTS = {"www.youtube-nocookie.com": r"^/embed/[A-Za-z0-9_-]{6,20}$", "you
 MEDIA_SRC = re.compile(r"^/media/[0-9a-f]{16}\.(mp4|vtt)$")
 
 
-class VideoDisplay(BaseModel):
+class VideoDisplay(Described):
     """Optional video: an embed from youtube-nocookie.com / player.vimeo.com, or a course file
     copied at import (``src``, served by the gateway). Never required for the grade."""
     model_config = ConfigDict(extra="forbid")
@@ -506,6 +516,17 @@ class Choice(BaseModel):
         return plain(value)
 
 
+class KeyTerm(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    term: str = Field(min_length=1, max_length=60)
+    definition: str = Field(min_length=1, max_length=300)
+
+    @field_validator("term", "definition")
+    @classmethod
+    def safe(cls, value: str) -> str:
+        return plain(value)
+
+
 class MissionDefinition(BaseModel):
     model_config = ConfigDict(extra="forbid")
     schema_version: Literal[1] = 1
@@ -533,8 +554,16 @@ class MissionDefinition(BaseModel):
     scoring: Literal["all_or_nothing", "partial"] = "all_or_nothing"
     estimated_duration_minutes: int = Field(ge=1, le=120)
     bonus: bool = False
-    # Lesson text: paragraphs separated by a blank line, "- " lists. Shown to students.
+    # Lesson text: paragraphs separated by a blank line, "- " and "1. " lists, "### " subtitles,
+    # **bold** and `code`. Shown to students (rendered as text, never as HTML).
     body: str = Field(default="", max_length=4000)
+    # Structured lesson (all optional, lessons only): one-sentence objective, hook, vocabulary,
+    # worked example and a closing "À vous" call to action (ADR-0022).
+    objective: str = Field(default="", max_length=200)
+    hook: str = Field(default="", max_length=600)
+    key_terms: list[KeyTerm] = Field(default_factory=list, max_length=8)
+    example: str = Field(default="", max_length=3000)
+    practice: str = Field(default="", max_length=1000)
     # Preconfigured executions (SQL on the lab database, Python run at import).
     run: list[RunItem] = Field(default_factory=list, max_length=4)
     # sql_challenge: the student edits ``starter_sql``; ``expected_sql`` stays private.
@@ -542,10 +571,20 @@ class MissionDefinition(BaseModel):
     expected_sql: str = Field(default="", max_length=4000)
     compare: Literal["rows", "rows_unordered", "scalar"] = "rows"
 
-    @field_validator("scenario", "instructions", "body")
+    @field_validator("scenario", "instructions", "body", "hook", "example", "practice")
     @classmethod
     def safe_text(cls, value: str) -> str:
         return plain(value) if value.strip() else ""
+
+    @field_validator("objective")
+    @classmethod
+    def safe_objective(cls, value: str) -> str:
+        if not value.strip():
+            return ""
+        value = plain(value)
+        if "\n" in value:
+            raise ValueError("The objective is one sentence on one line")
+        return value
 
     @field_validator("starter_sql", "expected_sql")
     @classmethod
@@ -581,9 +620,12 @@ class MissionDefinition(BaseModel):
         run_ids = [item.id for item in self.run]
         if len(set(run_ids)) != len(run_ids):
             raise ValueError("Duplicate run id")
+        layout = bool(self.objective or self.hook or self.key_terms or self.example or self.practice)
+        if len({term.term.casefold() for term in self.key_terms}) != len(self.key_terms):
+            raise ValueError("Duplicate key term")
         if self.kind == "lesson":
-            if not self.body:
-                raise ValueError("A lesson needs a body")
+            if not (self.body or self.hook or self.key_terms or self.example or self.practice):
+                raise ValueError("A lesson needs a body or structured content")
             if self.choices or self.correct_ids or self.match_targets or self.correct_pairs or self.feedback or self.max_points:
                 raise ValueError("A lesson has no choices, answer key or points")
         else:
@@ -593,6 +635,8 @@ class MissionDefinition(BaseModel):
                 raise ValueError("Points must be between 1 and 100")
             if self.body:
                 raise ValueError("body is only for lessons")
+            if layout:
+                raise ValueError("objective, hook, key_terms, example and practice are only for lessons")
         if self.kind == "sql_challenge":
             if not self.starter_sql or not self.expected_sql:
                 raise ValueError("An SQL challenge needs starter_sql and expected_sql")

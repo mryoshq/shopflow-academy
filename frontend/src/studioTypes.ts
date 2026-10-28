@@ -3,22 +3,22 @@ export type User = { id: number; username: string; role: Role }
 export type CourseSummary = { id: number; slug: string; title: string; status: "draft" | "published" | "archived" }
 export type Objective = { id: number; code: string; statement: string }
 export type Choice = { id: string; label: string }
-export type TableDisplay = { kind: "table"; title?: string; columns: string[]; rows: (string | number | boolean | null)[][] }
-export type BarChartDisplay = { kind: "bar_chart"; title: string; labels: string[]; values: number[]; unit: string }
-export type LineChartDisplay = { kind: "line_chart"; title: string; labels: string[]; series: { name: string; values: (number | null)[] }[]; unit: string }
-export type CodeDisplay = { kind: "code"; language: "sql" | "python" | "text"; code: string; title?: string }
-export type ComparisonDisplay = { kind: "comparison"; items: (CodeDisplay | TableDisplay)[] }
+export type TableDisplay = { kind: "table"; description?: string; title?: string; columns: string[]; rows: (string | number | boolean | null)[][] }
+export type BarChartDisplay = { kind: "bar_chart"; description?: string; title: string; labels: string[]; values: number[]; unit: string }
+export type LineChartDisplay = { kind: "line_chart"; description?: string; title: string; labels: string[]; series: { name: string; values: (number | null)[] }[]; unit: string }
+export type CodeDisplay = { kind: "code"; description?: string; language: "sql" | "python" | "text"; code: string; title?: string }
+export type ComparisonDisplay = { kind: "comparison"; description?: string; items: (CodeDisplay | TableDisplay)[] }
 export type Cell = string | number | boolean | null
 export type SceneTable = { title: string; columns: string[]; rows: Cell[][]; highlight: { rows: number[]; cells: [number, number][] } }
 export type Scene = {
   tables: SceneTable[]; arrows: { source: [number, number]; target: [number, number]; label: string }[]
   counter: { label: string; value: string | number } | null; badge: { kind: "ok" | "erreur" | "attention"; text: string } | null
 }
-export type AnimationDisplay = { kind: "animation"; title: string; steps: { caption: string; scene: Scene }[] }
+export type AnimationDisplay = { kind: "animation"; description?: string; title: string; steps: { caption: string; scene: Scene }[] }
 export type MindNode = { label: string; children: MindNode[] }
-export type MindmapDisplay = { kind: "mindmap"; title: string; root: MindNode }
-export type FlowDisplay = { kind: "flow"; title: string; input: number; unit: string; steps: { id: string; label: string; rejects: number; note: string }[] }
-export type VideoDisplay = { kind: "video"; title: string; url: string | null; src: string | null; captions_src: string | null }
+export type MindmapDisplay = { kind: "mindmap"; description?: string; title: string; root: MindNode }
+export type FlowDisplay = { kind: "flow"; description?: string; title: string; input: number; unit: string; steps: { id: string; label: string; rejects: number; note: string }[] }
+export type VideoDisplay = { kind: "video"; description?: string; title: string; url: string | null; src: string | null; captions_src: string | null }
 export type DisplayData = TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay
 export type RunView = { id: string; label: string; language: "sql" | "python"; code: string }
 export type MissionKind = "single_choice" | "multiple_choice" | "true_false" | "reorder" | "matching" | "data_interpretation" | "scenario_choice" | "guided_simulation" | "lesson" | "sql_challenge"
@@ -44,6 +44,11 @@ export type MissionDefinition = {
   explanation?: string
   scoring?: "all_or_nothing" | "partial"
   body?: string
+  objective?: string
+  hook?: string
+  key_terms?: { term: string; definition: string }[]
+  example?: string
+  practice?: string
   run?: unknown[]
   starter_sql?: string
   expected_sql?: string

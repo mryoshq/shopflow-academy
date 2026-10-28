@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react"
+import { DescribedMedia } from "./Lesson"
 import { Box, Button, Flex, NativeSelect, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
 import { CodeBlock, Comparison, DataTable, LineChart } from "./displays"
 import { AnimationPlayer, FlowDiagram, MindMap, VideoView } from "./media"
@@ -117,6 +118,10 @@ export function Activity(props: ActivityProps) {
 }
 
 export function DataView({ data }: { data: DisplayData | null }) {
+  return <DescribedMedia data={data}><MediaBody data={data} /></DescribedMedia>
+}
+
+function MediaBody({ data }: { data: DisplayData | null }) {
   const [asTable, setAsTable] = useState(false)
   if (!data) return null
   if (data.kind === "table") return <DataTable columns={data.columns} rows={data.rows} caption={data.title || "Extrait de données fictives"} />

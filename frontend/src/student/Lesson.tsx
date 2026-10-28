@@ -1,0 +1,68 @@
+import { useId, useState, type ReactNode } from "react"
+import { Box, Button, Flex, Grid, Stack, Text } from "@chakra-ui/react"
+import type { DisplayData, StudentDefinition } from "../studioTypes"
+
+export type LessonFields = Pick<StudentDefinition, "body" | "objective" | "hook" | "key_terms" | "example" | "practice">
+import { Inline, RichText } from "./RichText"
+import { Icon } from "./ui"
+
+/**
+ * Structured lesson (ADR-0022), in reading order: objective (discreet banner), hook,
+ * vocabulary cards, free text, worked example, media, "À vous". Every part is optional;
+ * an old lesson with only ``body`` renders exactly its text.
+ */
+export function LessonView({ definition, media, headingAs = "h2" }: { definition: LessonFields; media: ReactNode; headingAs?: "h2" | "h3" | "h4" | "h5" }) {
+  const terms = definition.key_terms ?? []
+  const id = useId()
+  return <Stack gap="5">
+    {definition.objective && <Flex as="p" m="0" gap="2" align="start" px="3" py="2" rounded="md" bg="brand.subtle" color="brand.fg" fontSize="sm" maxW="72ch">
+      <Box as="span" mt="0.5" flexShrink={0}><Icon name="target" size={16} /></Box>
+      <span><Text as="span" fontWeight="semibold">Objectif : </Text>{definition.objective}</span>
+    </Flex>}
+    {definition.hook && <RichText text={definition.hook} fontSize={{ base: "lg", md: "xl" }} />}
+    {terms.length > 0 && <Box as="section" aria-labelledby={`${id}-terms`}>
+      <Text id={`${id}-terms`} fontSize="sm" fontWeight="semibold" color="app.muted" mb="2">Vocabulaire</Text>
+      <Grid as="dl" m="0" gap="3" templateColumns={{ base: "1fr", sm: "repeat(auto-fill, minmax(14rem, 1fr))" }}>
+        {terms.map((item) => <Box key={item.term} p="3" rounded="lg" borderWidth="1px" borderColor="app.border" bg="app.sunken">
+          <Text as="dt" fontWeight="semibold" color="brand.fg">{item.term}</Text>
+          <Text as="dd" m="0" mt="1" fontSize="sm"><Inline text={item.definition} /></Text>
+        </Box>)}
+      </Grid>
+    </Box>}
+    {definition.body && <RichText text={definition.body} headings headingAs={headingAs} fontSize="lg" />}
+    {definition.example && <Box as="section" aria-labelledby={`${id}-example`} p="4" rounded="lg" borderWidth="1px" borderColor="app.border" borderLeftWidth="4px" borderLeftColor="brand.solid" bg="app.surface">
+      <Flex id={`${id}-example`} gap="2" align="center" fontWeight="semibold" mb="2" color="brand.fg"><Icon name="check" size={16} />Exemple résolu</Flex>
+      <RichText text={definition.example} />
+    </Box>}
+    {media}
+    {definition.practice && <Box as="section" aria-labelledby={`${id}-practice`} p="4" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
+      <Flex id={`${id}-practice`} gap="2" align="center" fontWeight="semibold" mb="2" color="saffron.fg"><Icon name="pencil" size={16} />À vous</Flex>
+      <RichText text={definition.practice} />
+    </Box>}
+  </Stack>
+}
+
+/**
+ * Wraps a media: its ``description`` is never shown in the lesson body. Screen readers get
+ * it through ``aria-describedby``; sighted readers open « Description du média ».
+ */
+export function DescribedMedia({ data, children }: { data: DisplayData | null; children: ReactNode }) {
+  const id = useId()
+  const [open, setOpen] = useState(false)
+  const description = data?.description?.trim()
+  if (!data || !description) return <>{children}</>
+  const descriptionId = `${id}-description`
+  return <Stack gap="2">
+    <Box role="group" aria-label={"title" in data && data.title ? `Média : ${data.title}` : "Média"} aria-describedby={descriptionId}>{children}</Box>
+    <Button alignSelf="start" size="sm" variant="ghost" colorPalette="brand" px="1" h="auto" minH="8" py="1" whiteSpace="normal" textAlign="start"
+      aria-expanded={open} aria-controls={descriptionId} onClick={() => setOpen(!open)}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
+        style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>
+      Description du média
+    </Button>
+    {/* Hidden but still referenced: aria-describedby reads hidden content. */}
+    <Box id={descriptionId} hidden={!open} p="3" rounded="md" bg="app.sunken" fontSize="sm" maxW="72ch">
+      <RichText text={description} gap="2" />
+    </Box>
+  </Stack>
+}

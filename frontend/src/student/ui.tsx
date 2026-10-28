@@ -3,7 +3,7 @@ import { Badge, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import type { MissionStatus } from "./types"
 
 /** Small inline icons (no icon font, no emoji). Always paired with text. */
-export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock"; size?: number }) {
+export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock" | "target" | "pencil"; size?: number }) {
   const paths: Record<string, ReactNode> = {
     check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
     retry: <><path d="M4 12a8 8 0 1 0 2.4-5.7" /><path d="M4 4v4.5h4.5" /></>,
@@ -13,6 +13,8 @@ export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "
     "arrow-left": <path d="M19 12H5M11 6l-6 6 6 6" />,
     alert: <><path d="M12 8v5M12 16.5v.5" /><circle cx="12" cy="12" r="9" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></>,
+    pencil: <><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" /></>,
   }
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>
 }

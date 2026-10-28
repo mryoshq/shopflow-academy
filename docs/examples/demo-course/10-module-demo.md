@@ -19,7 +19,7 @@ body: |
   - orders : une ligne par commande ;
   - order_items : une ligne par article commandé.
 
-  Joindre ces deux tables fait passer au grain article : une valeur de commande est alors répétée sur chaque article.
+  Joindre ces deux tables fait passer au **grain article** : une valeur de commande est alors répétée sur chaque article.
 data:
   kind: code
   language: sql
@@ -36,12 +36,30 @@ data:
 slug: demo-lecon-jointure-animee
 kind: lesson
 objectives: [DEMO-GRAIN]
-duration: 2
-body: |
-  Lancez l'animation : elle montre comment la jointure fait passer les frais de livraison de 70 DH à 100 DH, puis comment on corrige.
+duration: 4
+objective: Expliquer pourquoi une jointure peut gonfler un total, et le corriger.
+hook: |
+  La comptabilité attend **70 DH** de frais de livraison. Votre requête affiche **100 DH**. Aucune donnée n'est fausse : c'est la jointure qui a changé ce que compte une ligne.
+key_terms:
+  - term: Grain
+    definition: Ce que représente une ligne d'une table (une commande, un article…).
+  - term: Jointure
+    definition: Associe les lignes de deux tables qui partagent une clé, ici `order_id`.
+  - term: CTE
+    definition: Requête nommée avec `WITH`, réutilisée dans la requête principale.
+example: |
+  C-101 coûte 30 DH de livraison et contient **deux** articles.
+  1. Avant la jointure : une ligne pour C-101, donc 30 DH.
+  2. Après `JOIN order_items` : deux lignes pour C-101, donc 30 + 30 = 60 DH.
+  3. Avec C-102 (40 DH, un article), le total passe de 70 DH à **100 DH**.
+practice: |
+  Lancez l'animation et arrêtez-vous à l'étape 3 : quelles cellules sont comptées deux fois ?
+  Puis ouvrez la mission « Pourquoi 70 DH deviennent 100 DH ? ».
 data:
   kind: animation
   title: "Jointure orders et order_items : 70 DH deviennent 100 DH"
+  description: |
+    Animation en quatre étapes. 1. La table orders contient deux commandes, C-101 à 30 DH et C-102 à 40 DH, total attendu 70 DH. 2. La table order_items contient trois articles : I-1 et I-2 pointent vers C-101, I-3 vers C-102. 3. Après la jointure, il y a une ligne par article : les 30 DH de C-101 apparaissent deux fois et la somme vaut 100 DH. 4. En calculant d'abord les frais par commande dans une CTE, puis en joignant, le total redevient 70 DH.
   steps:
     - caption: Deux commandes, une ligne chacune. Les frais attendus font 30 + 40 = 70 DH.
       scene:
