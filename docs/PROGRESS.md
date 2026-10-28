@@ -17,6 +17,8 @@
 
 ## Prochain lot réel
 
+**28/10/2026 :** P0-05 à P0-09 livrés (PR #18 à #22), P0-10 partiel (#23). Prochaine tâche : finir P0-10 après création de la route Cloudflare par le propriétaire. Texte historique ci-dessous.
+
 **P0-05** — lecteur étudiant générique et tableau de bord initial, seulement après revue de P0-04. Aucun cours définitif avant P2. Intégrer manuellement les PR dans l'ordre #11 → #12 → #13 → #14 après revue et CI ; ne pas fusionner automatiquement.
 
 ## Registre des sessions

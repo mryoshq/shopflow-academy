@@ -1,5 +1,13 @@
 # HANDOFF — reprise ShopFlow Academy
 
+## Reprise unique (28/10/2026, fin de la session de nuit)
+
+**Prochaine tâche unique : terminer P0-10** dès que le propriétaire a créé la route `shopflow.rapidfox.io → HTTP 127.0.0.1:3080` dans le tableau de bord Cloudflare (valeurs exactes : `docs/DEPLOY-RAPIDFOX.md` § Journal de publication) : lancer `python3 scripts/smoke_public.py` (URL publique), vérifier n8n (302 Access), faire tester depuis un téléphone en 4G, puis cocher P0-10 dans le BACKLOG avec ces preuves.
+
+**Pile de PR (aucune fusionnée)** : #11 P0-01 ← #12 P0-02 ← #13 P0-03 ← #14 P0-04 ← #15 publication ← #17 correctifs de revue ← #18 P0-05 ← #19 P0-06 ← #20 P0-07 ← #21 P0-08 ← #22 P0-09 ← #23 P0-10 (partiel). PR indépendante #16 (configuration Claude Code) vers `main`. La fusion attend l'accord écrit du propriétaire (ordre, merge commit, changement de base : `docs/INTEGRATION-PLAN.md`). Des correctifs apparus dans des lots tardifs (focus clavier de l'activité d'ordre, contraste des badges) ne sont pas dans les PR plus basses : fusionner la pile entière.
+
+**Stack locale/publiée** : branche `feat/p0-10-operations`, `APP_ENV=production`, migration `0006_class_control`, service `backup` actif. Rapport de nuit : `~/Developer/shopflow-notes/RAPPORT-NUIT.md` ; revue : `~/Developer/shopflow-notes/REVUE-P0-01-04.md`.
+
 ## État courant — session de nuit Claude Code (27-28/10/2026)
 
 Agent : Claude Code (reprise après Codex). Clone de travail **`~/Developer/shopflow-academy`** (hors iCloud, branches qui suivent `origin`). L'ancien clone `~/Documents/Codex/2026-10-27/…/shopflow-academy` a des SHA différents : ne plus l'ouvrir ni pousser depuis lui (fichier `ANCIEN-CLONE-NE-PLUS-UTILISER.txt` posé à côté). `.env` et `.local/` y ont été copiés sans affichage (0600/0700, ignorés par Git).
