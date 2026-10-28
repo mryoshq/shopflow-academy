@@ -246,6 +246,9 @@ def mission_kind(item: dict) -> str | None:
 @router.get("/dashboard")
 def dashboard(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
+    from app.leaderboard import enabled_boards  # late import: app.leaderboard imports this module
+
+    boards = enabled_boards(db, auth.user.id)
     courses = []
     for release in assigned_releases(db, auth.user.id):
         missions = flatten(release.student_snapshot)
@@ -281,6 +284,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             "description": release.student_snapshot.get("description", ""), "version": release.version,
             "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
             "paused": is_paused(db, auth.user.id, release.id), "modules": modules,
+            # Class leaderboard turned on by the teacher for this course (ADR-0026), else null.
+            "leaderboard_id": boards.get(release.id),
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
                 "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),

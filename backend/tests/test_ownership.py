@@ -40,6 +40,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return ids["draft"]
     if "/objectives" in path:
         return {"code": "INTRUS", "statement": "Objectif ajouté par un autre enseignant"}
+    if path.endswith("/leaderboard"):
+        return {"enabled": True}
     if path.endswith("/missions"):
         return {"title": "Intrusion", "slug": "intrusion"}
     if path.endswith(("/modules", "/chapters")) or method == "PATCH":

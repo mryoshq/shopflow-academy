@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, false, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -16,6 +16,8 @@ class User(Base):
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     role: Mapped[str] = mapped_column(Enum("student", "teacher", name="user_role"), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
+    # Name shown in the class leaderboard, chosen by the student (never the username or e-mail).
+    public_name: Mapped[str | None] = mapped_column(String(24), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
@@ -134,6 +136,10 @@ class Cohort(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     label: Mapped[str] = mapped_column(String(200), unique=True, nullable=False)
+    # Leaderboard (ADR-0026): off by default, set by the teacher in « Ma classe ».
+    leaderboard_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    leaderboard_top3_only: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    leaderboard_hide_during_block: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
 
 
 class Enrollment(Base):

@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     main_course_slug: str = "python-data-engineering-sql"
     main_course_title: str = "Python Data Engineering & SQL Avancé"
     class_label: str = "Classe B3 IA/Data"
+    # Local day for « Progression du jour » (leaderboard).
+    class_timezone: str = "Africa/Casablanca"
     # Course videos copied at import, served read-only by the gateway under /media/.
     media_dir: str = "/srv/media"
     # Laboratory database (service labdb, ADR-0017). Empty = SQL execution unavailable.

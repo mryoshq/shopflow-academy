@@ -58,7 +58,11 @@ export function StudentDashboard({ navigate }: Props) {
             <Stack gap="2">
               <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}{course.paused && <Badge colorPalette="saffron" variant="solid" rounded="full">En pause</Badge>}<Text fontSize="sm" color="app.muted">Version {course.version}</Text></Flex>
               {course.paused && <Text fontSize="sm" color="saffron.fg">Votre enseignant a mis cette séquence en pause : vous pouvez relire les missions, les réponses reprendront à son signal.</Text>}
-              <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
+              <Flex gap="3" align="center" wrap="wrap" justify="space-between">
+                <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
+                {course.leaderboard_id && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => navigate(`/classement/${course.leaderboard_id}`)}>
+                  <Icon name="star" size={16} />Classement de la classe</Button>}
+              </Flex>
               {course.description && <Text color="app.muted">{course.description}</Text>}
             </Stack>
             {course.modules && course.modules.length > 0

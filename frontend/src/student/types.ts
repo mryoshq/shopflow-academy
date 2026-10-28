@@ -49,6 +49,8 @@ export type DashboardCourse = {
   paused: boolean
   modules?: DashboardModule[]
   missions: DashboardMission[]
+  /** Class leaderboard, when the teacher turned it on (ADR-0026). */
+  leaderboard_id?: number | null
 }
 
 export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[] }
