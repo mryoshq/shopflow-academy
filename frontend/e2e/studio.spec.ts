@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import { readFileSync } from "node:fs"
 
 const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test-stack-credentials.json"
@@ -29,9 +30,8 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   const courseTitle = `Démonstration SQL ${suffix}`
   const cohortTitle = `Cohorte démo ${suffix}`
   await login(page, teacher)
-  await expect(page.getByRole("heading", { name: "Studio de cours" })).toBeVisible()
-  // Other courses live in the advanced options: the studio opens the single course first.
-  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
+  // Other courses live in « Mon cours » → Import: the studio opens the single course first.
+  await teacherView(page, "Mon cours", "Import")
   const sidebar = page.locator("aside")
   await sidebar.getByLabel("Titre").fill(courseTitle)
   await sidebar.getByLabel("Description").fill("Exercice fictif pour vérifier le studio.")
@@ -41,7 +41,7 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   await page.getByRole("tab", { name: "Publication" }).click()
   await page.getByRole("button", { name: "Publier une version" }).click()
   await expect(page.getByRole("alert")).toContainText("incomplet")
-  await page.getByRole("tab", { name: "Structure" }).click()
+  await page.getByRole("tab", { name: "Plan" }).click()
   await page.getByLabel("Description de l’objectif").fill("Comparer des volumes SQL")
   await page.getByRole("button", { name: "Ajouter l’objectif" }).click()
   await page.getByLabel("Titre du nouveau module").fill("Fondations")

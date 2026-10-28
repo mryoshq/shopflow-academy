@@ -1,4 +1,5 @@
 import { test, expect, type Browser, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -61,7 +62,7 @@ for (const theme of ["light", "dark"] as const) {
     const studentCtx = await context(browser, theme)
     const student = await studentCtx.newPage()
     await login(student, STUDENT)
-    await teacher.getByRole("tab", { name: "Ma classe" }).click()
+    await teacherView(teacher, "Ma classe", "Étudiants")
     const grid = teacher.getByRole("table", { name: "Étudiants par blocs" })
     await expect(grid).toBeVisible()
     // The student's heartbeat makes them « en ligne » within one refresh.
@@ -124,7 +125,7 @@ test("a closed block opened for one student only, within 10 s (« ouvert pour vo
     await login(student, STUDENT)
     const card = student.getByRole("group", { name: `Bloc : ${BLOCK}` })
     await expect(card.getByText("Bientôt disponible")).toBeVisible()
-    await teacher.getByRole("tab", { name: "Ma classe" }).click()
+    await teacherView(teacher, "Ma classe", "Étudiants")
     const row = teacher.getByRole("table", { name: "Étudiants par blocs" }).getByRole("row").filter({ hasText: STUDENT })
     await row.getByRole("button", { name: new RegExp(`${BLOCK} : fermé\\. Ouvrir ce bloc pour ${STUDENT}`) }).click()
     await expect(teacher.getByText(`« ${BLOCK} » ouvert pour ${STUDENT}.`)).toBeVisible()
@@ -152,7 +153,7 @@ test("automatic opening: plan shown before activation, the server opens the bloc
   const info = await classInfo(teacher)
   await teacherPost(teacher, `/teacher/classes/${info.id}/blocks/${info.block.chapter_id}/close`)
   try {
-    await teacher.getByRole("tab", { name: "Ma classe" }).click()
+    await teacherView(teacher, "Ma classe", "Frise")
     const section = teacher.getByRole("region", { name: "Ouverture automatique des blocs" })
     // « Heure de fin » is a time of today: after 21:00 « now + 3 h » would wrap past midnight into the past.
     const now = new Date()
@@ -190,7 +191,7 @@ for (const theme of ["light", "dark"] as const) {
     const teacherCtx = await context(browser, theme, 390, 844)
     const teacher = await teacherCtx.newPage()
     await login(teacher, "demo.enseignant")
-    await teacher.getByRole("tab", { name: "Ma classe" }).click()
+    await teacherView(teacher, "Ma classe", "Étudiants")
     await expect(teacher.getByRole("table", { name: "Étudiants par blocs" })).toBeVisible()
     expect(await teacher.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
     expect(await serious(teacher)).toEqual([])

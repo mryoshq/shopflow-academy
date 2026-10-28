@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync, writeFileSync } from "node:fs"
 
@@ -56,11 +57,11 @@ for (const theme of ["light", "dark"] as const) {
 
     await page.getByRole("button", { name: "Se déconnecter" }).click()
     await login(page, "demo.enseignant")
-    await page.getByRole("tab", { name: "Ma classe" }).click()
+    await teacherView(page, "Ma classe", "Frise")
     await expect(page.getByRole("heading", { name: "Déroulé de la journée" })).toBeVisible()
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/${theme}-04-ma-classe.png`, fullPage: true, animations: "disabled" })
-    await page.getByRole("tab", { name: "Mon cours" }).click()
+    await teacherView(page, "Mon cours")
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/${theme}-05-mon-cours.png`, fullPage: true, animations: "disabled" })
   })
@@ -134,7 +135,7 @@ test("the teacher resets a password: shown once, sessions closed, old password r
   await login(learner, name, old)
 
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await teacherView(page, "Ma classe", "Étudiants")
   await page.getByRole("button", { name: `Détail de ${name}` }).first().click()
   page.once("dialog", (dialog) => void dialog.accept())
   await page.getByRole("button", { name: "Réinitialiser le mot de passe" }).click()

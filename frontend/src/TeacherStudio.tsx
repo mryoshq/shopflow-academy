@@ -60,6 +60,8 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
   const [ownTab, setOwnTab] = useState("plan")
   const tab = routeTab ?? ownTab
   const setTab = (value: string) => { if (onTab) onTab(value); else setOwnTab(value) }
+  // With a main course, search and import live in the « Import » tab: picking a course keeps it open (ADR-0031).
+  const stayOrPlan = () => { if (!mainCourseId) setTab("plan") }
   const [newCourseTitle, setNewCourseTitle] = useState("")
   const [newCourseDescription, setNewCourseDescription] = useState("")
   const [editTitle, setEditTitle] = useState("")
@@ -313,9 +315,9 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
 
   const sidebar = <Stack gap="5" as="aside" bg="app.surface" p="5" rounded="xl" borderWidth="1px">
         <Heading as="h3" size="md">Mes cours</Heading>
-        {courses.length === 0 ? <Text color="app.muted">Aucun cours créé. Commencez ci-dessous.</Text> : <CourseSearch selectedId={selectedId} refreshKey={refreshKey} onSelect={(id) => { setSelectedId(id); setTab("plan"); setError(""); setNotice("") }} />}
+        {courses.length === 0 ? <Text color="app.muted">Aucun cours créé. Commencez ci-dessous.</Text> : <CourseSearch selectedId={selectedId} refreshKey={refreshKey} onSelect={(id) => { setSelectedId(id); stayOrPlan(); setError(""); setNotice("") }} />}
         <Box borderTopWidth="1px" pt="4"><Heading as="h4" size="sm" mb="3">Nouveau cours</Heading><Stack gap="3"><Field.Root required><Field.Label>Titre</Field.Label><Input value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Démo : qualité des données" /></Field.Root><Field.Root><Field.Label>Description</Field.Label><Textarea value={newCourseDescription} onChange={(event) => setNewCourseDescription(event.target.value)} rows={3} /></Field.Root><Button colorPalette="brand" onClick={createCourse} loading={busy} disabled={!newCourseTitle.trim()}>Créer le cours</Button></Stack></Box>
-        <Box borderTopWidth="1px" pt="4"><CourseImport onImported={(id) => { setCourses((items) => [...items]); setRefreshKey((value) => value + 1); setSelectedId(id); setTab("plan"); setNotice("Cours importé comme nouveau brouillon. Vérifiez-le puis publiez une version.") }} /></Box>
+        <Box borderTopWidth="1px" pt="4"><CourseImport onImported={(id) => { setCourses((items) => [...items]); setRefreshKey((value) => value + 1); setSelectedId(id); stayOrPlan(); setNotice("Cours importé comme nouveau brouillon. Vérifiez-le puis publiez une version.") }} /></Box>
         {mainCourseId && <Box borderTopWidth="1px" pt="4"><Cleanup onDone={() => { void api<CourseSummary[]>("/teacher/courses").then(setCourses); setRefreshKey((value) => value + 1) }} /></Box>}
         {mainCourseId && selectedId !== mainCourseId && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => { setSelectedId(mainCourseId); setTab("plan") }}>Revenir à mon cours</Button>}
       </Stack>

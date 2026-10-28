@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -31,10 +32,11 @@ async function openMarkdownCourse(page: Page) {
   await login(page, "demo.enseignant")
   const found = await (await page.request.get("/api/v1/teacher/course-search?q=demo-cours-markdown")).json() as { id: number }[]
   test.skip(found.length === 0, "course not imported")
-  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
+  await teacherView(page, "Mon cours", "Import")
   await page.getByLabel("Rechercher un cours").fill("Markdown")
   await page.locator("aside").getByRole("button", { name: new RegExp(TITLE) }).first().click()
   await expect(page.getByRole("heading", { level: 3, name: TITLE })).toBeVisible()
+  await page.getByRole("tab", { name: "Plan", exact: true }).click()
 }
 
 test("icons and theme colours are served", async ({ page }) => {

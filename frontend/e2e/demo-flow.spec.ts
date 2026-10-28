@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import { readFileSync } from "node:fs"
 
 /** P0-09 acceptance: the teacher publishes a demo, a student completes it, the grade persists, other accounts are isolated. */
@@ -19,7 +20,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   const suffix = Date.now().toString(36)
   const title = `Parcours de démonstration ${suffix}`
   await login(page, "demo.enseignant")
-  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
+  await teacherView(page, "Mon cours", "Import")
   await page.getByLabel("Fichier de cours JSON").setInputFiles({ name: "demo.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(fixture)) })
   await expect(page.getByText(/Fichier valide/)).toBeVisible()
   await page.getByLabel("Titre du nouveau cours").fill(title)
@@ -93,8 +94,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await outsiderContext.close()
 
   // The teacher sees the persistent grade in the class view.
-  await page.getByRole("tab", { name: "Ma classe" }).click()
-  await page.getByRole("button", { name: "Options avancées : autres classes" }).click()
+  await teacherView(page, "Réglages", "Autres classes")
   const select = page.getByLabel("Classe suivie")
   const value = await select.locator("option").filter({ hasText: `Cohorte parcours ${suffix}` }).getAttribute("value")
   await select.selectOption(value!)

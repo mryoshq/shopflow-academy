@@ -15,6 +15,10 @@
 - Binômes par invitation (ou seul), une personne par binôme ; l'enseignant corrige la composition.
 - Jalons (consignes, date limite, livrables) et dépôts versionnés : texte avec tableaux, lien HTTPS, fichiers (pdf, png, jpg, md, zip ; 20 Mo) stockés hors base ; retard signalé.
 - Enseignant : dépôts par jalon, commentaires visibles du binôme, grille sur 20 séparée du cours, export CSV, planning des soutenances visible des étudiants. Observateur : rien sans autorisation. Tout est audité. Migration `0014_project`. ADR-0034.
+## 2026-10-29 — Sprint 3, partie O : interface enseignant en application à une page (`claude/lucid-brahmagupta-htwgun-o`)
+- Barre latérale (Aujourd'hui, Ma classe, Mon cours, Résultats, Projet, Leaderboard, Réglages) et barre haute (étudiants en ligne, recherche, cloche, thème, compte).
+- Une adresse par vue et sous-vue, bouton retour, liens directs, dernière vue rouverte ; détails dans un panneau latéral ; tableau « Aujourd'hui » ; recherche Cmd+K / Ctrl+K.
+- Rien n'est retiré ; l'interface étudiante est inchangée. Pas de migration. ADR-0031.
 
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
