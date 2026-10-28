@@ -6,7 +6,7 @@ import { readFileSync } from "node:fs"
  * P0-05 student player on the demonstration course (fictional accounts only).
  * Requires: stack running + `python -m app.demo_course` (see docs/STUDENT-PLAYER.md).
  */
-const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/demo-credentials.json"
+const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test-stack-credentials.json"
 const accounts = JSON.parse(readFileSync(credentialsPath, "utf8")) as { username: string; password: string }[]
 const account = (name: string) => {
   const found = accounts.find((item) => item.username === name)
@@ -44,8 +44,10 @@ async function openMission(page: Page, title: string) {
 }
 
 async function seriousA11yViolations(page: Page) {
+  // Measure the settled page: a button fading from disabled to enabled is not a contrast defect.
+  await page.waitForFunction(() => document.getAnimations().every((animation) => animation.playState !== "running"))
   const results = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()
-  return results.violations.filter((item) => item.impact === "serious" || item.impact === "critical").map((item) => `${item.id}: ${item.nodes.length}`)
+  return results.violations.filter((item) => item.impact === "serious" || item.impact === "critical").map((item) => `${item.id}: ${item.nodes.length} ${item.nodes.map((node) => `${node.target.join(" ")} [${node.failureSummary?.split("\n").slice(1).join(" ").trim()}]`).join(" | ")}`)
 }
 
 async function csrf(context: BrowserContext): Promise<string> {

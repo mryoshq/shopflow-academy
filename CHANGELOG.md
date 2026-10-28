@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-28 — P0-10 terminé, décisions du propriétaire (`feat/p0-10-owner-decisions`)
+
+- `https://shopflow.rapidfox.io` en ligne ; `smoke_public.py` se connecte en production avec le compte du propriétaire et vérifie qu'un compte de démo est refusé.
+- Studio, import/export, historique et suivi de classe réservés au propriétaire du cours (404 sinon) ; listes et recherche filtrées ; tests générés sur toutes les routes de cours.
+- `app.account_policy` : un seul enseignant, étudiants `@ynov.com` seuls actifs, autres comptes désactivés sans suppression, sessions révoquées, audit ; simulation par défaut.
+- Stack de test séparée (`scripts/test_stack.py`, projet `shopflow-academy-test`, port 3180, base jetable) ; Playwright, charge et persistance refusent la production ; CI alignée ; ADR-0016.
+- Le cours de démonstration refuse de s'installer en production.
+
 ## 2026-10-28 — P0-10 exploitation, partiel (`feat/p0-10-operations`)
 
 - Service Compose `backup` : sauvegardes PostgreSQL vérifiées toutes les 6 h, rétention, SHA-256.

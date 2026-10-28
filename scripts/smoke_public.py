@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Smoke test of a running ShopFlow Academy (local gateway or public URL).
 
-Uses only the fictitious demo accounts from .local/demo-credentials.json and
-never prints a credential, cookie value or token.
+Production (the public URL or the local production gateway on port 3080) signs in
+with the owner teacher account (.local/teacher-credentials.json) and checks that the
+disabled demo accounts are refused. The test stack (any other address, for example
+http://127.0.0.1:3180) signs in with a fictitious demo student. Never prints a
+credential, cookie value or token.
 
     python3 scripts/smoke_public.py                       # https://shopflow.rapidfox.io
-    python3 scripts/smoke_public.py http://127.0.0.1:3080 # local gateway
+    python3 scripts/smoke_public.py http://127.0.0.1:3080 # local production gateway
+    python3 scripts/smoke_public.py http://127.0.0.1:3180 # test stack (scripts/test_stack.py)
 """
 
 from __future__ import annotations
@@ -19,7 +23,10 @@ from urllib.parse import urlparse
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
-CREDENTIALS = ROOT / ".local" / "demo-credentials.json"
+DEMO_CREDENTIALS = ROOT / ".local" / "demo-credentials.json"
+TEST_STACK_CREDENTIALS = ROOT / ".local" / "test-stack-credentials.json"
+TEACHER_CREDENTIALS = ROOT / ".local" / "teacher-credentials.json"
+PRODUCTION_HOSTS = {"shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"}
 N8N_URL = "https://n8n.rapidfox.io"
 
 
@@ -77,35 +84,50 @@ def main() -> int:
     check("En-tête CSP", bool(headers.get("Content-Security-Policy")))
     status, _, body = call("GET", f"{base}/health/ready")
     check("/health/ready", status == 200 and b'"ok"' in body, f"HTTP {status}")
-    status, _, _ = call("GET", f"{base}/api/v1/openapi.json")
-    check("Schéma OpenAPI masqué", status == 404, f"HTTP {status}")
-
-    if not CREDENTIALS.exists():
-        check("Comptes de démo", False, "fichier .local absent")
-        return report()
-    accounts = {item["username"]: item for item in json.loads(CREDENTIALS.read_text())}
-    student = accounts.get("demo.etudiant01")
-    if not student:
-        check("Comptes de démo", False, "demo.etudiant01 absent")
-        return report()
+    production = urlparse(base).netloc in PRODUCTION_HOSTS
+    if production:
+        status, _, _ = call("GET", f"{base}/api/v1/openapi.json")
+        check("Schéma OpenAPI masqué", status == 404, f"HTTP {status}")
 
     origin = {"Origin": base}
-    status, headers, _ = call("POST", f"{base}/api/v1/auth/login", {"username": student["username"], "password": student["password"]}, origin)
-    check("Connexion étudiant de démo", status == 200, f"HTTP {status}")
+    demo_file = DEMO_CREDENTIALS if production else TEST_STACK_CREDENTIALS
+    demo = {item["username"]: item for item in json.loads(demo_file.read_text())} if demo_file.exists() else {}
+    if production:
+        if not TEACHER_CREDENTIALS.exists():
+            check("Compte enseignant", False, "fichier .local absent")
+            return report()
+        teacher = json.loads(TEACHER_CREDENTIALS.read_text())
+        username, password, role, other_api = teacher["email"], teacher["password"], "teacher", "/api/v1/student/dashboard"
+        label = "Connexion enseignant propriétaire"
+        if "demo.etudiant01" in demo:
+            status, _, _ = call("POST", f"{base}/api/v1/auth/login", {"username": "demo.etudiant01", "password": demo["demo.etudiant01"]["password"]}, origin)
+            check("Compte de démo désactivé (refusé)", status == 401, f"HTTP {status}")
+    else:
+        if "demo.etudiant01" not in demo:
+            check("Comptes de démo", False, "demo.etudiant01 absent")
+            return report()
+        username, password, role, other_api = "demo.etudiant01", demo["demo.etudiant01"]["password"], "student", "/api/v1/teacher/courses"
+        label = "Connexion étudiant de démo"
+
+    status, headers, _ = call("POST", f"{base}/api/v1/auth/login", {"username": username, "password": password}, origin)
+    check(label, status == 200, f"HTTP {status}")
     cookies = parse_cookies(headers)
     session = next((c for n, c in cookies.items() if n.endswith("academy_session")), None)
     csrf_name = next((n for n in cookies if n.endswith("academy_csrf")), None)
-    check("Cookie de session Secure + HttpOnly", bool(session and {"secure", "httponly"} <= session["flags"]))
-    check("Cookies préfixés __Host-", all(name.startswith("__Host-") for name in cookies) and bool(cookies))
+    if production:  # production mode: Secure cookies with the __Host- prefix
+        check("Cookie de session Secure + HttpOnly", bool(session and {"secure", "httponly"} <= session["flags"]))
+        check("Cookies préfixés __Host-", all(name.startswith("__Host-") for name in cookies) and bool(cookies))
+    else:  # test stack, development mode over plain HTTP
+        check("Cookie de session HttpOnly", bool(session and "httponly" in session["flags"]))
     if not session or not csrf_name:
         return report()
     jar = "; ".join(f"{name}={cookie['value']}" for name, cookie in cookies.items())
     auth_headers = {"Cookie": jar, **origin}
 
     status, _, body = call("GET", f"{base}/api/v1/auth/me", headers=auth_headers)
-    check("/auth/me", status == 200 and json.loads(body).get("role") == "student", f"HTTP {status}")
-    status, _, _ = call("GET", f"{base}/api/v1/teacher/courses", headers=auth_headers)
-    check("Étudiant refusé sur l'API enseignant", status == 403, f"HTTP {status}")
+    check("/auth/me", status == 200 and json.loads(body).get("role") == role, f"HTTP {status}")
+    status, _, _ = call("GET", f"{base}{other_api}", headers=auth_headers)
+    check("Rôle refusé sur l'API de l'autre rôle", status == 403, f"HTTP {status}")
     status, _, _ = call("POST", f"{base}/api/v1/auth/logout", headers={**auth_headers, "Origin": "https://evil.example", "X-CSRF-Token": cookies[csrf_name]["value"]})
     check("Origine étrangère refusée", status == 403, f"HTTP {status}")
     status, _, _ = call("POST", f"{base}/api/v1/auth/logout", headers={**auth_headers, "X-CSRF-Token": cookies[csrf_name]["value"]})

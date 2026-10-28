@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 """Ten simultaneous fictional students plus the teacher dashboard (P0-09).
 
-Uses only the demo accounts from .local/demo-credentials.json (never printed) and the
-demonstration course. Each student: login, dashboard, opens the three missions,
+Runs on the test stack only (scripts/test_stack.py up); a production address is
+refused before any request. Uses the fictitious accounts of the test stack
+(.local/test-stack-credentials.json, never printed) and the demonstration course. Each student: login, dashboard, opens the three missions,
 reveals a hint, submits answers (including the same idempotency key twice in
 parallel) and reads history; meanwhile the teacher polls the class overview.
 
-    python3 scripts/load_test.py [--base http://127.0.0.1:3080] [--rounds 2]
+    python3 scripts/load_test.py [--base http://127.0.0.1:3180] [--rounds 2]
 
 Exit code 1 when an unexpected HTTP status, a duplicated attempt or a slow p95 occurs.
 """
@@ -24,6 +25,9 @@ from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, build_opener
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from test_stack import BASE, CREDENTIALS, refuse_production  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = "Démonstration — Données ShopFlow"
@@ -120,10 +124,11 @@ def percentile(values: list[float], q: float) -> float:
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--base", default="http://127.0.0.1:3080")
+    parser.add_argument("--base", default=BASE)
     parser.add_argument("--rounds", type=int, default=2)
-    parser.add_argument("--credentials", default=str(ROOT / ".local" / "demo-credentials.json"))
+    parser.add_argument("--credentials", default=str(CREDENTIALS))
     args = parser.parse_args()
+    refuse_production(args.base)
     accounts = {item["username"]: item for item in json.loads(Path(args.credentials).read_text())}
     students = [accounts[f"demo.etudiant{i:02d}"] for i in range(1, 11)]
     stop = threading.Event()
