@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Logo du propriétaire (`claude/lucid-brahmagupta-htwgun-logo`)
+
+- En-tête et page de connexion : logo complet à côté du nom « ShopFlow Academy » en texte ; variante verte du propriétaire en mode sombre.
+- Favicon SVG et PNG 16/32 : tête du renard seule, traits épaissis, couleurs de la variante verte en mode sombre ; icônes 192/512, apple-touch-icon et icône masquable tirées de la variante verte ; image de partage 1200×630 et balises Open Graph. ADR-0022c (remplace le monogramme de l'ADR-0022b).
+
 ## 2026-10-28 — Sprint 2, partie G2 : plan du cours, objectifs par catégorie, logo et icônes (`claude/lucid-brahmagupta-htwgun-g2`)
 
 - Studio et aperçu : plan module → bloc → éléments, blocs repliables (le bloc courant ouvert), une ligne par élément (type, points, durée, badges Leçon / Bonus / Exécution, état), en-tête de bloc (numéro, durée, points), compteurs, recherche et filtre par type ; navigation par bloc dans l'aperçu.
