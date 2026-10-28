@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — P0-08 administration de contenu (`feat/p0-08-content-admin`)
+
+- Format portable `shopflow-course` v1 ; export du brouillon ou d'une version publiée exacte ; import vérifié (simulation, rapport d'erreurs par chemin, jamais d'écrasement).
+- Recherche et tri des cours dans le studio ; historique des modifications ; restauration du brouillon depuis une version publiée avec sauvegarde téléchargeable.
+
 ## 2026-10-28 — P0-07 tableau de bord enseignant (`feat/p0-07-teacher-dashboard`)
 
 - Onglet « Suivi de classe » : classes du propriétaire, élèves (missions réussies, score, mission en cours, dernière activité, actif, besoin d'aide), détail par élève, actualisation toutes les 5 s.
