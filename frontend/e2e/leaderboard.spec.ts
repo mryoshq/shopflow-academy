@@ -37,7 +37,9 @@ test("K: teacher settings, student name, tied ranks, refresh, daily tab, AA and 
           day: "2026-10-28", timezone: "Africa/Casablanca", rows: !enabled || hidden ? [] : rows,
           daily_rows: !enabled || hidden ? [] : rows.map(({ rank, display_name, is_self, today_blocks }) => ({ rank, display_name, is_self, today_blocks })) }
       }
-    } else { unexpected.push(path); status = 500; body = { detail: "Unexpected fixture request" } }
+    } else if (path.endsWith("/notifications")) body = { unread: 0, items: [] } // ADR-0023: polled on every page
+    else if (path.endsWith("/presence")) body = { interval_seconds: 30, unread: 0 } // ADR-0023: student heartbeat
+    else { unexpected.push(path); status = 500; body = { detail: "Unexpected fixture request" } }
     await route.fulfill({ status, json: body })
   })
   await page.goto("/#/classement/4")
