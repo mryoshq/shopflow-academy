@@ -2,8 +2,11 @@ import type { ReactNode } from "react"
 import { Badge, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import type { MissionStatus } from "./types"
 
+export type IconName = "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock" | "target" | "pencil"
+  | "book" | "list" | "sort" | "link" | "chart" | "code" | "play" | "star" | "search" | "chevron" | "layers"
+
 /** Small inline icons (no icon font, no emoji). Always paired with text. */
-export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock"; size?: number }) {
+export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | IconName; size?: number }) {
   const paths: Record<string, ReactNode> = {
     check: <path d="M5 12.5l4.5 4.5L19 7.5" />,
     retry: <><path d="M4 12a8 8 0 1 0 2.4-5.7" /><path d="M4 4v4.5h4.5" /></>,
@@ -13,6 +16,19 @@ export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "
     "arrow-left": <path d="M19 12H5M11 6l-6 6 6 6" />,
     alert: <><path d="M12 8v5M12 16.5v.5" /><circle cx="12" cy="12" r="9" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    target: <><circle cx="12" cy="12" r="8" /><circle cx="12" cy="12" r="4" /><circle cx="12" cy="12" r="0.5" /></>,
+    pencil: <><path d="M4 20h4L19 9l-4-4L4 16v4z" /><path d="M13.5 6.5l4 4" /></>,
+    book: <><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z" /><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5" /></>,
+    list: <><path d="M9 6h11M9 12h11M9 18h11" /><circle cx="4.5" cy="6" r="1" /><circle cx="4.5" cy="12" r="1" /><circle cx="4.5" cy="18" r="1" /></>,
+    sort: <><path d="M8 4v16M4 8l4-4 4 4" /><path d="M16 20V4M12 16l4 4 4-4" /></>,
+    link: <><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>,
+    chart: <><path d="M4 20V4" /><path d="M4 20h16" /><path d="M8 16v-5M12 16V8M16 16v-3" /></>,
+    code: <><path d="M8 7l-5 5 5 5M16 7l5 5-5 5" /></>,
+    play: <path d="M7 5l12 7-12 7z" />,
+    star: <path d="M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.8z" />,
+    search: <><circle cx="11" cy="11" r="6.5" /><path d="M16 16l4.5 4.5" /></>,
+    chevron: <path d="M9 6l6 6-6 6" />,
+    layers: <><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>,
   }
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>
 }

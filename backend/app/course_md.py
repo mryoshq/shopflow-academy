@@ -32,7 +32,7 @@ import sys
 from pydantic import ValidationError
 import yaml
 
-from app.curriculum_schema import CHOICE_KINDS, MissionDefinition
+from app.curriculum_schema import CHOICE_KINDS, HTML_TAG, MissionDefinition
 
 FORMAT = "shopflow-course-md"
 HEADER_FILE = "00-cours.md"
@@ -288,8 +288,8 @@ def parse_header(compiled: Compiled, name: str, text: str) -> None:
     seen = set()
     for index, objective in enumerate(objectives):
         line = where.get(("objectives", index), 2)
-        if not isinstance(objective, dict) or set(objective) - {"code", "statement"}:
-            compiled.error(name, line, "un objectif s'écrit `{code, statement}`")
+        if not isinstance(objective, dict) or set(objective) - {"code", "statement", "category"}:
+            compiled.error(name, line, "un objectif s'écrit `{code, statement, category?}`")
             continue
         code = str(objective.get("code") or "")
         statement = str(objective.get("statement") or "").strip()
@@ -299,8 +299,11 @@ def parse_header(compiled: Compiled, name: str, text: str) -> None:
             compiled.error(name, line, f"code d'objectif en double : `{code}`")
         if not statement or len(statement) > 1000:
             compiled.error(name, line, "`statement` obligatoire (1000 caractères au plus)")
+        category = str(objective.get("category") or "").strip()
+        if len(category) > 60 or HTML_TAG.search(category):
+            compiled.error(name, line, "`category` : texte brut, 60 caractères au plus")
         seen.add(code)
-        compiled.objectives.append({"code": code, "statement": statement, "line": line, "file": name})
+        compiled.objectives.append({"code": code, "statement": statement, "category": category, "line": line, "file": name})
 
 
 def parse_module_file(compiled: Compiled, name: str, text: str) -> None:
@@ -789,7 +792,8 @@ def document(compiled: Compiled) -> dict:
         "format": "shopflow-course", "format_version": 1,
         "source": {"format": FORMAT, "files": compiled.files},
         "course": compiled.course,
-        "objectives": [{"code": o["code"], "statement": o["statement"]} for o in compiled.objectives],
+        "objectives": [{"code": o["code"], "statement": o["statement"], **({"category": o["category"]} if o.get("category") else {})}
+                       for o in compiled.objectives],
         "modules": [{
             "title": module.title, "description": module.description, "sort_order": mi,
             "chapters": [{"title": block.title, "sort_order": bi, "missions": [{
@@ -869,8 +873,10 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     for item in compiled.objectives:
         if item["code"] in objectives:
             objectives[item["code"]].statement = item["statement"]
+            objectives[item["code"]].category = item.get("category", "")
         else:
-            objectives[item["code"]] = LearningObjective(course_id=course.id, code=item["code"], statement=item["statement"])
+            objectives[item["code"]] = LearningObjective(course_id=course.id, code=item["code"], statement=item["statement"],
+                                                         category=item.get("category", ""))
             db.add(objectives[item["code"]])
     db.flush()
 

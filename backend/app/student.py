@@ -8,6 +8,7 @@ key and tied to the exact mission version; scores and best score arrive in P0-06
 from __future__ import annotations
 
 from datetime import timedelta
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -17,7 +18,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, display_name, require_student, require_student_csrf, utcnow
 from app.config import get_settings
-from app.curriculum import release_private_definitions, student_safe_snapshot
+from app.curriculum import BLOCK_CATEGORY, objective_category, release_private_definitions, student_safe_snapshot
 from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
@@ -65,6 +66,31 @@ def blocks_of(snapshot: dict) -> list[dict]:
              "module_description": module.get("description", ""),
              "missions": [m for m in chapter.get("missions", []) if isinstance(m.get("mission_version_id"), int)]}
             for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])]
+
+
+def first_sentence(text: str) -> str:
+    match = re.match(r"(.+?[.!?])(?:\s|$)", text.strip(), re.S)
+    return (match.group(1) if match else text.strip()).replace("\n", " ")
+
+
+def block_objective(snapshot: dict, missions: list[dict]) -> str:
+    """The block's objective for students, in one sentence and never with its code (ADR-0022).
+
+    A « bloc » objective (BLOC- prefix or category) covered by the block's missions comes first,
+    else the first objective they cover.
+    """
+    objectives = {item.get("id"): item for item in snapshot.get("objectives", []) if isinstance(item, dict)}
+    covered: list[dict] = []
+    for mission in missions:
+        definition = mission.get("definition") or {}
+        for objective_id in definition.get("objective_ids", []) if isinstance(definition, dict) else []:
+            item = objectives.get(objective_id)
+            if item is not None and item not in covered:
+                covered.append(item)
+    if not covered:
+        return ""
+    chosen = next((item for item in covered if objective_category(str(item.get("code", "")), str(item.get("category") or "")) == BLOCK_CATEGORY), covered[0])
+    return first_sentence(str(chosen.get("statement", "")))
 
 
 def student_cohorts(db: Session, user_id: int, release_id: int) -> list[int]:
@@ -247,6 +273,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
                 "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
                 "done": is_open and bool(core) and all(scores[vid].completed for vid in core),
                 "mission_ids": shown,
+                # Closed blocks expose their title only.
+                "objective": block_objective(release.student_snapshot, block["missions"]) if is_open else "",
             })
         courses.append({
             "release_id": release.id, "title": release.student_snapshot.get("title", ""),

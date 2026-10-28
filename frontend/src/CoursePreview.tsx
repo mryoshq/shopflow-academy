@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react"
-import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Text } from "@chakra-ui/react"
+import { Badge, Box, Button, Flex, Grid, Heading, NativeSelect, Stack, Text } from "@chakra-ui/react"
 import type { MissionDefinition, StudentMission, CourseModule } from "./studioTypes"
 import { DataView } from "./student/activities"
 import { CodeBlock, LessonBody } from "./student/displays"
 import { RunPanel } from "./student/RunPanel"
+import { Icon } from "./student/ui"
+import { CourseOutline } from "./studio/CourseOutline"
 
 export type PreviewTree = { title: string; description: string; modules: CourseModule<StudentMission>[] }
 
@@ -64,11 +66,24 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
 }
 
 export function CoursePreview({ course, corrections }: { course: PreviewTree; corrections?: Record<number, MissionDefinition> }) {
-  const missions = course.modules.flatMap((module) => module.chapters.flatMap((chapter) => chapter.missions))
+  const blocks = course.modules.flatMap((module) => module.chapters.filter((chapter) => chapter.missions.length > 0))
+  const missions = blocks.flatMap((chapter) => chapter.missions)
   const [selectedId, setSelectedId] = useState<number | null>(missions[0]?.id ?? null)
   useEffect(() => setSelectedId(missions[0]?.id ?? null), [course.title, missions.map((mission) => mission.id).join(",")])
   const mission = missions.find((item) => item.id === selectedId)
+  const blockIndex = blocks.findIndex((chapter) => chapter.missions.some((item) => item.id === selectedId))
+  const goBlock = (index: number) => setSelectedId(blocks[index]?.missions[0]?.id ?? selectedId)
   return <Stack gap="5"><Box><Heading as="h3" size="lg">{course.title}</Heading>{course.description && <Text mt="2">{course.description}</Text>}</Box>
-    {missions.length === 0 ? <Text>Aucune mission à prévisualiser.</Text> : <><NativeSelect.Root maxW="md"><NativeSelect.Field aria-label="Mission à prévisualiser" value={selectedId ?? ""} onChange={(event) => setSelectedId(Number(event.target.value))}>{missions.map((item) => <option key={item.id} value={item.id}>{item.title}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>{mission && <MissionPreview key={mission.id} mission={mission} correction={corrections?.[mission.id]} />}</>}
+    {missions.length === 0 ? <Text>Aucune mission à prévisualiser.</Text> : <Grid templateColumns={{ base: "1fr", xl: "minmax(320px, 400px) minmax(0, 1fr)" }} gap="5" alignItems="start">
+      <CourseOutline label="Plan de l’aperçu" modules={course.modules} privateDefinitions={corrections} selectedId={selectedId} onSelect={(item) => setSelectedId(item.id)} />
+      <Stack gap="3" minW="0">
+        <Flex as="nav" aria-label="Navigation par bloc" gap="2" align="center" wrap="wrap" justify="space-between">
+          <Button size="sm" variant="outline" disabled={blockIndex <= 0} onClick={() => goBlock(blockIndex - 1)}><Icon name="arrow-left" size={16} />Bloc précédent</Button>
+          <Text fontSize="sm" color="app.muted" textAlign="center">Bloc {blockIndex + 1} sur {blocks.length} : {blocks[blockIndex]?.title}</Text>
+          <Button size="sm" variant="outline" disabled={blockIndex < 0 || blockIndex >= blocks.length - 1} onClick={() => goBlock(blockIndex + 1)}>Bloc suivant<Icon name="arrow-right" size={16} /></Button>
+        </Flex>
+        {mission && <MissionPreview key={mission.id} mission={mission} correction={corrections?.[mission.id]} />}
+      </Stack>
+    </Grid>}
   </Stack>
 }

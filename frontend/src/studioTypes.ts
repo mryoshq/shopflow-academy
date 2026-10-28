@@ -1,7 +1,7 @@
 export type Role = "student" | "teacher"
 export type User = { id: number; username: string; role: Role }
 export type CourseSummary = { id: number; slug: string; title: string; status: "draft" | "published" | "archived" }
-export type Objective = { id: number; code: string; statement: string }
+export type Objective = { id: number; code: string; statement: string; category?: string }
 export type Choice = { id: string; label: string }
 export type TableDisplay = { kind: "table"; title?: string; columns: string[]; rows: (string | number | boolean | null)[][] }
 export type BarChartDisplay = { kind: "bar_chart"; title: string; labels: string[]; values: number[]; unit: string }

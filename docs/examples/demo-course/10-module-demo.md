@@ -10,7 +10,7 @@ Note pour l'enseignant : deux blocs d'environ 15 minutes, puis un défi bonus.
 ```yaml
 slug: demo-lecon-grain
 kind: lesson
-objectives: [DEMO-GRAIN]
+objectives: [DEMO-GRAIN, BLOC-GRAIN]
 duration: 3
 body: |
   Le grain d'une table, c'est ce que représente une ligne.
@@ -197,7 +197,7 @@ explanation: Chaque table a son grain ; le connaître évite de répéter une va
 ```yaml
 slug: demo-lecon-carte-qualite
 kind: lesson
-objectives: [DEMO-QUALITE]
+objectives: [DEMO-QUALITE, BLOC-QUALITE]
 duration: 2
 body: |
   Avant de charger un fichier, on vérifie quatre familles de règles. Dépliez chaque branche avec le clavier ou la souris.

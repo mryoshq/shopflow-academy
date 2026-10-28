@@ -64,26 +64,49 @@ class CoursePatch(BaseModel):
         return plain(value) if value and value.strip() else "" if value is not None else None
 
 
+BLOCK_CATEGORY = "Objectifs de bloc"
+CATEGORY_PREFIXES = (("SQL-", "SQL"), ("PY-", "Python"), ("BLOC-", BLOCK_CATEGORY))
+
+
+def objective_category(code: str, category: str = "") -> str:
+    """Explicit category, else deduced from the code prefix (SQL-, PY-, BLOC-), else « Autres objectifs »."""
+    if category.strip():
+        return category.strip()
+    return next((name for prefix, name in CATEGORY_PREFIXES if code.upper().startswith(prefix)), "Autres objectifs")
+
+
 class ObjectiveInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     code: str = Field(pattern=r"^[A-Z0-9_-]{1,40}$")
     statement: str = Field(min_length=1, max_length=1000)
+    category: str = Field(default="", max_length=60)
 
     @field_validator("statement")
     @classmethod
     def safe_statement(cls, value: str) -> str:
         return plain(value)
 
+    @field_validator("category")
+    @classmethod
+    def safe_category(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
 
 class ObjectivePatch(BaseModel):
     model_config = ConfigDict(extra="forbid")
     code: str | None = Field(default=None, pattern=r"^[A-Z0-9_-]{1,40}$")
     statement: str | None = Field(default=None, min_length=1, max_length=1000)
+    category: str | None = Field(default=None, max_length=60)
 
     @field_validator("statement")
     @classmethod
     def safe_statement(cls, value: str | None) -> str | None:
         return plain(value) if value is not None else None
+
+    @field_validator("category")
+    @classmethod
+    def safe_category(cls, value: str | None) -> str | None:
+        return (plain(value) if value.strip() else "") if value is not None else None
 
 
 class TitleInput(BaseModel):
@@ -212,7 +235,7 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
     result = {
         "id": course.id, "slug": course.slug, "title": course.title,
         "description": course.description, "status": course.status,
-        "objectives": [{"id": o.id, "code": o.code, "statement": o.statement} for o in objectives],
+        "objectives": [{"id": o.id, "code": o.code, "statement": o.statement, "category": o.category or ""} for o in objectives],
         "modules": [],
     }
     for module in modules:
@@ -245,6 +268,9 @@ def student_safe_snapshot(snapshot: dict, private_by_version: dict[int, dict] | 
     order (see ``app.projection``), so ordering/matching answers are not revealed.
     """
     safe = deepcopy(snapshot)
+    # Students never see objective codes (ADR-0022): the dashboard gives each open block's objective in one sentence.
+    safe["objectives"] = [{"id": item.get("id"), "statement": item.get("statement", "")}
+                          for item in safe.get("objectives", []) if isinstance(item, dict)]
     for module in safe.get("modules", []):
         for chapter in module.get("chapters", []):
             for mission in chapter.get("missions", []):
@@ -336,7 +362,7 @@ def update_objective(objective_id: int, payload: ObjectivePatch, auth: AuthConte
     apply_patch(objective, payload)
     audit(db, auth, "objective.update", "objective", objective.id)
     save(db)
-    return {"id": objective.id, "code": objective.code, "statement": objective.statement}
+    return {"id": objective.id, "code": objective.code, "statement": objective.statement, "category": objective.category}
 
 
 @router.delete("/teacher/objectives/{objective_id}", status_code=204)

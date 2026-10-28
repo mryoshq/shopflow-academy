@@ -68,6 +68,8 @@ class LearningObjective(Base):
     course_id: Mapped[int] = mapped_column(ForeignKey("courses.id", ondelete="CASCADE"), nullable=False, index=True)
     code: Mapped[str] = mapped_column(String(40), nullable=False)
     statement: Mapped[str] = mapped_column(Text, nullable=False)
+    # Optional; empty = deduced from the code prefix (see app.curriculum.objective_category).
+    category: Mapped[str] = mapped_column(String(60), nullable=False, default="", server_default="")
 
 
 class CourseModule(Base):
