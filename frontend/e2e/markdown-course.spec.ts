@@ -207,3 +207,45 @@ for (const theme of ["light", "dark"] as const) {
     await context.close()
   })
 }
+
+test("minimum reading time (ADR-0027): « J'ai compris » waits, then validates", async ({ page, browser }) => {
+  await login(page, "demo.enseignant")
+  const token = (await page.context().cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
+  const headers = { "X-CSRF-Token": token }
+  const found = await (await page.request.get("/api/v1/teacher/course-search?q=demo-cours-markdown")).json() as { id: number }[]
+  test.skip(found.length === 0, "course not imported")
+  const courseId = found[0].id
+  const rulesUrl = `/api/v1/teacher/courses/${courseId}/attempt-rules`
+  const strip = (rules: Record<string, unknown>) => Object.fromEntries(Object.entries(rules).filter(([key]) => !["defaults", "decay_since", "pause_since", "announced_since"].includes(key)))
+  const current = await (await page.request.get(rulesUrl)).json() as Record<string, unknown>
+  expect((await page.request.put(rulesUrl, { headers, data: { ...strip(current), reading_enabled: true, reading_min: 10, reading_max: 15 } })).status()).toBe(200)
+  // A second fictional student joins the Markdown class (idempotent across runs).
+  const label = "Cohorte Markdown (comptes fictifs)"
+  const cohort = (await (await page.request.get("/api/v1/teacher/cohorts")).json() as { id: number; label: string }[]).find((item) => item.label === label)!
+  const students = await (await page.request.get("/api/v1/teacher/students")).json() as { id: number; username: string }[]
+  await page.request.post(`/api/v1/teacher/cohorts/${cohort.id}/enrollments`, { headers, data: { user_id: students.find((s) => s.username === "demo.etudiant09")!.id } })
+  try {
+    const context = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+    const student = await context.newPage()
+    await login(student, "demo.etudiant09")
+    const dashboard = await (await student.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string; status: string }[] }[] }
+    const lesson = dashboard.courses.find((item) => item.title === TITLE)!.missions.find((item) => item.title === "Qu'est-ce que le grain d'une table ?")!
+    test.skip(lesson.status === "completed", "lesson already understood in an earlier run")
+    await student.goto(`/#/mission/${lesson.mission_version_id}`)
+    const understood = student.getByRole("button", { name: "J’ai compris" })
+    await expect(understood).toBeDisabled()
+    await expect(student.getByRole("progressbar", { name: "Temps de lecture" })).toBeVisible()
+    expect(await serious(student)).toEqual([])
+    await student.screenshot({ path: `${shots}/12-lecture-minimale.png`, fullPage: true, animations: "disabled" })
+    // The server refuses a validation that comes too soon.
+    const studentToken = (await context.cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
+    expect((await student.request.post(`/api/v1/student/missions/${lesson.mission_version_id}/understood`, { headers: { "X-CSRF-Token": studentToken } })).status()).toBe(429)
+    await expect(understood).toBeEnabled({ timeout: 20_000 })
+    await understood.click()
+    await expect(student.getByText("Leçon comprise")).toBeVisible()
+    await context.close()
+  } finally {
+    const latest = await (await page.request.get(rulesUrl)).json() as Record<string, unknown>
+    await page.request.put(rulesUrl, { headers, data: { ...strip(latest), reading_enabled: false } })
+  }
+})

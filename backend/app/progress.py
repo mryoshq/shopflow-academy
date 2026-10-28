@@ -33,6 +33,11 @@ def attempt_points(attempt: MissionAttempt, definition: MissionDefinition) -> fl
     return float(definition.max_points) if attempt.is_correct else 0.0
 
 
+def decayed(points: float, percent: int | None) -> float:
+    """Points of one attempt after the decreasing rule (ADR-0027); percent None = 100 %."""
+    return points if percent is None else round(points * percent / 100, 2)
+
+
 def definitions(db: Session, version_ids: list[int]) -> dict[int, MissionDefinition]:
     if not version_ids:
         return {}
@@ -74,6 +79,6 @@ def replay(db: Session) -> list[int]:
         if definition is None:
             definition = MissionDefinition.model_validate(db.get(MissionVersion, attempt.mission_version_id).definition_private)
             cache[attempt.mission_version_id] = definition
-        if round(score(definition, attempt.answer), 2) != round(float(attempt.points), 2):
+        if round(decayed(score(definition, attempt.answer), attempt.percent), 2) != round(float(attempt.points), 2):
             mismatches.append(attempt.id)
     return mismatches

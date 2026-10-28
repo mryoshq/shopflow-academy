@@ -121,6 +121,8 @@ export function App() {
             <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label="Connexion">
               <form onSubmit={onLogin}>
               <Stack gap="5">
+                <Flex align="center" gap="3"><Logo size={56} />
+                  <Text fontWeight="bold" fontSize="xl" letterSpacing="0.01em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text></Flex>
                 <Stack gap="1"><Heading as="h2" size="xl">Connexion</Heading><Text color="app.muted" fontSize="sm">Utilisez l’identifiant transmis par votre enseignant.</Text></Stack>
                 <Field.Root required>
                   <Field.Label>Identifiant</Field.Label>

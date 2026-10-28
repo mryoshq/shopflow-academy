@@ -223,8 +223,11 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
     solved: dict[int, set[int]] = {vid: set() for vid in ids}
     failures: dict[tuple[int, int], int] = {}
     tries: dict[int, int] = {vid: 0 for vid in ids}
+    fast: dict[int, dict[int, int]] = {vid: {} for vid in ids}  # ADR-0027: « clics rapides » per mission and student
     for item in attempts:
         tries[item.mission_version_id] += 1
+        if item.fast:
+            fast[item.mission_version_id][item.user_id] = fast[item.mission_version_id].get(item.user_id, 0) + 1
         if item.is_correct:
             solved[item.mission_version_id].add(item.user_id)
         else:
@@ -267,6 +270,8 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
             "bonus": bool(vid in defs and defs[vid].bonus), "completed": len(solved[vid]), "attempts": tries[vid], "hints": hint_count[vid],
             "stuck": sorted(names[sid] for sid in student_ids
                             if sid not in solved[vid] and failures.get((vid, sid), 0) >= HELP_AFTER_FAILURES),
+            "fast_attempts": sum(fast[vid].values()),
+            "fast": [{"student": names[sid], "count": count} for sid, count in sorted(fast[vid].items(), key=lambda kv: names[kv[0]])],
         } for vid in ids],
     }
 

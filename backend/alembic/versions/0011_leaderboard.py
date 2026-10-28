@@ -3,8 +3,8 @@
 from alembic import op
 import sqlalchemy as sa
 
-revision = "0010_leaderboard"
-down_revision = "0009_objective_category"
+revision = "0011_leaderboard"
+down_revision = "0010_attempt_rules"
 branch_labels = None
 depends_on = None
 

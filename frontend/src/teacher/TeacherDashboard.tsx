@@ -10,6 +10,8 @@ export type ClassSummary = { id: number; cohort: string; course_title: string; v
 export type OverviewStudent = {
   id: number; display_name: string; completed: number; total: number; core_points: number; core_possible: number; bonus_points: number
   attempts: number; hints: number; current_mission: string | null; last_activity: string | null; active: boolean; needs_help: string[]
+  /** ADR-0027: attempts marked « rapide » (no sanction). */
+  fast_attempts?: number
 }
 export type Overview = {
   generated_at: string; assignment_id: number; cohort: string; course_title: string; version: number; paused: boolean
@@ -17,8 +19,8 @@ export type Overview = {
 }
 type StudentDetail = {
   id: number; display_name: string
-  missions: { mission_version_id: number; title: string; status: MissionStatus; locked_by: string[]; unlocked_by_teacher: boolean; best_points: number; possible: number; bonus: boolean; attempts: number; hints: number }[]
-  attempts: { id: number; mission: string; created_at: string; correct: boolean; points: number }[]
+  missions: { mission_version_id: number; title: string; status: MissionStatus; locked_by: string[]; unlocked_by_teacher: boolean; best_points: number; possible: number; bonus: boolean; attempts: number; hints: number; fast_attempts?: number }[]
+  attempts: { id: number; mission: string; created_at: string; correct: boolean; points: number; fast?: boolean; percent?: number | null }[]
 }
 type Intervention = { id: number; action: string; actor: string; created_at: string; details: Record<string, string> }
 
@@ -191,7 +193,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
               {["Étudiant", "Missions réussies", "Score", "Mission en cours", "Dernière activité", "Signal", ""].map((label, index) => <Table.ColumnHeader key={index} scope="col">{label}</Table.ColumnHeader>)}
             </Table.Row></Table.Header>
             <Table.Body>{overview.students.map((row) => <Table.Row key={row.id} bg={row.needs_help.length ? "saffron.subtle" : undefined}>
-              <Table.Cell fontWeight="semibold">{row.display_name}</Table.Cell>
+              <Table.Cell fontWeight="semibold"><Flex gap="2" align="center" wrap="wrap">{row.display_name}<FastBadge count={row.fast_attempts} /></Flex></Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.completed} / {row.total}</Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{formatPoints(row.core_points)} / {row.core_possible}{row.bonus_points > 0 ? ` (+${formatPoints(row.bonus_points)} bonus)` : ""}</Table.Cell>
               <Table.Cell>{row.current_mission ?? "—"}</Table.Cell>
@@ -224,6 +226,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
               <Text flex="1" fontWeight="medium">{mission.title}</Text>
               <StatusBadge status={mission.status} />
               {mission.unlocked_by_teacher && <Badge variant="outline" rounded="full">Débloquée par l’enseignant</Badge>}
+              <FastBadge count={mission.fast_attempts} />
               <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{formatPoints(mission.best_points)} / {mission.possible} pts · {mission.attempts} essai{mission.attempts > 1 ? "s" : ""} · {mission.hints} indice{mission.hints > 1 ? "s" : ""}</Text>
               {mission.status === "locked" && <Button size="xs" colorPalette="brand" loading={busy}
                 onClick={() => void act("/unlocks", { user_id: detail.id, mission_version_id: mission.mission_version_id }, `« ${mission.title} » débloquée pour ${detail.display_name}.`)}>Débloquer pour cet étudiant</Button>}
@@ -232,7 +235,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
           <Text fontWeight="semibold">Derniers essais</Text>
           {detail.attempts.length === 0 ? <Text color="app.muted" fontSize="sm">Aucun essai pour le moment.</Text>
             : <Stack as="ol" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{detail.attempts.slice(0, 15).map((item) => <Flex as="li" key={item.id} justify="space-between" gap="3">
-              <Text>{item.mission}</Text><Text color="app.muted">{new Date(item.created_at).toLocaleTimeString("fr-FR")} · {item.correct ? "réussi" : "à revoir"} · {formatPoints(item.points)} pts</Text>
+              <Text>{item.mission}</Text><Text color="app.muted">{new Date(item.created_at).toLocaleTimeString("fr-FR")} · {item.correct ? "réussi" : "à revoir"} · {formatPoints(item.points)} pts{item.percent != null ? ` (${item.percent} %)` : ""}{item.fast ? " · clic rapide" : ""}</Text>
             </Flex>)}</Stack>}
         </Stack>
       </Panel>}
@@ -249,4 +252,11 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
       </Panel>
     </>}
   </Stack>
+}
+
+/** ADR-0027: « clics rapides » (attempt < 5 s after opening, or 3 attempts in 30 s). Information only. */
+export function FastBadge({ count }: { count?: number }) {
+  if (!count) return null
+  return <Badge colorPalette="saffron" variant="outline" rounded="full" title="Essai moins de 5 s après l’ouverture, ou 3 essais en moins de 30 s">
+    Clics rapides : {count}</Badge>
 }

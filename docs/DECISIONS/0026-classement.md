@@ -12,9 +12,11 @@ réponse, adresse de connexion ou identité technique d’un autre étudiant.
 
 ## Décisions
 
-- Deux tables propres à K (migration `0010_leaderboard`) : réglages par
+- Deux tables propres à K (migration `0011_leaderboard`) : réglages par
   couple classe/cours, conservés entre publications ; pseudonyme par utilisateur.
   Aucun changement aux tentatives, à la notation, au barème ou à l’export CSV.
+  La migration suit `0010_attempt_rules` de L, intégré par merge de `main` ;
+  elle n’ajoute pas de tête Alembic parallèle.
 - Le classement lit `mission_scores` et `course_score`, comme le suivi existant.
   Il conserve les points stockés et le meilleur résultat par version, sans
   réévaluer une réponse. Les comptes désactivés sont exclus.

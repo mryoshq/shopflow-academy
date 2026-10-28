@@ -58,6 +58,7 @@ export function StudentDashboard({ navigate }: Props) {
             <Stack gap="2">
               <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}{course.paused && <Badge colorPalette="saffron" variant="solid" rounded="full">En pause</Badge>}<Text fontSize="sm" color="app.muted">Version {course.version}</Text></Flex>
               {course.paused && <Text fontSize="sm" color="saffron.fg">Votre enseignant a mis cette séquence en pause : vous pouvez relire les missions, les réponses reprendront à son signal.</Text>}
+              {course.rules_notice && <RulesNotice releaseId={course.release_id} notice={course.rules_notice} />}
               <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
               {course.description && <Text color="app.muted">{course.description}</Text>}
             </Stack>
@@ -150,4 +151,16 @@ function BlockCard({ block, missions, offset, navigate }: { block: DashboardBloc
       {missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={offset + index} navigate={navigate} />)}
     </Stack>}
   </Box>
+}
+
+/** ADR-0027: the teacher's announcement of the rules against random clicking, until the student acknowledges it. */
+function RulesNotice({ releaseId, notice }: { releaseId: number; notice: { text: string; since: string } }) {
+  const key = `shopflow:notice:${releaseId}:${notice.since}`
+  const [seen, setSeen] = useState(() => { try { return window.localStorage.getItem(key) === "1" } catch { return false } })
+  if (seen) return null
+  return <Flex role="status" gap="3" align="center" wrap="wrap" p="3" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
+    <Box color="saffron.fg"><Icon name="alert" /></Box>
+    <Text flex="1" minW="48" fontWeight="medium">{notice.text}</Text>
+    <Button size="sm" variant="outline" colorPalette="saffron" onClick={() => { try { window.localStorage.setItem(key, "1") } catch { /* not remembered */ } setSeen(true) }}>J’ai compris</Button>
+  </Flex>
 }

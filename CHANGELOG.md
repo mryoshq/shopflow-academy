@@ -4,8 +4,18 @@
 
 - Page « Classement » et onglet « Progression du jour », actualisation toutes les 5 secondes, points principaux et bonus distincts, ex æquo au même rang, ligne personnelle marquée « Vous ».
 - Réglages enseignant : désactivé par défaut, top 3 avec ex æquo et position personnelle, masquage pendant un bloc ouvert. Filtrage serveur, inscription/propriété, CSRF, aucun identifiant de connexion exposé. Pseudonyme choisi (24 caractères), nom neutre en attendant.
-- Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0010_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
+- Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0011_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
 - Retours CI K : propriété vérifiée avant validation des réglages (404 pour une autre classe même avec un corps invalide), navigation sans débordement mobile avec libellés longs ; régressions ciblées ajoutées.
+
+## 2026-10-28 — Sprint 2, partie L : décourager le clic au hasard (`claude/lucid-brahmagupta-htwgun-l`)
+
+- « Mon cours » → « Règles » : points dégressifs (100/70/50 puis 30 %, missions principales seulement), pause après une erreur (10/20/30 s, 429 côté serveur), lecture minimale des leçons (200 mots/min, 10 à 60 s, vérifiée par le serveur), repérage des clics rapides (badge dans « Ma classe », sans sanction), annonce modifiable. Tout désactivé par défaut sauf le repérage ; réglages audités.
+- Pourcentage enregistré par essai, meilleur essai retenu, non rétroactif (date d'activation), rejouable. Migration 0010. ADR-0027.
+
+## 2026-10-28 — Logo du propriétaire (`claude/lucid-brahmagupta-htwgun-logo`)
+
+- En-tête et page de connexion : logo complet à côté du nom « ShopFlow Academy » en texte ; variante verte du propriétaire en mode sombre.
+- Favicon SVG et PNG 16/32 : tête du renard seule, traits épaissis, couleurs de la variante verte en mode sombre ; icônes 192/512, apple-touch-icon et icône masquable tirées de la variante verte ; image de partage 1200×630 et balises Open Graph. ADR-0022c (remplace le monogramme de l'ADR-0022b).
 
 ## 2026-10-28 — Sprint 2, partie G2 : plan du cours, objectifs par catégorie, logo et icônes (`claude/lucid-brahmagupta-htwgun-g2`)
 
