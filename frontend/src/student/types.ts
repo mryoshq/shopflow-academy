@@ -27,6 +27,8 @@ export type DashboardBlock = {
   mission_count: number
   bonus_count: number
   completed_count: number
+  lesson_count?: number
+  lessons_read?: number
   done: boolean
   mission_ids: number[]
 }
