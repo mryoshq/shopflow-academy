@@ -485,6 +485,43 @@ class ImageDisplay(Described):
         return self
 
 
+MAX_EXPERIENCE_DATA = 200_000
+
+
+def json_depth(value: object, depth: int = 0) -> int:
+    if isinstance(value, dict):
+        return max([json_depth(item, depth + 1) for item in value.values()], default=depth + 1)
+    if isinstance(value, list):
+        return max([json_depth(item, depth + 1) for item in value], default=depth + 1)
+    return depth
+
+
+class ExperienceDisplay(Described):
+    """An interactive experience of the Academy opened from a lesson (ADR-0033): « voyage » = « Le voyage d'une donnée ».
+
+    ``scene`` is the optional starting scene (1 to 7); ``data`` holds the exact values given by the course
+    (JSON file of the course folder), merged over the experience's own defaults."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["experience"]
+    experience: Literal["voyage"]
+    title: str = Field(default="", max_length=200)
+    scene: int | None = Field(default=None, ge=1, le=7)
+    data: dict | None = None
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+    @model_validator(mode="after")
+    def bounded_data(self) -> ExperienceDisplay:
+        import json
+
+        if self.data is not None and (len(json.dumps(self.data, ensure_ascii=False)) > MAX_EXPERIENCE_DATA or json_depth(self.data) > 8):
+            raise ValueError("Experience data too large")
+        return self
+
+
 class Flashcard(BaseModel):
     """One card: a short front (question, term) and its back, light formatting allowed (ADR-0028)."""
     model_config = ConfigDict(extra="forbid")
@@ -511,7 +548,7 @@ class FlashcardsDisplay(Described):
 
 
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | ExperienceDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 

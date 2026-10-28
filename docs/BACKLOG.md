@@ -33,6 +33,9 @@
 - [x] **S2-N** Confort et finitions : session persistante, code Catppuccin, images, passe mobile (ADR-0029). Preuves : voir PROGRESS.
 - [x] **S2-J** Observateur en lecture seule (ADR-0025). Preuves : voir PROGRESS.
 
+### Sprint 3 (ordre fixé par le propriétaire le 29/10 : P, S, Q, R, puis O)
+- [ ] **S3-Q** « Le voyage d'une donnée » (ADR-0033) : cadre livré (route, chargement différé, `data.kind: experience`, valeurs du cours) ; **intégration de l'application en attente de l'archive** `ShopFlow-voyage.zip`.
+
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
 - [ ] **P1-01** Adaptateur tuteur IA optionnel (none et OpenRouter configurable), indices statiques en fallback, plafond requêtes/coûts, confidentialité et journaux minimaux.

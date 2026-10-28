@@ -32,7 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner dans l'ordre #49 (M), #51 (N), puis #52 (J, observateur, migration `0013_observers`), et faire leurs « À faire en local » — accord et action du propriétaire.** Le sprint 2 est alors terminé.
+**Prochaine tâche unique : transmettre l'archive `ShopFlow-voyage.zip` (et `experiences/voyage.json` du kit) pour intégrer l'application dans `frontend/src/voyage/` ; en parallèle, relire #53 (P), #54 (S) et la PR Q (cadre, sans migration) — action du propriétaire.** Ensuite : R (projet CampusEquip), puis O.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -62,7 +62,8 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 16 | I — PWA, confort (pomodoro, radio), couleurs (ADR-0024) | `claude/lucid-brahmagupta-htwgun-i` | [#47](https://github.com/mryoshq/shopflow-academy/pull/47) | **fusionnée** |
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
-| 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | ouverte |
+| 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
+| 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | PR Q (base : `main`) | ouverte, application en attente de l'archive |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -131,6 +132,11 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Facultatif, radio : vérifier les identifiants proposés dans l'ADR-0024, puis `RADIO_STREAMS='[...]'` dans `.env` et `docker compose up -d --wait backend`. Sans cette variable, aucune radio n'est proposée.
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
+
+### À faire en local après la PR Q
+
+1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
+2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
 
 ### À faire en local après la PR J
 

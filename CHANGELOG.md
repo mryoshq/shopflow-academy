@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-29 — Sprint 3, partie Q (cadre) : « Le voyage d'une donnée » (`claude/lucid-brahmagupta-htwgun-q`)
+
+- Page `#/voyage[/<scène>]` chargée à la demande, navigation entre 7 scènes (boutons, flèches, retour arrière), valeurs exactes lues depuis le cours (`experiences/voyage.json`) avec valeurs par défaut.
+- Nouveau `data.kind: experience` pour l'ouvrir depuis une leçon. L'application du propriétaire sera intégrée à réception de l'archive (ADR-0033).
+
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
 - Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.
