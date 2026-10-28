@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie E : suggestions (`claude/lucid-brahmagupta-htwgun-e`)
+
+- `docs/SUGGESTIONS.md` : 14 améliorations classées par valeur et effort (S/M/L), distinctes de ce que le sprint a livré ; recommandation : signal des demandes d'aide hors de l'onglet et contrôle d'avant séance avant le prochain cours.
+
 ## 2026-10-28 — Sprint 2, partie B : expérience simple et mode sombre (`claude/lucid-brahmagupta-htwgun-b`)
 
 - Mode sombre : chaque jeton du thème a sa valeur `_dark` ; sélecteur « Système / Clair / Sombre » mémorisé dans le navigateur, sans flash (`public/theme-init.js`, compatible CSP). axe 0 violation sérieuse dans les deux thèmes.
