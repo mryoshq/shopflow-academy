@@ -30,9 +30,9 @@ function Rank({ value }: { value: number }) {
 
 function RankingTable({ rows, daily }: { rows: (LeaderboardRow | DailyRow)[]; daily?: boolean }) {
   if (!rows.length) return <Text color="app.muted">Aucun étudiant actif dans cette classe pour le moment.</Text>
-  return <Box overflowX="auto" tabIndex={0} role="region" aria-label={daily ? "Tableau de progression du jour, défilement horizontal" : "Tableau du classement, défilement horizontal"}>
+  return <Box overflowX="auto" tabIndex={0} role="region" aria-label={daily ? "Tableau de progression du jour, défilement horizontal" : "Tableau du leaderboard, défilement horizontal"}>
     <Table.Root size="md" bg="app.surface" color="app.ink">
-      <Table.Caption>{daily ? "Blocs terminés aujourd’hui" : "Classement de la classe"}</Table.Caption>
+      <Table.Caption>{daily ? "Blocs terminés aujourd’hui" : "Leaderboard de la classe"}</Table.Caption>
       <Table.Header><Table.Row bg="app.sunken">
         <Table.ColumnHeader scope="col">Rang</Table.ColumnHeader><Table.ColumnHeader scope="col">Nom affiché</Table.ColumnHeader>
         {daily ? <Table.ColumnHeader scope="col" textAlign="end">Blocs aujourd’hui</Table.ColumnHeader> : <>
@@ -78,7 +78,7 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
         if (active) {
           // Remove stale personal/class data immediately, including on disable or loss of enrollment.
           setBoard(null)
-          setError(cause instanceof ApiError && cause.status === 404 ? "Le classement n’est pas disponible pour cette classe." : "Actualisation impossible. Le classement est masqué jusqu’au retour de la connexion.")
+          setError(cause instanceof ApiError && cause.status === 404 ? "Le leaderboard n’est pas disponible pour cette classe." : "Actualisation impossible. Le leaderboard est masqué jusqu’au retour de la connexion.")
         }
       } finally { if (active) timer = setTimeout(refresh, REFRESH_MS) }
     }
@@ -93,30 +93,30 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
       await api(`${path}/settings`, "PUT", { ...board.settings, [key]: value })
       setBoard(await api<Board>(path))
       setNotice("Réglage enregistré.")
-    } catch { setBoard(null); setError("Enregistrement impossible. Le classement sera rechargé automatiquement.") }
+    } catch { setBoard(null); setError("Enregistrement impossible. Le leaderboard sera rechargé automatiquement.") }
     finally { setBusy(false) }
   }
 
   return <Stack gap="6" className="leaderboard-page">
     <Flex justify="space-between" align="start" gap="4">
-      <Stack gap="2" minW="0" flex="1"><Heading as="h1" size="3xl"><span aria-hidden="true">🏆 </span>Classement</Heading>
+      <Stack gap="2" minW="0" flex="1"><Heading as="h1" size="3xl"><span aria-hidden="true">🏆 </span>Leaderboard</Heading>
         <Text color="app.muted">Avancez ensemble, à votre rythme. Les bonus restent séparés des points principaux.</Text></Stack><Podium />
     </Flex>
     <Text fontSize="sm" color="app.muted">Actualisation automatique toutes les 5 secondes. Les ex æquo partagent le même rang. Aucun rang n’entre dans la note ou l’export.</Text>
     {error && <Text role="alert">{error}</Text>}
-    {!board && !error && <Text role="status">Chargement du classement…</Text>}
+    {!board && !error && <Text role="status">Chargement du leaderboard…</Text>}
     {board && <>
-      {role === "teacher" && <Box as="section" aria-label="Réglages du classement" p="5" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card">
+      {role === "teacher" && <Box as="section" aria-label="Réglages du leaderboard" p="5" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card">
         <Stack gap="4"><Heading as="h2" size="lg">Visibilité pour la classe</Heading>
-          <Setting label="Activer le classement" checked={board.settings.enabled} disabled={busy} change={value => void updateOptions("enabled", value)} />
+          <Setting label="Activer le leaderboard" checked={board.settings.enabled} disabled={busy} change={value => void updateOptions("enabled", value)} />
           <Setting label="Afficher le top 3 et sa propre position" checked={board.settings.top_three} disabled={busy} change={value => void updateOptions("top_three", value)} />
           <Setting label="Masquer pendant un bloc ouvert" checked={board.settings.hide_open_block} disabled={busy} change={value => void updateOptions("hide_open_block", value)} />
           <Text fontSize="sm" color="app.muted">Ces réglages s’appliquent aux deux onglets. Les ex æquo dans les trois premiers rangs sont tous affichés.</Text>
         </Stack>
       </Box>}
       {!board.hidden && <Text display={{ base: "block", md: "none" }} fontSize="sm" color="app.muted">Faites défiler le tableau pour voir toutes les colonnes.</Text>}
-      {board.hidden ? <Text role="status">{board.settings.enabled ? "Le classement est masqué pendant un bloc ouvert. Profitez de ce temps pour explorer et essayer." : "Le classement est désactivé. Vous pouvez l’activer quand la classe est prête."}</Text> : <Tabs.Root defaultValue="ranking" colorPalette="brand">
-        <Tabs.List><Tabs.Trigger value="ranking">Classement général</Tabs.Trigger><Tabs.Trigger value="daily">Progression du jour</Tabs.Trigger></Tabs.List>
+      {board.hidden ? <Text role="status">{board.settings.enabled ? "Le leaderboard est masqué pendant un bloc ouvert. Profitez de ce temps pour explorer et essayer." : "Le leaderboard est désactivé. Vous pouvez l’activer quand la classe est prête."}</Text> : <Tabs.Root defaultValue="ranking" colorPalette="brand">
+        <Tabs.List><Tabs.Trigger value="ranking">Leaderboard général</Tabs.Trigger><Tabs.Trigger value="daily">Progression du jour</Tabs.Trigger></Tabs.List>
         <Tabs.Content value="ranking"><RankingTable rows={board.rows} /></Tabs.Content>
         <Tabs.Content value="daily"><Stack gap="3"><Text color="app.muted">Journée du {new Intl.DateTimeFormat("fr-MA", { dateStyle: "long", timeZone: board.timezone }).format(new Date(`${board.day}T12:00:00Z`))} · heure du Maroc. Un bloc compte quand toutes ses activités principales sont terminées, leçons comprises.</Text><RankingTable rows={board.daily_rows} daily /></Stack></Tabs.Content>
       </Tabs.Root>}
@@ -154,7 +154,7 @@ export function LeaderboardNavigation({ role, children }: { role: Role; children
   return <Stack gap="6" minW="0" maxW="full">
     {(classes.length > 0 || selected !== null) && <Flex as="nav" aria-label="Navigation de l’espace" gap="2" wrap="wrap" minW="0" maxW="full">
       <Button variant={selected === null ? "solid" : "outline"} colorPalette="brand" aria-current={selected === null ? "page" : undefined} onClick={() => navigate(null)}>Mon espace</Button>
-      {classes.map(item => <Button key={item.assignment_id} colorPalette="brand" variant={selected === item.assignment_id ? "solid" : "outline"} minW="0" maxW="full" height="auto" py="2" whiteSpace="normal" overflowWrap="anywhere" textAlign="start" aria-current={selected === item.assignment_id ? "page" : undefined} onClick={() => navigate(item.assignment_id)}>{classes.length === 1 ? "Classement" : `Classement · ${item.label}`}</Button>)}
+      {classes.map(item => <Button key={item.assignment_id} colorPalette="brand" variant={selected === item.assignment_id ? "solid" : "outline"} minW="0" maxW="full" height="auto" py="2" whiteSpace="normal" overflowWrap="anywhere" textAlign="start" aria-current={selected === item.assignment_id ? "page" : undefined} onClick={() => navigate(item.assignment_id)}>{classes.length === 1 ? "Leaderboard" : `Leaderboard · ${item.label}`}</Button>)}
     </Flex>}
     <Box minW="0" maxW="full">{selected === null ? children : <LeaderboardPage key={`${role}-${selected}`} role={role} assignmentId={selected} />}</Box>
   </Stack>
