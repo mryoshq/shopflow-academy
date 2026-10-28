@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type ReactNode } from "react"
+import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Heading, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { Logo } from "../Logo"
@@ -14,6 +14,8 @@ import { ObserversPanel } from "./ObserversPanel"
 import { Results } from "./Results"
 import { TeacherDashboard } from "./TeacherDashboard"
 import { Today } from "./Today"
+import { TeacherProject } from "../project/TeacherProject"
+import { VOYAGE_READY, VoyagePage } from "../voyage"
 import { VIEWS, formatRoute, initialRoute, rememberRoute, viewInfo, parseRoute, type TeacherRoute, type ViewKey } from "./routes"
 
 export type MainState = {
@@ -38,6 +40,8 @@ const ICONS: Record<string, ReactNode> = {
   collapse: <path d="M15 6l-6 6 6 6" />,
   expand: <path d="M9 6l6 6-6 6" />,
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" />,
+  folder: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M8 13h8" /></>,
+  route: <><circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7" /></>,
 }
 
 function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
@@ -137,7 +141,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
       <Logo size={30} />
       {!collapsed && <Text display={{ base: "none", md: "block" }} fontWeight="bold" letterSpacing="0.02em" lineHeight="1.1">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>}
     </Flex>
-    {VIEWS.map((view) => {
+    {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
       const current = route.view === view.key
       return <Link key={view.key} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
         aria-label={view.label} title={view.label} display="flex" alignItems="center" gap="3" minH="11" px="3" rounded="lg" fontWeight={current ? "semibold" : "medium"}
@@ -242,6 +246,11 @@ function ViewContent({ route, main, username, go, navigate, reload }: {
       return <TeacherStudio mainCourseId={main.course!.id} onPublished={() => void reload()} tab={route.sub} onTab={(sub) => go("cours", sub)} />
     case "resultats":
       return assignmentId ? <Stack gap="0">{context}<Results assignmentId={assignmentId} /></Stack> : <NoClass />
+    case "projet":
+      return assignmentId ? <Stack gap="0">{context}<TeacherProject assignmentId={assignmentId} /></Stack> : <NoClass />
+    case "voyage":
+      return <Suspense fallback={<LoadingState label="Chargement de l’expérience…" />}>
+        <VoyagePage scene={route.sub ? Number(route.sub) : 1} onScene={(scene) => navigate({ view: "voyage", sub: String(scene), params: {} })} /></Suspense>
     case "classement": {
       const selected = route.sub ? Number(route.sub) : assignmentId
       return selected ? <LeaderboardPage key={selected} role="teacher" assignmentId={selected} /> : <NoClass />

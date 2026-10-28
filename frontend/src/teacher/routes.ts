@@ -6,11 +6,13 @@
  *   #/classe/frise | etudiants | aide | difficultes      (?eleve=<id> opens a student panel)
  *   #/cours/plan | missions | apercu | import | regles | publication
  *   #/resultats
+ *   #/projet                (ADR-0034)
+ *   #/voyage[/<scène>]      (ADR-0033, in the menu once the application is integrated)
  *   #/classement            #/classement/<assignment id>
  *   #/reglages/notifications | observateurs | classes
  */
 
-export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "classement" | "reglages"
+export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "projet" | "classement" | "voyage" | "reglages"
 export type TeacherRoute = { view: ViewKey; sub: string; params: Record<string, string> }
 export type SubView = { key: string; label: string }
 export type ViewInfo = { key: ViewKey; label: string; title: string; icon: string; subs: SubView[] }
@@ -24,7 +26,9 @@ export const VIEWS: ViewInfo[] = [
     { key: "plan", label: "Plan" }, { key: "missions", label: "Missions" }, { key: "apercu", label: "Aperçu" },
     { key: "import", label: "Import" }, { key: "regles", label: "Règles" }, { key: "publication", label: "Publication" }] },
   { key: "resultats", label: "Résultats", title: "Résultats", icon: "chart", subs: [] },
+  { key: "projet", label: "Projet", title: "Projet CampusEquip", icon: "folder", subs: [] },
   { key: "classement", label: "Leaderboard", title: "Leaderboard", icon: "trophy", subs: [] },
+  { key: "voyage", label: "Le voyage d’une donnée", title: "Le voyage d’une donnée", icon: "route", subs: [] },
   { key: "reglages", label: "Réglages", title: "Réglages", icon: "settings", subs: [
     { key: "notifications", label: "Notifications" }, { key: "observateurs", label: "Observateurs" }, { key: "classes", label: "Autres classes" }] },
 ]
@@ -44,6 +48,7 @@ export function parseRoute(hash: string): TeacherRoute | null {
   if (!info) return null
   const params = Object.fromEntries(new URLSearchParams(match[3] ?? ""))
   if (info.key === "classement") return { view: "classement", sub: match[2] && /^\d+$/.test(match[2]) ? match[2] : "", params }
+  if (info.key === "voyage") return { view: "voyage", sub: match[2] && /^[1-7]$/.test(match[2]) ? match[2] : "", params }
   const sub = match[2] ?? ""
   if (info.subs.length === 0) return sub ? null : { view: info.key, sub: "", params }
   if (!sub) return { view: info.key, sub: info.subs[0].key, params }

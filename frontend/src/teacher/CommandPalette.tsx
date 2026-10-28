@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { Box, Dialog, Input, Kbd, Portal, Stack, Text, chakra } from "@chakra-ui/react"
 import { api } from "../api"
 import { VIEWS, type TeacherRoute } from "./routes"
+import { VOYAGE_READY } from "../voyage"
 
 export type PaletteItem = { id: string; label: string; group: "Vues" | "Étudiants" | "Blocs"; route: TeacherRoute; keywords?: string }
 
@@ -13,7 +14,7 @@ export function matches(item: PaletteItem, query: string): boolean {
 }
 
 export function viewItems(): PaletteItem[] {
-  return VIEWS.flatMap((view) => view.subs.length
+  return VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).flatMap((view) => view.subs.length
     ? view.subs.map((sub) => ({ id: `v-${view.key}-${sub.key}`, label: `${view.label} · ${sub.label}`, group: "Vues" as const, route: { view: view.key, sub: sub.key, params: {} } }))
     : [{ id: `v-${view.key}`, label: view.label, group: "Vues" as const, route: { view: view.key, sub: "", params: {} } }])
 }
