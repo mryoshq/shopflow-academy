@@ -91,3 +91,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 
 - Backend : `app/student.py` (routes), `app/grading.py` (évaluation déterministe, aucune note), `app/projection.py` (identifiants opaques HMAC + mélange), tables `mission_attempts` et `hint_reveals` (migration 0004). Cours de démonstration idempotent : `python -m app.demo_course` (comptes `demo.*` uniquement).
 - Frontend : routage par hash (`#/`, `#/mission/<id>`) dans `src/useHashRoute.ts` ; `src/student/` (tableau de bord, lecteur, activités accessibles, stockage local de confort : dernière mission et brouillon de réponse en `sessionStorage`). Thème : `src/theme.ts`, voir `docs/DESIGN.md`.
+
+## Notation et progression (P0-06)
+
+`app/grading.py::score` (fonction pure), `app/progress.py` (meilleur score, totaux cœur/bonus, rejeu), colonne `mission_attempts.points` (migration 0005), `GET /api/v1/student/missions/{id}/attempts` (historique personnel). Voir ADR-0012.

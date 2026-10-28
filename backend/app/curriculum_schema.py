@@ -120,6 +120,9 @@ class MissionDefinition(BaseModel):
     # Private explanation, revealed by the server after a correct answer or enough attempts.
     explanation: str = Field(default="", max_length=3000)
     max_points: int = Field(ge=1, le=100)
+    # all_or_nothing: max_points only for a fully correct answer. partial: proportional
+    # credit, allowed for multiple choice, ordering and matching (see app.grading).
+    scoring: Literal["all_or_nothing", "partial"] = "all_or_nothing"
     estimated_duration_minutes: int = Field(ge=1, le=120)
     bonus: bool = False
 
@@ -185,13 +188,15 @@ class MissionDefinition(BaseModel):
             raise ValueError("Matching fields are only for matching activities")
         if not set(self.feedback) <= set(ids):
             raise ValueError("Feedback must use choice IDs")
+        if self.scoring == "partial" and self.kind not in {"multiple_choice", "reorder", "matching"}:
+            raise ValueError("Partial scoring is only for multiple choice, ordering and matching")
         if self.display_data is not None and len(json.dumps(self.display_data.model_dump(), ensure_ascii=False)) > 32_000:
             raise ValueError("Display data is too large")
         return self
 
     def student_projection(self) -> dict:
         """Public part stored with a release. Hints are revealed one by one by the API."""
-        data = self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback", "action_id", "max_points", "explanation", "hints"})
+        data = self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback", "action_id", "max_points", "explanation", "hints", "scoring"})
         data["hint_count"] = len(self.hints)
         return data
 

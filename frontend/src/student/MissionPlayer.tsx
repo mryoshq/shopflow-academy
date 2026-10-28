@@ -3,8 +3,8 @@ import { Alert, Box, Button, Flex, Heading, Link, Stack, Text, VisuallyHidden } 
 import { api, ApiError } from "../api"
 import { Activity, DataView, emptyAnswer, isAnswerComplete } from "./activities"
 import { clearDraft, loadDraft, newIdempotencyKey, rememberLastMission, saveDraft } from "./storage"
-import type { Answer, AttemptResult, PlayerMission } from "./types"
-import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge } from "./ui"
+import type { Answer, AttemptHistoryItem, AttemptResult, PlayerMission } from "./types"
+import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "./ui"
 
 type Props = { missionId: number; navigate: (path: string) => void }
 
@@ -16,6 +16,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [hintBusy, setHintBusy] = useState(false)
+  const [history, setHistory] = useState<AttemptHistoryItem[] | null>(null)
   const pendingKey = useRef<string | null>(null)
   const feedbackRef = useRef<HTMLDivElement | null>(null)
   const headingRef = useRef<HTMLHeadingElement | null>(null)
@@ -65,8 +66,9 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         ...current, attempts_count: response.attempts_count,
         status: response.correct || current.status === "completed" ? "completed" : "in_progress",
         last_attempt: { correct: response.correct, created_at: new Date().toISOString() },
-        explanation: response.explanation ?? current.explanation,
+        explanation: response.explanation ?? current.explanation, score: response.score,
       })
+      setHistory(null)
       requestAnimationFrame(() => feedbackRef.current?.focus())
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
@@ -90,6 +92,12 @@ export function MissionPlayer({ missionId, navigate }: Props) {
     } finally {
       setHintBusy(false)
     }
+  }
+
+  async function toggleHistory() {
+    if (history) return setHistory(null)
+    try { setHistory(await api<AttemptHistoryItem[]>(`/student/missions/${missionId}/attempts`)) }
+    catch (error) { if (!(error instanceof ApiError && error.status === 401)) setSubmitError("Impossible de charger l’historique.") }
   }
 
   function retry() {
@@ -116,6 +124,8 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         {mission.is_demo && <DemoBadge />}
         <StatusBadge status={mission.status} />
         <Text fontSize="sm" color="app.muted">{mission.course_title} · {mission.module} · {mission.chapter}</Text>
+        {mission.score && <Text fontSize="sm" fontWeight="semibold" ml="auto" css={{ fontVariantNumeric: "tabular-nums" }}>
+          Meilleur score : {formatPoints(mission.score.best)} / {mission.score.possible} pts{mission.score.bonus ? " (bonus)" : ""}</Text>}
       </Flex>
       <Heading as="h1" size={{ base: "2xl", md: "3xl" }} ref={headingRef} tabIndex={-1} outline="none">{mission.title}</Heading>
       <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={`Position dans le cours : ${mission.position} sur ${mission.total}`}>
@@ -176,7 +186,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                 </Box>)}
               </Stack>}
               {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">Explication</Text><Text>{result.explanation}</Text></Box>}
-              <Text fontSize="sm" color="app.muted">Essai n° {result.attempts_count}{result.replayed ? " (déjà enregistré)" : ""}. Le score sera disponible prochainement.</Text>
+              <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>Essai n° {result.attempts_count}{result.replayed ? " (déjà enregistré)" : ""} : {formatPoints(result.points)} / {result.score.possible} pts. Meilleur score conservé : {formatPoints(result.score.best)} pts.</Text>
               <Flex gap="3" wrap="wrap">
                 {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry}><Icon name="retry" />Réessayer</Button>}
                 {result.correct && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
@@ -203,6 +213,17 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             {mission.hint_count > 0 && mission.hint_count === mission.hints.length && <Text fontSize="xs" color="app.muted">Tous les indices sont affichés.</Text>}
           </Stack>
         </Panel>
+        {mission.attempts_count > 0 && <Panel>
+          <Stack gap="2">
+            <Button size="sm" variant="ghost" alignSelf="start" px="0" aria-expanded={Boolean(history)} onClick={() => void toggleHistory()}>
+              {history ? "Masquer l’historique" : `Historique de vos essais (${mission.attempts_count})`}
+            </Button>
+            {history && <Stack as="ol" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{history.map((item, index) => <Flex as="li" key={item.id} justify="space-between" gap="2">
+              <Text color="app.muted">Essai {history.length - index} · {new Date(item.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</Text>
+              <Text fontWeight="semibold" color={item.correct ? "green.800" : "app.ink"}>{item.correct ? "Réussi" : "À revoir"} · {formatPoints(item.points)} pts</Text>
+            </Flex>)}</Stack>}
+          </Stack>
+        </Panel>}
         {definition.resources.length > 0 && <Panel><Stack gap="2"><Text fontWeight="semibold">Ressources</Text>
           {definition.resources.map((url) => <Link key={url} href={url} target="_blank" rel="noreferrer" color="brand.fg" textDecoration="underline" wordBreak="break-all">{url}</Link>)}
         </Stack></Panel>}

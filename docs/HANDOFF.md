@@ -19,6 +19,9 @@ Rapport : `~/Developer/shopflow-notes/REVUE-P0-01-04.md`. Un bloquant (B1, répo
 ### P0-05 — lecteur étudiant : livré
 Branche `feat/p0-05-student-player`, empilée sur `fix/revue-p0-01-04` (#17). ADR-0011 (option A). Cours de démonstration installé dans la base locale/publiée (`docker compose exec -T backend python -m app.demo_course`, idempotent, comptes `demo.*` seulement). La stack locale tourne sur cette branche.
 
+### P0-06 — notation et progression : livré
+Branche `feat/p0-06-grading-progress` (empilée sur P0-05 #18). ADR-0012 : scores dérivés du journal des tentatives, sans cache. La stack locale tourne sur cette branche (migration 0005).
+
 ### Décisions prises par prudence en l'absence du propriétaire
 - Route Cloudflare non créée (pas d'accès au tableau de bord) ; aucune commande `cloudflared` lancée ; jeton conservé, jamais affiché.
 - `APP_EXTRA_ORIGINS=http://127.0.0.1:3080` ajouté pour garder l'accès local enseignant en production (Chrome).
