@@ -2,13 +2,13 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner #32 (G, leçons structurées) puis #33 (G2 : plan du cours, objectifs, icônes ; migration 0009) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** Les parties suivantes, dans l'ordre : K (classement), H (suivi en direct), I (PWA, confort, couleurs), J (observateur).
+**Prochaine tâche unique : faire les sections « À faire en local » des PR déjà fusionnées (A, D, F, C, B, E, G) si ce n'est pas fait, puis relire et fusionner #33 (G2 : plan du cours, objectifs, icônes ; migration 0009) — accord et action du propriétaire.** Les parties suivantes, dans l'ordre : K (classement), H (suivi en direct), I (PWA, confort, couleurs), J (observateur).
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
 - **Production** : `https://shopflow.rapidfox.io`, sur le Mac de l'enseignant (Docker Compose + Cloudflare Tunnel), déployée depuis `main`. Ce setup est définitif.
 - **Cours** : en cours de rédaction par un autre agent dans un **dossier local du Mac** (jamais sur GitHub : il contient les corrigés). Sauvegarde dans le dépôt privé `mryoshq/shopflow-courses` (ne pas y toucher depuis une session cloud).
-- **Sprint 2 terminé** (session cloud, sans accès au Mac) : parties A, D, F, C, B, E, une PR par partie ; A, D, F, C, B, E fusionnées ; G et G2 en PR.
+- **Sprint 2** (session cloud, sans accès au Mac) : une PR par partie ; A, D, F, C, B, E, G fusionnées ; G2 en PR ; puis K, H, I, J.
 
 ### PR du sprint 2, dans l'ordre de fusion
 
@@ -20,8 +20,8 @@
 | 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | [#29](https://github.com/mryoshq/shopflow-academy/pull/29) | **fusionnée** |
 | 5 | B — expérience simple et mode sombre | `claude/lucid-brahmagupta-htwgun-b` | [#30](https://github.com/mryoshq/shopflow-academy/pull/30) | **fusionnée** |
 | 6 | E — `docs/SUGGESTIONS.md` | `claude/lucid-brahmagupta-htwgun-e` | [#31](https://github.com/mryoshq/shopflow-academy/pull/31) | **fusionnée** |
-| 7 | G — leçons structurées, description des médias, mise en forme légère (ADR-0022) | `claude/lucid-brahmagupta-htwgun-g` | [#32](https://github.com/mryoshq/shopflow-academy/pull/32) (base : `main`) | ouverte |
-| 8 | G2 — plan du cours, objectifs par catégorie, logo et icônes (ADR-0022b) | `claude/lucid-brahmagupta-htwgun-g2` | [#33](https://github.com/mryoshq/shopflow-academy/pull/33) (base : `main`, indépendante de #32) | ouverte |
+| 7 | G — leçons structurées, description des médias, mise en forme légère (ADR-0022) | `claude/lucid-brahmagupta-htwgun-g` | [#32](https://github.com/mryoshq/shopflow-academy/pull/32) | **fusionnée** |
+| 8 | G2 — plan du cours, objectifs par catégorie, logo et icônes (ADR-0022b) | `claude/lucid-brahmagupta-htwgun-g2` | [#33](https://github.com/mryoshq/shopflow-academy/pull/33) (base : `main`, `main` fusionnée dedans après #32) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -57,13 +57,17 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Con
 ### À faire en local après la PR E
 Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenues.
 
+### À faire en local après la PR G
+1. Redéployer (`docker compose up -d --build --wait`, puis `python3 scripts/smoke_public.py`). Pas de migration ; les leçons déjà publiées sont inchangées.
+2. Dans le cours réel, structurer les leçons (`objective`, `hook`, `key_terms`, `example`, `practice`, `data.description`) selon `docs/COURSE-AUTHORING.md` § 5 bis et 5 ter, recompiler et relire les avertissements « paragraphe de N mots » dans `RETOURS-PLATEFORME.md`.
+
 ### À faire en local après la PR G2
 1. **Sauvegarde manuelle** (migration **0009**, ajout de la colonne `learning_objectives.category`) : commande « Manuelle » de `docs/RUNBOOK.md`, suffixe `avant-sprint2-g2`.
 2. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait` (le service `migrate` applique 0009), puis `python3 scripts/smoke_public.py`. Les étudiants connectés gardent leur session ; un rechargement de page suffit.
 3. Facultatif : ajouter `category` aux objectifs de `00-cours.md` du cours réel et des objectifs `BLOC-` (une phrase), recompiler et réimporter.
 
 ### Attend l'accord du propriétaire
-- Fusion de #31.
+- Fusion de #33 (G2).
 - Publication du cours réel pour la classe (`course_md.py import … --publish` ou « Publier pour la classe ») et ouverture des blocs en séance : jamais faites par un agent.
 - Choix parmi `docs/SUGGESTIONS.md`.
 

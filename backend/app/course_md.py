@@ -60,7 +60,11 @@ MAX_VIDEO_BYTES = 50 * 1024 * 1024
 MAX_CAPTIONS_BYTES = 512 * 1024
 MISSION_KEYS = {"slug", "kind", "objectives", "prerequisites", "points", "scoring", "duration", "bonus", "scenario",
                 "instructions", "data", "run", "choices", "order", "targets", "pairs", "hints", "explanation",
-                "resources", "body", "starter_sql", "expected_sql", "compare"}
+                "resources", "body", "starter_sql", "expected_sql", "compare",
+                "objective", "hook", "key_terms", "example", "practice"}
+LESSON_LAYOUT_KEYS = ("objective", "hook", "key_terms", "example", "practice")
+# A paragraph longer than this reads as a wall of text: the compiler suggests splitting it.
+MAX_PARAGRAPH_WORDS = 80
 HEADER_KEYS = {"format", "version", "slug", "title", "description", "objectives"}
 # Definition field → Markdown key, to point pydantic errors at the right line.
 FIELD_TO_KEY = {"max_points": "points", "estimated_duration_minutes": "duration", "display_data": "data",
@@ -87,7 +91,10 @@ FRENCH = {
     "A series needs at least one value": "une série doit avoir au moins une valeur",
     "Each side of a comparison needs a title": "chaque côté d'une comparaison demande un `title`",
     "Display data is too large": "données affichées trop volumineuses",
-    "A lesson needs a body": "une leçon demande un `body`",
+    "A lesson needs a body or structured content": "une leçon demande un `body` ou au moins un champ parmi `hook`, `key_terms`, `example`, `practice`",
+    "objective, hook, key_terms, example and practice are only for lessons": "`objective`, `hook`, `key_terms`, `example` et `practice` sont réservés aux leçons",
+    "The objective is one sentence on one line": "`objective` : une seule phrase, sur une ligne",
+    "Duplicate key term": "deux `key_terms` ont le même `term`",
     "A lesson has no choices, answer key or points": "une leçon n'a ni choix, ni corrigé, ni points",
     "Scenario and instructions are required": "`scenario` et `instructions` sont obligatoires",
     "Points must be between 1 and 100": "`points` doit être entre 1 et 100",
@@ -437,8 +444,14 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     for key in ("duration",) + (() if kind == "lesson" else ("points", "scenario", "instructions")):
         if raw.get(key) in (None, ""):
             error((key,), f"champ obligatoire manquant : `{key}`")
-    if kind == "lesson" and not raw.get("body"):
-        error(("body",), "champ obligatoire manquant : `body`")
+    if kind != "lesson":
+        for key in LESSON_LAYOUT_KEYS:
+            if raw.get(key) not in (None, "", []):
+                error((key,), f"`{key}` est réservé aux leçons (`### Leçon :`)")
+    key_terms = raw.get("key_terms") or []
+    if not isinstance(key_terms, list) or any(not isinstance(term, dict) for term in key_terms):
+        error(("key_terms",), "`key_terms` est une liste de `{term, definition}`")
+        key_terms = []
     if kind in CHOICE_KINDS and not raw.get("choices"):
         error(("choices",), "champ obligatoire manquant : `choices`")
     if kind == "reorder" and not raw.get("order"):
@@ -487,6 +500,8 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
         "display_data": data, "body": str(raw.get("body") or ""), "run": raw.get("run") or [],
         "starter_sql": str(raw.get("starter_sql") or ""), "expected_sql": str(raw.get("expected_sql") or ""),
         "compare": raw.get("compare", "rows"),
+        "objective": str(raw.get("objective") or ""), "hook": str(raw.get("hook") or ""), "key_terms": key_terms,
+        "example": str(raw.get("example") or ""), "practice": str(raw.get("practice") or ""),
     }
     candidate = {**definition, "objective_ids": list(range(1, max(1, len(item.objective_codes)) + 1)),
                  "prerequisite_mission_ids": []}
@@ -503,6 +518,8 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
             key = FIELD_TO_KEY.get(str(loc[0]), str(loc[0])) if loc else message_key(str(err.get("msg", "")), kind)
             path = ((key,) + loc[1:]) if loc else ((key,) if key else ())
             message = french(err)
+            if message == FRENCH["objective, hook, key_terms, example and practice are only for lessons"]:
+                continue  # already reported above, field by field
             if (path[:1], message) in reported:
                 continue
             reported.add((path[:1], message))
@@ -514,6 +531,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     body.pop("objective_ids")
     body.pop("prerequisite_mission_ids")
     item.definition = body
+    readability(compiled, item, parsed)
     if kind != "lesson":
         words = len(parsed.scenario.split())
         if words < 40 or words > 90:
@@ -522,8 +540,27 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
             compiled.warn(item.file, line_for(item, ("explanation",)), "pas d'`explanation` (conseillée)")
 
 
+def readability(compiled: Compiled, item: Item, parsed: MissionDefinition) -> None:
+    """Warnings only: a one-sentence objective, no paragraph long enough to read as a wall of text."""
+    if parsed.objective and len(re.findall(r"[.!?](?:\s|$)", parsed.objective)) > 1:
+        compiled.warn(item.file, line_for(item, ("objective",)), "`objective` : une seule phrase conseillée")
+    # The scenario has its own 40 to 90 words advice (below).
+    for key in ("body", "hook", "example", "practice", "explanation"):
+        for paragraph in re.split(r"\n\s*\n", getattr(parsed, key)):
+            prose = [line for line in paragraph.splitlines() if not re.match(r"\s*(?:[-*]\s|\d{1,3}[.)]\s|###\s)", line)]
+            words = len(" ".join(prose).split())
+            if words > MAX_PARAGRAPH_WORDS:
+                compiled.warn(item.file, line_for(item, (key,)),
+                              f"`{key}` : paragraphe de {words} mots, découpez-le (liste, sous-titre, exemple) : {MAX_PARAGRAPH_WORDS} au plus")
+                break
+
+
 def message_key(message: str, kind: str) -> str:
     """Field to point at for a whole-mission error (pydantic gives no location)."""
+    if "objective" in message:
+        return "objective"
+    if "key term" in message:
+        return "key_terms"
     if "body" in message or "lesson" in message:
         return "body"
     if "SQL" in message or "starter_sql" in message:

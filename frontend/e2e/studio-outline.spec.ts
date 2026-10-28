@@ -113,9 +113,11 @@ for (const theme of ["light", "dark"] as const) {
     const lesson = course!.missions.find((item) => item.title === "La jointure pas à pas")!
     await page.goto(`/#/mission/${lesson.mission_version_id}`)
     await expect(page.getByRole("heading", { level: 1, name: "La jointure pas à pas" })).toBeVisible()
+    await expect(page.getByText(/^Objectif :/)).toBeVisible()
+    await expect(page.getByRole("region", { name: "Exemple résolu" })).toBeVisible()
     expect(await noHorizontalScroll()).toBe(true)
     expect(await serious(page)).toEqual([])
-    await page.screenshot({ path: `${shots}/31-mobile-lecon-${suffix}.png`, fullPage: true, animations: "disabled" })
+    await page.screenshot({ path: `${shots}/31-mobile-lecon-structuree-${suffix}.png`, fullPage: true, animations: "disabled" })
     await page.getByRole("button", { name: "Se déconnecter" }).click()
     await expect(page.getByRole("textbox", { name: "Identifiant" })).toBeVisible()
     await openMarkdownCourse(page)

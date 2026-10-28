@@ -2,7 +2,9 @@ import { useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, NativeSelect, Stack, Text } from "@chakra-ui/react"
 import type { MissionDefinition, StudentMission, CourseModule } from "./studioTypes"
 import { DataView } from "./student/activities"
-import { CodeBlock, LessonBody } from "./student/displays"
+import { CodeBlock } from "./student/displays"
+import { LessonView } from "./student/Lesson"
+import { RichText } from "./student/RichText"
 import { RunPanel } from "./student/RunPanel"
 import { Icon } from "./student/ui"
 import { CourseOutline } from "./studio/CourseOutline"
@@ -49,11 +51,15 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
 
   return <Stack gap="5" p="6" bg="app.surface" borderWidth="1px" rounded="xl" aria-label={`Aperçu de ${mission.title}`}>
     <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="brand" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
-    {definition.kind === "lesson" && definition.body && <LessonBody body={definition.body} />}
-    {definition.scenario && <Text whiteSpace="pre-wrap">{definition.scenario}</Text>}
-    <DataView data={definition.display_data} />
-    <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
-    {definition.instructions && <Text fontWeight="semibold" whiteSpace="pre-wrap">{definition.instructions}</Text>}
+    {definition.kind === "lesson" ? <LessonView definition={definition} headingAs="h5" media={<>
+      <DataView data={definition.display_data} />
+      <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
+    </>} /> : <>
+      {definition.scenario && <RichText text={definition.scenario} />}
+      <DataView data={definition.display_data} />
+      <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
+    </>}
+    {definition.instructions && <RichText text={definition.instructions} fontWeight="semibold" />}
     {definition.kind === "lesson" ? <Text color="app.muted">Leçon non notée : l’étudiant clique « J’ai compris ».</Text>
       : definition.kind === "sql_challenge" ? <CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ (modifiable par l’étudiant)" />
       : definition.kind === "reorder" ? <Stack gap="2">{selected.map((id, index) => <Flex key={id} gap="2" align="center"><Text flex="1">{index + 1}. {definition.choices.find((choice) => choice.id === id)?.label}</Text><Button size="sm" variant="outline" onClick={() => moveChoice(index, -1)} disabled={index === 0}>Monter</Button><Button size="sm" variant="outline" onClick={() => moveChoice(index, 1)} disabled={index === selected.length - 1}>Descendre</Button></Flex>)}</Stack>

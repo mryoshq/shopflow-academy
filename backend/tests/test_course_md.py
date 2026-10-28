@@ -75,7 +75,7 @@ def test_demonstration_course_compiles_without_error():
     [demo] = data["modules"]
     assert [b["title"] for b in demo["blocks"]] == ["Le grain des tables", "Qualité et ingestion"]
     assert (demo["missions"], demo["lessons"], demo["bonus"], demo["points"], demo["bonus_points"]) == (7, 4, 1, 25, 5)
-    assert [b["duration"] for b in demo["blocks"]] == [17, 18]
+    assert [b["duration"] for b in demo["blocks"]] == [19, 18]
     kinds = {item.definition["kind"] for item in compiled.items()}
     assert kinds == {"lesson", "single_choice", "true_false", "matching", "data_interpretation", "multiple_choice",
                      "reorder", "scenario_choice", "sql_challenge"}
@@ -83,7 +83,7 @@ def test_demonstration_course_compiles_without_error():
     assert data_kinds == {"code", "table", "line_chart", "comparison", "animation", "mindmap", "flow", "video"}
     assert compiled.modules[0].description.startswith("Une journée courte")
     report = report_markdown(compiled)
-    assert "État : OK, 0 erreur" in report and "| Le grain des tables | 3 | 2 | 0 | 10 | 0 | 17 |" in report
+    assert "État : OK, 0 erreur" in report and "| Le grain des tables | 3 | 2 | 0 | 10 | 0 | 19 |" in report
     # true/false ids stay text even though YAML reads them as booleans.
     tf = next(item for item in compiled.items() if item.slug == "demo-vrai-faux-grain")
     assert [c["id"] for c in tf.definition["choices"]] == ["true", "false"] and tf.definition["correct_ids"] == ["false"]

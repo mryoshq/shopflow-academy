@@ -142,7 +142,8 @@ Règles générales : UTF-8, français, vouvoiement, contexte marocain **fictif*
 | `hints` | non | 0 à 5, du plus vague au plus précis |
 | `explanation` | conseillé | ≤ 3000 caractères ; montrée après une bonne réponse ou quelques essais |
 | `resources` | non | 0 à 10 liens HTTPS |
-| `body` | `lesson` | § 5 |
+| `body` | `lesson` (ou structure) | § 5 |
+| `objective`, `hook`, `key_terms`, `example`, `practice` | non (`lesson` seulement) | leçon structurée, § 5 bis |
 | `starter_sql`, `expected_sql`, `compare` | `sql_challenge` | § 5 |
 
 Notation : **toutes les tentatives sont permises, la meilleure est retenue.** Aucun champ de pénalité.
@@ -151,10 +152,73 @@ Notation : **toutes les tentatives sont permises, la meilleure est retenue.** Au
 
 Disponibles : `single_choice`, `multiple_choice`, `true_false` (choix `true` et `false`), `reorder` (`order`), `matching` (`targets` + `pairs`), `data_interpretation`, `scenario_choice`, `lesson`, `sql_challenge`.
 
-- `lesson` (titre `### Leçon :`) : courte leçon non notée (l'équivalent d'une slide). Champs : `slug`, `kind: lesson`, `objectives`, `duration`, `body` (≤ 4000 caractères, paragraphes séparés par une ligne vide, listes `- `), `data` et `run` facultatifs. Pas de `points`, `choices`, `scenario` ni `instructions`. L'étudiant clique « J'ai compris » : la leçon compte dans la progression (bloc terminé), jamais dans la note.
+- `lesson` (titre `### Leçon :`) : courte leçon non notée (l'équivalent d'une slide). Champs : `slug`, `kind: lesson`, `objectives`, `duration`, puis **`body`** (texte libre, ≤ 4000 caractères) **ou** une **structure** (§ 5 bis), ou les deux ; `data` et `run` facultatifs. Pas de `points`, `choices`, `scenario` ni `instructions`. L'étudiant clique « J'ai compris » : la leçon compte dans la progression (bloc terminé), jamais dans la note.
 - `sql_challenge` (bonus de préférence) : l'étudiant **modifie ou écrit** une requête `SELECT` sur la base de laboratoire ; le serveur l'exécute en lecture seule et compare **le résultat** au résultat attendu (`expected_sql`, privé, exécuté côté serveur). Champs : `starter_sql`, `expected_sql`, `compare: rows | rows_unordered | scalar` (défaut `rows`), `points`, `scenario`, `instructions` ; pas de `choices`. Notation tout ou rien. Requêtes acceptées : **une seule** instruction `SELECT` (avec `WITH`, `UNION`, ou précédée d'`EXPLAIN [ANALYZE]`) sur les tables du laboratoire, fonctions usuelles (agrégats, fenêtres `ROW_NUMBER`, `RANK`, `NTILE`, `LAG`, `LEAD`, `PERCENT_RANK`…, dates et texte courants) ; jamais d'écriture. Le résultat doit être identique à celui d'`expected_sql` (avec `compare: rows`, l'ordre des lignes compte : mettez un `ORDER BY` dans `expected_sql`). Vérifiez que `starter_sql` ne donne **pas** déjà le bon résultat.
 
 `guided_simulation` reste réservé aux actions serveur déjà approuvées ; le compilateur le refuse.
+
+### 5 bis. Leçon structurée (ADR-0022)
+
+Tous les champs sont facultatifs et réservés aux leçons ; une leçon a au moins un `body`, un `hook`, des `key_terms`, un `example` ou un `practice`. L'ancien format (`body` seul) reste valable.
+
+| Champ | Règle | Affichage |
+|---|---|---|
+| `objective` | **une phrase**, une ligne, ≤ 200 caractères | bandeau discret en haut : « Objectif : … » |
+| `hook` | accroche, ≤ 600 caractères | texte d'introduction un peu plus grand |
+| `key_terms` | 1 à 8 `{term (≤ 60), definition (≤ 300)}`, termes distincts | petites cartes « Vocabulaire » |
+| `body` | texte libre, ≤ 4000 caractères, sous-titres `### ` permis | après le vocabulaire |
+| `example` | exemple résolu, ≤ 3000 caractères | encadré « Exemple résolu » |
+| `data` / `run` | média | **entre** l'exemple et « À vous » |
+| `practice` | appel à l'action, ≤ 1000 caractères | encadré « À vous » |
+
+Ordre d'affichage : objectif, accroche, vocabulaire, texte libre, exemple résolu, média, « À vous ». Visez des paragraphes courts : le compilateur avertit au-delà de **80 mots** par paragraphe (découpez en liste, sous-titre ou exemple) et si `objective` contient plus d'une phrase.
+
+Exemple complet (extrait de `docs/examples/demo-course/10-module-demo.md`, étapes de l'animation abrégées) :
+
+```yaml
+slug: demo-lecon-jointure-animee
+kind: lesson
+objectives: [DEMO-GRAIN]
+duration: 4
+objective: Expliquer pourquoi une jointure peut gonfler un total, et le corriger.
+hook: |
+  La comptabilité attend **70 DH** de frais de livraison. Votre requête affiche **100 DH**. Aucune donnée n'est fausse : c'est la jointure qui a changé ce que compte une ligne.
+key_terms:
+  - term: Grain
+    definition: Ce que représente une ligne d'une table (une commande, un article…).
+  - term: Jointure
+    definition: Associe les lignes de deux tables qui partagent une clé, ici `order_id`.
+example: |
+  C-101 coûte 30 DH de livraison et contient **deux** articles.
+  1. Avant la jointure : une ligne pour C-101, donc 30 DH.
+  2. Après `JOIN order_items` : deux lignes pour C-101, donc 30 + 30 = 60 DH.
+  3. Avec C-102 (40 DH, un article), le total passe de 70 DH à **100 DH**.
+practice: |
+  Lancez l'animation et arrêtez-vous à l'étape 3 : quelles cellules sont comptées deux fois ?
+data:
+  kind: animation
+  title: "Jointure orders et order_items : 70 DH deviennent 100 DH"
+  description: |
+    Animation en quatre étapes. 1. La table orders contient deux commandes… 4. Le total redevient 70 DH.
+  steps:
+    - caption: Deux commandes, une ligne chacune. Les frais attendus font 30 + 40 = 70 DH.
+      scene: …
+```
+
+### 5 ter. Mise en forme légère des textes
+
+Dans `body`, `scenario`, `instructions`, `explanation`, `hook`, `example`, `practice` (et la `description` d'un média) :
+
+| Écrire | Résultat |
+|---|---|
+| `**mot**` | **gras** |
+| `` `SUM(total)` `` | code en ligne |
+| lignes commençant par `- ` | liste à puces |
+| lignes commençant par `1. `, `2. `… | liste numérotée (commence au premier numéro) |
+| `### Sous-titre` | sous-titre (**`body` seulement**) |
+| ligne vide | nouveau paragraphe |
+
+Rien d'autre n'est interprété : le HTML est refusé par le compilateur, et le texte est toujours affiché comme du texte (jamais comme du HTML).
 
 ## 6. Données affichées (`data`)
 
@@ -163,6 +227,7 @@ Disponibles : `single_choice`, `multiple_choice`, `true_false` (choix `true` et 
 - `line_chart` : `title`, `labels` (2 à 40), `series` : 1 ou 2 `{name, values}` (une valeur par libellé, `null` = point absent, affiché comme une interruption et jamais comme zéro), `unit`.
 - `code` : `language` `sql` | `python` | `text`, `code` (≤ 60 lignes), `title` facultatif. À lire : jamais exécuté dans le navigateur.
 - `comparison` : `items`, exactement deux blocs côte à côte, chacun `kind: code` (comme ci-dessus) ou `kind: table`, **chacun avec `title`**.
+- **`description`** (tous les `data.kind`, facultatif, ≤ 3000 caractères, texte brut avec mise en forme légère) : description du média pour qui ne le voit pas. Elle n'apparaît **jamais** dans le corps de la leçon : les lecteurs d'écran la lisent (`aria-describedby`) et l'étudiant peut l'ouvrir avec le lien repliable « Description du média ». Recommandée pour `animation`, `mindmap`, `flow`, `video` et les graphiques.
 
 Exemple :
 
@@ -232,17 +297,18 @@ Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai r�
 
 ## 9. Contrôles du compilateur
 
-Erreurs avec **fichier et numéro de ligne** si : champ obligatoire manquant ; `kind` ou `data.kind` inconnu ou pas encore livré ; objectif non déclaré ; prérequis vers une mission suivante ; slug dupliqué ; clé de réponse incohérente ; HTML ou lien non HTTPS ; texte trop long ; requête `run` qui échoue sur la base de laboratoire ; extrait Python qui échoue ou dépasse le temps ; objectif déclaré mais couvert par aucune mission.
+Erreurs avec **fichier et numéro de ligne** si : champ obligatoire manquant ; leçon sans `body` ni structure ; champ de leçon structurée sur une mission ; `objective` sur plusieurs lignes ; `key_terms` en double ; `kind` ou `data.kind` inconnu ou pas encore livré ; objectif non déclaré ; prérequis vers une mission suivante ; slug dupliqué ; clé de réponse incohérente ; HTML ou lien non HTTPS ; texte trop long ; requête `run` qui échoue sur la base de laboratoire ; extrait Python qui échoue ou dépasse le temps ; objectif déclaré mais couvert par aucune mission.
 
 Résumé produit : modules, blocs, leçons, missions, bonus, points par module et par bloc (principal et bonus), durée estimée (missions principales et leçons), objectifs couverts.
 
-Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `explanation`, bloc dont les missions principales ne font pas 10 à 20 minutes.
+Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `explanation`, paragraphe de plus de 80 mots (`body`, `hook`, `example`, `practice`, `explanation`), `objective` de plus d'une phrase, bloc dont les missions principales ne font pas 10 à 20 minutes.
 
 ## 10. Journal des changements de syntaxe
 
 | Date | Changement |
 |---|---|
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
+| 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |
 | 28/10/2026 (sprint 2, C) | Exécution livrée : `run` SQL (base de laboratoire, à la demande), `run` Python (exécuté à la compilation sur le Mac, sortie stockée), `sql_challenge` (corrigé par comparaison de résultats). `datasets/shopflow-lab.sql` chargé à l'import ; `datasets/python/` = répertoire de travail des extraits. Les échecs d'exécution sont des erreurs avec fichier et ligne. |
 | 28/10/2026 (sprint 2, F) | Livrés : `data.kind` `animation`, `mindmap`, `flow`, `video` (`url` youtube-nocookie.com / player.vimeo.com, ou `file` + `captions` dans `cours/media/`). |
