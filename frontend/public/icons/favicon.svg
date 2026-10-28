@@ -1,5 +1,20 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="ShopFlow Academy">
-  <rect width="64" height="64" rx="14" fill="#146457"/>
-  <path d="M43 19H27.5a7.5 7.5 0 0 0 0 15h9a7.5 7.5 0 0 1 0 15H20" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="47" cy="49" r="4" fill="#EDB458"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="589 274 1180 1180" role="img" aria-label="ShopFlow Academy">
+  <!-- Fox head traced from docs/design/shopflow-logo-source.png (same drawing and colours), without
+       the rings and dots, with thicker strokes for 16 and 32 px (docs/design/README.md).
+       Dark theme: the colours of the owner's green variant (docs/design/shopflow-logo-vert.png),
+       sand fox on a plain green tile. -->
+  <style>
+    .s { fill: none; stroke: #166359; stroke-width: 84; stroke-linecap: round; stroke-linejoin: round }
+    .f { fill: #88541A } .g { fill: #166359 } .b { fill: #F6F1EB }
+    .t { fill: none }
+    @media (prefers-color-scheme: dark) { .t, .b { fill: #146457 } .s { stroke: #F6F1EB } .f, .g { fill: #F6F1EB } }
+  </style>
+  <rect class="t" x="589" y="274" width="1180" height="1180" rx="236"/>
+  <polygon class="b" points="883,350 1024,672 830,864"/>
+  <polygon class="b" points="636,1007 1632,1219 1590,1283 880,1378"/>
+  <polygon class="f" points="883,350 675,806 636,1007 830,864"/>
+  <polygon class="f" points="1024,672 1251,371 1242,766"/>
+  <polygon class="f" points="636,1007 1024,672 1346,816 1431,980 1606,1100 1622,1205"/>
+  <polygon class="g" points="1606,1100 1722,1145 1628,1215"/>
+  <path class="s" d="M883 350L675 806L636 1007M883 350L830 864M883 350L1024 672L1251 371L1242 763M1024 672L1346 816L1431 980L1722 1145L1590 1283L880 1378L636 1007L1024 672M636 1007L1632 1219"/>
 </svg>

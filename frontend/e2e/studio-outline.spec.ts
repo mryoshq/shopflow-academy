@@ -39,7 +39,9 @@ async function openMarkdownCourse(page: Page) {
 
 test("icons and theme colours are served", async ({ page }) => {
   for (const [path, type] of [["/icons/favicon.svg", "image/svg+xml"], ["/icons/icon-192.png", "image/png"], ["/icons/icon-512.png", "image/png"],
-    ["/icons/apple-touch-icon.png", "image/png"], ["/icons/icon-maskable-512.png", "image/png"]]) {
+    ["/icons/apple-touch-icon.png", "image/png"], ["/icons/icon-maskable-512.png", "image/png"], ["/icons/favicon-16.png", "image/png"],
+    ["/icons/icon-32.png", "image/png"], ["/icons/logo-light.png", "image/png"], ["/icons/logo-dark.png", "image/png"],
+    ["/icons/share-1200x630.png", "image/png"]]) {
     const response = await page.request.get(path)
     expect(response.status(), path).toBe(200)
     expect(response.headers()["content-type"]).toContain(type)
@@ -47,6 +49,9 @@ test("icons and theme colours are served", async ({ page }) => {
   await page.goto("/")
   await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute("href", "/icons/favicon.svg")
   await expect(page.locator('meta[name="theme-color"]')).toHaveCount(2)
+  await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/icons\/share-1200x630\.png$/)
+  // The login card shows the full logo next to the name written in text.
+  await expect(page.getByText("ShopFlow Academy").first()).toBeVisible()
 })
 
 for (const theme of ["light", "dark"] as const) {
