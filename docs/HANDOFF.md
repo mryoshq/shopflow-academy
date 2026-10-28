@@ -6,9 +6,11 @@ Branche `codex/k-classement`, créée sur `main` `14017c2`, puis mise à jour pa
 
 Livré : off par défaut, accès aux inscrits et au propriétaire seulement, pseudonymes sans login/e-mail, principaux/bonus séparés, rangs `1, 1, 3`, top 3 avec tous les ex æquo et sa position, masquage serveur si bloc ouvert, onglet du jour (`Africa/Casablanca`), polling 5 s, podium SVG original, clavier/AA/clair/sombre/mouvement réduit. Ni notation ni export modifiés.
 
-Tests ciblés : pytest classement + matrice + propriété **23 PASS** ; Vitest classement + App **11 PASS** ; TypeScript **PASS** ; une spec Playwright classement **PASS**, avec axe sans violation sur vues testées, captures enseignant/clair/sombre et actualisation ≤ 10 s. Le navigateur utilise uniquement des réponses fictives ; l’API et les migrations sont réellement exercées dans pytest sur SQLite. Suites complètes/Compose/PostgreSQL/production **NOT RUN localement**, laissées à la CI pour les suites et au propriétaire pour le déploiement.
+Tests ciblés : pytest classement + migrations + matrice + propriété **27 PASS** ; Vitest classement + App **11 PASS** ; TypeScript **PASS** ; une spec Playwright classement **PASS**, avec axe sans violation sur vues testées, captures enseignant/clair/sombre et actualisation ≤ 10 s. Le navigateur utilise uniquement des réponses fictives ; l’API et les migrations sont réellement exercées dans pytest sur SQLite. Suites complètes/Compose/PostgreSQL/production **NOT RUN localement**, laissées à la CI pour les suites et au propriétaire pour le déploiement.
 
 Suivi CI : les échecs initiaux sur `cba066b` ont été reproduits (propriété avant validation d’un corps invalide, navigation mobile avec libellés longs). Correctifs et régressions dans K seulement, tests ciblés repassés. Attendre tous les contrôles verts sur le dernier commit. Un suivi automatique dans la conversation prévient alors le propriétaire, puis relit en lecture seule la PR de l’autre agent sur le compteur « terminé », suivie de H ; aucun commentaire GitHub ni modification de ces PR.
+
+Compatibilité L vérifiée explicitement : 7 points retenus après essais réels à 70 % puis 50 %, ancien score de 10 conservé ; aucun recalcul des notes. Test de chaîne depuis `0010_attempt_rules` peuplée, aller-retour K/L/K, préserve réglages L et tentatives. Tête unique `0011_leaderboard` ; aucune migration exécutée en production dans cette session.
 
 ### K — À faire en local après revue et fusion par le propriétaire
 

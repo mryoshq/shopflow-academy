@@ -15,7 +15,8 @@ from app.leaderboard_models import LeaderboardName, LeaderboardSettings
 from app.main import app
 from app.models import Assignment, BlockState, Course, CourseRelease, Enrollment, MissionAttempt, MissionVersion, User
 from app.progress import course_score, mission_scores
-from test_student import env, walk_keys  # noqa: F401
+from test_attempt_rules import set_rules
+from test_student import attempt, choice_id, env, missions_of, walk_keys  # noqa: F401
 
 
 def assignment(clients):
@@ -162,6 +163,34 @@ def test_ties_competition_ranks_and_bonus_tiebreak():
             for i, (main, bonus) in enumerate([(8, 99), (10, 2), (10, 2), (10, 0)], 1)]
     ordered = ranked(rows, ("core_points", "bonus_points"))
     assert [(r["display_name"], r["rank"]) for r in ordered] == [("2", 1), ("3", 1), ("4", 3), ("1", 4)]
+
+
+def test_ranking_uses_L_retained_points_including_decay_and_preserves_prior_scores(env):
+    clients, engine = env
+    aid = assignment(clients)
+    enable(clients, aid)
+    a, b = clients["a"], clients["b"]
+    version = missions_of(a)[0]["mission_version_id"]
+    view = a.get(f"/api/v1/student/missions/{version}").json()
+    right, wrong = choice_id(view, "La jointure"), choice_id(view, "Supprimer")
+    # A real pre-activation success keeps its full score under L.
+    assert attempt(b, version, "k-before-decay-01", choice_ids=[right]).json()["points"] == 10
+    with Session(engine) as db:
+        course_id = db.scalar(select(Course.id))
+    set_rules(clients["teacher"], course_id, decay_enabled=True)
+    assert attempt(a, version, "k-decay-wrong-01", choice_ids=[wrong]).json()["percent"] == 100
+    earned = attempt(a, version, "k-decay-right-02", choice_ids=[right]).json()
+    assert (earned["percent"], earned["points"], earned["score"]["best"]) == (70, 7, 7)
+    # A subsequent 50% success must not replace the retained best of 7.
+    again = attempt(a, version, "k-decay-right-03", choice_ids=[right]).json()
+    assert (again["percent"], again["points"], again["score"]["best"]) == (50, 5, 7)
+    with Session(engine) as db:
+        before = [(row.id, row.points, row.percent) for row in db.scalars(select(MissionAttempt).order_by(MissionAttempt.id))]
+    rows = read(a, aid).json()["rows"]
+    assert [(row["rank"], row["core_points"], row["bonus_points"], row["is_self"]) for row in rows] == [
+        (1, 10, 0, False), (2, 7, 0, True)]
+    with Session(engine) as db:
+        assert before == [(row.id, row.points, row.percent) for row in db.scalars(select(MissionAttempt).order_by(MissionAttempt.id))]
 
 
 def test_top_three_and_self_are_filtered_on_server_for_both_tabs(env):

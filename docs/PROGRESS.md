@@ -8,7 +8,7 @@ Critères couverts : opt-in enseignant, 404 étudiant si désactivé, droits par
 
 Vérifications locales ciblées, copie isolée et données fictives :
 
-- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_leaderboard.py tests/test_security_matrix.py tests/test_ownership.py` : 23 tests, dont droits de toutes les nouvelles routes, migration SQLite, points stockés inchangés, leçon requise, minuit marocain, nouvelle publication et retrait d’inscription.
+- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_leaderboard.py tests/test_leaderboard_migration.py tests/test_migration.py tests/test_security_matrix.py tests/test_ownership.py` : 27 tests, dont droits de toutes les nouvelles routes, migration SQLite, points stockés inchangés, leçon requise, minuit marocain, nouvelle publication et retrait d’inscription.
 - **PASS** `cd frontend && npm run test -- src/leaderboard/LeaderboardPage.test.tsx src/App.test.tsx --maxWorkers=1` : 11 tests.
 - **PASS** `cd frontend && ./node_modules/.bin/tsc --noEmit`.
 - **PASS** `cd frontend && SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3185 npx playwright test e2e/leaderboard.spec.ts` : une spec ; actualisation observée dans la limite de 10 s ; axe WCAG A/AA sans violation sur les vues testées, 1366 px et 390 px ; captures enseignant/clair/sombre dans `frontend/test-results/` (ignorées par Git), relues visuellement.
@@ -19,6 +19,8 @@ Vérifications locales ciblées, copie isolée et données fictives :
 Retour CI de #37 sur `cba066b` : contrôle de propriété attendu avant validation du corps (autre enseignant : 422 au lieu de 404), et débordement de la navigation à 390 px avec plusieurs libellés de classe longs. Reproduits localement, corrigés uniquement dans les fichiers K : dépendance de propriété avant validation, boutons à texte multiligne et conteneur réductible. Tests ciblés ci-dessus repassés ; spec K enrichie avec libellé long et absence de débordement. CI complète à attendre sur le nouveau commit.
 
 Intégration de L après son arrivée dans `main` : conflits partagés résolus en conservant L et K, sans modifier le moteur de notation. Migration K renommée et chaînée après L : `cd backend && ../.venv/bin/python -m alembic heads` **PASS**, une tête `0011_leaderboard`. Tests ciblés ci-dessus repassés après ce merge.
+
+Régressions explicites K/L : activation réelle de la dégressivité, réussite à 70 % (7 points), puis à 50 % (5 points) : K conserve 7 points, sans recalcul ni mutation ; un score de 10 acquis avant activation reste à 10. Test de migration ciblé depuis `0010_attempt_rules` peuplée : règles et points dégressifs conservés après montée vers K, descente vers L puis remontée ; classement désactivé par défaut. Chaîne générale montée/descente également testée.
 
 **Date : 2026-10-28 · État : P0 entièrement fusionné dans `main` (PR #11 à #25), production `https://shopflow.rapidfox.io` sur `main`. Sprint 2 (session cloud) : A, D, F, C, B, E, G, G2 fusionnées (#26 à #33), logo du propriétaire (#34, #35) ; PR du logo #36 ouverte ; partie L en PR ; puis H, K, I, J.** (Ligne d'état précédente : P0-01 à P0-10 livrés en PR empilées non fusionnées.)
 
