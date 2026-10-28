@@ -2,6 +2,7 @@ from functools import lru_cache
 
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 from app.config import get_settings
 
@@ -21,3 +22,8 @@ def database_is_ready() -> bool:
     except Exception:
         return False
     return True
+
+
+def get_db():
+    with Session(get_engine(), expire_on_commit=False) as session:
+        yield session

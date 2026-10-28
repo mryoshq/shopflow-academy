@@ -1,6 +1,6 @@
 # ShopFlow Academy
 
-**État au 27 octobre 2026 : P0-01, fondations locales.** Ce dépôt contient le kit documentaire original et le premier socle exécutable React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx local. L'authentification, le studio et les cours sont prévus dans les lots suivants. Aucun contenu pédagogique définitif n'est publié.
+**État au 27 octobre 2026 : P0-02 en revue, authentification locale.** Ce dépôt contient le kit documentaire original et un socle exécutable React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx local. La connexion, les rôles et les sessions sont implémentés ; le studio et les cours restent dans les lots suivants. Aucun contenu pédagogique définitif n'est publié.
 
 ## Démarrer le socle en local sur Mac
 
@@ -13,7 +13,7 @@ docker compose up -d --build
 curl --fail http://127.0.0.1:3080/health/ready
 ```
 
-Ouvrir `http://127.0.0.1:3080/` pour la page de fondation. Arrêter uniquement cette stack avec `docker compose down` ; ne pas utiliser `-v` si les données PostgreSQL doivent être conservées. Pour les tests hors Docker : installer `backend/requirements-dev.txt` dans un environnement Python, exécuter `python -m pytest -q` depuis `backend`, puis `npm ci`, `npm run test -- --maxWorkers=1` et `npm run build` depuis `frontend`.
+Ouvrir `http://127.0.0.1:3080/` pour la page de connexion. Pour créer uniquement les comptes fictifs de développement, exécuter `python3 scripts/seed_demo.py` ; les identifiants sont sauvés dans `.local/demo-credentials.json`, ignoré par Git et accessible au seul utilisateur local. Les dix adresses fournies séparément sont importables avec `python3 scripts/import_students.py` depuis `.local/student-emails.txt`, également ignoré par Git. Aucun script n'envoie de message. Conserver les fichiers de mots de passe localement et ne pas les ajouter à Git. Arrêter uniquement cette stack avec `docker compose down` ; ne pas utiliser `-v` si les données PostgreSQL doivent être conservées. Pour les tests hors Docker : installer `backend/requirements-dev.txt` dans un environnement Python, exécuter `python -m pytest -q` depuis `backend`, puis `npm ci`, `npm run test -- --pool=threads --maxWorkers=1` et `npm run build` depuis `frontend`.
 
 Le domaine `https://shopflow.rapidfox.io` reste réservé au déploiement ultérieur sur Mac via Cloudflare Tunnel, après accord explicite. `n8n.rapidfox.io` est hors de cette stack et reste inchangé.
 
@@ -68,4 +68,4 @@ La vérification documentaire du kit ne valide pas l'application. Les tests appl
 
 ## État vérifiable
 
-**Livré dans P0-01** : page React/Chakra v3, API FastAPI de santé, migration initiale de la table `users`, Compose Mac avec gateway loopback et tests de fondation. **À livrer dans les lots suivants** : authentification, studio, lecteur, correction, dashboards et publication Cloudflare après accord.
+**Livré dans P0-01 et P0-02** : page React/Chakra v3, API FastAPI de santé, Compose Mac avec gateway loopback, authentification, rôles, sessions et tests. **À livrer dans les lots suivants** : référentiel, studio, lecteur, correction, dashboards et publication Cloudflare après accord.
