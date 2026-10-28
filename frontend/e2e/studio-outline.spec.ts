@@ -75,7 +75,7 @@ for (const theme of ["light", "dark"] as const) {
     // Filter by objective, then by type.
     await page.getByRole("button", { name: /qui couvrent DEMO-PIPELINE/ }).click()
     await expect(page.getByText("Éléments qui couvrent")).toBeVisible()
-    await expect(outline.getByText(/3 éléments affichés/)).toBeVisible()
+    await expect(outline.getByText(/4 éléments affichés/)).toBeVisible()
     await page.getByRole("button", { name: "Retirer le filtre" }).click()
     await outline.getByLabel("Filtrer par type").selectOption("bonus")
     await expect(outline.getByRole("button", { name: "Défi bonus, le top des villes", exact: true })).toBeVisible()
