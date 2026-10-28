@@ -147,7 +147,7 @@ export function CourseSearch({ onSelect, selectedId, refreshKey }: { onSelect: (
         <option value="recent">Plus récents</option><option value="title">Titre A→Z</option>
       </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
     </Flex>
-    {results === null ? <Text fontSize="sm" color="app.muted" role="status">Recherche…</Text> : results.length === 0
+    {results === null ? <Text fontSize="sm" color="app.muted">Recherche…</Text> : results.length === 0
       ? <Text fontSize="sm" color="app.muted">Aucun cours ne correspond.</Text>
       : <Stack gap="1.5" maxH="80" overflowY="auto" as="ul" listStyleType="none" p="0" m="0">{results.map((item) => <Box as="li" key={item.id}>
         <Button size="sm" w="full" variant={selectedId === item.id ? "solid" : "outline"} colorPalette="brand" justifyContent="start" whiteSpace="normal" h="auto" py="2" textAlign="left" onClick={() => onSelect(item.id)}>
