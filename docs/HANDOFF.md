@@ -2,7 +2,7 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusionner #35 (variante verte du logo, PR du propriétaire), puis relire et fusionner la PR du logo (`claude/lucid-brahmagupta-htwgun-logo`) — accord et action du propriétaire.** Les parties suivantes, une PR chacune, dans l'ordre : L (clic au hasard, prioritaire), H (suivi en direct), K (classement), I (PWA, confort, couleurs), J (observateur).
+**Prochaine tâche unique : fusionner #35 (variante verte du logo, PR du propriétaire), puis relire et fusionner #36 (logo) — accord et action du propriétaire.** Les parties suivantes, une PR chacune, dans l'ordre : L (clic au hasard, prioritaire), H (suivi en direct), K (classement), I (PWA, confort, couleurs), J (observateur).
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -24,7 +24,7 @@
 | 8 | G2 — plan du cours, objectifs par catégorie, logo et icônes (ADR-0022b) | `claude/lucid-brahmagupta-htwgun-g2` | [#33](https://github.com/mryoshq/shopflow-academy/pull/33) | **fusionnée** |
 | 9 | Logo source du propriétaire (`docs/design/`) | `design/logo-proprietaire` | [#34](https://github.com/mryoshq/shopflow-academy/pull/34) | **fusionnée** |
 | 10 | Variante verte du logo (PR du propriétaire) | `design/logo-vert` | [#35](https://github.com/mryoshq/shopflow-academy/pull/35) | ouverte — **à fusionner avant 11** |
-| 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | PR du logo (base : `main`, contient #35 par fusion) | ouverte |
+| 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | [#36](https://github.com/mryoshq/shopflow-academy/pull/36) (base : `main`, contient #35 par fusion) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
