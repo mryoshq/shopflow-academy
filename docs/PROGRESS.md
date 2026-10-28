@@ -2,7 +2,7 @@
 
 ## Résultats — accompagnement, 28/10/2026
 
-Branche `codex/resultats` depuis `main` à jour. Périmètre : `frontend/src/teacher/Results.tsx`, nouveau routeur `backend/app/results.py`, deux lignes d’inclusion dans `main.py`, tests dédiés et documentation de ce lot. Aucun changement dans `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Aucune migration, aucun cours ajouté, aucun déploiement.
+Branche `codex/resultats` depuis `main` à jour, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41). Périmètre : `frontend/src/teacher/Results.tsx`, nouveau routeur `backend/app/results.py`, deux lignes d’inclusion dans `main.py`, tests dédiés et documentation de ce lot. Aucun changement dans `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Aucune migration, aucun cours ajouté, aucun déploiement.
 
 Lecture `GET /teacher/classes/{assignment_id}/results?threshold=50` : points retenus du moteur, principaux/bonus séparés, pourcentage hors bonus, réussites principales et liste des principales non réussies (y compris non commencées). Seuil de 0 à 100, indicateur strictement sous le seuil ; pas d’indicateur sans barème principal. Icône et texte, tri et filtre ; top 5 hors leçons/bonus calculé sur toute la classe. CSV dédié `…/results/export.csv?threshold=50` : colonnes historiques et format Excel conservés, ajout `a_accompagner` (oui/non), compteur de réussite principale cohérent avec la page ; téléchargement de toute la classe avec le seuil appliqué. Ancien endpoint et suivi laissés intacts pour éviter les conflits avec l’autre agent.
 

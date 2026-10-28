@@ -1,6 +1,6 @@
 # HANDOFF — reprise ShopFlow Academy
 
-## Résultats — branche `codex/resultats` (28/10/2026)
+## Résultats — branche `codex/resultats`, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41) (28/10/2026)
 
 Nouvelle page Résultats et deux endpoints dédiés en lecture/export, sans migration. Seuil d’accompagnement réglable, défaut 50 %, comparaison strictement inférieure au seuil, bonus exclus du pourcentage ; compteurs/difficultés sur missions principales seulement, leçons et bonus exclus. Points retenus fournis par `mission_scores`/`course_score` sans re-noter. Top 5 classe entière ; détail des missions non réussies par étudiant ; icône/texte « À accompagner », tri et filtre.
 
