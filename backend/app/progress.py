@@ -47,34 +47,45 @@ def definitions(db: Session, version_ids: list[int]) -> dict[int, MissionDefinit
 
 
 def equivalents(db: Session, version_ids: list[int]) -> dict[int, set[int]]:
-    """Earlier published versions that count for each version (republication, same course and slug).
+    """Earlier published versions that count for each version (republication of the same mission).
 
-    A lesson read in any version stays read; a graded mission keeps its success only when its
-    private definition is identical (same answers, same points). Read-time only: the stored
-    attempts are never copied or changed.
+    Same mission = same mission row, or, for a mission re-created at import, same slug at the
+    same place (module and block positions) in the same course: a slug reused in another block
+    is another mission. A lesson stays read when it was validated as a lesson in any version (a
+    graded version never makes it read); a graded mission keeps its success only when its private
+    definition is identical. Read-time only: the stored attempts are never copied or changed.
     """
     if not version_ids:
         return {}
-    def key(row):
-        return (row.course_id, row.slug)
-    query = (select(MissionVersion.id, MissionVersion.definition_private, Mission.slug, CourseModule.course_id)
+    query = (select(MissionVersion.id, MissionVersion.mission_id, MissionVersion.definition_private, Mission.slug,
+                    CourseModule.course_id, CourseModule.sort_order.label("module_order"), Chapter.sort_order.label("chapter_order"))
              .join(Mission, Mission.id == MissionVersion.mission_id).join(Chapter, Chapter.id == Mission.chapter_id)
              .join(CourseModule, CourseModule.id == Chapter.module_id))
     targets = db.execute(query.where(MissionVersion.id.in_(version_ids))).all()
     slugs = {row.slug for row in targets}
     family: dict[tuple, list] = {}
     for row in db.execute(query.where(Mission.slug.in_(slugs))).all() if slugs else []:
-        family.setdefault(key(row), []).append(row)
+        family.setdefault((row.course_id, row.slug), []).append(row)
     result = {vid: {vid} for vid in version_ids}
     for row in targets:
-        lesson = (row.definition_private or {}).get("kind") == "lesson"
-        result[row.id] |= {other.id for other in family.get(key(row), [])
-                           if lesson or other.definition_private == row.definition_private}
+        kind = (row.definition_private or {}).get("kind")
+        for other in family.get((row.course_id, row.slug), []):
+            same_mission = other.mission_id == row.mission_id or (other.module_order, other.chapter_order) == (row.module_order, row.chapter_order)
+            if not same_mission:
+                continue
+            if kind == "lesson" and (other.definition_private or {}).get("kind") == "lesson":
+                result[row.id].add(other.id)
+            elif kind != "lesson" and other.definition_private == row.definition_private:
+                result[row.id].add(other.id)
     return result
 
 
 def attempts_for(db: Session, user_ids: list[int], version_ids: list[int]) -> list[tuple[MissionAttempt, int]]:
-    """Attempts of these users counted for each version (its own and its equivalents): (attempt, version)."""
+    """Attempts of these users counted for each version (its own and its equivalents): (attempt, version).
+
+    One attempt counts for one mission only: an old version claimed by several current versions goes
+    to the one of the same mission row, or to none when that is ambiguous.
+    """
     groups = equivalents(db, version_ids)
     owners: dict[int, list[int]] = {}
     for target, members in groups.items():
@@ -82,6 +93,13 @@ def attempts_for(db: Session, user_ids: list[int], version_ids: list[int]) -> li
             owners.setdefault(member, []).append(target)
     if not owners or not user_ids:
         return []
+    shared = [member for member, targets in owners.items() if len(targets) > 1]
+    if shared:
+        mission_of = dict(db.execute(select(MissionVersion.id, MissionVersion.mission_id)
+                                     .where(MissionVersion.id.in_(set(shared) | {t for m in shared for t in owners[m]}))).all())
+        for member in shared:
+            own = [t for t in owners[member] if t == member] or [t for t in owners[member] if mission_of.get(t) == mission_of.get(member)]
+            owners[member] = own[:1]
     rows = db.scalars(select(MissionAttempt).where(MissionAttempt.user_id.in_(user_ids),
                                                    MissionAttempt.mission_version_id.in_(list(owners))).order_by(MissionAttempt.id)).all()
     return [(attempt, target) for attempt in rows for target in owners[attempt.mission_version_id]]
@@ -95,7 +113,9 @@ def mission_scores(db: Session, user_id: int, version_ids: list[int]) -> dict[in
     for attempt, vid in attempts_for(db, [user_id], list(defs)):
         item = result[vid]
         item.attempts += 1
-        item.best = max(item.best, attempt_points(attempt, defs[vid]))
+        # A lesson never earns points, whatever its earlier versions were.
+        if not item.lesson:
+            item.best = max(item.best, attempt_points(attempt, defs[vid]))
         item.completed = item.completed or attempt.is_correct
     return result
 

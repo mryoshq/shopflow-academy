@@ -76,3 +76,67 @@ def test_lesson_read_in_v1_and_unchanged_mission_still_count_after_republication
         db.commit()
     block = course_of(a, "Cours republié")["modules"][0]["blocks"][0]
     assert block["done"] is False and block["lessons_read"] == 1
+
+
+def setup_course(teacher, engine, slug: str, blocks: dict[str, list[tuple[str, dict]]]) -> tuple[dict, int]:
+    """A course with the given blocks of (mission slug, definition); published, given to a class, blocks open."""
+    course = post(teacher, "/api/v1/teacher/courses", {"slug": slug, "title": slug}).json()["id"]
+    objective = post(teacher, f"/api/v1/teacher/courses/{course}/objectives", {"code": "OBJ-X", "statement": "Objectif"}).json()["id"]
+    module = post(teacher, f"/api/v1/teacher/courses/{course}/modules", {"title": "Module"}).json()["id"]
+    ids = {}
+    for order, (title, missions) in enumerate(blocks.items()):
+        chapter = post(teacher, f"/api/v1/teacher/modules/{module}/chapters", {"title": title, "sort_order": order}).json()["id"]
+        ids[title] = chapter
+        for index, (mission_slug, make) in enumerate(missions):
+            response = post(teacher, f"/api/v1/teacher/chapters/{chapter}/missions",
+                            {"slug": mission_slug, "title": f"{title} {mission_slug}", "sort_order": index, "definition": make(objective)})
+            assert response.status_code == 201, response.text
+    klass = give_to_class(teacher, engine, course, f"Classe {slug}")
+    for chapter in ids.values():
+        post(teacher, f"/api/v1/teacher/classes/{klass['assignment']}/blocks/{chapter}/open")
+    return klass, objective
+
+
+def graded(points: int):
+    def make(objective: int) -> dict:
+        value = definition(objective, "m")
+        value["max_points"] = points
+        return value
+    return make
+
+
+def test_graded_mission_turned_into_lesson_never_keeps_its_points(env):
+    clients, engine = env
+    teacher, a = clients["teacher"], clients["a"]
+    klass, objective = setup_course(teacher, engine, "devenue-lecon", {"Bloc": [("grain", graded(7))]})
+    version = course_of(a, "devenue-lecon")["missions"][0]["mission_version_id"]
+    view = a.get(f"/api/v1/student/missions/{version}").json()
+    assert attempt(a, version, "graded-0001", choice_ids=[choice_id(view, "Bonne réponse")]).json()["points"] == 7
+    with Session(engine) as db:
+        mission = db.scalar(select(Mission.id).where(Mission.slug == "grain"))
+        course_id = db.scalar(select(Assignment.course_release_id).where(Assignment.id == klass["assignment"]))
+    put(teacher, f"/api/v1/teacher/missions/{mission}/draft", lesson(objective, "Le grain d'une table."))
+    from app.models import CourseRelease
+    with Session(engine) as db:
+        course = db.get(CourseRelease, course_id).course_id
+    release = post(teacher, f"/api/v1/teacher/courses/{course}/publish").json()["id"]
+    with Session(engine) as db:
+        db.execute(update(Assignment).where(Assignment.id == klass["assignment"]).values(course_release_id=release))
+        db.commit()
+    score = course_of(a, "devenue-lecon")["score"]
+    # 0 point, and the old graded success does not count as having read the lesson.
+    assert score["core_points"] == 0 and score["lessons_total"] == 1 and score["lessons_read"] == 0
+
+
+def test_same_slug_in_two_blocks_are_two_missions(env):
+    clients, engine = env
+    a = clients["a"]
+    setup_course(clients["teacher"], engine, "meme-slug", {"Bloc A": [("calcul", graded(7))], "Bloc B": [("calcul", graded(7))]})
+    course = course_of(a, "meme-slug")
+    first = course["missions"][0]["mission_version_id"]
+    view = a.get(f"/api/v1/student/missions/{first}").json()
+    attempt(a, first, "same-slug-0001", choice_ids=[choice_id(view, "Bonne réponse")])
+    course = course_of(a, "meme-slug")
+    # One attempt counts for one mission: 7 points, block A done, block B not.
+    assert course["score"]["core_points"] == 7 and course["score"]["completed"] == 1
+    assert [b["done"] for b in course["modules"][0]["blocks"]] == [True, False]

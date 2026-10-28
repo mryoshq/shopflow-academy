@@ -66,12 +66,13 @@ export function NotificationProvider({ children, heartbeat = false }: { children
       const first = lastId.current === null
       lastId.current = Math.max(lastId.current ?? 0, ...feed.items.map((item) => item.id))
       setItems((previous) => [...feed.items, ...previous.filter((item) => !feed.items.some((n) => n.id === item.id))].slice(0, 100))
+      const fresh = feed.items.filter((item) => !item.read_at).reverse()
       if (!first) {
-        const fresh = feed.items.filter((item) => !item.read_at).reverse()
         setToasts((previous) => [...previous, ...fresh].slice(-3))
         fresh.forEach(systemNotify)
-        if (fresh.some((item) => REFRESH_KINDS.has(item.kind))) window.dispatchEvent(new Event("academy:refresh"))
       }
+      // A block opened while the page was loading arrives in the first batch too: refresh the dashboard.
+      if (fresh.some((item) => REFRESH_KINDS.has(item.kind))) window.dispatchEvent(new Event("academy:refresh"))
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return
     }
@@ -209,6 +210,22 @@ function SystemNotificationsSwitch() {
   const supported = typeof Notification !== "undefined"
   const [permission, setPermission] = useState(() => supported ? Notification.permission : "denied")
   const [status, setStatus] = useState("")
+  // Permission already granted but no Web Push subscription in this browser: keep a way to finish.
+  const [pushMissing, setPushMissing] = useState(false)
+  useEffect(() => {
+    if (!supported || Notification.permission !== "granted" || !("serviceWorker" in navigator) || !("PushManager" in window)) return
+    let cancelled = false
+    void (async () => {
+      try {
+        const key = await api<{ enabled: boolean }>("/push/key")
+        if (!key.enabled) return
+        const registration = await navigator.serviceWorker.getRegistration("/sw.js")
+        const subscription = registration ? await registration.pushManager.getSubscription() : null
+        if (!cancelled && !subscription) setPushMissing(true)
+      } catch { /* leave as is */ }
+    })()
+    return () => { cancelled = true }
+  }, [supported])
   if (!supported) return null
   async function enable() {
     setStatus("")
@@ -229,7 +246,8 @@ function SystemNotificationsSwitch() {
     }
   }
   return <Box mb="2">
-    {permission !== "granted" && <Button size="xs" variant="outline" colorPalette="brand" onClick={() => void enable()}>Activer les notifications système</Button>}
+    {(permission !== "granted" || pushMissing) && <Button size="xs" variant="outline" colorPalette="brand" onClick={() => void enable().then(() => setPushMissing(false))}>
+      {permission === "granted" ? "Activer les notifications hors de l’onglet" : "Activer les notifications système"}</Button>}
     {status && <Text fontSize="xs" color="app.muted" role="status" mt="1">{status}</Text>}
   </Box>
 }
