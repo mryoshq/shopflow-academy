@@ -54,7 +54,10 @@ HTTP_RE = re.compile(r"http://", re.IGNORECASE)
 # Kinds and data kinds the platform can play today. Others are refused with a clear message.
 KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching", "data_interpretation",
          "scenario_choice", "lesson", "sql_challenge"}
-DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison"}
+DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video"}
+MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt)$")
+MAX_VIDEO_BYTES = 50 * 1024 * 1024
+MAX_CAPTIONS_BYTES = 512 * 1024
 MISSION_KEYS = {"slug", "kind", "objectives", "prerequisites", "points", "scoring", "duration", "bonus", "scenario",
                 "instructions", "data", "run", "choices", "order", "targets", "pairs", "hints", "explanation",
                 "resources", "body", "starter_sql", "expected_sql", "compare"}
@@ -96,6 +99,18 @@ FRENCH = {
     "Duplicate run id": "deux exécutions `run` ont le même `id`",
     "Code is limited to 60 lines": "code limité à 60 lignes",
     "At least two choices are required": "au moins deux choix sont nécessaires",
+    "Highlight outside the table": "`highlight` vise une ligne ou une cellule qui n'existe pas",
+    "Arrow outside the tables": "une flèche vise une table ou une ligne qui n'existe pas (indices à partir de 0)",
+    "An arrow links two different tables": "une flèche relie deux tables différentes",
+    "A mind map has at most 3 levels below its root": "une carte mentale a au plus 3 niveaux sous la racine",
+    "A mind map has at most 40 nodes": "une carte mentale a au plus 40 nœuds",
+    "Duplicate step id": "deux étapes ont le même `id`",
+    "A pipeline cannot reject more rows than it receives": "les rejets dépassent le nombre de lignes en entrée (`input`)",
+    "A video needs either url or file": "une vidéo demande soit `url`, soit `file`",
+    "Video url must be an https embed from youtube-nocookie.com or player.vimeo.com": "`url` doit être un lien https d'intégration youtube-nocookie.com/embed/… ou player.vimeo.com/video/…",
+    "Captions files are for course videos only": "`captions` seulement avec une vidéo `file` du cours",
+    "Invalid video file": "fichier vidéo invalide",
+    "Invalid captions file": "fichier de sous-titres invalide",
 }
 
 
@@ -149,6 +164,9 @@ class Compiled:
     modules: list[Module] = field(default_factory=list)
     issues: list[Issue] = field(default_factory=list)
     files: list[str] = field(default_factory=list)
+    media_in: dict[str, bytes] = field(default_factory=dict)
+    # Content-addressed media to copy at import: "/media/<sha>.mp4" -> bytes.
+    media_out: dict[str, bytes] = field(default_factory=dict)
 
     @property
     def errors(self) -> list[Issue]:
@@ -473,6 +491,10 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
         reported = set()
         for err in exc.errors()[:8]:
             loc = tuple(err["loc"])
+            # Drop the discriminator tags pydantic inserts after a union (display_data → "animation" → steps…).
+            loc = tuple(part for index, part in enumerate(loc)
+                        if not (index and isinstance(part, str) and part in DATA_KINDS
+                                and (loc[index - 1] in ("display_data",) or isinstance(loc[index - 1], int))))
             key = FIELD_TO_KEY.get(str(loc[0]), str(loc[0])) if loc else message_key(str(err.get("msg", "")), kind)
             path = ((key,) + loc[1:]) if loc else ((key,) if key else ())
             message = french(err)
@@ -483,7 +505,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
                 continue  # already reported above in French
             error(path, message)
         return
-    body = parsed.model_dump()
+    body = json.loads(json.dumps(parsed.model_dump(), ensure_ascii=False))  # JSON shapes (tuples → lists), as stored
     body.pop("objective_ids")
     body.pop("prerequisite_mission_ids")
     item.definition = body
@@ -566,9 +588,13 @@ def walk_strings(value: object, path: tuple = ()) -> list[tuple[tuple, str]]:
     return []
 
 
-def compile_files(files: dict[str, str]) -> Compiled:
-    """Compile a course from {file name: content}; names are sorted, reserved files ignored."""
+def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None) -> Compiled:
+    """Compile a course from {file name: content}; names are sorted, reserved files ignored.
+
+    ``media`` maps ``media/<name>.mp4|vtt`` to bytes (videos of the course folder).
+    """
     compiled = Compiled()
+    compiled.media_in = dict(media or {})
     names = sorted(name for name in files if name.lower().endswith(".md") and name.upper() not in RESERVED and "/" not in name)
     compiled.files = names
     if len(names) > MAX_FILES:
@@ -589,6 +615,7 @@ def compile_files(files: dict[str, str]) -> Compiled:
     codes = {item["code"] for item in compiled.objectives}
     seen: list[str] = []
     for item in compiled.items():
+        attach_media(compiled, item)
         build_definition(compiled, item, codes, list(seen))
         if item.slug:
             if item.slug in seen:
@@ -631,11 +658,49 @@ def compile_files(files: dict[str, str]) -> Compiled:
     return compiled
 
 
+def attach_media(compiled: Compiled, item: Item) -> None:
+    """``data.kind: video`` with ``file``: check the course file and replace it by its content address."""
+    data = item.raw.get("data")
+    if not isinstance(data, dict) or data.get("kind") != "video" or "file" not in data:
+        if isinstance(data, dict) and data.get("kind") == "video" and data.get("captions") is not None:
+            compiled.error(item.file, line_for(item, ("data", "captions")), "`captions` seulement avec une vidéo `file` du cours")
+            data.pop("captions")
+        return
+    import hashlib
+
+    for key, ext, limit in (("file", "mp4", MAX_VIDEO_BYTES), ("captions", "vtt", MAX_CAPTIONS_BYTES)):
+        name = data.pop(key, None)
+        if name is None:
+            continue
+        line = line_for(item, ("data", key))
+        name = str(name)
+        if not MEDIA_NAME.fullmatch(name) or not name.endswith("." + ext):
+            compiled.error(item.file, line, f"`{key}` : chemin `media/<nom>.{ext}` attendu (lettres, chiffres, - et _)")
+            continue
+        content = compiled.media_in.get(name)
+        if content is None:
+            compiled.error(item.file, line, f"fichier introuvable dans le dossier du cours : `{name}`")
+            continue
+        if len(content) > limit:
+            compiled.error(item.file, line, f"`{name}` trop volumineux ({len(content) // (1024 * 1024)} Mo, maximum {limit // (1024 * 1024) or 0.5} Mo)")
+            continue
+        if ext == "mp4" and content[4:8] != b"ftyp":
+            compiled.error(item.file, line, f"`{name}` n'est pas une vidéo MP4")
+            continue
+        if ext == "vtt" and not content.lstrip(b"\xef\xbb\xbf").startswith(b"WEBVTT"):
+            compiled.error(item.file, line, f"`{name}` n'est pas un fichier de sous-titres WebVTT")
+            continue
+        src = f"/media/{hashlib.sha256(content).hexdigest()[:16]}.{ext}"
+        compiled.media_out[src] = content
+        data["src" if ext == "mp4" else "captions_src"] = src
+
+
 def compile_dir(folder: Path) -> Compiled:
     files: dict[str, str] = {}
     for path in sorted(folder.glob("*.md")):
         files[path.name] = path.read_text(encoding="utf-8")
-    return compile_files(files)
+    media = {f"media/{path.name}": path.read_bytes() for path in sorted((folder / "media").glob("*")) if path.is_file()}
+    return compile_files(files, media)
 
 
 # Summary, document, report -------------------------------------------------------------
@@ -803,6 +868,7 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     stale = [o for code, o in objectives.items() if code not in {x["code"] for x in compiled.objectives}]
     for objective in stale:
         db.delete(objective)
+    write_media(compiled)
     db.add(AuditEvent(actor_id=owner.id, action="course.import_md", resource_type="course", resource_id=course.id,
                       details={"files": compiled.files, "missions": len(placed), "removed_drafts": len(removed)}))
     db.commit()
@@ -820,6 +886,22 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
             db.commit()
             result["assigned_to_class"] = True
     return result
+
+
+def write_media(compiled: Compiled) -> None:
+    """Copy course videos into the media volume served by the gateway (content-addressed, idempotent)."""
+    from app.config import get_settings
+
+    if not compiled.media_out:
+        return
+    folder = Path(get_settings().media_dir)
+    folder.mkdir(parents=True, exist_ok=True)
+    for src, content in compiled.media_out.items():
+        target = folder / Path(src).name
+        if not target.exists():
+            temporary = target.with_suffix(target.suffix + ".part")
+            temporary.write_bytes(content)
+            temporary.replace(target)
 
 
 # Command line --------------------------------------------------------------------------------
@@ -859,7 +941,13 @@ def main() -> None:
     files = payload.get("files") or {}
     if not isinstance(files, dict) or not all(isinstance(k, str) and isinstance(v, str) for k, v in files.items()):
         raise SystemExit("lot invalide : {\"files\": {nom: texte}} attendu")
-    compiled = compile_files(files)
+    import base64
+
+    raw_media = payload.get("media") or {}
+    if not isinstance(raw_media, dict):
+        raise SystemExit("lot invalide : \"media\" doit être un dictionnaire")
+    media = {str(name): base64.b64decode(value) for name, value in raw_media.items() if isinstance(value, str)}
+    compiled = compile_files(files, media)
     output = {"summary": summary(compiled), "issues": [issue.__dict__ for issue in compiled.issues]}
     if args.command == "import-bundle" and not compiled.errors:
         from sqlalchemy.orm import Session

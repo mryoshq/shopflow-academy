@@ -19,8 +19,9 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
     00-cours.md               en-tête du cours (titre, objectifs)
     10-module-sql.md          module SQL analytique
     20-module-python.md       module Python ingestion et qualité (peut être découpé en 20-, 21-, 22-…)
+    media/                    vidéos .mp4 (≤ 50 Mo) et sous-titres .vtt facultatifs (§ 6, `data.kind: video`)
     datasets/
-      shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 6)
+      shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 7)
       python/                 petits fichiers CSV/JSON fictifs utilisés par les extraits Python
   COVERAGE.md                 objectif → missions → points → durée
   QUESTIONS.md                points à trancher par l'enseignant
@@ -173,6 +174,38 @@ data:
         ON CONFLICT (order_id) DO UPDATE SET total = EXCLUDED.total;
 ```
 
+### Médias codés (ADR-0018), utilisables dans les leçons et les missions
+
+- `animation` : animation pas à pas **dessinée par la plateforme** (aucun fichier vidéo). `title`, `steps` (2 à 20) : `{caption, scene}`. Une `scene` contient `tables` (1 à 3 : `title`, `columns` ≤ 8, `rows` ≤ 12, `highlight: {rows: [i], cells: [[ligne, colonne]]}`), `arrows` facultatives (`{from: [table, ligne], to: [table, ligne], label?}`, indices **à partir de 0**, entre deux tables différentes), `counter` facultatif (`{label, value}`), `badge` facultatif (`{kind: ok | erreur | attention, text}`). L'étudiant a Lecture/Pause, étape par étape, Recommencer et une description textuelle complète.
+- `mindmap` : `title`, `root: {label, children: [...]}` ; au plus **3 niveaux sous la racine** et **40 nœuds** ; libellés ≤ 80 caractères.
+- `flow` : `title`, `input` (lignes en entrée), `unit` (défaut `lignes`), `steps` (2 à 8) : `{id, label, rejects?, note?}`. Un jeton parcourt le pipeline ; les compteurs acceptées / rejetées se mettent à jour. La somme des `rejects` ne dépasse pas `input`.
+- `video` (toujours facultative, jamais requise pour la note) : soit `url` = lien **https d'intégration** `https://www.youtube-nocookie.com/embed/<id>` ou `https://player.vimeo.com/video/<id>` ; soit `file: media/<nom>.mp4` (≤ 50 Mo, dans le dossier `cours/media/`) avec `captions: media/<nom>.vtt` facultatif (sous-titres WebVTT, recommandés). Noms : lettres, chiffres, `-` et `_`.
+
+Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
+
+```yaml
+data:
+  kind: animation
+  title: "Jointure orders et order_items : 70 DH deviennent 100 DH"
+  steps:
+    - caption: Deux commandes, une ligne chacune. Les frais attendus font 30 + 40 = 70 DH.
+      scene:
+        tables:
+          - title: orders (grain commande)
+            columns: [order_id, shipping_fee]
+            rows: [[C-101, 30], [C-102, 40]]
+        counter: {label: Total attendu, value: 70 DH}
+    - caption: Après la jointure, une ligne par article. Les 30 DH de C-101 apparaissent deux fois.
+      scene:
+        tables:
+          - title: Résultat de la jointure
+            columns: [order_id, item_id, shipping_fee]
+            rows: [[C-101, I-1, 30], [C-101, I-2, 30], [C-102, I-3, 40]]
+            highlight: {cells: [[0, 2], [1, 2]]}
+        counter: {label: SUM(shipping_fee), value: 100 DH}
+        badge: {kind: erreur, text: Les frais de C-101 sont comptés deux fois}
+```
+
 ## 7. Exécution de code préconfiguré (`run`)
 
 Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai résultat**, sans rien installer. La réponse notée reste un choix ; le code sert à observer et comprendre.
@@ -202,4 +235,5 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | Date | Changement |
 |---|---|
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |
+| 28/10/2026 (sprint 2, F) | Livrés : `data.kind` `animation`, `mindmap`, `flow`, `video` (`url` youtube-nocookie.com / player.vimeo.com, ou `file` + `captions` dans `cours/media/`). |
 | 28/10/2026 (sprint 2, D) | Livrés : `lesson` (`body`, « J'ai compris »), `data.kind` `line_chart`, `code`, `comparison` (avec `title` de chaque côté), `title` facultatif d'un `table`. `run` et `sql_challenge` acceptés et stockés (exécution en partie C). Introduction de module = première ligne sous `# Module :`. Fichiers réservés ignorés. |

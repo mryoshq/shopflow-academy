@@ -19,7 +19,7 @@
 
 - [x] **S2-A** Journée en blocs de 15 min ouverts par l'enseignant, « Ma classe » (frise, repère horaire enseignant, aide, difficultés), interface en trois zones, classe et cours uniques, ménage des cours de test, `APP_SECRET` obligatoire. ADR-0019. Preuves : pytest 71, Vitest 31, build, Playwright 12 (stack de test locale) — voir PROGRESS.
 - [x] **S2-D** Chaîne d'import Markdown (`course_md.py compile|import|--publish`), leçons, `line_chart`, `code`, `comparison`, schéma `run`/`sql_challenge`. ADR-0020. Preuves : pytest 94, Vitest 35, build, Playwright 13 (stack de test locale) — voir PROGRESS.
-- [ ] **S2-F** Médias codés : animation, carte mentale, pipeline animé, vidéo (ADR-0018).
+- [x] **S2-F** Médias codés : animation, carte mentale, pipeline animé, vidéo (ADR-0018). Preuves : pytest 108, Vitest 40, build, Playwright 13 dont médias avec axe et mouvement réduit (stack de test locale) — voir PROGRESS.
 - [ ] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017).
 - [ ] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion.
 - [ ] **S2-E** `docs/SUGGESTIONS.md`.

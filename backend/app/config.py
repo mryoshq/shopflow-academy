@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     main_course_slug: str = "python-data-engineering-sql"
     main_course_title: str = "Python Data Engineering & SQL Avancé"
     class_label: str = "Classe B3 IA/Data"
+    # Course videos copied at import, served read-only by the gateway under /media/.
+    media_dir: str = "/srv/media"
     ai_provider: str = "none"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

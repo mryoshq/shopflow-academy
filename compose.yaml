@@ -46,6 +46,9 @@ services:
     build: ./backend
     restart: unless-stopped
     environment: *backend_env
+    volumes:
+      # Course videos copied at import (content-addressed); served read-only by the gateway.
+      - media_data:/srv/media
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -73,6 +76,8 @@ services:
     restart: unless-stopped
     ports:
       - "127.0.0.1:${ACADEMY_HOST_PORT:-3080}:8080"
+    volumes:
+      - media_data:/srv/media:ro
     depends_on:
       backend:
         condition: service_healthy
@@ -127,3 +132,4 @@ networks:
 volumes:
   pg_data:
   mysql_data:
+  media_data:

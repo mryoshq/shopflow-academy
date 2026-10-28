@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { Box, Button, Flex, NativeSelect, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
 import { CodeBlock, Comparison, DataTable, LineChart } from "./displays"
+import { AnimationPlayer, FlowDiagram, MindMap, VideoView } from "./media"
 import type { Choice, DisplayData } from "../studioTypes"
 import type { Answer, PlayerDefinition } from "./types"
 
@@ -119,6 +120,10 @@ export function DataView({ data }: { data: DisplayData | null }) {
   if (data.kind === "line_chart") return <LineChart data={data} />
   if (data.kind === "code") return <CodeBlock code={data.code} language={data.language} title={data.title} />
   if (data.kind === "comparison") return <Comparison data={data} />
+  if (data.kind === "animation") return <AnimationPlayer data={data} />
+  if (data.kind === "mindmap") return <MindMap data={data} />
+  if (data.kind === "flow") return <FlowDiagram data={data} />
+  if (data.kind === "video") return <VideoView data={data} />
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3">
     {asTable ? <DataTable caption={data.title} columns={["Libellé", data.unit ? `Valeur (${data.unit})` : "Valeur"]}
