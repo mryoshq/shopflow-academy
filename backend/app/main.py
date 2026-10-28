@@ -18,6 +18,7 @@ from app.live import router as live_router
 from app.autoplan import router as autoplan_router, start_background
 from app.results import router as results_router
 from app.comfort import router as comfort_router
+from app.observer import router as observer_router
 
 
 class Health(BaseModel):
@@ -62,6 +63,7 @@ app.include_router(live_router)
 app.include_router(autoplan_router)
 app.include_router(results_router)
 app.include_router(comfort_router)
+app.include_router(observer_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])

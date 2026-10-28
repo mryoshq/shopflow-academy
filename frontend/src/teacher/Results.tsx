@@ -5,7 +5,7 @@ import { ErrorState, Icon, LoadingState, Panel } from "../student/ui"
 
 type Unsuccessful = { mission_version_id: number; title: string; best_points: number; possible: number; attempts: number }
 export type ResultStudent = {
-  id: number; display_name: string; core_points: number; core_possible: number; bonus_points: number
+  id?: number; position?: number; display_name: string; core_points: number; core_possible: number; bonus_points: number
   percentage: number | null; needs_support: boolean; completed: number; total: number; unsuccessful_count: number
   unsuccessful_missions: Unsuccessful[]
 }
@@ -17,7 +17,7 @@ type Sort = "support" | "name" | "percentage_asc" | "percentage_desc"
 const number = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 })
 
 /** Results are a read-only projection: the platform owns every score and support flag. */
-export function Results({ assignmentId }: { assignmentId: number }) {
+export function Results({ assignmentId, scope = "teacher" }: { assignmentId: number; scope?: "teacher" | "observer" }) {
   const [data, setData] = useState<ResultsData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [threshold, setThreshold] = useState(50)
@@ -29,7 +29,7 @@ export function Results({ assignmentId }: { assignmentId: number }) {
   useEffect(() => {
     let active = true
     setError(null); setData(null)
-    void api<ResultsData>(`/teacher/classes/${assignmentId}/results?threshold=${threshold}`)
+    void api<ResultsData>(`/${scope}/classes/${assignmentId}/results?threshold=${threshold}`)
       .then(next => { if (active) setData(next) })
       .catch(reason => {
         if (active && !(reason instanceof ApiError && reason.status === 401)) setError("Impossible de charger les résultats.")
@@ -60,7 +60,7 @@ export function Results({ assignmentId }: { assignmentId: number }) {
       </Stack>
       <Flex gap="2" wrap="wrap">
         <Button size="sm" variant="outline" onClick={() => setRefresh(value => value + 1)}><Icon name="retry" size={16} />Actualiser</Button>
-        {data && <Button size="sm" colorPalette="brand" asChild><a href={`/api/v1/teacher/classes/${assignmentId}/results/export.csv?threshold=${data.threshold}`} download>Exporter les notes (CSV)</a></Button>}
+        {data && <Button size="sm" colorPalette="brand" asChild><a href={`/api/v1/${scope}/classes/${assignmentId}/results/export.csv?threshold=${data.threshold}`} download>Exporter les notes (CSV)</a></Button>}
       </Flex>
     </Flex>
     <Panel minW="0">
@@ -95,7 +95,7 @@ export function Results({ assignmentId }: { assignmentId: number }) {
         <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des notes (défilement horizontal)">
           <Table.Root size="sm" variant="line" aria-label="Notes de la classe">
             <Table.Header><Table.Row bg="app.sunken">{["Étudiant", "Points principaux", "Points bonus", "Pourcentage", "Missions réussies", "Missions non réussies", "Accompagnement"].map(label => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
-            <Table.Body>{rows.map(row => <Table.Row key={row.id} bg={row.needs_support ? "saffron.subtle" : undefined}>
+            <Table.Body>{rows.map(row => <Table.Row key={row.id ?? row.position ?? row.display_name} bg={row.needs_support ? "saffron.subtle" : undefined}>
               <Table.Cell fontWeight="semibold" minW="32" overflowWrap="anywhere">{row.display_name}</Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{number.format(row.core_points)} / {number.format(row.core_possible)}</Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{number.format(row.bonus_points)}</Table.Cell>

@@ -29,6 +29,7 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
 ```
 
 - Les fichiers contiennent les corrigés : **jamais** dans le dépôt public de la plateforme, une issue publique, un gist ou un lien partagé.
+- Un observateur (ADR-0025) voit le cours publié comme un étudiant ; il ne voit les corrigés que si l'enseignant l'autorise pour ce compte.
 - Le compilateur lit les fichiers `.md` de `cours/` **dans l'ordre de leur nom** et les assemble en un seul cours. Il ignore `RETOURS-PLATEFORME.md`, `COVERAGE.md`, `QUESTIONS.md` et `README.md`.
 - Commandes (agent plateforme, sur le Mac) : `python3 scripts/course_md.py compile "<dossier du cours>/cours"` puis `python3 scripts/course_md.py import "<dossier du cours>/cours" < .local/teacher-email.txt` (brouillon). Le rapport `RETOURS-PLATEFORME.md` est écrit dans `<dossier du cours>/` (le parent de `cours/`). Exemple complet et testé en CI : `docs/examples/demo-course/` du dépôt plateforme.
 - Chaîne, quand l'enseignant annonce « le cours est prêt » : l'agent plateforme lance `scripts/course_md.py compile "<dossier du cours>/cours"` (validation, erreurs avec fichier et ligne), écrit ses retours dans `<dossier du cours>/RETOURS-PLATEFORME.md`, puis, à 0 erreur, importe **en brouillon** (`import`) → aperçu par l'enseignant → publication **sur son accord écrit seulement** → les modules s'ouvrent ensuite un par un depuis le suivi de classe.

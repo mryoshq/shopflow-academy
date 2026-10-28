@@ -24,7 +24,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.curriculum_schema import UNGRADED_KINDS
-from app.auth import AuthContext, aware, current_auth, display_name, require_csrf, require_student, require_teacher, require_teacher_csrf, utcnow
+from app.auth import AuthContext, aware, display_name, require_member, require_member_csrf, require_student, require_teacher, require_teacher_csrf, utcnow
 from app.curriculum_schema import HTML_TAG
 from app.database import get_db
 from app.models import (
@@ -96,7 +96,7 @@ def notification_out(item: Notification, names: dict[int, str] | None = None) ->
 
 @router.get("/notifications")
 def my_notifications(response: Response, after: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100),
-                     auth: AuthContext = Depends(current_auth), db: Session = Depends(get_db)) -> dict:
+                     auth: AuthContext = Depends(require_member), db: Session = Depends(get_db)) -> dict:
     """The current user's notifications, newest first (``after``: only newer than this id)."""
     response.headers["Cache-Control"] = "no-store"
     query = select(Notification).where(Notification.recipient_id == auth.user.id, Notification.id > after)
@@ -107,7 +107,7 @@ def my_notifications(response: Response, after: int = Query(0, ge=0), limit: int
 
 
 @router.post("/notifications/{notification_id}/read")
-def read_notification(notification_id: int, auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
+def read_notification(notification_id: int, auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     item = db.get(Notification, notification_id)
     if item is None or item.recipient_id != auth.user.id:
         raise HTTPException(status_code=404, detail="notification not found")
@@ -118,7 +118,7 @@ def read_notification(notification_id: int, auth: AuthContext = Depends(require_
 
 
 @router.post("/notifications/read-all")
-def read_all(auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
+def read_all(auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     now = utcnow()
     count = 0
     for item in db.scalars(select(Notification).where(Notification.recipient_id == auth.user.id, Notification.read_at.is_(None))):
@@ -135,7 +135,7 @@ class HeartbeatInput(BaseModel):
 
 
 @router.post("/presence")
-def heartbeat(payload: HeartbeatInput, auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
+def heartbeat(payload: HeartbeatInput, auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     """Every 30 s from an open page. Extra beats within 10 s are not written (cheap for 10 students)."""
     now = utcnow()
     row = db.get(Presence, auth.user.id)
@@ -169,7 +169,7 @@ class PushInput(BaseModel):
 
 
 @router.get("/push/key")
-def push_key(response: Response, auth: AuthContext = Depends(current_auth)) -> dict:
+def push_key(response: Response, auth: AuthContext = Depends(require_member)) -> dict:
     from app.config import get_settings
     from app.webpush import enabled
 
@@ -178,7 +178,7 @@ def push_key(response: Response, auth: AuthContext = Depends(current_auth)) -> d
 
 
 @router.post("/push/subscribe", status_code=201)
-def push_subscribe(payload: PushInput, auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
+def push_subscribe(payload: PushInput, auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     from app.webpush import allowed_endpoint, enabled
 
     if not enabled():
@@ -198,7 +198,7 @@ def push_subscribe(payload: PushInput, auth: AuthContext = Depends(require_csrf)
 
 
 @router.post("/push/unsubscribe")
-def push_unsubscribe(payload: PushInput, auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
+def push_unsubscribe(payload: PushInput, auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     item = db.scalar(select(PushSubscription).where(PushSubscription.endpoint == payload.endpoint, PushSubscription.user_id == auth.user.id))
     if item is not None:
         db.delete(item)

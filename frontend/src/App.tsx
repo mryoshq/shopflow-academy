@@ -2,6 +2,7 @@ import { useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
+import { ObserverHome } from "./observer/ObserverHome"
 import { ThemeSwitch } from "./ThemeSwitch"
 import { Logo } from "./Logo"
 import { NotificationBell, NotificationProvider } from "./live/notifications"
@@ -108,8 +109,8 @@ export function App() {
             <ThemeSwitch />
             {state === "authenticated" && user ? <Flex align="center" gap={{ base: "2", md: "3" }} wrap="wrap" justify="end">
               {user.role === "student" && <ComfortButton />}
-              <NotificationBell />
-              <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
+              {user.role !== "observer" && <NotificationBell />}
+              <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette={user.role === "teacher" ? "saffron" : user.role === "observer" ? "gray" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : user.role === "observer" ? "Observateur (lecture seule)" : "Étudiant"}</Badge>
               <Button size="sm" variant="outline" onClick={onLogout} loading={busy} aria-label="Se déconnecter">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" /></svg>
                 <Box as="span" display={{ base: "none", sm: "inline" }}>Se déconnecter</Box></Button>
@@ -154,7 +155,8 @@ export function App() {
             </Box>
           </Flex>
         )}
-        {state === "authenticated" && user && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
+        {state === "authenticated" && user?.role === "observer" && <Stack gap="4"><ObserverHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}
+        {state === "authenticated" && user && user.role !== "observer" && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
           <Stack gap="8">
             <Stack gap="2">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
@@ -168,7 +170,7 @@ export function App() {
     </Box>
   )
   // ADR-0023: notifications for the signed-in user; students also send a presence heartbeat.
-  return state === "authenticated" && user
+  return state === "authenticated" && user && user.role !== "observer"
     ? <NotificationProvider key={user.id} heartbeat={user.role === "student"}>{page}</NotificationProvider>
     : page
 }

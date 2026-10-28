@@ -15,7 +15,7 @@ import re
 
 from fastapi import APIRouter, Depends, Response
 
-from app.auth import AuthContext, current_auth
+from app.auth import AuthContext, require_member
 from app.config import get_settings
 
 router = APIRouter(prefix="/api/v1", tags=["comfort"])
@@ -44,6 +44,6 @@ def radio_streams(raw: str) -> list[dict]:
 
 
 @router.get("/radio")
-def radio(response: Response, auth: AuthContext = Depends(current_auth)) -> dict:
+def radio(response: Response, auth: AuthContext = Depends(require_member)) -> dict:
     response.headers["Cache-Control"] = "no-store"
     return {"streams": radio_streams(get_settings().radio_streams)}
