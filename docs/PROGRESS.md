@@ -1,5 +1,20 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## Résultats — accompagnement, 28/10/2026
+
+Branche `codex/resultats` depuis `main` à jour, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41). Périmètre : `frontend/src/teacher/Results.tsx`, nouveau routeur `backend/app/results.py`, deux lignes d’inclusion dans `main.py`, tests dédiés et documentation de ce lot. Aucun changement dans `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Aucune migration, aucun cours ajouté, aucun déploiement.
+
+Lecture `GET /teacher/classes/{assignment_id}/results?threshold=50` : points retenus du moteur, principaux/bonus séparés, pourcentage hors bonus, réussites principales et liste des principales non réussies (y compris non commencées). Seuil de 0 à 100, indicateur strictement sous le seuil ; pas d’indicateur sans barème principal. Icône et texte, tri et filtre ; top 5 hors leçons/bonus calculé sur toute la classe. CSV dédié `…/results/export.csv?threshold=50` : colonnes historiques et format Excel conservés, ajout `a_accompagner` (oui/non), compteur de réussite principale cohérent avec la page ; téléchargement de toute la classe avec le seuil appliqué. Ancien endpoint et suivi laissés intacts pour éviter les conflits avec l’autre agent.
+
+Vérifications ciblées :
+
+- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_results.py tests/test_security_matrix.py tests/test_ownership.py` : 20 tests (authentification, rôle/propriété, absence de corrigés, dégressivité et non-rétroactivité, bonus/leçons, seuil/bornes, CSV/BOM/formules, top 5, classes vides).
+- **PASS** `cd frontend && npm run test -- src/teacher/Results.test.tsx src/teacher/TeacherDashboard.test.tsx --maxWorkers=1` : 11 tests (tri, filtre, détail individuel, seuil/export, cas vide et sans barème, erreur/retry, réponse tardive d’une autre classe).
+- **PASS** `cd frontend && ./node_modules/.bin/tsc --noEmit`.
+- **NOT RUN localement** : suites complètes et E2E, confiées à la CI conformément à la demande. Production inchangée.
+
+Prochaine action : attendre la CI de l’unique PR puis revue/fusion par le propriétaire.
+
 ## K — Classement facultatif, 28/10/2026
 
 Branche `codex/k-classement`, créée sur `main` `14017c2` puis mise à jour par merge de `main` `52079c8` (logo et L), [PR #37](https://github.com/mryoshq/shopflow-academy/pull/37) vers `main`, sans fusion de PR ni déploiement. ADR-0026, migration `0011_leaderboard` après `0010_attempt_rules` (deux nouvelles tables de préférences uniquement). Nouveaux fichiers dédiés pour API, modèles, page, tests ; fichiers partagés limités à l’enregistrement du routeur, des modèles Alembic et à l’entrée de navigation App. Les écrans « Ma classe » et le moteur de notation ne sont pas modifiés par K.

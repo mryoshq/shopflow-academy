@@ -1,5 +1,15 @@
 # HANDOFF — reprise ShopFlow Academy
 
+## Résultats — branche `codex/resultats`, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41) (28/10/2026)
+
+Nouvelle page Résultats et deux endpoints dédiés en lecture/export, sans migration. Seuil d’accompagnement réglable, défaut 50 %, comparaison strictement inférieure au seuil, bonus exclus du pourcentage ; compteurs/difficultés sur missions principales seulement, leçons et bonus exclus. Points retenus fournis par `mission_scores`/`course_score` sans re-noter. Top 5 classe entière ; détail des missions non réussies par étudiant ; icône/texte « À accompagner », tri et filtre.
+
+CSV dédié à la page : `GET /api/v1/teacher/classes/{assignment_id}/results/export.csv?threshold=50`. Format historique préservé, compteur de réussite principale cohérent avec la page, ajout `a_accompagner` ; export de toute la classe quel que soit le filtre. Le seuil est un paramètre de lecture, pas un nouveau réglage de notation. Propriétaire uniquement ; pas de corrigé dans ces réponses ; audit d’export et protection contre les formules conservés.
+
+Fichiers de l’autre agent inchangés : `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Intégration partagée limitée à l’inclusion du nouveau routeur dans `main.py`. Tests ciblés **20 pytest PASS**, **11 Vitest PASS**, **TypeScript PASS**, commandes dans PROGRESS. Suites complètes/E2E : CI ; production **NOT RUN**.
+
+Prochaine action unique : attendre les cinq contrôles verts de la PR, puis revue/fusion par le propriétaire. Après déploiement autorisé à une pause, vérifier l’onglet Résultats, les seuils 50 % et 75 %, le filtre et le CSV ; aucune migration ni opération sur le cours n’est nécessaire.
+
 ## K — Classement facultatif (Codex, 28/10/2026)
 
 Branche `codex/k-classement`, créée sur `main` `14017c2`, puis mise à jour par merge de `main` `52079c8` (logo et L), [PR #37](https://github.com/mryoshq/shopflow-academy/pull/37) vers `main`, sans fusion de PR ni déploiement. ADR `docs/DECISIONS/0026-classement.md`. API, modèles, migration, page et tests propres à K ; seules l’inclusion du routeur, la déclaration des modèles Alembic et la navigation App touchent des fichiers partagés. Ne pas modifier le chantier H/L. Si `main` avance, le fusionner dans cette branche sans force-push, et vérifier la tête de migration (actuellement `0011_leaderboard` après `0010_attempt_rules`, tête unique vérifiée ; tests ciblés repassés après le merge).
