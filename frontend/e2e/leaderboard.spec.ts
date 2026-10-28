@@ -29,7 +29,7 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
       body = value
     } else if (path.endsWith("/leaderboard/name")) { displayName = route.request().postDataJSON().display_name; body = { display_name: displayName } }
     else if (path.endsWith("/classes/4/leaderboard")) {
-      if (role === "student" && !enabled) { status = 404; body = { detail: "Classement indisponible." } }
+      if (role === "student" && !enabled) { status = 404; body = { detail: "Leaderboard indisponible." } }
       else {
         const rows = [{ rank: 1, display_name: displayName, is_self: role === "student", core_points: core, bonus_points: 2, completed_blocks: 2, today_blocks: 1 },
           { rank: 1, display_name: "Rif", is_self: false, core_points: core, bonus_points: 2, completed_blocks: 2, today_blocks: 1 }]
@@ -44,14 +44,14 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
     await route.fulfill({ status, json: body })
   })
   await page.goto("/#/classement/4")
-  await expect(page.getByRole("heading", { name: "Classement", exact: true })).toBeVisible()
+  await expect(page.getByRole("heading", { name: "Leaderboard", exact: true })).toBeVisible()
   const podium = await page.locator(".leaderboard-podium svg").boundingBox()
   expect(podium?.width).toBeGreaterThan(60)
   expect(podium?.height).toBeGreaterThan(25)
-  const enable = page.getByRole("checkbox", { name: "Activer le classement", exact: true })
+  const enable = page.getByRole("checkbox", { name: "Activer le leaderboard", exact: true })
   await expect(enable).not.toBeChecked()
-  await page.getByText("Activer le classement", { exact: true }).click()
-  await expect(page.getByRole("table", { name: "Classement de la classe" })).toBeVisible()
+  await page.getByText("Activer le leaderboard", { exact: true }).click()
+  await expect(page.getByRole("table", { name: "Leaderboard de la classe" })).toBeVisible()
   await page.getByText("Afficher le top 3 et sa propre position", { exact: true }).click()
   await expect(page.getByRole("checkbox", { name: "Afficher le top 3 et sa propre position" })).toBeChecked()
   await page.getByText("Masquer pendant un bloc ouvert", { exact: true }).click()
@@ -61,7 +61,7 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
 
   role = "student"
   await page.reload()
-  const table = page.getByRole("table", { name: "Classement de la classe" })
+  const table = page.getByRole("table", { name: "Leaderboard de la classe" })
   await expect(table.getByText("Rang 1", { exact: true })).toHaveCount(2)
   await expect(table.getByText("· Vous")).toBeVisible()
   await expect(page.getByRole("textbox", { name: "Votre nom affiché" })).toHaveCount(0)
@@ -78,15 +78,15 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
     await expect(page.locator(".leaderboard-podium")).toHaveCSS("animation-name", "none")
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([])
     await page.screenshot({ path: testInfo.outputPath(`classement-${theme}.png`), fullPage: true, animations: "disabled" })
-    await page.getByRole("tab", { name: "Classement général" }).focus()
+    await page.getByRole("tab", { name: "Leaderboard général" }).focus()
     await page.keyboard.press("ArrowRight")
     await expect(page.getByRole("tab", { name: "Progression du jour" })).toBeFocused()
     await expect(page.getByRole("table", { name: "Blocs terminés aujourd’hui" })).toBeVisible()
     expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([])
-    await page.getByRole("tab", { name: "Classement général" }).click()
+    await page.getByRole("tab", { name: "Leaderboard général" }).click()
   }
   hidden = true
-  await expect(page.getByText(/classement est masqué pendant un bloc ouvert/)).toBeVisible({ timeout: 10_000 })
+  await expect(page.getByText(/leaderboard est masqué pendant un bloc ouvert/)).toBeVisible({ timeout: 10_000 })
   await expect(page.getByRole("table")).toHaveCount(0)
   enabled = false
   await expect(page.getByRole("alert")).toContainText("n’est pas disponible", { timeout: 10_000 })
