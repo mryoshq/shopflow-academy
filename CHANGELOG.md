@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Résultats et accompagnement (`codex/resultats`)
+
+- Résultats : points principaux et bonus séparés, pourcentage principal, missions principales réussies/non réussies et détail par étudiant ; icône et texte « À accompagner » sous un seuil réglable (50 % par défaut), tri et filtre, top 5 des missions les moins réussies sur la classe entière.
+- Endpoint de lecture et CSV propres à Résultats, réservés au propriétaire ; points lus dans le moteur existant, dégressivité et meilleur essai compris. Format CSV conservé (BOM, séparateur, nombres et colonnes historiques), colonne `a_accompagner` ajoutée ; le compteur de réussite suit les missions principales affichées. Sans migration ni modification du suivi ou de la notation.
+
 ## 2026-10-28 — Correctif : blocs terminés et republication (`claude/lucid-brahmagupta-htwgun-lecons`)
 
 - Un bloc est « terminé » quand toutes ses missions notées sont réussies (hors bonus et hors leçons) ; « leçons lues x/y » s'affiche à part (étudiant, « Ma classe », vue de classe). Le score « missions réussies » ne compte plus les leçons.

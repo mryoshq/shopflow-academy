@@ -1,5 +1,15 @@
 # HANDOFF — reprise ShopFlow Academy
 
+## Résultats — branche `codex/resultats` (28/10/2026)
+
+Nouvelle page Résultats et deux endpoints dédiés en lecture/export, sans migration. Seuil d’accompagnement réglable, défaut 50 %, comparaison strictement inférieure au seuil, bonus exclus du pourcentage ; compteurs/difficultés sur missions principales seulement, leçons et bonus exclus. Points retenus fournis par `mission_scores`/`course_score` sans re-noter. Top 5 classe entière ; détail des missions non réussies par étudiant ; icône/texte « À accompagner », tri et filtre.
+
+CSV dédié à la page : `GET /api/v1/teacher/classes/{assignment_id}/results/export.csv?threshold=50`. Format historique préservé, compteur de réussite principale cohérent avec la page, ajout `a_accompagner` ; export de toute la classe quel que soit le filtre. Le seuil est un paramètre de lecture, pas un nouveau réglage de notation. Propriétaire uniquement ; pas de corrigé dans ces réponses ; audit d’export et protection contre les formules conservés.
+
+Fichiers de l’autre agent inchangés : `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Intégration partagée limitée à l’inclusion du nouveau routeur dans `main.py`. Tests ciblés **20 pytest PASS**, **11 Vitest PASS**, **TypeScript PASS**, commandes dans PROGRESS. Suites complètes/E2E : CI ; production **NOT RUN**.
+
+Prochaine action unique : attendre les cinq contrôles verts de la PR, puis revue/fusion par le propriétaire. Après déploiement autorisé à une pause, vérifier l’onglet Résultats, les seuils 50 % et 75 %, le filtre et le CSV ; aucune migration ni opération sur le cours n’est nécessaire.
+
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
 **Prochaine tâche unique : fusionner, dans l'ordre, #35 (variante verte du logo), #36 (logo) puis #38 (partie L, clic au hasard ; migration 0010), et faire leurs « À faire en local » — accord et action du propriétaire.** Les parties suivantes, une PR chacune : H (suivi en direct), K (classement), I (PWA, confort, couleurs), J (observateur).
