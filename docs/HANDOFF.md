@@ -32,7 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis #40 (H, suivi en direct ; migration 0012), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
+**Prochaine tâche unique : relire et fusionner la PR de la partie I (PWA, confort, couleurs ; sans migration) et faire son « À faire en local » — accord et action du propriétaire.** Ensuite : partie J (observateur en lecture seule), une PR, tests ciblés et CI GitHub.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -56,8 +56,10 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 10 | Variante verte du logo (PR du propriétaire) | `design/logo-vert` | [#35](https://github.com/mryoshq/shopflow-academy/pull/35) | **fusionnée** |
 | 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | [#36](https://github.com/mryoshq/shopflow-academy/pull/36) (base : `main`, contient #35 par fusion) | **fusionnée** |
 | 12 | L — décourager le clic au hasard (ADR-0027) | `claude/lucid-brahmagupta-htwgun-l` | [#38](https://github.com/mryoshq/shopflow-academy/pull/38) (base : `main`, contient #36 par fusion) | **fusionnée** |
-| 13 | Correctif : bloc terminé sur les missions notées, leçons lues à part, validations après republication | `claude/lucid-brahmagupta-htwgun-lecons` | [#39](https://github.com/mryoshq/shopflow-academy/pull/39) (base : `main`) | ouverte — **à fusionner en premier** |
-| 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | [#40](https://github.com/mryoshq/shopflow-academy/pull/40) (base : `main`, contient #39 par fusion) | ouverte |
+| 13 | Correctif : bloc terminé sur les missions notées, leçons lues à part, validations après republication | `claude/lucid-brahmagupta-htwgun-lecons` | [#39](https://github.com/mryoshq/shopflow-academy/pull/39) (base : `main`) | **fusionnée** |
+| 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | [#40](https://github.com/mryoshq/shopflow-academy/pull/40) (base : `main`, contient #39 par fusion) | **fusionnée** |
+| 15 | Correctifs de relecture (#39, #40) | `claude/lucid-brahmagupta-htwgun-relecture` | [#44](https://github.com/mryoshq/shopflow-academy/pull/44) | **fusionnée** |
+| 16 | I — PWA, confort (pomodoro, radio), couleurs (ADR-0024) | `claude/lucid-brahmagupta-htwgun-i` | PR I (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -120,6 +122,12 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait` (nouvelle dépendance `cryptography`, nouveau réseau `push` sortant pour le backend), puis `python3 scripts/smoke_public.py`.
 3. Facultatif, Web Push : `docker compose run --rm --no-deps -v "$PWD:/repo" -w /repo backend python scripts/vapid_keys.py` (écrit les clés dans `.env`, n'affiche pas la clé privée), puis `docker compose up -d --wait backend`. Sans clés, les notifications dans la page fonctionnent.
 4. Dans « Ma classe » : « Réglages des notifications » (types, seuil) ; l'ouverture automatique reste désactivée tant que vous ne l'activez pas.
+
+### À faire en local après la PR I
+1. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait` (frontend, backend et gateway : nouvelle CSP), puis `python3 scripts/smoke_public.py`. **Pas de migration, pas de sauvegarde nécessaire.**
+2. Facultatif, radio : vérifier les identifiants proposés dans l'ADR-0024, puis `RADIO_STREAMS='[...]'` dans `.env` et `docker compose up -d --wait backend`. Sans cette variable, aucune radio n'est proposée.
+3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
+4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
 
 ### Attend l'accord du propriétaire
 - Fusion de #35 (variante verte), puis #36 (logo), puis #38 (L).

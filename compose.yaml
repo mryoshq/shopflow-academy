@@ -34,6 +34,8 @@ services:
       APP_EXTRA_ORIGINS: ${APP_EXTRA_ORIGINS:-}
       APP_SECRET: ${APP_SECRET:-}
       AI_PROVIDER: ${AI_PROVIDER:-none}
+      # Optional radio (ADR-0024): JSON list of YouTube nocookie embeds; empty = no radio.
+      RADIO_STREAMS: ${RADIO_STREAMS:-}
       # Web Push (ADR-0023): generated locally by scripts/vapid_keys.py into .env. Empty = off.
       VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY:-}
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}

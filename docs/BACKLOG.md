@@ -27,7 +27,9 @@
 - [x] **S2-G2** Plan du cours (studio, aperçu), objectifs par catégorie, objectif de bloc côté étudiant sans code, logo et icônes. ADR-0022b, migration 0009. Preuves : pytest 216, Vitest 51, build, Playwright 28 (après fusion de `main`) — voir PROGRESS.
 - [x] **S2-L** Décourager le clic au hasard (ADR-0027) : règles par cours (points dégressifs, pause après erreur, lecture minimale, clics rapides, annonce), non rétroactives, rejouables, auditées. Preuves : voir PROGRESS.
 - [x] **S2-H** Suivi en direct (ADR-0023) : présence, notifications, déblocage individuel, ouverture automatique. Preuves : voir PROGRESS.
-- [ ] Ordre restant : **S2-I** PWA, radio, pomodoro, couleurs (ADR-0024). **S2-J** Observateur en lecture seule (ADR-0025). **S2-K** Classement de la classe (ADR-0026).
+- [x] **S2-I** PWA, radio, pomodoro, couleurs (ADR-0024). Preuves : voir PROGRESS.
+- [x] **S2-K** Classement de la classe (ADR-0026), livré par #37.
+- [ ] Ordre restant : **S2-J** Observateur en lecture seule (ADR-0025).
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 

@@ -16,7 +16,8 @@ from test_student import env, missions_of, post  # noqa: F401  (fixture reuse)
 PUBLIC = {("/api/v1/auth/login", "POST"), ("/api/v1/status", "GET")}
 # Any signed-in user, own data only (ADR-0023: presence, own notifications, own push subscriptions).
 SELF_SERVICE = {"/api/v1/auth/me", "/api/v1/auth/logout", "/api/v1/presence", "/api/v1/notifications", "/api/v1/notifications/read-all",
-                "/api/v1/notifications/{notification_id}/read", "/api/v1/push/key", "/api/v1/push/subscribe", "/api/v1/push/unsubscribe"}
+                "/api/v1/notifications/{notification_id}/read", "/api/v1/push/key", "/api/v1/push/subscribe", "/api/v1/push/unsubscribe",
+                "/api/v1/radio"}
 
 
 def api_routes() -> list[tuple[str, str]]:

@@ -40,7 +40,8 @@ const config = defineConfig({
       // Every colour has a light value and a `_dark` value (docs/DESIGN.md). Pairs meet WCAG AA in both.
       colors: {
         brand: {
-          solid: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.500}" } },
+          // ADR-0024: white on brand.600 = 7.02:1 (AAA) in both themes (was 5.18:1 in dark).
+          solid: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.600}" } },
           contrast: { value: { base: "white", _dark: "white" } },
           fg: { value: { base: "{colors.brand.700}", _dark: "{colors.brand.300}" } },
           muted: { value: { base: "{colors.brand.100}", _dark: "{colors.brand.800}" } },
@@ -72,6 +73,8 @@ const config = defineConfig({
           border: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
           ink: { value: { base: "#14211F", _dark: "#E6EEEB" } },
           muted: { value: { base: "#4A5A56", _dark: "#A9B8B4" } },
+          // Form field borders: >= 3:1 against canvas, surface and sunken (WCAG 1.4.11), ADR-0024.
+          field: { value: { base: "#7D8884", _dark: "#667874" } },
         },
         // Code blocks: syntax colours at least 4.5:1 on code.bg in both themes.
         code: {
@@ -93,6 +96,14 @@ const config = defineConfig({
       shadows: {
         card: { value: { base: "0 1px 2px rgba(20, 33, 31, 0.06), 0 4px 16px rgba(20, 33, 31, 0.04)", _dark: "0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25)" } },
       },
+    },
+    // ADR-0024: visible field boundaries (3:1) for text inputs, text areas and selects.
+    recipes: {
+      input: { variants: { variant: { outline: { borderColor: "app.field" } } } },
+      textarea: { variants: { variant: { outline: { borderColor: "app.field" } } } },
+    },
+    slotRecipes: {
+      nativeSelect: { slots: ["root", "field", "indicator"], variants: { variant: { outline: { field: { borderColor: "app.field" } } } } },
     },
   },
 })
