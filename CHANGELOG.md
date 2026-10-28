@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — Correctifs de relecture (`claude/lucid-brahmagupta-htwgun-relecture`)
+
+- Une leçon ne rapporte jamais de points, même si une ancienne version était notée ; une réussite notée ne vaut pas lecture.
+- Reprise entre versions par mission (même mission, ou même slug à la même place) : un slug réutilisé dans un autre bloc est une autre mission, une tentative ne compte qu'une fois.
+- Un bloc ouvert pendant le chargement de la page rafraîchit le tableau de bord ; « Activer les notifications hors de l'onglet » reste proposé si l'autorisation est déjà donnée sans abonnement Web Push.
+
 ## 2026-10-28 — Sprint 2, partie H : suivi en direct (`claude/lucid-brahmagupta-htwgun-h`)
 
 - Présence (30 s), grille étudiants × blocs dans « Ma classe », message aux étudiants (280 caractères, accusés de lecture), notifications automatiques, centre de notifications de l'enseignant (aide, blocage, bloc terminé à X %, ouverture automatique, déconnexion ; réglages par type), cloche et historique, notifications système et Web Push facultatif.
