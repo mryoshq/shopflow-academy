@@ -174,7 +174,7 @@ def test_student_projection_of_every_kind_has_no_answer_key(env):
     assert first.status_code == 201 and first.json()["correct"] is True and first.json()["points"] == 0
     assert again.status_code == 200 and again.json()["attempt_id"] == first.json()["attempt_id"]
     course = next(c for c in a.get("/api/v1/student/dashboard").json()["courses"] if c["release_id"] == release)
-    assert course["score"]["completed"] == 1 and course["score"]["core_points"] == 0 and course["score"]["core_possible"] == 25
+    assert course["score"]["completed"] == 0 and course["score"]["lessons_read"] == 1 and course["score"]["core_points"] == 0 and course["score"]["core_possible"] == 25
     assert post(a, f"/api/v1/student/missions/{by_slug['demo-frais-livraison']['mission_version_id']}/understood").status_code == 422
 
 

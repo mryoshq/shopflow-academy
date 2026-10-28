@@ -8,7 +8,7 @@ export const REFRESH_MS = 5000
 
 export type ClassSummary = { id: number; cohort: string; course_title: string; version: number; paused: boolean; student_count: number }
 export type OverviewStudent = {
-  id: number; display_name: string; completed: number; total: number; core_points: number; core_possible: number; bonus_points: number
+  id: number; display_name: string; completed: number; total: number; lessons_read?: number; lessons_total?: number; core_points: number; core_possible: number; bonus_points: number
   attempts: number; hints: number; current_mission: string | null; last_activity: string | null; active: boolean; needs_help: string[]
   /** ADR-0027: attempts marked « rapide » (no sanction). */
   fast_attempts?: number
@@ -194,7 +194,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
             </Table.Row></Table.Header>
             <Table.Body>{overview.students.map((row) => <Table.Row key={row.id} bg={row.needs_help.length ? "saffron.subtle" : undefined}>
               <Table.Cell fontWeight="semibold"><Flex gap="2" align="center" wrap="wrap">{row.display_name}<FastBadge count={row.fast_attempts} /></Flex></Table.Cell>
-              <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.completed} / {row.total}</Table.Cell>
+              <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.completed} / {row.total}{row.lessons_total ? <Text as="span" display="block" fontSize="xs" color="app.muted">leçons lues {row.lessons_read}/{row.lessons_total}</Text> : null}</Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{formatPoints(row.core_points)} / {row.core_possible}{row.bonus_points > 0 ? ` (+${formatPoints(row.bonus_points)} bonus)` : ""}</Table.Cell>
               <Table.Cell>{row.current_mission ?? "—"}</Table.Cell>
               <Table.Cell color="app.muted">{since(row.last_activity, now)}</Table.Cell>

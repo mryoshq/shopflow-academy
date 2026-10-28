@@ -105,6 +105,7 @@ def overview(assignment_id: int, response: Response, auth: AuthContext = Depends
         rows.append({
             "id": student.id, "display_name": display_name(student.username),
             "completed": summary["completed"], "total": summary["total"],
+            "lessons_read": summary["lessons_read"], "lessons_total": summary["lessons_total"],
             "core_points": summary["core_points"], "core_possible": summary["core_possible"],
             "bonus_points": summary["bonus_points"], "attempts": len(attempts), "hints": len(hints),
             "current_mission": titles.get(last[1]) if last else None, "last_activity": last[0].isoformat() if last else None,

@@ -7,6 +7,11 @@
 - Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0011_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
 - Retours CI K : propriété vérifiée avant validation des réglages (404 pour une autre classe même avec un corps invalide), navigation sans débordement mobile avec libellés longs ; régressions ciblées ajoutées.
 
+## 2026-10-28 — Correctif : blocs terminés et republication (`claude/lucid-brahmagupta-htwgun-lecons`)
+
+- Un bloc est « terminé » quand toutes ses missions notées sont réussies (hors bonus et hors leçons) ; « leçons lues x/y » s'affiche à part (étudiant, « Ma classe », vue de classe). Le score « missions réussies » ne compte plus les leçons.
+- Après une republication, une leçon validée dans n'importe quelle version publiée du même slug reste lue, et une mission inchangée (même définition) reste réussie. Calcul à la lecture : les validations déjà enregistrées comptent tout de suite, sans migration ni copie.
+
 ## 2026-10-28 — Sprint 2, partie L : décourager le clic au hasard (`claude/lucid-brahmagupta-htwgun-l`)
 
 - « Mon cours » → « Règles » : points dégressifs (100/70/50 puis 30 %, missions principales seulement), pause après une erreur (10/20/30 s, 429 côté serveur), lecture minimale des leçons (200 mots/min, 10 à 60 s, vérifiée par le serveur), repérage des clics rapides (badge dans « Ma classe », sans sanction), annonce modifiable. Tout désactivé par défaut sauf le repérage ; réglages audités.
