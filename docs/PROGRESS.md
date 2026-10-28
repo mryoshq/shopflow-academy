@@ -17,6 +17,8 @@
 
 ## Prochain lot réel
 
+**28/10/2026 :** P0-05 à P0-09 livrés (PR #18 à #22), P0-10 partiel (#23). Prochaine tâche : finir P0-10 après création de la route Cloudflare par le propriétaire. Texte historique ci-dessous.
+
 **P0-05** — lecteur étudiant générique et tableau de bord initial, seulement après revue de P0-04. Aucun cours définitif avant P2. Intégrer manuellement les PR dans l'ordre #11 → #12 → #13 → #14 après revue et CI ; ne pas fusionner automatiquement.
 
 ## Registre des sessions
@@ -36,3 +38,4 @@
 | 2026-10-28 | P0-07 | `feat/p0-07-teacher-dashboard` (empilée sur #19) ; [issue #7](https://github.com/mryoshq/shopflow-academy/issues/7) | `pytest -q` PASS 46 ; Vitest PASS 21 ; build PASS ; `npm run test:e2e` PASS 7 (latence suivi 4,4 s ≤ 10 s, mesurée 3 fois) ; migration 0006 PostgreSQL PASS ; CI #19 verte | Pause toujours relâchée en fin de test. |
 | 2026-10-28 | P0-08 | `feat/p0-08-content-admin` (empilée sur #20) ; [issue #8](https://github.com/mryoshq/shopflow-academy/issues/8) | `pytest -q` PASS 51 ; Vitest PASS 25 ; build PASS ; `npm run test:e2e` PASS 8 (import navigateur, refus d'un fichier malformé, publication, restauration) ; CI #20 verte | Aucun contenu réel importé. |
 | 2026-10-28 | P0-09 | `feat/p0-09-quality` (empilée sur #21) ; [issue #9](https://github.com/mryoshq/shopflow-academy/issues/9) | `pytest -q` PASS 56 ; Vitest PASS 25 ; `npm run test:e2e` PASS 9 (deux fois) ; `load_test.py` PASS (0 erreur, 0 doublon, p95 ≤ 292 ms) ; `persistence_check.py` PASS ; smoke 13/13 ; CI #21 verte | n8n inchangé pendant les redémarrages (seul le projet `shopflow-academy` est touché). |
+| 2026-10-28 | P0-10 (partiel) | `feat/p0-10-operations` (empilée sur #22) ; [issue #10](https://github.com/mryoshq/shopflow-academy/issues/10) | service `backup` : 1re sauvegarde vérifiée PASS ; `restore_check.py` PASS (19 tables identiques) ; `ops_status.py` PASS ; `docker compose config --quiet` PASS ; route publique et test distant **NOT RUN** (tableau de bord Cloudflare non accessible) | n8n 302 inchangé. FileVault actif. |

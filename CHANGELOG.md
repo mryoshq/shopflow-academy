@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — P0-10 exploitation, partiel (`feat/p0-10-operations`)
+
+- Service Compose `backup` : sauvegardes PostgreSQL vérifiées toutes les 6 h, rétention, SHA-256.
+- `scripts/restore_check.py` (restauration testée dans un conteneur jetable), `scripts/ops_status.py` (contrôle avant cours), rotation des journaux, `docs/RUNBOOK.md`, ADR-0015.
+
 ## 2026-10-28 — P0-09 qualité et démonstration complète (`feat/p0-09-quality`)
 
 - Matrice d'autorisation générée depuis toutes les routes (anonyme, rôles, CSRF) et contrôles inter-comptes.

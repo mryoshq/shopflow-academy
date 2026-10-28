@@ -1,6 +1,12 @@
 name: shopflow-academy
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
 services:
   postgres:
+    logging: *logging
     image: postgres:16-alpine
     restart: unless-stopped
     environment:
@@ -17,6 +23,7 @@ services:
     networks: [private]
 
   migrate:
+    logging: *logging
     build: ./backend
     command: ["alembic", "upgrade", "head"]
     restart: "no"
@@ -33,6 +40,7 @@ services:
     networks: [private]
 
   backend:
+    logging: *logging
     build: ./backend
     restart: unless-stopped
     environment: *backend_env
@@ -47,6 +55,7 @@ services:
     networks: [private]
 
   frontend:
+    logging: *logging
     build: ./frontend
     restart: unless-stopped
     healthcheck:
@@ -57,6 +66,7 @@ services:
     networks: [private]
 
   gateway:
+    logging: *logging
     build: ./gateway
     restart: unless-stopped
     ports:
@@ -67,6 +77,26 @@ services:
       frontend:
         condition: service_healthy
     networks: [edge, private]
+
+  backup:
+    # Automatic, verified pg_dump every BACKUP_INTERVAL_HOURS into BACKUP_DIR (P0-10).
+    image: postgres:16-alpine
+    logging: *logging
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/ops/backup.sh"]
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?}
+      POSTGRES_DB: ${POSTGRES_DB:?}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      BACKUP_KEEP: ${BACKUP_KEEP:-28}
+      BACKUP_INTERVAL_HOURS: ${BACKUP_INTERVAL_HOURS:-6}
+    volumes:
+      - ./scripts/ops/backup.sh:/ops/backup.sh:ro
+      - ${BACKUP_DIR:-./.backups}:/backups
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [private]
 
   mysql:
     # Only needed when labs are developed: docker compose --profile labs up -d

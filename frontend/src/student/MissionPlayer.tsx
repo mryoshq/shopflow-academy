@@ -32,7 +32,6 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       setMission(data)
       if (data.definition) setAnswer(loadDraft(missionId) ?? emptyAnswer(data.definition))
       rememberLastMission(missionId)
-      requestAnimationFrame(() => headingRef.current?.focus())
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
       setLoadError(error instanceof ApiError && error.status === 404
@@ -42,6 +41,10 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   }, [missionId])
 
   useEffect(() => { void load() }, [load])
+  // Move focus right after React commits, so keyboard and screen-reader users land on the new content.
+  const loadedId = mission?.mission_version_id
+  useEffect(() => { if (loadedId) headingRef.current?.focus() }, [loadedId])
+  useEffect(() => { if (result) feedbackRef.current?.focus() }, [result])
 
   function change(next: Answer) {
     setAnswer(next)
@@ -69,7 +72,6 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         explanation: response.explanation ?? current.explanation, score: response.score,
       })
       setHistory(null)
-      requestAnimationFrame(() => feedbackRef.current?.focus())
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
       if (error instanceof ApiError && error.status === 429) setSubmitError("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer.")

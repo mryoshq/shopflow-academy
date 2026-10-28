@@ -21,3 +21,5 @@ test-results/
 *.key
 *.p12
 *.pfx
+.backups/
+*.dump
