@@ -21,6 +21,8 @@ export type DashboardMission = {
 export type DashboardBlock = {
   id: number
   title: string
+  /** The block's objective in one sentence, never its code (open blocks only). */
+  objective?: string
   open: boolean
   mission_count: number
   bonus_count: number

@@ -144,6 +144,7 @@ function BlockCard({ block, missions, offset, navigate }: { block: DashboardBloc
       {block.open && block.mission_count > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_count} / {block.mission_count} mission{block.mission_count > 1 ? "s" : ""}{block.bonus_count ? ` · ${block.bonus_count} bonus` : ""}</Text>}
       <Badge colorPalette={state.palette} variant={state.variant} rounded="full" gap="1">{block.done && <Icon name="check" size={12} />}{!block.open && <Icon name="clock" size={12} />}{state.label}</Badge>
     </Flex>
+    {block.open && block.objective && <Flex gap="2" align="start" mt="-1" mb="3" fontSize="sm" color="brand.fg"><Box mt="0.5" flexShrink={0}><Icon name="target" size={14} /></Box><Text><Text as="span" fontWeight="semibold">Objectif : </Text>{block.objective}</Text></Flex>}
     {!block.open && missions.length === 0 && <Text fontSize="sm" color="app.muted">Votre enseignant ouvrira ce bloc pendant la séance.</Text>}
     {missions.length > 0 && <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
       {missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={offset + index} navigate={navigate} />)}

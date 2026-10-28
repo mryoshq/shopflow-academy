@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie G2 : plan du cours, objectifs par catégorie, logo et icônes (`claude/lucid-brahmagupta-htwgun-g2`)
+
+- Studio et aperçu : plan module → bloc → éléments, blocs repliables (le bloc courant ouvert), une ligne par élément (type, points, durée, badges Leçon / Bonus / Exécution, état), en-tête de bloc (numéro, durée, points), compteurs, recherche et filtre par type ; navigation par bloc dans l'aperçu.
+- Objectifs groupés par catégorie (`category` facultatif, sinon déduit de `SQL-`, `PY-`, `BLOC-`), couverture cliquable, alerte si aucun élément ne couvre l'objectif. Migration 0009.
+- Étudiant : objectif de chaque bloc ouvert en une phrase, aucun code d'objectif dans les réponses de l'API.
+- Logo original (monogramme), favicon SVG, PNG 32/192/512, apple-touch-icon, icône masquable, `theme-color` clair et sombre. ADR-0022b.
 ## 2026-10-28 — Sprint 2, partie G : mise en page des leçons (`claude/lucid-brahmagupta-htwgun-g`)
 
 - Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs) affichés dans un ordre fixe (objectif, accroche, vocabulaire, texte, exemple résolu, média, « À vous ») ; l'ancien format `body` seul reste valable.

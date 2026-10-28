@@ -3,6 +3,7 @@ import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Text
 import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
+import { Logo } from "./Logo"
 import type { User } from "./studioTypes"
 
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
@@ -93,7 +94,7 @@ export function App() {
         <Container maxW="7xl" py="3.5">
           <Flex align="center" justify="space-between" gap="3" wrap="wrap">
             <Flex align="center" gap="2.5">
-              <Box w="8" h="8" rounded="lg" bg="brand.solid" color="brand.contrast" display="grid" placeItems="center" fontWeight="bold" fontSize="sm" aria-hidden="true">SF</Box>
+              <Logo size={32} />
               <Text fontWeight="bold" letterSpacing="0.02em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>
             </Flex>
             <Flex align="center" gap="3" wrap="wrap" justify="end">

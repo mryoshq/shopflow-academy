@@ -51,8 +51,17 @@ objectives:
     statement: Identifier le grain d'une table avant une jointure et éviter la duplication des indicateurs.
   - code: PY-DEDUP
     statement: Détecter et traiter les doublons par clé métier.
+  - code: QUAL-RGPD
+    category: Qualité et conformité
+    statement: Repérer une donnée personnelle dans un fichier importé.
+  - code: BLOC-JOINTURES
+    statement: Expliquer pourquoi un total change après une jointure, puis le corriger.
 ---
 ~~~~
+
+**Catégories d'objectifs** (champ `category` facultatif, 60 caractères au plus) : elles regroupent les objectifs dans le studio. Sans `category`, la catégorie est déduite du code : `SQL-` → SQL, `PY-` → Python, `BLOC-` → **Objectifs de bloc** (repliés par défaut dans le studio), sinon « Autres objectifs ». Le studio affiche pour chaque objectif son code, son énoncé, le nombre d'éléments qui le couvrent (cliquable pour filtrer le plan) et une alerte s'il n'est couvert par aucune mission.
+
+**Côté étudiant, aucun code d'objectif n'est montré.** Sous le titre de chaque bloc ouvert, l'étudiant lit l'objectif du bloc en une phrase : l'énoncé d'un objectif `BLOC-` (ou de catégorie « Objectifs de bloc ») couvert par les missions du bloc, sinon celui du premier objectif qu'elles couvrent ; seule la première phrase est affichée. Écrivez donc des objectifs `BLOC-` courts, une phrase, du point de vue de l'étudiant.
 
 Dans les fichiers de module (un fichier peut contenir un ou plusieurs modules) :
 - `# Module : <titre>` (la **première ligne** non vide en dessous est l'introduction facultative, montrée aux étudiants dès qu'un bloc du module est ouvert ; les lignes suivantes sont des notes pour l'enseignant) ;
@@ -298,6 +307,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 
 | Date | Changement |
 |---|---|
+| 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |
 | 28/10/2026 (sprint 2, C) | Exécution livrée : `run` SQL (base de laboratoire, à la demande), `run` Python (exécuté à la compilation sur le Mac, sortie stockée), `sql_challenge` (corrigé par comparaison de résultats). `datasets/shopflow-lab.sql` chargé à l'import ; `datasets/python/` = répertoire de travail des extraits. Les échecs d'exécution sont des erreurs avec fichier et ligne. |

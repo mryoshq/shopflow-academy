@@ -34,11 +34,17 @@ class ObjectiveDoc(BaseModel):
     model_config = ConfigDict(extra="forbid")
     code: str = Field(pattern=r"^[A-Z0-9_-]{1,40}$")
     statement: str = Field(min_length=1, max_length=1000)
+    category: str = Field(default="", max_length=60)
 
     @field_validator("statement")
     @classmethod
     def safe(cls, value: str) -> str:
         return plain(value)
+
+    @field_validator("category")
+    @classmethod
+    def safe_category(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
 
 
 class MissionDoc(BaseModel):
@@ -200,7 +206,8 @@ def export_tree(tree: dict, definitions: dict[int, dict], source: dict) -> dict:
     return {
         "format": FORMAT, "format_version": 1, "exported_at": datetime.now(timezone.utc).isoformat(), "source": source,
         "course": {"slug": tree["slug"], "title": tree["title"], "description": tree.get("description", "")},
-        "objectives": [{"code": item["code"], "statement": item["statement"]} for item in tree["objectives"]],
+        "objectives": [{"code": item["code"], "statement": item["statement"], **({"category": item["category"]} if item.get("category") else {})}
+                       for item in tree["objectives"]],
         "modules": modules,
     }
 
@@ -281,7 +288,7 @@ def import_course(payload: ImportRequest, response: Response, dry_run: bool = Qu
     db.flush()
     objective_ids: dict[str, int] = {}
     for item in document.objectives:
-        objective = LearningObjective(course_id=course.id, code=item.code, statement=item.statement)
+        objective = LearningObjective(course_id=course.id, code=item.code, statement=item.statement, category=item.category)
         db.add(objective)
         db.flush()
         objective_ids[item.code] = objective.id

@@ -24,6 +24,8 @@
 - [x] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion. ADR-0021. Preuves : pytest 198 (avec base de laboratoire), Vitest 43, build, Playwright (thèmes clair et sombre avec axe, 390×844, raccourcis, réinitialisation) — voir PROGRESS.
 - [x] **S2-E** `docs/SUGGESTIONS.md` : 14 suggestions classées par valeur et effort, décisions du propriétaire attendues.
 - [x] **S2-G** Mise en page des leçons (objectif, accroche, vocabulaire, exemple résolu, « À vous »), description des médias, mise en forme légère. ADR-0022. Preuves : pytest 214 (avec base de laboratoire), Vitest 48, build, Playwright (leçon structurée en clair et en sombre avec axe) — voir PROGRESS.
+- [x] **S2-G2** Plan du cours (studio, aperçu), objectifs par catégorie, objectif de bloc côté étudiant sans code, logo et icônes. ADR-0022b, migration 0009. Preuves : pytest 216, Vitest 51, build, Playwright 28 (après fusion de `main`) — voir PROGRESS.
+- [ ] **S2-H** Suivi en direct (ADR-0023). **S2-I** PWA, radio, pomodoro, couleurs (ADR-0024). **S2-J** Observateur en lecture seule (ADR-0025). **S2-K** Classement de la classe (ADR-0026).
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
