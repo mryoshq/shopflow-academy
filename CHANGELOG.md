@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie H : suivi en direct (`claude/lucid-brahmagupta-htwgun-h`)
+
+- Présence (30 s), grille étudiants × blocs dans « Ma classe », message aux étudiants (280 caractères, accusés de lecture), notifications automatiques, centre de notifications de l'enseignant (aide, blocage, bloc terminé à X %, ouverture automatique, déconnexion ; réglages par type), cloche et historique, notifications système et Web Push facultatif.
+- Déblocage d'un bloc pour un seul étudiant (« Ouvert pour vous »), ouverture automatique des blocs selon le temps restant (planning pondéré, rattrapage, pause, décalage, avance, recalcul, jamais de fermeture). Migration 0011. ADR-0023.
+
 ## 2026-10-28 — Correctif : blocs terminés et republication (`claude/lucid-brahmagupta-htwgun-lecons`)
 
 - Un bloc est « terminé » quand toutes ses missions notées sont réussies (hors bonus et hors leçons) ; « leçons lues x/y » s'affiche à part (étudiant, « Ma classe », vue de classe). Le score « missions réussies » ne compte plus les leçons.

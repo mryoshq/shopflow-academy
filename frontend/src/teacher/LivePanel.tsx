@@ -8,7 +8,8 @@ import { Icon, Panel } from "../student/ui"
 export const LIVE_REFRESH_MS = 5000
 const MAX_MESSAGE = 280
 
-export type LiveCell = { chapter_id: number; state: "closed" | "not_started" | "in_progress" | "done"; done: number; total: number; for_student: boolean }
+export type LiveCell = { chapter_id: number; state: "closed" | "not_started" | "in_progress" | "done"; done: number; total: number; for_student: boolean
+  lessons_read?: number; lesson_count?: number }
 export type LiveStudent = { id: number; name: string; online: boolean; seen_at: string | null; mission: string | null; help: boolean; fast_attempts: number; cells: LiveCell[] }
 export type LiveBlock = { chapter_id: number; position: number; title: string; module: string; open: boolean; mission_count: number }
 export type Live = { generated_at: string; assignment_id: number; online_count: number; student_count: number; blocks: LiveBlock[]; students: LiveStudent[] }
@@ -106,7 +107,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
               const cell = student.cells[index.get(block.chapter_id)!]
               const style = CELL[cell.state]
               const text = cell.state === "done" ? "fait" : cell.state === "in_progress" ? `${cell.done}/${cell.total}` : cell.state === "not_started" ? "—" : ""
-              const label = `${student.name}, ${block.title} : ${style.label}${cell.state === "in_progress" ? ` (${cell.done} sur ${cell.total})` : ""}${cell.for_student ? ", ouvert pour lui" : ""}`
+              const label = `${student.name}, ${block.title} : ${style.label}${cell.state === "in_progress" ? ` (${cell.done} sur ${cell.total})` : ""}${cell.lesson_count ? `, leçons lues ${cell.lessons_read ?? 0}/${cell.lesson_count}` : ""}${cell.for_student ? ", ouvert pour lui" : ""}`
               const interactive = cell.state === "closed" || cell.for_student
               return <Table.Cell key={block.chapter_id} textAlign="center" p="1">
                 {interactive
@@ -115,7 +116,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
                     title={cell.for_student ? "Retirer l’ouverture individuelle" : `Ouvrir pour ${student.name}`} onClick={() => void toggle(student, block, cell)}>
                     {cell.for_student ? <Flex gap="1" align="center" fontSize="xs">{text || "—"}<Icon name="user" size={12} /></Flex> : <Icon name="lock" size={12} />}
                   </Button>
-                  : <Flex role="img" aria-label={label} justify="center" align="center" gap="1" minH="7" rounded="md" bg={style.bg} color={style.fg} fontSize="xs" fontWeight="semibold">
+                  : <Flex role="img" aria-label={label} title={label} justify="center" align="center" gap="1" minH="7" rounded="md" bg={style.bg} color={style.fg} fontSize="xs" fontWeight="semibold">
                     {cell.state === "done" && <Icon name="check" size={12} />}{text}
                   </Flex>}
               </Table.Cell>

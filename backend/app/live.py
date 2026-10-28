@@ -381,7 +381,7 @@ def relock_block_for(assignment_id: int, chapter_id: int, user_id: int, auth: Au
 @router.get("/teacher/classes/{assignment_id}/live")
 def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
     """Students × blocks: done / in progress / not started / closed, « ouvert pour lui », presence, help, fast clicks."""
-    from app.progress import definitions
+    from app.progress import attempts_for, definitions
     from app.student import blocks_of, flatten
 
     response.headers["Cache-Control"] = "no-store"
@@ -395,12 +395,14 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
     solved: set[tuple[int, int]] = set()
     tried: set[tuple[int, int]] = set()
     fast: dict[int, int] = {}
-    for item in db.scalars(select(MissionAttempt).where(MissionAttempt.user_id.in_(ids), MissionAttempt.mission_version_id.in_(vids))).all() if ids and vids else []:
-        tried.add((item.user_id, item.mission_version_id))
+    # Work done before a republication counts (same slug: lesson read, unchanged mission), like the timeline.
+    for item, vid in attempts_for(db, ids, vids):
+        tried.add((item.user_id, vid))
         if item.is_correct:
-            solved.add((item.user_id, item.mission_version_id))
-        if item.fast:
-            fast[item.user_id] = fast.get(item.user_id, 0) + 1
+            solved.add((item.user_id, vid))
+    for item in db.scalars(select(MissionAttempt).where(MissionAttempt.user_id.in_(ids), MissionAttempt.mission_version_id.in_(vids),
+                                                        MissionAttempt.fast.is_(True))).all() if ids and vids else []:
+        fast[item.user_id] = fast.get(item.user_id, 0) + 1
     help_by = {h.user_id for h in db.scalars(select(HelpRequest).where(HelpRequest.user_id.in_(ids), HelpRequest.status == "pending",
                                                                       HelpRequest.mission_version_id.in_(vids))).all()} if ids and vids else set()
     opened = {s.chapter_id for s in db.scalars(select(BlockState).where(BlockState.cohort_id == cohort.id, BlockState.opened_at.is_not(None)))}
@@ -410,9 +412,12 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
     presence = presence_of(db, ids, now)
     blocks = []
     for position, block in enumerate(blocks_of(release.student_snapshot), start=1):
-        core = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs and not defs[m["mission_version_id"]].bonus]
+        # « Terminé » = graded missions only (not bonus, not lesson); lessons counted apart.
+        vids_here = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs]
+        lessons = [vid for vid in vids_here if defs[vid].kind == "lesson"]
+        core = [vid for vid in vids_here if not defs[vid].bonus and defs[vid].kind != "lesson"] or lessons
         blocks.append({"chapter_id": block["chapter_id"], "position": position, "title": block["title"], "module": block["module"],
-                       "open": block["chapter_id"] in opened, "core": core})
+                       "open": block["chapter_id"] in opened, "core": core, "lessons": lessons})
     rows = []
     for student in students:
         cells = []
@@ -423,11 +428,13 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
             started = any((student.id, vid) in tried for vid in block["core"])
             state = ("closed" if not available else "done" if block["core"] and done == len(block["core"])
                      else "in_progress" if started else "not_started")
-            cells.append({"chapter_id": block["chapter_id"], "state": state, "done": done, "total": len(block["core"]), "for_student": mine and not block["open"]})
+            cells.append({"chapter_id": block["chapter_id"], "state": state, "done": done, "total": len(block["core"]), "for_student": mine and not block["open"],
+                          "lessons_read": sum(1 for vid in block["lessons"] if (student.id, vid) in solved), "lesson_count": len(block["lessons"])})
         here = presence[student.id]
         rows.append({"id": student.id, "name": display_name(student.username), "online": here["online"], "seen_at": here["seen_at"],
                      "mission": titles.get(here["mission_version_id"]) if here["mission_version_id"] else None,
                      "help": student.id in help_by, "fast_attempts": fast.get(student.id, 0), "cells": cells})
     return {"generated_at": now.isoformat(), "assignment_id": assignment.id,
             "online_count": sum(1 for r in rows if r["online"]), "student_count": len(rows),
-            "blocks": [{k: v for k, v in b.items() if k != "core"} | {"mission_count": len(b["core"])} for b in blocks], "students": rows}
+            "blocks": [{k: v for k, v in b.items() if k not in ("core", "lessons")} | {"mission_count": len(b["core"]), "lesson_count": len(b["lessons"])}
+                       for b in blocks], "students": rows}

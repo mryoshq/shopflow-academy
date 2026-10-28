@@ -310,7 +310,7 @@ def tick(db: Session, now: datetime | None = None) -> dict:
 
 def class_events(db: Session, now: datetime) -> list[int]:
     """Block completed by X % of the class; student disconnected during an open block."""
-    from app.progress import definitions
+    from app.progress import attempts_for, definitions
     from app.student import blocks_of
     from app.teacher_dashboard import class_students
 
@@ -329,11 +329,11 @@ def class_events(db: Session, now: datetime) -> list[int]:
         blocks = [b for b in blocks_of(release.student_snapshot) if b["chapter_id"] in opened]
         vids = [m["mission_version_id"] for b in blocks for m in b["missions"]]
         defs = definitions(db, vids)
-        solved = set(db.execute(select(MissionAttempt.user_id, MissionAttempt.mission_version_id).where(
-            MissionAttempt.is_correct.is_(True), MissionAttempt.user_id.in_(ids), MissionAttempt.mission_version_id.in_(vids))).all()) if vids else set()
+        solved = {(item.user_id, vid) for item, vid in attempts_for(db, ids, vids) if item.is_correct}
         threshold = int(settings.get("block_done_percent", 80))
         for block in blocks:
-            core = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs and not defs[m["mission_version_id"]].bonus]
+            here = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs]
+            core = [vid for vid in here if not defs[vid].bonus and defs[vid].kind != "lesson"] or [vid for vid in here if defs[vid].kind == "lesson"]
             if not core:
                 continue
             done = sum(1 for sid in ids if all((sid, vid) in solved for vid in core))

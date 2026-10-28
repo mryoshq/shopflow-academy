@@ -2,7 +2,7 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusionner, dans l'ordre, #35 (variante verte du logo), #36 (logo) puis #38 (partie L, clic au hasard ; migration 0010), et faire leurs « À faire en local » — accord et action du propriétaire.** Les parties suivantes, une PR chacune : H (suivi en direct), K (classement), I (PWA, confort, couleurs), J (observateur).
+**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis la PR H (suivi en direct ; migration 0011), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -23,9 +23,11 @@
 | 7 | G — leçons structurées, description des médias, mise en forme légère (ADR-0022) | `claude/lucid-brahmagupta-htwgun-g` | [#32](https://github.com/mryoshq/shopflow-academy/pull/32) | **fusionnée** |
 | 8 | G2 — plan du cours, objectifs par catégorie, logo et icônes (ADR-0022b) | `claude/lucid-brahmagupta-htwgun-g2` | [#33](https://github.com/mryoshq/shopflow-academy/pull/33) | **fusionnée** |
 | 9 | Logo source du propriétaire (`docs/design/`) | `design/logo-proprietaire` | [#34](https://github.com/mryoshq/shopflow-academy/pull/34) | **fusionnée** |
-| 10 | Variante verte du logo (PR du propriétaire) | `design/logo-vert` | [#35](https://github.com/mryoshq/shopflow-academy/pull/35) | ouverte — **à fusionner avant 11** |
-| 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | [#36](https://github.com/mryoshq/shopflow-academy/pull/36) (base : `main`, contient #35 par fusion) | ouverte |
-| 12 | L — décourager le clic au hasard (ADR-0027) | `claude/lucid-brahmagupta-htwgun-l` | [#38](https://github.com/mryoshq/shopflow-academy/pull/38) (base : `main`, contient #36 par fusion) | ouverte |
+| 10 | Variante verte du logo (PR du propriétaire) | `design/logo-vert` | [#35](https://github.com/mryoshq/shopflow-academy/pull/35) | **fusionnée** |
+| 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | [#36](https://github.com/mryoshq/shopflow-academy/pull/36) (base : `main`, contient #35 par fusion) | **fusionnée** |
+| 12 | L — décourager le clic au hasard (ADR-0027) | `claude/lucid-brahmagupta-htwgun-l` | [#38](https://github.com/mryoshq/shopflow-academy/pull/38) (base : `main`, contient #36 par fusion) | **fusionnée** |
+| 13 | Correctif : bloc terminé sur les missions notées, leçons lues à part, validations après republication | `claude/lucid-brahmagupta-htwgun-lecons` | [#39](https://github.com/mryoshq/shopflow-academy/pull/39) (base : `main`) | ouverte — **à fusionner en premier** |
+| 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | PR H (base : `main`, contient #39 par fusion) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -82,6 +84,12 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 ### À faire en local après le correctif leçons (prioritaire)
 1. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait`, puis `python3 scripts/smoke_public.py`. **Pas de migration** : les « J'ai compris » de la version 1 comptent immédiatement (calcul à la lecture).
 2. Vérifier dans « Ma classe » : bloc SQL 01, « terminé » attendu pour les 7 étudiants ayant réussi toutes les missions notées, et « leçons lues x/10 » à côté.
+
+### À faire en local après la PR H
+1. **Sauvegarde manuelle** (migration **0011** : tables `presences`, `notifications`, `block_unlocks`, `push_subscriptions`, `notification_settings`, `block_plans` ; rien d'existant n'est modifié), suffixe `avant-sprint2-h`.
+2. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait` (nouvelle dépendance `cryptography`, nouveau réseau `push` sortant pour le backend), puis `python3 scripts/smoke_public.py`.
+3. Facultatif, Web Push : `docker compose run --rm --no-deps -v "$PWD:/repo" -w /repo backend python scripts/vapid_keys.py` (écrit les clés dans `.env`, n'affiche pas la clé privée), puis `docker compose up -d --wait backend`. Sans clés, les notifications dans la page fonctionnent.
+4. Dans « Ma classe » : « Réglages des notifications » (types, seuil) ; l'ouverture automatique reste désactivée tant que vous ne l'activez pas.
 
 ### Attend l'accord du propriétaire
 - Fusion de #35 (variante verte), puis #36 (logo), puis #38 (L).
