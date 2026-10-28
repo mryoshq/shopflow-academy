@@ -1,7 +1,9 @@
 import { useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react"
+import { TeacherStudio } from "./TeacherStudio"
+import { StudentHome } from "./StudentHome"
+import type { User } from "./studioTypes"
 
-type User = { id: number; username: string; role: "student" | "teacher" }
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
 
 function csrfToken(): string {
@@ -34,6 +36,12 @@ export function App() {
         if (error instanceof Error && error.name !== "AbortError") setState("network_error")
       })
     return () => controller.abort()
+  }, [])
+
+  useEffect(() => {
+    const reset = () => { setUser(null); setState("anonymous") }
+    window.addEventListener("academy:unauthorized", reset)
+    return () => window.removeEventListener("academy:unauthorized", reset)
   }, [])
 
   async function onLogin(event: FormEvent<HTMLFormElement>) {
@@ -84,7 +92,7 @@ export function App() {
         <Container maxW="6xl" py="5">
           <Flex align="center" justify="space-between" gap="4">
             <Text fontWeight="bold" letterSpacing="0.08em">SHOPFLOW / ACADEMY</Text>
-            <Badge colorPalette="teal" variant="subtle">Accès privé</Badge>
+            <Badge colorPalette="teal" variant="subtle">Espace pédagogique</Badge>
           </Flex>
         </Container>
       </Box>
@@ -96,7 +104,7 @@ export function App() {
             <Stack gap="5" flex="1" maxW="xl">
               <Text fontWeight="semibold" color="#306f65" textTransform="uppercase" letterSpacing="0.12em">Python Data Engineering & SQL avancé</Text>
               <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1">Apprendre en agissant sur des données.</Heading>
-              <Text fontSize="lg" color="#405550" lineHeight="1.7">Connectez-vous pour accéder à votre espace. Les cours et le studio de création seront ajoutés progressivement.</Text>
+              <Text fontSize="lg" color="#405550" lineHeight="1.7">Connectez-vous pour accéder à vos cours ou au studio de création.</Text>
             </Stack>
             <Box as="section" bg="white" borderWidth="1px" borderColor="#d8dfd9" rounded="xl" p="8" w="full" maxW="md" aria-label="Connexion">
               <form onSubmit={onLogin}>
@@ -118,19 +126,16 @@ export function App() {
           </Flex>
         )}
         {state === "authenticated" && user && (
-          <Stack gap="8" maxW="3xl">
+          <Stack gap="8">
             <Flex justify="space-between" align="center" gap="4" wrap="wrap">
               <Badge colorPalette="teal" variant="subtle">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
               <Button variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
             </Flex>
             <Stack gap="4">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }}>Bonjour, {user.username}</Heading>
-              <Text fontSize="lg" color="#405550">{user.role === "teacher" ? "Votre espace enseignant est prêt. Le studio de cours arrive dans le lot P0-04." : "Votre espace étudiant est prêt. Aucun cours ne vous est encore attribué."}</Text>
+              <Text fontSize="lg" color="#405550">{user.role === "teacher" ? "Construisez vos cours et missions depuis le navigateur." : "Retrouvez les cours qui vous sont attribués."}</Text>
             </Stack>
-            <Box bg="white" borderWidth="1px" borderColor="#d8dfd9" rounded="xl" p="6">
-              <Heading as="h2" size="md">{user.role === "teacher" ? "Studio de cours" : "Mes cours"}</Heading>
-              <Text mt="3" color="#405550">{user.role === "teacher" ? "Aucun cours publié pour le moment." : "Aucun cours attribué pour le moment."}</Text>
-            </Box>
+            {user.role === "teacher" ? <TeacherStudio /> : <StudentHome />}
             {message && <Text role="alert" color="red.700">{message}</Text>}
           </Stack>
         )}

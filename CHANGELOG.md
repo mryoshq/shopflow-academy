@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-27 — P0-04 ([PR #14](https://github.com/mryoshq/shopflow-academy/pull/14), ouverte)
+
+- Studio enseignant Chakra UI v3 pour créer, modifier, réordonner, prévisualiser, valider, publier, attribuer et archiver des cours et missions de démonstration depuis le navigateur.
+- Lecteur étudiant initial des versions attribuées, sans corrigé ni notation ; tests Playwright du parcours enseignant et étudiant.
+- Compte enseignant réel créé ou actualisé localement avec mot de passe généré hors Git et sans e-mail.
+- Corrections de la revue P0-03 : comparaisons SQL, `display_data` typé, projection étudiante protégée et permissions après archivage.
+- Documentation du dépôt public et ordre de fusion manuelle des PR #11 à #14.
+
 ## 2026-10-27 — P0-03 ([PR #13](https://github.com/mryoshq/shopflow-academy/pull/13), ouverte)
 
 - Référentiel cours/objectifs/modules/chapitres/missions, brouillons typés, cohortes et assignations.

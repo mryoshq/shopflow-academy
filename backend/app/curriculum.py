@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 from hashlib import sha256
 import json
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError, field_validator
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, require_student, require_teacher, require_teacher_csrf
-from app.curriculum_schema import MissionDefinition, plain
+from app.curriculum_schema import DisplayData, MissionDefinition, plain
 from app.database import get_db
 from app.models import (
     Assignment, AuditEvent, Chapter, Cohort, Course, CourseModule, CourseRelease,
@@ -20,6 +21,12 @@ from app.models import (
 )
 
 router = APIRouter(prefix="/api/v1", tags=["curriculum"])
+PUBLIC_DEFINITION_FIELDS = {
+    "schema_version", "kind", "scenario", "instructions", "objective_ids",
+    "prerequisite_mission_ids", "choices", "match_targets", "display_data",
+    "resources", "hints", "estimated_duration_minutes", "bonus",
+}
+display_adapter = TypeAdapter(DisplayData)
 
 
 class CourseInput(BaseModel):
@@ -159,8 +166,15 @@ def course_or_404(db: Session, course_id: int) -> Course:
     return item
 
 
-def deletable_course(db: Session, course_id: int) -> Course:
+def editable_course(db: Session, course_id: int) -> Course:
     course = course_or_404(db, course_id)
+    if course.status == "archived":
+        raise HTTPException(status_code=409, detail="course archived")
+    return course
+
+
+def deletable_course(db: Session, course_id: int) -> Course:
+    course = editable_course(db, course_id)
     if db.scalar(select(CourseRelease.id).where(CourseRelease.course_id == course_id).limit(1)) is not None:
         raise HTTPException(status_code=409, detail="published course structure cannot be deleted")
     return course
@@ -207,7 +221,10 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
             for mission in missions:
                 definition = mission.draft_definition
                 if definition and not private:
-                    definition = MissionDefinition.model_validate(definition).student_projection()
+                    try:
+                        definition = MissionDefinition.model_validate(definition).student_projection()
+                    except ValidationError as exc:
+                        raise HTTPException(status_code=422, detail="draft definition needs correction") from exc
                 chapter_data["missions"].append({
                     "id": mission.id, "slug": mission.slug, "title": mission.title,
                     "sort_order": mission.sort_order, "definition": definition,
@@ -215,6 +232,26 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
             module_data["chapters"].append(chapter_data)
         result["modules"].append(module_data)
     return result
+
+
+def student_safe_snapshot(snapshot: dict) -> dict:
+    """Defend even older stored releases against accidental answer-key exposure."""
+    safe = deepcopy(snapshot)
+    for module in safe.get("modules", []):
+        for chapter in module.get("chapters", []):
+            for mission in chapter.get("missions", []):
+                raw = mission.get("definition")
+                if not isinstance(raw, dict):
+                    mission["definition"] = None
+                    continue
+                projected = {key: value for key, value in raw.items() if key in PUBLIC_DEFINITION_FIELDS}
+                if "display_data" in projected and projected["display_data"] is not None:
+                    try:
+                        projected["display_data"] = display_adapter.validate_python(projected["display_data"]).model_dump()
+                    except ValidationError:
+                        projected.pop("display_data")
+                mission["definition"] = projected
+    return safe
 
 
 @router.get("/teacher/courses")
@@ -240,9 +277,7 @@ def get_course(course_id: int, auth: AuthContext = Depends(require_teacher), db:
 
 @router.patch("/teacher/courses/{course_id}")
 def update_course(course_id: int, payload: CoursePatch, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    course = course_or_404(db, course_id)
-    if course.status == "archived":
-        raise HTTPException(status_code=409, detail="course archived")
+    course = editable_course(db, course_id)
     apply_patch(course, payload)
     audit(db, auth, "course.update", "course", course.id)
     save(db)
@@ -259,7 +294,7 @@ def delete_course(course_id: int, auth: AuthContext = Depends(require_teacher_cs
 
 @router.post("/teacher/courses/{course_id}/objectives", status_code=201)
 def add_objective(course_id: int, payload: ObjectiveInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    course_or_404(db, course_id)
+    editable_course(db, course_id)
     objective = LearningObjective(course_id=course_id, **payload.model_dump())
     db.add(objective)
     flush(db)
@@ -273,6 +308,7 @@ def update_objective(objective_id: int, payload: ObjectivePatch, auth: AuthConte
     objective = db.get(LearningObjective, objective_id)
     if objective is None:
         raise HTTPException(status_code=404, detail="objective not found")
+    editable_course(db, objective.course_id)
     apply_patch(objective, payload)
     audit(db, auth, "objective.update", "objective", objective.id)
     save(db)
@@ -297,7 +333,7 @@ def delete_objective(objective_id: int, auth: AuthContext = Depends(require_teac
 
 @router.post("/teacher/courses/{course_id}/modules", status_code=201)
 def add_module(course_id: int, payload: TitleInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    course_or_404(db, course_id)
+    editable_course(db, course_id)
     module = CourseModule(course_id=course_id, **payload.model_dump())
     db.add(module)
     flush(db)
@@ -309,6 +345,7 @@ def add_module(course_id: int, payload: TitleInput, auth: AuthContext = Depends(
 @router.patch("/teacher/modules/{module_id}")
 def update_module(module_id: int, payload: TitlePatch, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     module = module_or_404(db, module_id)
+    editable_course(db, module.course_id)
     apply_patch(module, payload)
     audit(db, auth, "module.update", "module", module.id)
     save(db)
@@ -326,7 +363,8 @@ def delete_module(module_id: int, auth: AuthContext = Depends(require_teacher_cs
 
 @router.post("/teacher/modules/{module_id}/chapters", status_code=201)
 def add_chapter(module_id: int, payload: TitleInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    module_or_404(db, module_id)
+    module = module_or_404(db, module_id)
+    editable_course(db, module.course_id)
     chapter = Chapter(module_id=module_id, **payload.model_dump())
     db.add(chapter)
     flush(db)
@@ -338,6 +376,7 @@ def add_chapter(module_id: int, payload: TitleInput, auth: AuthContext = Depends
 @router.patch("/teacher/chapters/{chapter_id}")
 def update_chapter(chapter_id: int, payload: TitlePatch, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     chapter = chapter_or_404(db, chapter_id)
+    editable_course(db, module_or_404(db, chapter.module_id).course_id)
     apply_patch(chapter, payload)
     audit(db, auth, "chapter.update", "chapter", chapter.id)
     save(db)
@@ -356,7 +395,7 @@ def delete_chapter(chapter_id: int, auth: AuthContext = Depends(require_teacher_
 @router.post("/teacher/chapters/{chapter_id}/missions", status_code=201)
 def add_mission(chapter_id: int, payload: MissionInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     chapter = chapter_or_404(db, chapter_id)
-    course = course_or_404(db, module_or_404(db, chapter.module_id).course_id)
+    course = editable_course(db, module_or_404(db, chapter.module_id).course_id)
     if payload.definition:
         check_objectives(db, course.id, payload.definition)
     mission = Mission(chapter_id=chapter_id, slug=payload.slug, title=payload.title, sort_order=payload.sort_order,
@@ -370,7 +409,8 @@ def add_mission(chapter_id: int, payload: MissionInput, auth: AuthContext = Depe
 
 @router.patch("/teacher/missions/{mission_id}")
 def update_mission(mission_id: int, payload: MissionPatch, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    mission, _ = mission_course(db, mission_id)
+    mission, course = mission_course(db, mission_id)
+    editable_course(db, course.id)
     apply_patch(mission, payload)
     audit(db, auth, "mission.meta.update", "mission", mission.id)
     save(db)
@@ -405,8 +445,7 @@ def check_objectives(db: Session, course_id: int, definition: MissionDefinition)
 def update_mission_draft(mission_id: int, definition: MissionDefinition,
                          auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     mission, course = mission_course(db, mission_id)
-    if course.status == "archived":
-        raise HTTPException(status_code=409, detail="course archived")
+    editable_course(db, course.id)
     check_objectives(db, course.id, definition)
     if mission.id in definition.prerequisite_mission_ids:
         raise HTTPException(status_code=422, detail="mission cannot require itself")
@@ -422,17 +461,19 @@ def preview_course(course_id: int, auth: AuthContext = Depends(require_teacher_c
     return course_tree(db, course, private=False)
 
 
-@router.post("/teacher/courses/{course_id}/publish", status_code=201)
-def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    course = db.scalar(select(Course).where(Course.id == course_id).with_for_update())
-    if course is None:
-        raise HTTPException(status_code=404, detail="course not found")
-    if course.status == "archived":
-        raise HTTPException(status_code=409, detail="course archived")
+def validated_tree(db: Session, course: Course) -> tuple[dict, list[dict]]:
     tree = course_tree(db, course, private=True)
     missions = [mission for module in tree["modules"] for chapter in module["chapters"] for mission in chapter["missions"]]
     if not missions:
         raise HTTPException(status_code=422, detail="course needs at least one mission")
+    for mission in missions:
+        if mission["definition"] is None:
+            raise HTTPException(status_code=422, detail="all missions need a valid definition")
+        try:
+            definition = MissionDefinition.model_validate(mission["definition"])
+        except ValidationError as exc:
+            raise HTTPException(status_code=422, detail="draft definition needs correction") from exc
+        check_objectives(db, course.id, definition)
     dependencies = {item["id"]: set(item["definition"].get("prerequisite_mission_ids", [])) if item["definition"] else set() for item in missions}
     visiting: set[int] = set()
     visited: set[int] = set()
@@ -452,6 +493,24 @@ def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_c
 
     for mission_id in dependencies:
         visit(mission_id)
+    return tree, missions
+
+
+@router.post("/teacher/courses/{course_id}/validate")
+def validate_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    course = editable_course(db, course_id)
+    _, missions = validated_tree(db, course)
+    return {"valid": True, "mission_count": len(missions)}
+
+
+@router.post("/teacher/courses/{course_id}/publish", status_code=201)
+def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    course = db.scalar(select(Course).where(Course.id == course_id).with_for_update())
+    if course is None:
+        raise HTTPException(status_code=404, detail="course not found")
+    if course.status == "archived":
+        raise HTTPException(status_code=409, detail="course archived")
+    tree, _ = validated_tree(db, course)
     latest = db.scalar(select(func.max(CourseRelease.version)).where(CourseRelease.course_id == course.id)) or 0
     public = {key: value for key, value in tree.items() if key != "status"}
     public["version"] = latest + 1
@@ -484,6 +543,25 @@ def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_c
     return {"id": release.id, "course_id": course.id, "version": release.version, "snapshot_hash": release.snapshot_hash}
 
 
+@router.post("/teacher/courses/{course_id}/archive")
+def archive_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    course = editable_course(db, course_id)
+    course.status = "archived"
+    for release in db.scalars(select(CourseRelease).where(CourseRelease.course_id == course_id)):
+        release.status = "archived"
+    audit(db, auth, "course.archive", "course", course.id)
+    save(db)
+    return {"id": course.id, "status": course.status}
+
+
+@router.get("/teacher/courses/{course_id}/releases")
+def list_releases(course_id: int, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> list[dict]:
+    course_or_404(db, course_id)
+    releases = db.scalars(select(CourseRelease).where(CourseRelease.course_id == course_id).order_by(CourseRelease.version.desc())).all()
+    return [{"id": item.id, "version": item.version, "status": item.status,
+             "published_at": item.published_at.isoformat()} for item in releases]
+
+
 @router.post("/teacher/cohorts", status_code=201)
 def create_cohort(payload: CohortInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     cohort = Cohort(label=payload.label)
@@ -492,6 +570,28 @@ def create_cohort(payload: CohortInput, auth: AuthContext = Depends(require_teac
     audit(db, auth, "cohort.create", "cohort", cohort.id)
     save(db)
     return {"id": cohort.id, "label": cohort.label}
+
+
+@router.get("/teacher/cohorts")
+def list_cohorts(auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> list[dict]:
+    cohorts = db.scalars(select(Cohort).order_by(Cohort.id)).all()
+    return [{"id": cohort.id, "label": cohort.label} for cohort in cohorts]
+
+
+@router.get("/teacher/cohorts/{cohort_id}")
+def get_cohort(cohort_id: int, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
+    cohort = db.get(Cohort, cohort_id)
+    if cohort is None:
+        raise HTTPException(status_code=404, detail="cohort not found")
+    enrolled = db.scalars(select(Enrollment.user_id).where(Enrollment.cohort_id == cohort_id)).all()
+    assigned = db.scalars(select(Assignment.course_release_id).where(Assignment.cohort_id == cohort_id)).all()
+    return {"id": cohort.id, "label": cohort.label, "student_ids": enrolled, "release_ids": assigned}
+
+
+@router.get("/teacher/students")
+def list_students(auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> list[dict]:
+    students = db.scalars(select(User).where(User.role == "student", User.enabled.is_(True)).order_by(User.id)).all()
+    return [{"id": student.id, "username": student.username} for student in students]
 
 
 @router.post("/teacher/cohorts/{cohort_id}/enrollments", status_code=201)
@@ -514,7 +614,7 @@ def assign_release(cohort_id: int, payload: AssignmentInput, auth: AuthContext =
     if db.get(Cohort, cohort_id) is None:
         raise HTTPException(status_code=404, detail="cohort not found")
     release = db.get(CourseRelease, payload.course_release_id)
-    if release is None or release.status != "published":
+    if release is None or release.status != "published" or course_or_404(db, release.course_id).status == "archived":
         raise HTTPException(status_code=422, detail="published release required")
     assignment = Assignment(cohort_id=cohort_id, course_release_id=release.id)
     db.add(assignment)
@@ -548,4 +648,4 @@ def student_course(release_id: int, response: Response, auth: AuthContext = Depe
     if release is None:
         raise HTTPException(status_code=404, detail="course not found")
     response.headers["Cache-Control"] = "no-store"
-    return release.student_snapshot
+    return student_safe_snapshot(release.student_snapshot)

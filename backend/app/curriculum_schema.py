@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import json
+from math import isfinite
 import re
-from typing import Literal
+from typing import Annotated, Literal
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -15,13 +16,77 @@ MissionKind = Literal[
 ]
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 APPROVED_ACTIONS = {"choose_shipping_rule", "choose_quality_rule", "choose_incident_response"}
+HTML_TAG = re.compile(r"</?[A-Za-z][^>]{0,500}>|<!--|<!DOCTYPE|<\?", re.IGNORECASE)
+CONTROL = re.compile(r"[\x00-\x08\x0b-\x1f\x7f]")
 
 
 def plain(value: str) -> str:
     value = value.strip()
-    if not value or "<" in value or ">" in value or "\x00" in value:
+    if not value or HTML_TAG.search(value) or CONTROL.search(value):
         raise ValueError("Nonempty plain text is required")
     return value
+
+
+Cell = str | int | float | bool | None
+
+
+class TableDisplay(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["table"]
+    columns: list[str] = Field(min_length=1, max_length=12)
+    rows: list[list[Cell]] = Field(min_length=1, max_length=100)
+
+    @field_validator("columns")
+    @classmethod
+    def safe_columns(cls, value: list[str]) -> list[str]:
+        return [plain(column) for column in value]
+
+    @model_validator(mode="after")
+    def consistent(self) -> TableDisplay:
+        for row in self.rows:
+            if len(row) != len(self.columns):
+                raise ValueError("Every table row must match the column count")
+            for cell in row:
+                if isinstance(cell, str):
+                    if len(cell) > 500:
+                        raise ValueError("Table cell too long")
+                    plain(cell)
+                if isinstance(cell, float) and not isfinite(cell):
+                    raise ValueError("Table values must be finite")
+        return self
+
+
+class BarChartDisplay(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["bar_chart"]
+    title: str = Field(min_length=1, max_length=200)
+    labels: list[str] = Field(min_length=1, max_length=20)
+    values: list[float] = Field(min_length=1, max_length=20)
+    unit: str = Field(default="", max_length=30)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @field_validator("labels")
+    @classmethod
+    def safe_labels(cls, value: list[str]) -> list[str]:
+        return [plain(label) for label in value]
+
+    @field_validator("unit")
+    @classmethod
+    def safe_unit(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+    @model_validator(mode="after")
+    def consistent(self) -> BarChartDisplay:
+        if len(self.labels) != len(self.values) or any(not isfinite(value) for value in self.values):
+            raise ValueError("Chart labels and finite values must align")
+        return self
+
+
+DisplayData = Annotated[TableDisplay | BarChartDisplay, Field(discriminator="kind")]
 
 
 class Choice(BaseModel):
@@ -48,7 +113,7 @@ class MissionDefinition(BaseModel):
     match_targets: list[Choice] = Field(default_factory=list, max_length=16)
     correct_pairs: dict[str, str] = Field(default_factory=dict)
     action_id: str | None = Field(default=None, max_length=80)
-    display_data: dict | None = None
+    display_data: DisplayData | None = None
     resources: list[str] = Field(default_factory=list, max_length=10)
     hints: list[str] = Field(default_factory=list, max_length=5)
     feedback: dict[str, str] = Field(default_factory=dict)
@@ -111,9 +176,11 @@ class MissionDefinition(BaseModel):
             raise ValueError("action_id is only for guided simulations")
         if self.kind != "matching" and (self.match_targets or self.correct_pairs):
             raise ValueError("Matching fields are only for matching activities")
-        if self.display_data is not None and len(json.dumps(self.display_data, ensure_ascii=False)) > 32_000:
+        if not set(self.feedback) <= set(ids):
+            raise ValueError("Feedback must use choice IDs")
+        if self.display_data is not None and len(json.dumps(self.display_data.model_dump(), ensure_ascii=False)) > 32_000:
             raise ValueError("Display data is too large")
         return self
 
     def student_projection(self) -> dict:
-        return self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback"})
+        return self.model_dump(exclude={"correct_ids", "correct_pairs", "feedback", "action_id", "max_points"})

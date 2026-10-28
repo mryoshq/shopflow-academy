@@ -47,7 +47,7 @@ Créer après accord un **tunnel nommé dédié ShopFlow**, avec `cloudflared` s
 
 ## Étape 3 : préparation locale (sans publication)
 
-1. Installer ou vérifier Docker Desktop + Docker Compose sur Mac ; cloner le repo privé et copier `.env.example` vers `.env` avec secrets aléatoires hors Git.
+1. Installer ou vérifier Docker Desktop + Docker Compose sur Mac ; cloner le dépôt public et copier `.env.example` vers `.env` avec secrets aléatoires hors Git. Ne jamais placer les comptes locaux dans le dépôt.
 2. Développer gateway/frontend/backend/PostgreSQL selon P0-01 ; MySQL en profil `labs` tant qu'inutile. Une seule entrée locale `http://127.0.0.1:3080` (sous réserve de disponibilité).
 3. Vérifier `docker compose config`, `docker compose up -d --build`, `docker compose ps`, tests HTTP `/` et `/health/ready` selon gateway ; vérifier que les volumes préservent les données après redémarrage.
 4. Tester les deux rôles en local, les permissions IDOR, 10 sessions de test, création/preview/publication de mission et scorer. Tests avant connexion publique.
