@@ -21,6 +21,7 @@ from app.comfort import router as comfort_router
 from app.observer import router as observer_router
 from app.downloads import router as downloads_router
 from app.experiences import router as experiences_router
+from app.project import router as project_router
 
 
 class Health(BaseModel):
@@ -68,6 +69,7 @@ app.include_router(comfort_router)
 app.include_router(observer_router)
 app.include_router(downloads_router)
 app.include_router(experiences_router)
+app.include_router(project_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])

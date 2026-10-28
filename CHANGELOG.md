@@ -11,6 +11,10 @@
 ## 2026-10-29 — Sprint 3, partie Q (cadre) : « Le voyage d'une donnée » (`claude/lucid-brahmagupta-htwgun-q`)
 - Page `#/voyage[/<scène>]` chargée à la demande, navigation entre 7 scènes (boutons, flèches, retour arrière), valeurs exactes lues depuis le cours (`experiences/voyage.json`) avec valeurs par défaut.
 - Nouveau `data.kind: experience` pour l'ouvrir depuis une leçon. L'application du propriétaire sera intégrée à réception de l'archive (ADR-0033).
+## 2026-10-29 — Sprint 3, partie R : espace projet CampusEquip (`claude/lucid-brahmagupta-htwgun-r`)
+- Binômes par invitation (ou seul), une personne par binôme ; l'enseignant corrige la composition.
+- Jalons (consignes, date limite, livrables) et dépôts versionnés : texte avec tableaux, lien HTTPS, fichiers (pdf, png, jpg, md, zip ; 20 Mo) stockés hors base ; retard signalé.
+- Enseignant : dépôts par jalon, commentaires visibles du binôme, grille sur 20 séparée du cours, export CSV, planning des soutenances visible des étudiants. Observateur : rien sans autorisation. Tout est audité. Migration `0014_project`. ADR-0034.
 
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 

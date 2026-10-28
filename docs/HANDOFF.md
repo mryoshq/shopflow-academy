@@ -66,6 +66,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
 | 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
+| 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -148,6 +149,11 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 ### À faire en local après la PR Q
 1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
 2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
+### À faire en local après la PR R
+1. **Sauvegarder la base** selon `docs/RUNBOOK.md`, suffixe `avant-sprint3-r` (migration `0014_project`).
+2. Redéployer à une pause (`docker compose up -d --build --wait`, service migrate compris, passerelle comprise : limite de 21 Mo sur l'envoi de fichiers). Vérifier la tête Alembic `0014_project`.
+3. Onglet « Projet » : publier le jalon « Conception du 29 octobre » (tableau des sources, règles, schéma, graphe, scénarios, plan), puis « Rendu final » (lien du dépôt, README, rapport ≤ 6 pages, `journal_IA.md`) et « Soutenance » ; créer les créneaux du 23 novembre.
+4. Vérifier avec deux comptes étudiants de démonstration : binôme, invitation, dépôt d'un PDF, commentaire.
 
 ### À faire en local après la PR J
 
