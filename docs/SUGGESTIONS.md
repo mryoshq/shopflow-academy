@@ -11,7 +11,7 @@ Classement par **valeur pour la classe** puis par **effort** (S : moins d'une de
 | A | Blocs de 15 min ouverts par l'enseignant, « Ma classe », demandes d'aide, interface en trois zones, ménage, `APP_SECRET` obligatoire | #26 (fusionnée) |
 | D | Cours écrit en Markdown, compilé avec erreurs localisées, importé sans perdre la progression | #27 (fusionnée) |
 | F | Animations, carte mentale, pipeline animé, vidéo | #28 (fusionnée) |
-| C | Base de laboratoire, requêtes exécutables, défi SQL bonus, sorties Python à l'import | #29 |
+| C | Base de laboratoire, requêtes exécutables, défi SQL bonus, sorties Python à l'import | #29 (fusionnée) |
 | B | Mode sombre, lecteur en une colonne, raccourcis, réinitialisation de mot de passe, fiches de connexion | #30 |
 
 ## Suggestions classées

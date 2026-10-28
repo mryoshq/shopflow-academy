@@ -2,7 +2,7 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : faire « À faire en local après la PR C » (#29, fusionnée), puis relire et fusionner #30 (B) puis #31 (E) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** L'agent rebase la PR suivante sur `main` après chaque fusion.
+**Prochaine tâche unique : faire les sections « À faire en local » des PR déjà fusionnées (A, D, F, C) si ce n'est pas fait, puis relire et fusionner #30 (B) puis #31 (E) — accord et action du propriétaire — en faisant après chacune sa section « À faire en local ».** L'agent rebase la PR suivante sur `main` après chaque fusion.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
