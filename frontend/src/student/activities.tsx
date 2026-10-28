@@ -1,3 +1,5 @@
+import { Flashcards } from "./Flashcards"
+import { isUngraded } from "../studioTypes"
 import { useEffect, useRef, useState } from "react"
 import { DescribedMedia } from "./Lesson"
 import { Box, Button, Flex, NativeSelect, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
@@ -19,7 +21,7 @@ export function emptyAnswer(definition: PlayerDefinition): Answer {
 }
 
 export function isAnswerComplete(definition: PlayerDefinition, answer: Answer): boolean {
-  if (definition.kind === "lesson" || definition.kind === "sql_challenge") return false
+  if (isUngraded(definition.kind) || definition.kind === "sql_challenge") return false
   if (definition.kind === "matching") return definition.choices.every((choice) => Boolean(answer.pairs[choice.id]))
   if (definition.kind === "reorder") return answer.choice_ids.length === definition.choices.length
   return answer.choice_ids.length > 0
@@ -132,6 +134,7 @@ function MediaBody({ data }: { data: DisplayData | null }) {
   if (data.kind === "mindmap") return <MindMap data={data} />
   if (data.kind === "flow") return <FlowDiagram data={data} />
   if (data.kind === "video") return <VideoView data={data} />
+  if (data.kind === "flashcards") return <Flashcards data={data} />
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3">
     {asTable ? <DataTable caption={data.title} columns={["Libellé", data.unit ? `Valeur (${data.unit})` : "Valeur"]}

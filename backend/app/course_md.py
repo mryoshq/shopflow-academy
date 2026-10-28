@@ -32,7 +32,7 @@ import sys
 from pydantic import ValidationError
 import yaml
 
-from app.curriculum_schema import CHOICE_KINDS, HTML_TAG, MissionDefinition
+from app.curriculum_schema import CHOICE_KINDS, HTML_TAG, UNGRADED_KINDS, MissionDefinition
 
 FORMAT = "shopflow-course-md"
 HEADER_FILE = "00-cours.md"
@@ -44,7 +44,7 @@ MAX_FILES = 60
 
 MODULE_RE = re.compile(r"^#\s+Module\s*:\s*(.+?)\s*$")
 BLOCK_RE = re.compile(r"^##\s+(Bloc|Chapitre)\s*:\s*(.+?)\s*$")
-ITEM_RE = re.compile(r"^###\s+(Mission|Leçon|Lecon)\s*:\s*(.+?)\s*$")
+ITEM_RE = re.compile(r"^###\s+(Mission|Leçon|Lecon|Révision|Revision)\s*:\s*(.+?)\s*$")
 YAML_FENCE = re.compile(r"^```\s*ya?ml\s*$")
 ANY_FENCE = re.compile(r"^(```|~~~)")
 SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -53,8 +53,8 @@ HTTP_RE = re.compile(r"http://", re.IGNORECASE)
 
 # Kinds and data kinds the platform can play today. Others are refused with a clear message.
 KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching", "data_interpretation",
-         "scenario_choice", "lesson", "sql_challenge"}
-DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video"}
+         "scenario_choice", "lesson", "sql_challenge", "review"}
+DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards"}
 MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt)$")
 MAX_VIDEO_BYTES = 50 * 1024 * 1024
 MAX_CAPTIONS_BYTES = 512 * 1024
@@ -91,6 +91,9 @@ FRENCH = {
     "A series needs at least one value": "une série doit avoir au moins une valeur",
     "Each side of a comparison needs a title": "chaque côté d'une comparaison demande un `title`",
     "Display data is too large": "données affichées trop volumineuses",
+    "A review needs flashcards (data.kind: flashcards)": "une révision demande des cartes : `data` avec `kind: flashcards` et `cards`",
+    "A review has no choices, answer key, hints or points": "une révision n'a ni choix, ni corrigé, ni indices, ni points",
+    "Flashcards are only for lessons and reviews": "les cartes (`kind: flashcards`) sont réservées aux leçons et aux révisions",
     "A lesson needs a body or structured content": "une leçon demande un `body` ou au moins un champ parmi `hook`, `key_terms`, `example`, `practice`",
     "objective, hook, key_terms, example and practice are only for lessons": "`objective`, `hook`, `key_terms`, `example` et `practice` sont réservés aux leçons",
     "The objective is one sentence on one line": "`objective` : une seule phrase, sur une ligne",
@@ -368,9 +371,10 @@ def parse_module_file(compiled: Compiled, name: str, text: str) -> None:
                     module.blocks.append(block)
                 intro_open = False
             elif match_item:
-                pending = (number, "lesson" if match_item.group(1) != "Mission" else "mission", match_item.group(2))
+                heading = {"Mission": "mission", "Révision": "review", "Revision": "review"}.get(match_item.group(1), "lesson")
+                pending = (number, heading, match_item.group(2))
                 intro_open = False
-            elif re.match(r"^#{1,3}\s+(Module|Bloc|Chapitre|Mission|Le[cç]on)\b", raw, re.IGNORECASE):
+            elif re.match(r"^#{1,3}\s+(Module|Bloc|Chapitre|Mission|Le[cç]on|R[ée]vision)\b", raw, re.IGNORECASE):
                 compiled.error(name, number, "titre mal formé : écrivez par exemple `## Bloc : Le grain` (deux-points)")
             else:
                 intro_open = False
@@ -410,7 +414,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     for key in raw:
         if key not in MISSION_KEYS:
             error((str(key),), f"champ inconnu : `{key}`")
-    kind = str(raw.get("kind") or ("lesson" if item.heading == "lesson" else ""))
+    kind = str(raw.get("kind") or (item.heading if item.heading in ("lesson", "review") else ""))
     slug = str(raw.get("slug") or "")
     item.slug = slug
     if not SLUG_RE.fullmatch(slug) or len(slug) > 100:
@@ -425,6 +429,10 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
         error(("kind",), "un titre `### Leçon :` demande `kind: lesson`")
     if item.heading == "mission" and kind == "lesson":
         error(("kind",), "une leçon s'écrit `### Leçon : <titre>`")
+    if item.heading == "review" and kind != "review":
+        error(("kind",), "un titre `### Révision :` demande `kind: review`")
+    if item.heading != "review" and kind == "review":
+        error(("kind",), "une révision s'écrit `### Révision : <titre>`")
     objectives = raw.get("objectives")
     if not isinstance(objectives, list) or not objectives:
         error(("objectives",), "`objectives` : liste obligatoire de codes déclarés dans 00-cours.md")
@@ -441,10 +449,10 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     for index, value in enumerate(item.prerequisite_slugs):
         if value not in earlier:
             error(("prerequisites", index), f"prérequis `{value}` : il doit désigner une mission **précédente** du cours")
-    for key in ("duration",) + (() if kind == "lesson" else ("points", "scenario", "instructions")):
+    for key in ("duration",) + (() if kind in UNGRADED_KINDS else ("points", "scenario", "instructions")):
         if raw.get(key) in (None, ""):
             error((key,), f"champ obligatoire manquant : `{key}`")
-    if kind != "lesson":
+    if kind not in UNGRADED_KINDS:
         for key in LESSON_LAYOUT_KEYS:
             if raw.get(key) not in (None, "", []):
                 error((key,), f"`{key}` est réservé aux leçons (`### Leçon :`)")
@@ -495,7 +503,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
         "choices": choices, "correct_ids": correct, "match_targets": targets, "correct_pairs": pairs, "feedback": feedback,
         "hints": [str(value) for value in raw.get("hints") or []], "explanation": str(raw.get("explanation") or ""),
         "resources": [str(value) for value in raw.get("resources") or []],
-        "max_points": raw.get("points", 0 if kind == "lesson" else None), "scoring": raw.get("scoring", "all_or_nothing"),
+        "max_points": raw.get("points", 0 if kind in UNGRADED_KINDS else None), "scoring": raw.get("scoring", "all_or_nothing"),
         "estimated_duration_minutes": raw.get("duration"), "bonus": bool(raw.get("bonus", False)),
         "display_data": data, "body": str(raw.get("body") or ""), "run": raw.get("run") or [],
         "starter_sql": str(raw.get("starter_sql") or ""), "expected_sql": str(raw.get("expected_sql") or ""),
@@ -532,7 +540,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     body.pop("prerequisite_mission_ids")
     item.definition = body
     readability(compiled, item, parsed)
-    if kind != "lesson":
+    if kind not in UNGRADED_KINDS:
         words = len(parsed.scenario.split())
         if words < 40 or words > 90:
             compiled.warn(item.file, line_for(item, ("scenario",)), f"scénario de {words} mots (40 à 90 conseillés)")
@@ -808,10 +816,10 @@ def summary(compiled: Compiled) -> dict:
         blocks = []
         for block in module.blocks:
             defs = [(item, item.definition or {}) for item in block.items]
-            main = [d for _, d in defs if d.get("kind") != "lesson" and not d.get("bonus")]
+            main = [d for _, d in defs if d.get("kind") not in UNGRADED_KINDS and not d.get("bonus")]
             bonus = [d for _, d in defs if d.get("bonus")]
             blocks.append({
-                "title": block.title, "missions": len(main), "lessons": sum(1 for _, d in defs if d.get("kind") == "lesson"),
+                "title": block.title, "missions": len(main), "lessons": sum(1 for _, d in defs if d.get("kind") in UNGRADED_KINDS),
                 "bonus": len(bonus), "points": sum(d.get("max_points", 0) for d in main),
                 "bonus_points": sum(d.get("max_points", 0) for d in bonus),
                 "duration": sum(d.get("estimated_duration_minutes", 0) for _, d in defs if d and not d.get("bonus")),

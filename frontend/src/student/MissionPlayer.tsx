@@ -1,3 +1,4 @@
+import { isUngraded } from "../studioTypes"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Alert, Box, Button, Flex, Grid, Heading, Link, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
 import { api, ApiError, retryAfter } from "../api"
@@ -226,9 +227,9 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       </Stack>
     </Panel> : <Stack gap="5">
       <Stack gap="5" minW="0">
-        {definition.kind === "lesson" ? <Panel as="section" aria-labelledby="lesson-title">
+        {isUngraded(definition.kind) ? <Panel as="section" aria-labelledby="lesson-title">
           <Stack gap="4">
-            <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Leçon</Text>
+            <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{definition.kind === "review" ? "Révision" : "Leçon"}</Text>
             <LessonView definition={definition} media={<>
               <DataView data={definition.display_data} />
               <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
@@ -237,12 +238,12 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             {mission.status !== "completed" && readingLeft > 0 && mission.rules?.reading_seconds ? <ReadingBar left={readingLeft} total={mission.rules.reading_seconds} /> : null}
             <Flex gap="3" wrap="wrap" align="center">
               {mission.status === "completed"
-                ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />Leçon comprise</Flex>
+                ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />{definition.kind === "review" ? "Révision faite" : "Leçon comprise"}</Flex>
                 : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused || readingLeft > 0} onClick={() => void markUnderstood()}>J’ai compris</Button>}
               {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
               {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
             </Flex>
-            <Text fontSize="sm" color="app.muted">Une leçon ne compte pas dans la note : elle aide à réussir les missions suivantes.</Text>
+            <Text fontSize="sm" color="app.muted">{definition.kind === "review" ? "Une révision" : "Une leçon"} ne compte pas dans la note : elle aide à réussir les missions suivantes.</Text>
           </Stack>
         </Panel> : <>
         <Panel as="section" aria-labelledby="situation-title">

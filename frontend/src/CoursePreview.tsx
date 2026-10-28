@@ -1,3 +1,4 @@
+import { isUngraded } from "./studioTypes"
 import { useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, NativeSelect, Stack, Text } from "@chakra-ui/react"
 import type { MissionDefinition, StudentMission, CourseModule } from "./studioTypes"
@@ -51,7 +52,7 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
 
   return <Stack gap="5" p="6" bg="app.surface" borderWidth="1px" rounded="xl" aria-label={`Aperçu de ${mission.title}`}>
     <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="brand" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
-    {definition.kind === "lesson" ? <LessonView definition={definition} headingAs="h5" media={<>
+    {isUngraded(definition.kind) ? <LessonView definition={definition} headingAs="h5" media={<>
       <DataView data={definition.display_data} />
       <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
     </>} /> : <>
@@ -60,14 +61,14 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
       <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
     </>}
     {definition.instructions && <RichText text={definition.instructions} fontWeight="semibold" />}
-    {definition.kind === "lesson" ? <Text color="app.muted">Leçon non notée : l’étudiant clique « J’ai compris ».</Text>
+    {isUngraded(definition.kind) ? <Text color="app.muted">{definition.kind === "review" ? "Révision" : "Leçon"} non notée : l’étudiant clique « J’ai compris ».</Text>
       : definition.kind === "sql_challenge" ? <CodeBlock code={definition.starter_sql ?? ""} language="sql" title="Requête de départ (modifiable par l’étudiant)" />
       : definition.kind === "reorder" ? <Stack gap="2">{selected.map((id, index) => <Flex key={id} gap="2" align="center"><Text flex="1">{index + 1}. {definition.choices.find((choice) => choice.id === id)?.label}</Text><Button size="sm" variant="outline" onClick={() => moveChoice(index, -1)} disabled={index === 0}>Monter</Button><Button size="sm" variant="outline" onClick={() => moveChoice(index, 1)} disabled={index === selected.length - 1}>Descendre</Button></Flex>)}</Stack>
       : definition.kind === "matching" ? <Stack gap="3">{definition.choices.map((choice) => <Flex key={choice.id} align="center" gap="3"><Text flex="1">{choice.label}</Text><NativeSelect.Root maxW="52"><NativeSelect.Field aria-label={`Associer ${choice.label}`} value={pairs[choice.id] ?? ""} onChange={(event) => { setPairs({ ...pairs, [choice.id]: event.target.value }); setMessage("") }}><option value="">Choisir une cible</option>{definition.match_targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Flex>)}</Stack>
         : <Stack gap="2">{definition.choices.map((choice) => <label key={choice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, border: "1px solid var(--chakra-colors-app-border)", borderRadius: 8 }}><input type={definition.kind === "multiple_choice" ? "checkbox" : "radio"} name={`preview-${mission.id}`} checked={selected.includes(choice.id)} onChange={() => { setSelected(definition.kind === "multiple_choice" ? selected.includes(choice.id) ? selected.filter((id) => id !== choice.id) : [...selected, choice.id] : [choice.id]); setMessage("") }} />{choice.label}</label>)}</Stack>}
     {definition.hints.length > 0 && <Box><Text fontWeight="semibold">Indices disponibles</Text><Stack gap="1" mt="2">{definition.hints.map((hint, index) => <Text key={index}>{index + 1}. {hint}</Text>)}</Stack></Box>}
     {definition.resources.length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "var(--chakra-colors-brand-fg)", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
-    {correction && definition.kind !== "lesson" && definition.kind !== "sql_challenge" ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="app.muted">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
+    {correction && !isUngraded(definition.kind) && definition.kind !== "sql_challenge" ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="app.muted">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
   </Stack>
 }
 

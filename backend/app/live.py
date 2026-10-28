@@ -23,6 +23,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, aware, current_auth, display_name, require_csrf, require_student, require_teacher, require_teacher_csrf, utcnow
 from app.curriculum_schema import HTML_TAG
 from app.database import get_db
@@ -414,8 +415,8 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
     for position, block in enumerate(blocks_of(release.student_snapshot), start=1):
         # « Terminé » = graded missions only (not bonus, not lesson); lessons counted apart.
         vids_here = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs]
-        lessons = [vid for vid in vids_here if defs[vid].kind == "lesson"]
-        core = [vid for vid in vids_here if not defs[vid].bonus and defs[vid].kind != "lesson"] or lessons
+        lessons = [vid for vid in vids_here if defs[vid].kind in UNGRADED_KINDS]
+        core = [vid for vid in vids_here if not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS] or lessons
         blocks.append({"chapter_id": block["chapter_id"], "position": position, "title": block["title"], "module": block["module"],
                        "open": block["chapter_id"] in opened, "core": core, "lessons": lessons})
     rows = []

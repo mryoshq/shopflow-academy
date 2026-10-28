@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie M : cartes à retourner (`claude/lucid-brahmagupta-htwgun-m`)
+
+- `data.kind: flashcards` (2 à 30 cartes recto/verso, mise en forme légère) dans les leçons et le nouvel élément non noté « Révision » (`### Révision :`, `kind: review`), compté comme une leçon.
+- Lecteur : une carte à la fois, retournement 3D (clic, Espace, Entrée ; instantané en mouvement réduit), flèches, compteur, « Mélanger », « Je savais / À revoir » gardé dans le navigateur sans effet sur la note, verso annoncé aux lecteurs d'écran. Exemple dans le cours de démonstration. ADR-0028.
+
 ## 2026-10-28 — Sprint 2, partie I : PWA, confort, couleurs (`claude/lucid-brahmagupta-htwgun-i`)
 
 - Application installable : manifeste, service worker limité aux fichiers statiques (jamais l'API ni les médias), page hors ligne, bandeau « Nouvelle version disponible », invite d'installation ; CSP `worker-src`/`manifest-src 'self'`.

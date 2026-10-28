@@ -66,7 +66,7 @@ objectives:
 Dans les fichiers de module (un fichier peut contenir un ou plusieurs modules) :
 - `# Module : <titre>` (la **première ligne** non vide en dessous est l'introduction facultative, montrée aux étudiants dès qu'un bloc du module est ouvert ; les lignes suivantes sont des notes pour l'enseignant) ;
 - `## Bloc : <titre>` (ou `## Chapitre : <titre>`, synonyme) : un **bloc** d'environ 15 minutes. L'enseignant ouvre les blocs un par un pour toute la classe ; un bloc nouvellement importé arrive **fermé** et les étudiants n'en voient que le titre (« Bientôt disponible ») ;
-- `### Mission : <titre>` ou `### Leçon : <titre>` suivi d'**un seul** bloc ```` ```yaml ```` (fermé par une ligne ```` ``` ````) ;
+- `### Mission : <titre>`, `### Leçon : <titre>` ou `### Révision : <titre>` suivi d'**un seul** bloc ```` ```yaml ```` (fermé par une ligne ```` ``` ````) ;
 - tout autre texte = note pour l'enseignant, jamais montrée aux étudiants.
 
 Exemple de mission :
@@ -156,6 +156,8 @@ Disponibles : `single_choice`, `multiple_choice`, `true_false` (choix `true` et 
 - `sql_challenge` (bonus de préférence) : l'étudiant **modifie ou écrit** une requête `SELECT` sur la base de laboratoire ; le serveur l'exécute en lecture seule et compare **le résultat** au résultat attendu (`expected_sql`, privé, exécuté côté serveur). Champs : `starter_sql`, `expected_sql`, `compare: rows | rows_unordered | scalar` (défaut `rows`), `points`, `scenario`, `instructions` ; pas de `choices`. Notation tout ou rien. Requêtes acceptées : **une seule** instruction `SELECT` (avec `WITH`, `UNION`, ou précédée d'`EXPLAIN [ANALYZE]`) sur les tables du laboratoire, fonctions usuelles (agrégats, fenêtres `ROW_NUMBER`, `RANK`, `NTILE`, `LAG`, `LEAD`, `PERCENT_RANK`…, dates et texte courants) ; jamais d'écriture. Le résultat doit être identique à celui d'`expected_sql` (avec `compare: rows`, l'ordre des lignes compte : mettez un `ORDER BY` dans `expected_sql`). Vérifiez que `starter_sql` ne donne **pas** déjà le bon résultat.
 
 `guided_simulation` reste réservé aux actions serveur déjà approuvées ; le compilateur le refuse.
+
+- `review` (titre `### Révision :`, ADR-0028) : révision non notée par **cartes à retourner**. Champs : `slug`, `objectives`, `duration`, **`data` avec `kind: flashcards`** (obligatoire), `body` facultatif (une consigne courte). Pas de `points`, `choices`, `hints`, `explanation`, `scenario` ni `instructions`. Comme une leçon : « J'ai compris », compte dans la progression (bloc terminé, « leçons lues »), jamais dans la note.
 
 ### 5 bis. Leçon structurée (ADR-0022)
 
@@ -255,6 +257,19 @@ data:
 - `flow` : `title`, `input` (lignes en entrée), `unit` (défaut `lignes`), `steps` (2 à 8) : `{id, label, rejects?, note?}`. Un jeton parcourt le pipeline ; les compteurs acceptées / rejetées se mettent à jour. La somme des `rejects` ne dépasse pas `input`.
 - `video` (toujours facultative, jamais requise pour la note) : soit `url` = lien **https d'intégration** `https://www.youtube-nocookie.com/embed/<id>` ou `https://player.vimeo.com/video/<id>` ; soit `file: media/<nom>.mp4` (≤ 50 Mo, dans le dossier `cours/media/`) avec `captions: media/<nom>.vtt` facultatif (sous-titres WebVTT, recommandés). Noms : lettres, chiffres, `-` et `_`.
 
+- `flashcards` (ADR-0028, **leçons et révisions seulement**) : `title` facultatif (≤ 200 caractères), `cards` de **2 à 30** cartes `{front, back}` : `front` court (≤ 200 caractères), `back` ≤ 500 caractères, texte avec la mise en forme légère (`**gras**`, `` `code` ``). L'étudiant voit une carte à la fois, la retourne (clic, Espace, Entrée), passe d'une carte à l'autre (flèches), peut mélanger et noter « Je savais / À revoir » (gardé dans son navigateur, sans effet sur la note). **Les cartes sont visibles avant toute réponse : n'y mettez jamais le corrigé d'une mission.**
+
+```yaml
+data:
+  kind: flashcards
+  title: Mots de la qualité des données
+  cards:
+    - front: Doublon
+      back: Deux lignes qui décrivent **la même chose**.
+    - front: "`NOT NULL`"
+      back: Une contrainte qui refuse les valeurs manquantes.
+```
+
 Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
 
 ```yaml
@@ -307,6 +322,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 
 | Date | Changement |
 |---|---|
+| 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |

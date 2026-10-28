@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.curriculum_schema import MissionDefinition
 from app.grading import score
 from app.models import Chapter, CourseModule, Mission, MissionAttempt, MissionVersion
@@ -73,9 +74,9 @@ def equivalents(db: Session, version_ids: list[int]) -> dict[int, set[int]]:
             same_mission = other.mission_id == row.mission_id or (other.module_order, other.chapter_order) == (row.module_order, row.chapter_order)
             if not same_mission:
                 continue
-            if kind == "lesson" and (other.definition_private or {}).get("kind") == "lesson":
+            if kind in UNGRADED_KINDS and (other.definition_private or {}).get("kind") == kind:
                 result[row.id].add(other.id)
-            elif kind != "lesson" and other.definition_private == row.definition_private:
+            elif kind not in UNGRADED_KINDS and other.definition_private == row.definition_private:
                 result[row.id].add(other.id)
     return result
 
@@ -107,7 +108,7 @@ def attempts_for(db: Session, user_ids: list[int], version_ids: list[int]) -> li
 
 def mission_scores(db: Session, user_id: int, version_ids: list[int]) -> dict[int, MissionScore]:
     defs = definitions(db, version_ids)
-    result = {vid: MissionScore(0.0, d.max_points, d.bonus, 0, False, d.kind == "lesson") for vid, d in defs.items()}
+    result = {vid: MissionScore(0.0, d.max_points, d.bonus, 0, False, d.kind in UNGRADED_KINDS) for vid, d in defs.items()}
     if not defs:
         return result
     for attempt, vid in attempts_for(db, [user_id], list(defs)):

@@ -16,6 +16,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, display_name, require_student, require_student_csrf, utcnow
 from app.config import get_settings
 from app.attempt_rules import (is_fast, next_attempt, notice, pause_remaining, reading_remaining, record_opening,
@@ -391,7 +392,7 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
     rules = rules_for_release(db, release)
     now = utcnow()
     # ADR-0027: after a wrong answer, the next attempt waits (checked here, not only in the browser).
-    wait = pause_remaining(db, rules, auth.user.id, version_id, now) if definition.kind != "lesson" else 0
+    wait = pause_remaining(db, rules, auth.user.id, version_id, now) if definition.kind not in UNGRADED_KINDS else 0
     if wait:
         raise HTTPException(status_code=429, detail={"code": "pause", "retry_after": wait,
                                                      "message": "Pause après une erreur : relisez la situation."},
@@ -419,7 +420,7 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
             raise HTTPException(status_code=409, detail="idempotency key already used")
         response.status_code = 200
         return attempt_response(db, existing, definition, replayed=True)
-    if not attempt.is_correct and definition.kind != "lesson":
+    if not attempt.is_correct and definition.kind not in UNGRADED_KINDS:
         blocked_signal(db, auth, release, version_id)
     return attempt_response(db, attempt, definition, replayed=False)
 
@@ -461,7 +462,7 @@ def understood(version_id: int, response: Response, auth: AuthContext = Depends(
                db: Session = Depends(get_db)) -> dict:
     """"J'ai compris" on a lesson: one attempt per student and lesson (idempotent), 0 point."""
     definition = private_definition(db, version_id)
-    if definition.kind != "lesson":
+    if definition.kind not in UNGRADED_KINDS:
         locate(db, auth.user.id, version_id)
         raise HTTPException(status_code=422, detail="only lessons can be marked as understood")
     key = f"lesson-{version_id}"

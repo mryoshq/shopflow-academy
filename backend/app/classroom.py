@@ -20,6 +20,7 @@ from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, aware, display_name, require_teacher, require_teacher_csrf, utcnow
 from app.config import get_settings
 from app.database import get_db
@@ -269,8 +270,8 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
         is_open = bool(state and state.opened_at)
         vids = [m["mission_version_id"] for m in block["missions"]]
         # « Terminé » = every graded mission solved (not bonus, not lesson); lessons are counted apart.
-        lessons = [vid for vid in vids if vid in defs and defs[vid].kind == "lesson"]
-        core = [vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind != "lesson"] or lessons
+        lessons = [vid for vid in vids if vid in defs and defs[vid].kind in UNGRADED_KINDS]
+        core = [vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS] or lessons
         done = sum(1 for sid in student_ids if core and all(sid in solved[vid] for vid in core))
         lessons_done = sum(1 for sid in student_ids if lessons and all(sid in solved[vid] for vid in lessons))
         if not is_open and next_block is None:
@@ -278,7 +279,7 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
         blocks.append({
             "chapter_id": block["chapter_id"], "position": position, "module": block["module"], "title": block["title"],
             "open": is_open, "opened_at": iso(state.opened_at) if is_open else None,
-            "mission_count": len([vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind != "lesson"]),
+            "mission_count": len([vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS]),
             "bonus_count": len([vid for vid in vids if vid in defs and defs[vid].bonus]), "lesson_count": len(lessons),
             "duration_minutes": sum(defs[vid].estimated_duration_minutes for vid in vids if vid in defs and not defs[vid].bonus),
             "completed_students": done, "lessons_read_students": lessons_done, "help_pending": sum(1 for h in pending if h.mission_version_id in vids),

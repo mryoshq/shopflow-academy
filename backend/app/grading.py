@@ -11,6 +11,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.curriculum_schema import UNGRADED_KINDS
 from app.curriculum_schema import MissionDefinition
 from app.projection import opaque_id, reverse_ids
 
@@ -40,7 +41,7 @@ def score(definition: MissionDefinition, raw_answer: dict) -> float:
     Pure function of (published definition, stored answer): scores can be replayed
     from the attempt log at any time and always give the same result.
     """
-    if definition.kind == "lesson":
+    if definition.kind in UNGRADED_KINDS:
         return 0.0
     if definition.kind == "sql_challenge":
         # The verdict is computed by the lab runner (part C) and stored with the attempt.
@@ -70,7 +71,7 @@ def _unique(values: list[str]) -> bool:
 
 
 def evaluate(definition: MissionDefinition, version_id: int, answer: AnswerInput) -> Evaluation:
-    if definition.kind == "lesson":
+    if definition.kind in UNGRADED_KINDS:
         # "J'ai compris": no answer to check, counted in progress, never in the grade.
         if answer.choice_ids or answer.pairs:
             raise InvalidAnswer("a lesson takes no answer")

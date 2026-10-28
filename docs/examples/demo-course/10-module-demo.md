@@ -439,3 +439,48 @@ data:
   file: media/pipeline-demo.mp4
   captions: media/pipeline-demo.vtt
 ```
+
+### Leçon : Le vocabulaire de la qualité en cartes
+
+```yaml
+slug: demo-lecon-cartes
+kind: lesson
+objectives: [DEMO-QUALITE]
+duration: 2
+body: |
+  Retournez chaque carte : le recto donne le mot, le verso sa définition. « Je savais / À revoir » est facultatif et ne compte jamais dans la note.
+data:
+  kind: flashcards
+  title: Mots de la qualité des données
+  description: Quatre cartes, un mot au recto et sa définition au verso.
+  cards:
+    - front: Doublon
+      back: Deux lignes qui décrivent **la même chose**, par exemple la même commande importée deux fois.
+    - front: Valeur manquante
+      back: Une cellule vide là où une valeur est attendue, comme une ville absente pour un client de Tanzar.
+    - front: Rejet
+      back: Une ligne écartée par une règle de qualité, gardée à part pour être corrigée.
+    - front: "`NOT NULL`"
+      back: Une contrainte qui refuse les valeurs manquantes dans une colonne.
+```
+
+### Révision : Le grain et la qualité
+
+```yaml
+slug: demo-revision-bloc
+objectives: [DEMO-GRAIN, DEMO-QUALITE]
+duration: 3
+body: Une révision rapide avant de quitter la journée. Elle compte dans la progression comme une leçon, jamais dans la note.
+data:
+  kind: flashcards
+  title: Révision de la journée
+  cards:
+    - front: Grain de `orders`
+      back: Une ligne par commande.
+    - front: Grain de `order_items`
+      back: Une ligne par article commandé.
+    - front: Jointure
+      back: Assemble deux tables à l'aide d'une **clé commune**.
+    - front: Pipeline d'ingestion
+      back: Les étapes qui amènent les données de leur source jusqu'à la table finale.
+```
