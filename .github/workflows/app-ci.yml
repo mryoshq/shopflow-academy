@@ -1,0 +1,44 @@
+name: Academy foundation
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: python -m pytest -q
+        working-directory: backend
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+        working-directory: frontend
+      - run: npm run test -- --maxWorkers=1
+        working-directory: frontend
+      - run: npm run build
+        working-directory: frontend
+  compose-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate local-only service topology
+        env:
+          POSTGRES_USER: academy_ci
+          POSTGRES_PASSWORD: ci_placeholder_not_for_deployment
+          POSTGRES_DB: academy_ci
+        run: docker compose config --quiet

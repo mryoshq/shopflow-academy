@@ -1,6 +1,4 @@
-# SPEC KIT ONLY: P0-01 must add gateway, frontend and backend.
-# At this stage `docker compose up -d` starts only PostgreSQL, not a working Academy.
-# No DB published to the host or Internet. cloudflared is managed separately from this stack.
+name: shopflow-academy
 services:
   postgres:
     image: postgres:16-alpine
@@ -18,16 +16,64 @@ services:
       retries: 5
     networks: [private]
 
+  migrate:
+    build: ./backend
+    command: ["alembic", "upgrade", "head"]
+    restart: "no"
+    environment: &backend_env
+      DATABASE_URL: postgresql+psycopg://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@postgres:5432/${POSTGRES_DB:?}
+      APP_ENV: ${APP_ENV:-development}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [private]
+
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    environment: *backend_env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/live', timeout=2)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [private]
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8080/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [private]
+
+  gateway:
+    build: ./gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${ACADEMY_HOST_PORT:-3080}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks: [edge, private]
+
   mysql:
     # Only needed when labs are developed: docker compose --profile labs up -d
     profiles: ["labs"]
     image: mysql:8.4
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?set MYSQL_ROOT_PASSWORD in .env}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:?set MYSQL_DATABASE in .env}
-      MYSQL_USER: ${MYSQL_USER:?set MYSQL_USER in .env}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-shopflow}
+      MYSQL_USER: ${MYSQL_USER:-shopflow_lab}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -39,6 +85,7 @@ services:
     networks: [private]
 
 networks:
+  edge:
   private:
     internal: true
 volumes:
