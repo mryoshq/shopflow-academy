@@ -2,7 +2,7 @@
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis la PR H (suivi en direct ; migration 0011), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
+**Prochaine tâche unique : fusionner #39 (correctif leçons, sans migration) puis #40 (H, suivi en direct ; migration 0011), et faire leurs « À faire en local » — accord et action du propriétaire.** Plan réinitialisé le 28/10 : ensuite K (classement), I (PWA, confort, couleurs), J (observateur), une PR chacune, tests ciblés et CI GitHub.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -27,7 +27,7 @@
 | 11 | Logo : en-tête, connexion, favicon, icônes, image de partage (ADR-0022c) | `claude/lucid-brahmagupta-htwgun-logo` | [#36](https://github.com/mryoshq/shopflow-academy/pull/36) (base : `main`, contient #35 par fusion) | **fusionnée** |
 | 12 | L — décourager le clic au hasard (ADR-0027) | `claude/lucid-brahmagupta-htwgun-l` | [#38](https://github.com/mryoshq/shopflow-academy/pull/38) (base : `main`, contient #36 par fusion) | **fusionnée** |
 | 13 | Correctif : bloc terminé sur les missions notées, leçons lues à part, validations après republication | `claude/lucid-brahmagupta-htwgun-lecons` | [#39](https://github.com/mryoshq/shopflow-academy/pull/39) (base : `main`) | ouverte — **à fusionner en premier** |
-| 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | PR H (base : `main`, contient #39 par fusion) | ouverte |
+| 14 | H — suivi en direct (ADR-0023) | `claude/lucid-brahmagupta-htwgun-h` | [#40](https://github.com/mryoshq/shopflow-academy/pull/40) (base : `main`, contient #39 par fusion) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
