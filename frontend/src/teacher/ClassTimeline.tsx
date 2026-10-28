@@ -87,7 +87,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
             <Heading as="h3" size="md" id="timeline-title">Déroulé de la journée</Heading>
             <Text fontSize="sm" color="app.muted">{openBlocks.length} bloc{openBlocks.length > 1 ? "s" : ""} ouvert{openBlocks.length > 1 ? "s" : ""} sur {data.blocks.length}. Les blocs ouverts restent accessibles.</Text>
           </Stack>
-          <Button colorPalette="brand" size="lg" loading={busy} disabled={!next}
+          <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" loading={busy} disabled={!next}
             onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/open-next`, (result) => `Bloc « ${result.title} » ouvert pour toute la classe.`)}>
             {next ? `Ouvrir le bloc suivant : ${next.title}` : "Tous les blocs sont ouverts"}
           </Button>

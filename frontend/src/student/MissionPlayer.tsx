@@ -244,7 +244,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                   explanation: response.explanation ?? current.explanation,
                 })} />
               : <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />}
-            {!["lesson", "sql_challenge", "reorder", "matching"].includes(definition.kind) && !result && <Text fontSize="xs" color="app.muted">
+            {!["lesson", "sql_challenge", "reorder", "matching"].includes(definition.kind) && !result && <Text fontSize="xs" color="app.muted" display={{ base: "none", md: "block" }}>
               Raccourcis : touches 1 à {Math.min(9, definition.choices.length)} pour choisir, Entrée pour valider.</Text>}
             {mission.paused && <Alert.Root status="warning" variant="subtle" rounded="lg">
               <Alert.Indicator /><Alert.Content><Alert.Title>Séquence en pause</Alert.Title>
@@ -296,7 +296,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       </Stack>
 
       <Box as="aside" aria-label="Aide" borderWidth="1px" borderColor="app.border" rounded="card" bg="app.sunken" p={{ base: "3", md: "4" }}>
-        <Button variant="ghost" size="sm" px="1" aria-expanded={helpOpen} aria-controls="mission-help" onClick={() => toggleHelp()}>
+        <Button variant="ghost" size="sm" px="1" h="auto" minH="8" py="1" whiteSpace="normal" textAlign="start" aria-expanded={helpOpen} aria-controls="mission-help" onClick={() => toggleHelp()}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
             style={{ transform: helpOpen ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>
           Aide : indices, question à l’enseignant{mission.attempts_count > 0 ? ", historique" : ""}
@@ -339,7 +339,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       </Box>
     </Stack>}
 
-    <Flex as="nav" aria-label="Navigation entre missions" justify="space-between" gap="3" pt="2" borderTopWidth="1px" borderColor="app.border">
+    <Flex as="nav" aria-label="Navigation entre missions" justify="space-between" wrap="wrap" gap="3" pt="2" borderTopWidth="1px" borderColor="app.border">
       <Button variant="ghost" disabled={!mission.previous_id} onClick={() => mission.previous_id && navigate(`/mission/${mission.previous_id}`)}><Icon name="arrow-left" />Mission précédente</Button>
       <Button variant="ghost" disabled={!mission.next_id} onClick={() => mission.next_id && navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>
     </Flex>

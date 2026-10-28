@@ -57,8 +57,14 @@ const config = defineConfig({
           emphasized: { value: { base: "{colors.saffron.200}", _dark: "{colors.saffron.800}" } },
           focusRing: { value: { base: "{colors.saffron.500}", _dark: "{colors.saffron.400}" } },
         },
-        // Default green.solid (600) fails AA with white text; use 700 everywhere.
-        green: { solid: { value: { base: "{colors.green.700}", _dark: "{colors.green.700}" } } },
+        // Default green.solid (600) fails AA with white text; use 700 everywhere. `_light`, not `base`:
+        // Chakra's own token has a `_light` value that would win over `base`.
+        green: { solid: { value: { _light: "{colors.green.700}", _dark: "{colors.green.700}" } } },
+        // Chakra's own surfaces (tables, inputs, menus) follow the app surfaces, not pure black.
+        bg: {
+          DEFAULT: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
+          panel: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
+        },
         app: {
           canvas: { value: { base: "#F7F4EE", _dark: "#0D1513" } },
           surface: { value: { base: "#FFFFFF", _dark: "#151F1D" } },

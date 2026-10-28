@@ -41,7 +41,7 @@ export function StudentDashboard({ navigate }: Props) {
         <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {data.display_name}</Heading>
         <Text fontSize="lg" color="app.muted">{data.courses.length === 0 ? "Votre enseignant ne vous a pas encore attribué de cours." : "Reprenez là où vous vous êtes arrêté."}</Text>
       </Stack>
-      {target && <Button colorPalette="brand" size="lg" onClick={() => navigate(`/mission/${target.mission_version_id}`)}>
+      {target && <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" onClick={() => navigate(`/mission/${target.mission_version_id}`)}>
         Continuer : {target.title}<Icon name="arrow-right" />
       </Button>}
     </Flex>

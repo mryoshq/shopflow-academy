@@ -47,7 +47,7 @@ test("the teacher follows the class live, pauses, unlocks and exports", async ({
   else await learner.getByRole("checkbox", { name: /^Convertir toutes les colonnes/ }).check()
   const started = Date.now()
   await learner.getByRole("button", { name: "Tester ma décision" }).click()
-  await expect(learner.getByText(/À revoir|Bonne décision/)).toBeVisible()
+  await expect(learner.getByText(/Presque ! Réessayez|Bonne décision/)).toBeVisible()
   await expect(currentCell).toHaveText(target.title, { timeout: 10_000 })
   const latency = Date.now() - started
   test.info().annotations.push({ type: "latence-suivi-ms", description: String(latency) })

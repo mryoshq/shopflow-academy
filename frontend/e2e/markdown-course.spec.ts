@@ -152,3 +152,21 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
   expect(text).not.toContain("ORDER BY ca DESC")
   await context.close()
 })
+
+test("every mission of the Markdown course passes axe in the dark theme", async ({ browser }) => {
+  const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, colorScheme: "dark", reducedMotion: "reduce" })
+  await context.addInitScript(() => window.localStorage.setItem("shopflow:theme", "dark"))
+  const student = await context.newPage()
+  await login(student, "demo.etudiant10")
+  const dashboard = await (await student.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string; status: string }[] }[] }
+  const course = dashboard.courses.find((item) => item.title === TITLE)
+  test.skip(!course, "course not given to demo.etudiant10 (run the previous test first)")
+  await expect(student.locator("html")).toHaveClass(/dark/)
+  for (const mission of course!.missions.filter((item) => item.status !== "locked")) {
+    await student.goto(`/#/mission/${mission.mission_version_id}`)
+    await expect(student.getByRole("heading", { level: 1, name: mission.title })).toBeVisible()
+    expect(await serious(student), mission.title).toEqual([])
+  }
+  await student.screenshot({ path: `${shots}/09-sombre-derniere-mission.png`, fullPage: true, animations: "disabled" })
+  await context.close()
+})

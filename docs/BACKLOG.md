@@ -21,7 +21,7 @@
 - [x] **S2-D** Chaîne d'import Markdown (`course_md.py compile|import|--publish`), leçons, `line_chart`, `code`, `comparison`, schéma `run`/`sql_challenge`. ADR-0020. Preuves : pytest 94, Vitest 35, build, Playwright 13 (stack de test locale) — voir PROGRESS.
 - [x] **S2-F** Médias codés : animation, carte mentale, pipeline animé, vidéo (ADR-0018). Preuves : pytest 108, Vitest 40, build, Playwright 13 dont médias avec axe et mouvement réduit (stack de test locale) — voir PROGRESS.
 - [x] **S2-C** Exécution de code préconfiguré : base de laboratoire, `run` SQL, `sql_challenge`, `run` Python à l'import (ADR-0017). Preuves : pytest 163 dont 55 sur la base de laboratoire, Vitest 42, Playwright (exécution, défi SQL réussi et refusé) — voir PROGRESS.
-- [ ] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion.
+- [x] **S2-B** Expérience simple et mode sombre, réinitialisation de mot de passe, fiches de connexion. ADR-0021. Preuves : pytest 198 (avec base de laboratoire), Vitest 43, build, Playwright (thèmes clair et sombre avec axe, 390×844, raccourcis, réinitialisation) — voir PROGRESS.
 - [ ] **S2-E** `docs/SUGGESTIONS.md`.
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable

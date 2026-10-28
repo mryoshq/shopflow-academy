@@ -32,7 +32,7 @@ type StudioProps = {
 export function Advanced({ label, children, defaultOpen = false }: { label: string; children: React.ReactNode; defaultOpen?: boolean }) {
   const [open, setOpen] = useState(defaultOpen)
   return <Box>
-    <Button size="sm" variant="ghost" px="1" aria-expanded={open} onClick={() => setOpen(!open)}>
+    <Button size="sm" variant="ghost" px="1" h="auto" minH="8" py="1" whiteSpace="normal" textAlign="start" aria-expanded={open} onClick={() => setOpen(!open)}>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
         style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>{label}</Button>
     {open && <Box pt="3">{children}</Box>}

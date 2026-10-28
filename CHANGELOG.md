@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie B : expérience simple et mode sombre (`claude/lucid-brahmagupta-htwgun-b`)
+
+- Mode sombre : chaque jeton du thème a sa valeur `_dark` ; sélecteur « Système / Clair / Sombre » mémorisé dans le navigateur, sans flash (`public/theme-init.js`, compatible CSP). axe 0 violation sérieuse dans les deux thèmes.
+- Étudiant : lecteur en une colonne, aide repliable (état mémorisé), « Mission suivante » en bouton principal après une réussite, « Presque ! Réessayez » au lieu de « À revoir », raccourcis 1 à 9 et Entrée, libellés longs qui passent à la ligne (aucun défilement horizontal à 390 px).
+- Enseignant : « Réinitialiser le mot de passe » d'un étudiant (affiché une seule fois, sessions fermées, audité sans le mot de passe).
+- `scripts/login_sheets.py` : fiches de connexion imprimables (adresse, QR code, identifiant ; mot de passe seulement avec `--with-passwords`), écrites hors du dépôt. QR code sans dépendance (`scripts/qrcode_min.py`). ADR-0021.
+
 ## 2026-10-28 — Sprint 2, partie C : exécution de code préconfiguré (`claude/lucid-brahmagupta-htwgun-c`)
 
 - Service `labdb` (PostgreSQL 16, réseau interne dédié, volume et identifiants à part) et `lab-init` (rôles `lab_reader` en lecture seule bornée, `lab_owner`) ; jeu fictif de démonstration ; `datasets/shopflow-lab.sql` chargé à l'import.
