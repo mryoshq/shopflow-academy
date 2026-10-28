@@ -44,9 +44,11 @@ réponse, adresse de connexion ou identité technique d’un autre étudiant.
   du jour : aucun total de points d’une ligne masquée au classement général.
 - Un prénom ou pseudonyme est choisi par l’étudiant, de 1 à 24 caractères.
   Normalisation Unicode NFKC, refus du signe arobase et des caractères de contrôle
-  ou de direction invisibles. Aucun pseudonyme n’est extrait d’un identifiant de
-  connexion. Avant ce choix, nom neutre « Élève N » dans l’ordre interne de la
-  classe. Les doublons de pseudonyme sont permis ; le repère textuel « Vous »
+  ou de direction invisibles. Avant ce choix, et sur décision du propriétaire du
+  28/10/2026, le nom réel est déduit de l’identifiant (`prenom.nom@ynov.com` →
+  « Prénom Nom » : partie avant `@`, découpée sur `.`, `-`, `_`, majuscule
+  initiale) ; l’adresse et le domaine ne sortent jamais de l’API. « Élève N »
+  seulement si rien d’exploitable ne reste. Les doublons de pseudonyme sont permis ; le repère textuel « Vous »
   identifie toujours la ligne personnelle. Le texte est échappé par React.
 - API sous les préfixes étudiants/enseignant existants, contrôles de rôle,
   d’inscription ou de propriété à chaque requête, CSRF sur les écritures.
