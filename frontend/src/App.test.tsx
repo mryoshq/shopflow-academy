@@ -46,8 +46,12 @@ it("opens the teacher home on the single course and logs out with CSRF", async (
   show()
   fireEvent.change(await screen.findByRole("textbox", { name: "Identifiant" }), { target: { value: "demo.enseignant" } })
   fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "local-secret" } })
+  fireEvent.click(screen.getByRole("checkbox", { name: /Rester connecté/ }))
   fireEvent.click(screen.getByRole("button", { name: "Se connecter" }))
   expect(await screen.findByRole("heading", { name: "Studio de cours" })).toBeInTheDocument()
+  const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/login"))
+  expect(JSON.parse(sent?.[1].body)).toEqual({ username: "demo.enseignant", password: "local-secret", remember: true })
+  expect(Object.keys(localStorage).filter((key) => /session|csrf|token/i.test(key))).toEqual([])
   // Three zones, the single course opened directly; other courses are folded in the advanced options.
   for (const name of ["Mon cours", "Ma classe", "Résultats"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument()
   expect(await screen.findByRole("heading", { name: "Python Data Engineering & SQL Avancé" })).toBeInTheDocument()

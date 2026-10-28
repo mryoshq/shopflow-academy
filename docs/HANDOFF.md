@@ -32,7 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner la PR de la partie M (cartes à retourner ; sans migration) et faire son « À faire en local » — accord et action du propriétaire.** Ensuite : partie J (observateur en lecture seule).
+**Prochaine tâche unique : relire et fusionner la PR M (#49), puis la PR N #51 (confort et finitions, empilée sur M ; sans migration), et faire leurs « À faire en local » — accord et action du propriétaire.** Ensuite : partie J (observateur en lecture seule).
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -61,6 +61,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 15 | Correctifs de relecture (#39, #40) | `claude/lucid-brahmagupta-htwgun-relecture` | [#44](https://github.com/mryoshq/shopflow-academy/pull/44) | **fusionnée** |
 | 16 | I — PWA, confort (pomodoro, radio), couleurs (ADR-0024) | `claude/lucid-brahmagupta-htwgun-i` | [#47](https://github.com/mryoshq/shopflow-academy/pull/47) | **fusionnée** |
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
+| 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -129,6 +130,13 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Facultatif, radio : vérifier les identifiants proposés dans l'ADR-0024, puis `RADIO_STREAMS='[...]'` dans `.env` et `docker compose up -d --wait backend`. Sans cette variable, aucune radio n'est proposée.
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
+
+### À faire en local après la PR N
+
+1. Fusionner #49 (M) avant N, ou N seule (elle contient M).
+2. Redéployer à une pause par la procédure habituelle (`docker compose up -d --build --wait`) : backend, interface **et passerelle** (types d'images sous `/media/`). Aucune migration, aucune sauvegarde nécessaire.
+3. Smoke : `python3 scripts/smoke_public.py http://127.0.0.1:3080`. Vérifier sur téléphone : case « Rester connecté », code coloré (clair et sombre), leçon image du cours de démonstration (après réimport du dossier si souhaité), aucun défilement horizontal.
+4. Les sessions déjà ouvertes gardent leur durée de 8 h ; « Rester connecté » s'applique aux nouvelles connexions.
 
 ### À faire en local après la PR M
 1. Redéployer à la pause : `git switch main && git pull && docker compose up -d --build --wait`, puis `python3 scripts/smoke_public.py`. **Pas de migration, pas de sauvegarde nécessaire.**

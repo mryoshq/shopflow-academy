@@ -21,6 +21,9 @@ router = APIRouter(prefix="/api/v1")
 password_hash = PasswordHash.recommended()
 _dummy_hash = password_hash.hash("not-an-account-password")
 SESSION_SECONDS = 8 * 60 * 60
+# « Rester connecté » (ADR-0029): 30 days, renewed at each visit (GET /auth/me), at most once an hour.
+REMEMBER_SECONDS = 30 * 24 * 60 * 60
+RENEW_EVERY = timedelta(hours=1)
 MAX_FAILURES = 5
 WINDOW = timedelta(minutes=15)
 LOCK = timedelta(minutes=1)
@@ -56,6 +59,7 @@ def check_origin(request: Request) -> None:
 class LoginRequest(BaseModel):
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=1024)
+    remember: bool = False
 
 
 class UserOut(BaseModel):
@@ -130,6 +134,18 @@ def require_teacher_csrf(auth: AuthContext = Depends(require_csrf)) -> AuthConte
     return auth
 
 
+def set_session_cookies(response: Response, raw_session: str, raw_csrf: str, max_age: int) -> None:
+    session_name, csrf_name = cookie_names()
+    secure = get_settings().app_env == "production"
+    response.set_cookie(session_name, raw_session, max_age=max_age, httponly=True, secure=secure, samesite="lax", path="/")
+    response.set_cookie(csrf_name, raw_csrf, max_age=max_age, httponly=False, secure=secure, samesite="lax", path="/")
+
+
+def remembered(session: UserSession) -> bool:
+    """A « Rester connecté » session: created for longer than a normal one (no extra column)."""
+    return aware(session.expires_at) - aware(session.created_at) > timedelta(seconds=SESSION_SECONDS + 3600)
+
+
 @router.post("/auth/login", response_model=UserOut, tags=["auth"])
 def login(payload: LoginRequest, request: Request, response: Response, db: Session = Depends(get_db)) -> UserOut:
     check_origin(request)
@@ -152,7 +168,9 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
                 throttle.blocked_until = None
                 result = user
                 raw_session, raw_csrf = token_urlsafe(32), token_urlsafe(32)
-                db.add(UserSession(token_hash=digest(raw_session), user_id=user.id, csrf_hash=digest(raw_csrf), expires_at=now + timedelta(seconds=SESSION_SECONDS)))
+                lifetime = REMEMBER_SECONDS if payload.remember else SESSION_SECONDS
+                db.add(UserSession(token_hash=digest(raw_session), user_id=user.id, csrf_hash=digest(raw_csrf), created_at=now,
+                                   expires_at=now + timedelta(seconds=lifetime)))
                 db.add(AuthEvent(user_id=user.id, action="login"))
             else:
                 throttle.attempts += 1
@@ -162,10 +180,7 @@ def login(payload: LoginRequest, request: Request, response: Response, db: Sessi
         raise HTTPException(status_code=429, detail="too many attempts")
     if result is None:
         raise HTTPException(status_code=401, detail="invalid credentials")
-    session_name, csrf_name = cookie_names()
-    secure = get_settings().app_env == "production"
-    response.set_cookie(session_name, raw_session, max_age=SESSION_SECONDS, httponly=True, secure=secure, samesite="lax", path="/")
-    response.set_cookie(csrf_name, raw_csrf, max_age=SESSION_SECONDS, httponly=False, secure=secure, samesite="lax", path="/")
+    set_session_cookies(response, raw_session, raw_csrf, REMEMBER_SECONDS if payload.remember else SESSION_SECONDS)
     response.headers["Cache-Control"] = "no-store"
     return UserOut(id=result.id, username=result.username, role=result.role)
 
@@ -182,8 +197,18 @@ def logout(response: Response, auth: AuthContext = Depends(require_csrf), db: Se
 
 
 @router.get("/auth/me", response_model=UserOut, tags=["auth"])
-def me(response: Response, auth: AuthContext = Depends(current_auth)) -> UserOut:
+def me(request: Request, response: Response, auth: AuthContext = Depends(current_auth), db: Session = Depends(get_db)) -> UserOut:
     response.headers["Cache-Control"] = "no-store"
+    now = utcnow()
+    session = auth.session
+    session_name, csrf_name = cookie_names()
+    raw_csrf = request.cookies.get(csrf_name, "")
+    if (remembered(session) and TOKEN_RE.fullmatch(raw_csrf)
+            and aware(session.expires_at) < now + timedelta(seconds=REMEMBER_SECONDS) - RENEW_EVERY):
+        # Same session and CSRF tokens, longer life: the browser keeps both cookies 30 more days.
+        session.expires_at = now + timedelta(seconds=REMEMBER_SECONDS)
+        db.commit()
+        set_session_cookies(response, request.cookies[session_name], raw_csrf, REMEMBER_SECONDS)
     return UserOut(id=auth.user.id, username=auth.user.username, role=auth.user.role)
 
 

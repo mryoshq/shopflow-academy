@@ -460,6 +460,31 @@ class VideoDisplay(Described):
         return self
 
 
+IMAGE_SRC = re.compile(r"^/media/[0-9a-f]{16}\.(png|jpg|webp|svg)$")
+
+
+class ImageDisplay(Described):
+    """A course picture (ADR-0029): a file of the course folder copied at import, with a required alt text."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["image"]
+    src: str = Field(max_length=40)
+    alt: str = Field(min_length=1, max_length=300)
+    caption: str = Field(default="", max_length=300)
+
+    @field_validator("alt", "caption")
+    @classmethod
+    def safe_text(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+    @model_validator(mode="after")
+    def course_file(self) -> ImageDisplay:
+        if not IMAGE_SRC.fullmatch(self.src):
+            raise ValueError("Invalid image file")
+        if not self.alt:
+            raise ValueError("An image needs an alt text")
+        return self
+
+
 class Flashcard(BaseModel):
     """One card: a short front (question, term) and its back, light formatting allowed (ADR-0028)."""
     model_config = ConfigDict(extra="forbid")
@@ -486,7 +511,7 @@ class FlashcardsDisplay(Described):
 
 
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 

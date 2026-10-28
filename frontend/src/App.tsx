@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react"
-import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text } from "@chakra-ui/react"
+import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
@@ -25,6 +25,7 @@ export function App() {
   const [user, setUser] = useState<User | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
+  const [remember, setRemember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
 
@@ -58,7 +59,7 @@ export function App() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, remember }),
       })
       if (response.status === 429) return setMessage("Trop de tentatives. Réessayez dans une minute.")
       if (!response.ok) return setMessage("Identifiant ou mot de passe incorrect.")
@@ -94,7 +95,7 @@ export function App() {
   const page = (
     <Box minH="100vh" bg="app.canvas" color="app.ink">
       {/* ADR-0024: keyboard users skip the header. */}
-      <Link href="#contenu" position="absolute" left="2" top="-12" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
+      <Link href="#contenu" position="absolute" left="2" top="-16" minH="11" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
         fontWeight="semibold" _focus={{ top: "2" }}>Aller au contenu</Link>
       <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
         <Container maxW="7xl" py="3.5">
@@ -103,13 +104,15 @@ export function App() {
               <Logo size={32} />
               <Text fontWeight="bold" letterSpacing="0.02em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>
             </Flex>
-            <Flex align="center" gap="3" wrap="wrap" justify="end">
+            <Flex align="center" gap={{ base: "2", md: "3" }} wrap="wrap" justify="end">
             <ThemeSwitch />
-            {state === "authenticated" && user ? <Flex align="center" gap="3" wrap="wrap" justify="end">
+            {state === "authenticated" && user ? <Flex align="center" gap={{ base: "2", md: "3" }} wrap="wrap" justify="end">
               {user.role === "student" && <ComfortButton />}
               <NotificationBell />
-              <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
-              <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
+              <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
+              <Button size="sm" variant="outline" onClick={onLogout} loading={busy} aria-label="Se déconnecter">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false"><path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" /></svg>
+                <Box as="span" display={{ base: "none", sm: "inline" }}>Se déconnecter</Box></Button>
             </Flex> : <Text fontSize="sm" color="app.muted" display={{ base: "none", md: "block" }}>Python Data Engineering & SQL avancé</Text>}
             </Flex>
           </Flex>
@@ -139,6 +142,11 @@ export function App() {
                   <Field.Label>Mot de passe</Field.Label>
                   <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
+                {/* ADR-0029: a 30-day session kept by the server cookie only, never a token in localStorage. */}
+                <chakra.label display="flex" alignItems="center" gap="3" minH="11" cursor="pointer" fontSize="sm">
+                  <chakra.input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} w="5" h="5" accentColor="var(--chakra-colors-brand-solid)" />
+                  <span>Rester connecté <Text as="span" color="app.muted">(30 jours sur cet appareil)</Text></span>
+                </chakra.label>
                 {message && <Text role="alert" color="red.fg" fontSize="sm">{message}</Text>}
                 <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText="Connexion…">Se connecter</Button>
               </Stack>

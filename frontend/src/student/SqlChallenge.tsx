@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
-import { Alert, Box, Button, Flex, Stack, Text, Textarea } from "@chakra-ui/react"
+import { Alert, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
+import { CodeEditor } from "./CodeEditor"
 import { api, ApiError } from "../api"
 import { newIdempotencyKey } from "./storage"
 import type { AttemptResult } from "./types"
@@ -38,10 +39,9 @@ export function SqlChallenge({ missionId, starter, disabled, onResult }: Props) 
 
   return <Stack gap="3">
     <label htmlFor={`sql-${missionId}`}><Text as="span" fontWeight="semibold">Votre requête</Text></label>
-    <Textarea id={`sql-${missionId}`} value={sql} onChange={(event) => { setSql(event.target.value); setOutcome(null) }} rows={Math.min(14, Math.max(6, sql.split("\n").length + 1))}
-      spellCheck={false} autoCapitalize="off" autoCorrect="off" maxLength={4000} disabled={disabled}
-      onKeyDown={(event) => { if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void submit() } }}
-      css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace", fontSize: "14px", background: "var(--chakra-colors-code-bg)" }} />
+    <CodeEditor id={`sql-${missionId}`} value={sql} language="sql" onChange={(value) => { setSql(value); setOutcome(null) }} rows={Math.min(14, Math.max(6, sql.split("\n").length + 1))}
+      maxLength={4000} disabled={disabled}
+      onKeyDown={(event) => { if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void submit() } }} />
     <Text fontSize="xs" color="app.muted">Une seule requête SELECT (WITH et EXPLAIN permis), sur les tables du laboratoire. Ctrl + Entrée pour exécuter.</Text>
     <Flex gap="3" wrap="wrap">
       <Button colorPalette="brand" size="lg" loading={busy} loadingText="Exécution…" disabled={disabled || !sql.trim()} onClick={() => void submit()}>Exécuter et vérifier</Button>

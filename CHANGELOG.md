@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie N : confort et finitions (`claude/lucid-brahmagupta-htwgun-n`)
+
+- « Rester connecté » : session de 30 jours renouvelée à chaque visite (sinon 8 h comme avant), cookies et CSRF inchangés, aucun jeton dans le navigateur hors cookies ; la déconnexion révoque la session.
+- Code coloré en Catppuccin (Latte en clair, Mocha en sombre, contrastes AA vérifiés) pour les blocs `code`, les exécutions et l'éditeur du défi SQL, sans nouvelle dépendance.
+- Images de cours : `data.kind: image` (png, jpg, webp, svg contrôlé ; 2 Mo ; `alt` obligatoire), copiées à l'import, agrandies au clic.
+- Passe mobile 390/360 px : cibles de 44 px, en-tête compact, tableaux défilant dans leur cadre. ADR-0029.
+
 ## 2026-10-28 — Sprint 2, partie M : cartes à retourner (`claude/lucid-brahmagupta-htwgun-m`)
 
 - `data.kind: flashcards` (2 à 30 cartes recto/verso, mise en forme légère) dans les leçons et le nouvel élément non noté « Révision » (`### Révision :`, `kind: review`), compté comme une leçon.

@@ -146,3 +146,40 @@ def test_demo_seed_is_fictional_idempotent_and_disabled_in_production(auth_env, 
         assert seed_demo(db, path, "development") == 0
     with Session(engine) as db, pytest.raises(RuntimeError):
         seed_demo(db, path, "production")
+
+
+def test_remember_me_keeps_a_30_day_session_renewed_at_each_visit_and_logout_revokes_it(auth_env):
+    """ADR-0029: « Rester connecté » = 30 days renewed by /auth/me; otherwise 8 h, unchanged."""
+    client, engine = auth_env
+
+    def stored():
+        with Session(engine) as db:
+            return db.get(UserSession, sha256(client.cookies["academy_session"].encode()).hexdigest())
+
+    response = login(client, "student.a", "student-a-test")
+    assert "Max-Age=28800" in response.headers["set-cookie"]
+    assert timedelta(hours=7) < stored().expires_at.replace(tzinfo=None) - utcnow().replace(tzinfo=None) <= timedelta(hours=8)
+    me = client.get("/api/v1/auth/me")
+    assert "set-cookie" not in me.headers  # a normal session is never extended
+    client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": client.cookies["academy_csrf"]})
+
+    response = client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test", "remember": True})
+    cookies = response.headers.get_list("set-cookie")
+    assert all("Max-Age=2592000" in cookie for cookie in cookies) and any("HttpOnly" in cookie for cookie in cookies)
+    session, csrf = client.cookies["academy_session"], client.cookies["academy_csrf"]
+    # Ten days later, a visit pushes the end back to 30 days, with the same tokens (CSRF unchanged).
+    with Session(engine) as db:
+        record = db.get(UserSession, sha256(session.encode()).hexdigest())
+        record.created_at = utcnow() - timedelta(days=10)
+        record.expires_at = utcnow() + timedelta(days=20)
+        db.commit()
+    renewed = client.get("/api/v1/auth/me")
+    assert renewed.status_code == 200 and "Max-Age=2592000" in renewed.headers["set-cookie"]
+    assert client.cookies["academy_session"] == session and client.cookies["academy_csrf"] == csrf
+    assert stored().expires_at.replace(tzinfo=None) - utcnow().replace(tzinfo=None) > timedelta(days=29)
+    assert client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": "invalid"}).status_code == 403  # CSRF still checked
+    assert client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": csrf}).status_code == 204
+    with Session(engine) as db:
+        assert db.get(UserSession, sha256(session.encode()).hexdigest()).revoked_at is not None
+    client.cookies.set("academy_session", session)
+    assert client.get("/api/v1/auth/me").status_code == 401  # the revoked long session is refused

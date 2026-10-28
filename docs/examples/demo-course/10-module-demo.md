@@ -440,6 +440,22 @@ data:
   captions: media/pipeline-demo.vtt
 ```
 
+### Leçon : Le schéma du pipeline en image
+
+```yaml
+slug: demo-lecon-image
+kind: lesson
+objectives: [DEMO-PIPELINE]
+duration: 1
+body: |
+  Cliquez sur l'image pour l'agrandir. Le texte alternatif décrit le schéma pour les lecteurs d'écran.
+data:
+  kind: image
+  file: media/pipeline-schema.svg
+  alt: "Schéma : le fichier source passe par le contrôle qualité, qui envoie les lignes valides vers la table propre et les autres vers les rejets."
+  caption: Un pipeline sépare les lignes valides des rejets.
+```
+
 ### Leçon : Le vocabulaire de la qualité en cartes
 
 ```yaml

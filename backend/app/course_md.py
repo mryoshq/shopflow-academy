@@ -54,8 +54,12 @@ HTTP_RE = re.compile(r"http://", re.IGNORECASE)
 # Kinds and data kinds the platform can play today. Others are refused with a clear message.
 KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching", "data_interpretation",
          "scenario_choice", "lesson", "sql_challenge", "review"}
-DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards"}
-MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt)$")
+DATA_KINDS = {"table", "bar_chart", "line_chart", "code", "comparison", "animation", "mindmap", "flow", "video", "flashcards", "image"}
+MEDIA_NAME = re.compile(r"^media/[A-Za-z0-9_-]{1,80}\.(mp4|vtt|png|jpg|jpeg|webp|svg)$")
+IMAGE_EXTS = {"png", "jpg", "jpeg", "webp", "svg"}
+MAX_IMAGE_BYTES = 2 * 1024 * 1024
+# SVG pictures are drawings only: no script, event handler, external link, embedded HTML or entity (ADR-0029).
+SVG_FORBIDDEN = re.compile(rb"<\s*script|<\s*foreignObject|<!ENTITY|<!DOCTYPE|\son[a-z]+\s*=|javascript:|data:text/html|href\s*=\s*[\"']\s*(?!#)", re.I)
 MAX_VIDEO_BYTES = 50 * 1024 * 1024
 MAX_CAPTIONS_BYTES = 512 * 1024
 MISSION_KEYS = {"slug", "kind", "objectives", "prerequisites", "points", "scoring", "duration", "bonus", "scenario",
@@ -120,6 +124,8 @@ FRENCH = {
     "Video url must be an https embed from youtube-nocookie.com or player.vimeo.com": "`url` doit être un lien https d'intégration youtube-nocookie.com/embed/… ou player.vimeo.com/video/…",
     "Captions files are for course videos only": "`captions` seulement avec une vidéo `file` du cours",
     "Invalid video file": "fichier vidéo invalide",
+    "Invalid image file": "fichier image invalide",
+    "An image needs an alt text": "une image demande un texte alternatif `alt`",
     "Invalid captions file": "fichier de sous-titres invalide",
 }
 
@@ -716,9 +722,61 @@ def compile_files(files: dict[str, str], media: dict[str, bytes] | None = None, 
     return compiled
 
 
+def image_problem(name: str, ext: str, content: bytes) -> str | None:
+    """Why a course picture is refused, in French; None when it is a real png, jpg, webp or safe svg."""
+    if len(content) > MAX_IMAGE_BYTES:
+        return f"`{name}` trop volumineux ({len(content) / (1024 * 1024):.1f} Mo, maximum 2 Mo)"
+    magic = {"png": content.startswith(b"\x89PNG\r\n\x1a\n"), "jpg": content.startswith(b"\xff\xd8\xff"),
+             "webp": content[:4] == b"RIFF" and content[8:12] == b"WEBP"}
+    if ext in magic and not magic[ext]:
+        return f"`{name}` n'est pas une image {ext.upper()}"
+    if ext == "svg":
+        head = content.lstrip(b"\xef\xbb\xbf \t\r\n")
+        if not (head.startswith(b"<svg") or head.startswith(b"<?xml")) or b"<svg" not in content:
+            return f"`{name}` n'est pas une image SVG"
+        if SVG_FORBIDDEN.search(content):
+            return f"`{name}` : SVG refusé (script, évènement, lien externe ou entité interdits)"
+    return None
+
+
+def attach_image(compiled: Compiled, item: Item, data: dict) -> None:
+    import hashlib
+
+    name = data.pop("file", None)
+    line = line_for(item, ("data", "file"))
+    if data.get("src") is not None:
+        compiled.error(item.file, line_for(item, ("data", "src")), "une image s'écrit avec `file: media/<nom>.png` (pas `src`)")
+        data.pop("src")
+    if name is None:
+        compiled.error(item.file, line_for(item, ("data",)), "une image demande `file: media/<nom>.png|jpg|webp|svg`")
+        data["src"] = "/media/" + "0" * 16 + ".png"  # placeholder: the error above already blocks the import
+        return
+    name = str(name)
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    if not MEDIA_NAME.fullmatch(name) or ext not in IMAGE_EXTS:
+        compiled.error(item.file, line, "`file` : chemin `media/<nom>.png|jpg|webp|svg` attendu (lettres, chiffres, - et _)")
+        data["src"] = "/media/" + "0" * 16 + ".png"
+        return
+    ext = "jpg" if ext == "jpeg" else ext
+    content = compiled.media_in.get(name)
+    problem = "fichier introuvable dans le dossier du cours : `%s`" % name if content is None else image_problem(name, ext, content)
+    if problem:
+        compiled.error(item.file, line, problem)
+        data["src"] = "/media/" + "0" * 16 + ".png"
+        return
+    src = f"/media/{hashlib.sha256(content).hexdigest()[:16]}.{ext}"
+    compiled.media_out[src] = content
+    data["src"] = src
+    if not str(data.get("alt") or "").strip():
+        compiled.error(item.file, line_for(item, ("data",)), "une image demande un texte alternatif `alt` (ce que montre l'image)")
+
+
 def attach_media(compiled: Compiled, item: Item) -> None:
-    """``data.kind: video`` with ``file``: check the course file and replace it by its content address."""
+    """``data.kind: video|image`` with ``file``: check the course file and replace it by its content address."""
     data = item.raw.get("data")
+    if isinstance(data, dict) and data.get("kind") == "image":
+        attach_image(compiled, item, data)
+        return
     if not isinstance(data, dict) or data.get("kind") != "video" or "file" not in data:
         if isinstance(data, dict) and data.get("kind") == "video" and data.get("captions") is not None:
             compiled.error(item.file, line_for(item, ("data", "captions")), "`captions` seulement avec une vidéo `file` du cours")
@@ -1011,7 +1069,7 @@ def load_lab_dataset(compiled: Compiled) -> str:
 
 
 def write_media(compiled: Compiled) -> None:
-    """Copy course videos into the media volume served by the gateway (content-addressed, idempotent)."""
+    """Copy course videos and pictures into the media volume served by the gateway (content-addressed, idempotent)."""
     from app.config import get_settings
 
     if not compiled.media_out:

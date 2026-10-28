@@ -81,7 +81,7 @@ export function ComfortButton() {
     <Box role="dialog" aria-label="Confort" hidden={!open} position="absolute" right="0" top="calc(100% + 8px)" zIndex="popover"
       w={{ base: "min(92vw, 20rem)", md: "20rem" }} bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg" p="3">
       <Flex justify="space-between" align="center" mb="2"><Text fontWeight="semibold">Confort</Text>
-        <CloseButton size="xs" aria-label="Fermer le panneau Confort" onClick={() => setOpen(false)} /></Flex>
+        <CloseButton size={{ base: "md", md: "xs" }} minW={{ base: "11", md: "auto" }} aria-label="Fermer le panneau Confort" onClick={() => setOpen(false)} /></Flex>
       <Pomodoro {...pomodoro} />
       <Radio />
     </Box>

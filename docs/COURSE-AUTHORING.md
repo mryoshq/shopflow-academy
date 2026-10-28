@@ -19,7 +19,7 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
     00-cours.md               en-tête du cours (titre, objectifs)
     10-module-sql.md          module SQL analytique
     20-module-python.md       module Python ingestion et qualité (peut être découpé en 20-, 21-, 22-…)
-    media/                    vidéos .mp4 (≤ 50 Mo) et sous-titres .vtt facultatifs (§ 6, `data.kind: video`)
+    media/                    vidéos .mp4 (≤ 50 Mo), sous-titres .vtt (§ 6, `data.kind: video`) et images png/jpg/webp/svg (≤ 2 Mo, `data.kind: image`)
     datasets/
       shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 7)
       python/                 petits fichiers CSV/JSON fictifs utilisés par les extraits Python
@@ -270,6 +270,16 @@ data:
       back: Une contrainte qui refuse les valeurs manquantes.
 ```
 
+- `image` (ADR-0029, leçons et missions) : `file: media/<nom>.png|jpg|webp|svg` (dans le dossier `cours/media/`, **2 Mo au plus**, copié à l'import comme les vidéos), **`alt` obligatoire** (≤ 300 caractères : ce que montre l'image, lu par les lecteurs d'écran), `caption` facultative (≤ 300 caractères, mise en forme légère), `description` facultative comme tous les médias. L'étudiant clique sur l'image pour l'agrandir (Échap ou « Fermer » pour revenir). L'image est posée sur un fond blanc dans les deux thèmes : un schéma à traits sombres reste lisible en mode sombre. Les SVG sont des dessins : aucun script, attribut d'évènement (`onload`…), lien externe, entité ni HTML intégré (`foreignObject`) ; un SVG qui en contient est refusé à la compilation. Pas de GIF ni d'image distante.
+
+```yaml
+data:
+  kind: image
+  file: media/pipeline-schema.svg
+  alt: "Schéma : le fichier source passe par le contrôle qualité, qui envoie les lignes valides vers la table propre et les autres vers les rejets."
+  caption: Un pipeline sépare les lignes valides des rejets.
+```
+
 Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
 
 ```yaml
@@ -323,6 +333,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | Date | Changement |
 |---|---|
 | 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
+| 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |

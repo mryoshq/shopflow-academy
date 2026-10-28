@@ -55,12 +55,12 @@ def bundle(folder: Path) -> dict[str, str]:
 
 
 def media_bundle(folder: Path) -> dict[str, str]:
-    """Videos and captions of ``media/`` (checked again by the compiler: MP4 <= 50 Mo, WebVTT)."""
+    """Videos, captions and pictures of ``media/`` (checked again by the compiler: MP4 <= 50 Mo, WebVTT, images <= 2 Mo)."""
     import base64
 
     media = {}
     for path in sorted((folder / "media").glob("*")):
-        if path.is_file() and path.suffix in {".mp4", ".vtt"}:
+        if path.is_file() and path.suffix.lower() in {".mp4", ".vtt", ".png", ".jpg", ".jpeg", ".webp", ".svg"}:
             if path.stat().st_size > MAX_MEDIA:
                 raise SystemExit(f"{path.name} : plus de 50 Mo")
             media[f"media/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
