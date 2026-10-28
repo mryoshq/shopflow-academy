@@ -20,6 +20,7 @@ it("renders tied ranks, separate points and the caller's text marker; switches t
   expect(within(table).getAllByText("Rang 1")).toHaveLength(2)
   expect(within(table).getByText("· Vous")).toBeInTheDocument()
   expect(within(table).getByRole("columnheader", { name: "Points bonus" })).toBeInTheDocument()
+  expect(within(table).queryByRole("columnheader", { name: "Blocs terminés" })).toBeNull()
   fireEvent.click(screen.getByRole("tab", { name: "Progression du jour" }))
   expect(await screen.findByRole("table", { name: "Blocs terminés aujourd’hui" })).toBeVisible()
   expect(screen.getByText(/heure du Maroc/)).toBeVisible()
