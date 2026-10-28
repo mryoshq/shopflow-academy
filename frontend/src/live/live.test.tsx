@@ -118,3 +118,24 @@ it("automatic opening: the weighted plan is shown before activation", async () =
   expect(screen.getByRole("button", { name: "Mettre en pause" })).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Ouvrir le suivant maintenant" })).toBeInTheDocument()
 })
+
+it("a block opened before the first load (first batch) still refreshes the dashboard", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => json({ unread: 1, items: [note(9, "block_open", "Le bloc « Jointures » est ouvert.")] })))
+  const refreshed = vi.fn()
+  window.addEventListener("academy:refresh", refreshed)
+  wrap(<NotificationProvider><NotificationBell /></NotificationProvider>)
+  await vi.waitFor(() => expect(refreshed).toHaveBeenCalled())
+  window.removeEventListener("academy:refresh", refreshed)
+})
+
+it("permission already granted without a Web Push subscription: the activation can still be finished", async () => {
+  vi.stubGlobal("Notification", Object.assign(vi.fn(), { permission: "granted", requestPermission: vi.fn(async () => "granted") }))
+  vi.stubGlobal("PushManager", function PushManager() {})
+  Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: { getRegistration: vi.fn(async () => undefined), addEventListener: vi.fn(), removeEventListener: vi.fn() } })
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => url.includes("/push/key")
+    ? json({ enabled: true, public_key: "BA" }) : json({ unread: 0, items: [] })))
+  wrap(<NotificationProvider><NotificationBell /></NotificationProvider>)
+  fireEvent.click(await screen.findByRole("button", { name: "Notifications" }))
+  expect(await screen.findByRole("button", { name: "Activer les notifications hors de l’onglet" })).toBeInTheDocument()
+  Reflect.deleteProperty(navigator, "serviceWorker")
+})

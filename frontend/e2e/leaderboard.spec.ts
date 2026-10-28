@@ -3,7 +3,7 @@ import AxeBuilder from "@axe-core/playwright"
 
 // Entirely synthetic browser fixtures; authorization/score invariants use real API
 // and migrated DB in test_leaderboard.py. This spec never contacts a live API.
-test("K: teacher settings, student name, tied ranks, refresh, daily tab, AA and reduced motion", async ({ page }, testInfo) => {
+test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA and reduced motion", async ({ page }, testInfo) => {
   let role: "teacher" | "student" = "teacher"
   let enabled = false
   let core = 15
@@ -64,9 +64,7 @@ test("K: teacher settings, student name, tied ranks, refresh, daily tab, AA and 
   const table = page.getByRole("table", { name: "Classement de la classe" })
   await expect(table.getByText("Rang 1", { exact: true })).toHaveCount(2)
   await expect(table.getByText("· Vous")).toBeVisible()
-  await page.getByRole("textbox", { name: "Votre nom affiché" }).fill("Toubkal")
-  await page.getByRole("button", { name: "Enregistrer le nom" }).click()
-  await expect(table.getByText("Toubkal", { exact: false })).toBeVisible()
+  await expect(page.getByRole("textbox", { name: "Votre nom affiché" })).toHaveCount(0)
   core = 18
   const start = Date.now()
   await expect(table.getByRole("cell", { name: "18", exact: true })).toHaveCount(2, { timeout: 10_000 })

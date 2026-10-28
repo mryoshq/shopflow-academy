@@ -94,31 +94,21 @@ def test_another_teacher_cannot_read_or_change_class(env):
     assert put(clients["teacher"], f"/api/v1/teacher/classes/{aid}/leaderboard/settings", {}).status_code == 422
 
 
-@pytest.mark.parametrize("name", ["a@b.test", "a＠b.test", "\u202ePseudo", "\x00Pseudo", " ", "x" * 25])
-def test_display_name_validation(env, name):
-    clients, _ = env
-    aid = assignment(clients)
-    enable(clients, aid)
-    assert put(clients["a"], f"/api/v1/student/classes/{aid}/leaderboard/name", {"display_name": name}).status_code == 422
-
-
-def test_name_is_self_only_and_never_taken_from_login(env):
+def test_names_are_always_real_names_and_cannot_be_edited(env):
     clients, engine = env
     aid = assignment(clients)
     enable(clients, aid)
-    path = f"/api/v1/student/classes/{aid}/leaderboard/name"
-    assert put(clients["a"], path, {"display_name": "Atlas", "user_id": 3}).status_code == 422
-    assert put(clients["a"], path, {"display_name": "Atlas"}, csrf=False).status_code == 403
-    assert put(clients["out"], path, {"display_name": "Intrus"}).status_code == 404
-    assert put(clients["a"], path, {"display_name": " Atlas "}).json() == {"display_name": "Atlas"}
-    rows = read(clients["b"], aid).json()["rows"]
-    assert next(row for row in rows if row["display_name"] == "Atlas")["is_self"] is False
-    assert next(row for row in rows if row["is_self"])["display_name"] == "Demo Etudiant02"
-    assert all("@" not in row["display_name"] for row in rows)
-    with Session(engine) as db:
-        assert len(db.scalars(select(LeaderboardName)).all()) == 1
-    enable(clients, aid, enabled=False)
-    assert put(clients["a"], path, {"display_name": "Fermé"}).status_code == 404
+    with Session(engine) as db:  # a nickname saved before the owner decision is ignored
+        user = db.scalar(select(User).where(User.username == "demo.etudiant01"))
+        db.add(LeaderboardName(user_id=user.id, display_name="Atlas"))
+        db.commit()
+    assert put(clients["a"], f"/api/v1/student/classes/{aid}/leaderboard/name", {"display_name": "Toubkal"}).status_code in (404, 405)
+    board = read(clients["b"], aid).json()
+    names = {row["display_name"] for row in board["rows"]}
+    assert {"Demo Etudiant01", "Demo Etudiant02"} <= names and "Atlas" not in names
+    assert next(row for row in board["rows"] if row["is_self"])["display_name"] == "Demo Etudiant02"
+    assert board["display_name"] == "Demo Etudiant02"
+    assert all("@" not in row["display_name"] for row in board["rows"] + board["daily_rows"])
 
 
 def test_best_main_points_then_separate_bonus_and_completion_day(env, monkeypatch):

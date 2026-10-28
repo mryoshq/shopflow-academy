@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from "react"
-import { Box, Button, Field, Flex, Heading, Input, Stack, Switch, Table, Tabs, Text } from "@chakra-ui/react"
+import { useCallback, useEffect, useState, type ReactNode } from "react"
+import { Box, Button, Flex, Heading, Stack, Switch, Table, Tabs, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import type { Role } from "../studioTypes"
 import "./leaderboard.css"
@@ -61,7 +61,6 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
   const [board, setBoard] = useState<Board | null>(null)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
-  const [name, setName] = useState("")
   const [busy, setBusy] = useState(false)
   const path = `/${role}/classes/${assignmentId}/leaderboard`
 
@@ -69,14 +68,11 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
     let active = true
     let timer: ReturnType<typeof setTimeout>
     setBoard(null)
-    setName("")
-    let initial = true
     const refresh = async () => {
       try {
         const next = await api<Board>(path)
         if (active) {
           setBoard(next); setError("")
-          if (initial) { setName(next.display_name); initial = false }
         }
       } catch (cause) {
         if (active) {
@@ -101,17 +97,6 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
     finally { setBusy(false) }
   }
 
-  async function saveName(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault(); setBusy(true); setNotice("")
-    try {
-      const saved = await api<{ display_name: string }>(`${path}/name`, "PUT", { display_name: name })
-      setName(saved.display_name)
-      setBoard(await api<Board>(path))
-      setNotice("Votre nom affiché est enregistré.")
-    } catch { setNotice("Choisissez un prénom ou pseudonyme de 1 à 24 caractères, sans adresse e-mail. Si le classement a été fermé, réessayez à sa réouverture.") }
-    finally { setBusy(false) }
-  }
-
   return <Stack gap="6" className="leaderboard-page">
     <Flex justify="space-between" align="start" gap="4">
       <Stack gap="2" minW="0" flex="1"><Heading as="h1" size="3xl"><span aria-hidden="true">🏆 </span>Classement</Heading>
@@ -129,12 +114,6 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
           <Text fontSize="sm" color="app.muted">Ces réglages s’appliquent aux deux onglets. Les ex æquo dans les trois premiers rangs sont tous affichés.</Text>
         </Stack>
       </Box>}
-      {role === "student" && <Box p="5" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card"><form onSubmit={saveName}>
-        <Flex gap="3" align="end" wrap="wrap"><Field.Root flex="1" minW="48" required>
-          <Field.Label>Votre nom affiché</Field.Label><Input value={name} maxLength={24} onChange={event => setName(event.target.value)} required autoComplete="off" borderColor="app.muted" aria-describedby="leaderboard-name-help" />
-          <Field.HelperText id="leaderboard-name-help">Prénom ou pseudonyme, 24 caractères maximum, sans adresse e-mail. Un nom neutre est utilisé en attendant votre choix.</Field.HelperText>
-        </Field.Root><Button type="submit" colorPalette="brand" loading={busy}>Enregistrer le nom</Button></Flex>
-      </form></Box>}
       {!board.hidden && <Text display={{ base: "block", md: "none" }} fontSize="sm" color="app.muted">Faites défiler le tableau pour voir toutes les colonnes.</Text>}
       {board.hidden ? <Text role="status">{board.settings.enabled ? "Le classement est masqué pendant un bloc ouvert. Profitez de ce temps pour explorer et essayer." : "Le classement est désactivé. Vous pouvez l’activer quand la classe est prête."}</Text> : <Tabs.Root defaultValue="ranking" colorPalette="brand">
         <Tabs.List><Tabs.Trigger value="ranking">Classement général</Tabs.Trigger><Tabs.Trigger value="daily">Progression du jour</Tabs.Trigger></Tabs.List>
