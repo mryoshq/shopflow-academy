@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
+
+- Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.
+- Lecture seule des classes de l'enseignant : aperçu du cours (corrigés seulement si autorisés), progression, résultats et CSV, nominatifs ou anonymisés (« Étudiant 1… », par défaut).
+- Chaque consultation est enregistrée et listée pour l'enseignant ; 403/404 sur toute autre route et toute écriture (matrice d'autorisation mise à jour). Migration `0013_observers`. ADR-0025.
+
 ## 2026-10-28 — Sprint 2, partie N : confort et finitions (`claude/lucid-brahmagupta-htwgun-n`)
 
 - « Rester connecté » : session de 30 jours renouvelée à chaque visite (sinon 8 h comme avant), cookies et CSRF inchangés, aucun jeton dans le navigateur hors cookies ; la déconnexion révoque la session.

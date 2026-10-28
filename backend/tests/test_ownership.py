@@ -42,6 +42,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"code": "INTRUS", "statement": "Objectif ajouté par un autre enseignant"}
     if path.endswith("/missions"):
         return {"title": "Intrusion", "slug": "intrusion"}
+    if "/observers/" in path and method == "PATCH":
+        return {"enabled": False}  # ADR-0025: an intruder tries to disable another teacher's observer
     if path.endswith(("/modules", "/chapters")) or method == "PATCH":
         return {"title": "Intrusion"}
     if path.endswith("/restore"):

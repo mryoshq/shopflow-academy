@@ -1,7 +1,8 @@
 """Authorization matrix generated from every registered API route.
 
 A new route is covered automatically: anonymous callers must get 401, students must
-get 403 on teacher routes, teachers 403 on student routes, and every write must
+get 403 on teacher routes, teachers 403 on student routes, observers (ADR-0025) 403 or
+404 on every route that is not theirs and on every write, and every write must
 require CSRF. Path parameters use IDs that exist in the fixture (cross-account
 attempts) as well as IDs that do not.
 """
@@ -18,6 +19,20 @@ PUBLIC = {("/api/v1/auth/login", "POST"), ("/api/v1/status", "GET")}
 SELF_SERVICE = {"/api/v1/auth/me", "/api/v1/auth/logout", "/api/v1/presence", "/api/v1/notifications", "/api/v1/notifications/read-all",
                 "/api/v1/notifications/{notification_id}/read", "/api/v1/push/key", "/api/v1/push/subscribe", "/api/v1/push/unsubscribe",
                 "/api/v1/radio"}
+
+
+# Observer (ADR-0025): its own GET routes, plus /auth/me and /auth/logout; nothing else.
+OBSERVER_ALLOWED = {("/api/v1/auth/me", "GET"), ("/api/v1/auth/logout", "POST")}
+
+
+def observer_client(clients: dict, **options) -> TestClient:
+    """A new observer created by the demo teacher (password shown once), signed in."""
+    created = clients["teacher"].post("/api/v1/teacher/observers", json={"username": "observateur.matrice", **options},
+                                      headers={"X-CSRF-Token": clients["teacher"].cookies["academy_csrf"]})
+    assert created.status_code == 201, created.text
+    client = TestClient(app)
+    assert client.post("/api/v1/auth/login", json={"username": "observateur.matrice", "password": created.json()["password"]}).status_code == 200
+    return client
 
 
 def api_routes() -> list[tuple[str, str]]:
@@ -39,7 +54,7 @@ def test_route_inventory_is_known():
     routes = api_routes()
     assert len(routes) >= 45
     unknown = [r for r in routes if r not in PUBLIC and r[0] not in SELF_SERVICE
-               and not r[0].startswith(("/api/v1/teacher/", "/api/v1/student/"))]
+               and not r[0].startswith(("/api/v1/teacher/", "/api/v1/student/", "/api/v1/observer/"))]
     assert unknown == [], f"route outside the authorization model: {unknown}"
 
 
@@ -67,7 +82,36 @@ def test_role_separation_on_every_route(env):
                 code = call(clients["teacher"], method, url).status_code
                 if code != 403:
                     failures.append((method, url, "teacher", code))
+            elif path.startswith("/api/v1/observer/"):
+                for role in ("a", "teacher"):
+                    code = call(clients[role], method, url).status_code
+                    if code != 403:
+                        failures.append((method, url, role, code))
     assert failures == []
+
+
+def test_observer_is_refused_everywhere_else_and_on_every_write(env):
+    """ADR-0025: 403 or 404 on every write and every route that is not an observer read."""
+    clients, _ = env
+    observer = observer_client(clients)
+    version = missions_of(clients["a"])[0]["mission_version_id"]
+    assignment = clients["teacher"].get("/api/v1/teacher/classes").json()[0]["id"]
+    failures, allowed = [], []
+    for path, method in api_routes():
+        if (path, method) in PUBLIC or (path, method) in OBSERVER_ALLOWED:
+            continue
+        mine = path.startswith("/api/v1/observer/") and method == "GET"
+        for value in (1, version, assignment, 999_999):
+            code = call(observer, method, concrete(path, value)).status_code
+            if mine:
+                allowed.append(code)
+            elif code not in (403, 404):
+                failures.append((method, path, value, code))
+    assert failures == []
+    assert 200 in allowed and all(code in (200, 403, 404) for code in allowed)
+    # Even without CSRF the answer is a refusal, never a change.
+    assert call(observer, "POST", f"/api/v1/teacher/classes/{assignment}/pause", csrf=False).status_code == 403
+    assert clients["teacher"].get("/api/v1/teacher/classes").json()[0]["paused"] is False
 
 
 def test_every_write_requires_csrf(env):

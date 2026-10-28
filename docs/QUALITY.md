@@ -14,6 +14,18 @@ Toutes les commandes s'exécutent depuis `~/Developer/shopflow-academy`. Depuis 
 
 La CI GitHub (`.github/workflows/app-ci.yml`) démarre la stack de test avec la même commande que sur le Mac (`scripts/test_stack.py up`) puis exécute Playwright (un worker : base partagée), le test de charge, la persistance et la restauration (`--test-stack`), en plus de pytest, Vitest, build et Compose.
 
+**Matrice d'autorisation par rôle (ADR-0025)**, générée depuis toutes les routes par `backend/tests/test_security_matrix.py` :
+
+| Routes | Anonyme | Étudiant | Enseignant | Observateur |
+|---|---|---|---|---|
+| `POST /auth/login`, `GET /status` | oui | oui | oui | oui |
+| `GET /auth/me`, `POST /auth/logout` | 401 | oui | oui | oui (seule écriture) |
+| présence, notifications, Web Push, radio | 401 | oui (les siennes) | oui (les siennes) | 403 |
+| `/student/...` | 401 | oui (ses données) | 403 | 403 |
+| `/teacher/...` | 401 | 403 | oui (ses cours, sinon 404) | 403 |
+| `GET /observer/...` | 401 | 403 | 403 | oui (classes de son enseignant, sinon 404) |
+| toute écriture sans jeton CSRF | 401 | 403 | 403 | 403 |
+
 **Latence du suivi enseignant** mesurée en E2E (essai étudiant → cellule mise à jour chez l'enseignant, sans rechargement) : 4,39 à 4,41 s sur 6 mesures, cible ≤ 10 s.
 
 **Fiabilité E2E (28/10/2026)** : l'échec intermittent observé la nuit venait du contrôle axe-core, qui mesurait un bouton pendant sa transition de désactivé à actif ; le contrôle attend maintenant la fin des animations.

@@ -14,7 +14,7 @@ class User(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     username: Mapped[str] = mapped_column(String(128), unique=True, nullable=False)
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False)
-    role: Mapped[str] = mapped_column(Enum("student", "teacher", name="user_role"), nullable=False)
+    role: Mapped[str] = mapped_column(Enum("student", "teacher", "observer", name="user_role"), nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default="true")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -337,3 +337,15 @@ class BlockPlan(Base):
     items: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class Observer(Base):
+    """Read-only observer account (ADR-0025): created, set and disabled by its teacher (owner)."""
+
+    __tablename__ = "observers"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
+    owner_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    show_answers: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    named: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)

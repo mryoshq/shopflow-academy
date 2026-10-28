@@ -5,6 +5,7 @@ import { TeacherStudio, Advanced } from "../TeacherStudio"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ClassTimeline } from "./ClassTimeline"
 import { AutoPlanPanel, LivePanel, NotificationSettingsPanel } from "./LivePanel"
+import { ObserversPanel } from "./ObserversPanel"
 import { Results } from "./Results"
 import { TeacherDashboard } from "./TeacherDashboard"
 
@@ -16,7 +17,7 @@ export type MainState = {
   latest_version: number | null
 }
 
-/** One class, one course: "Mon cours", "Ma classe", "Résultats". */
+/** One class, one course: "Mon cours", "Ma classe", "Résultats", plus the read-only "Observateurs" (ADR-0025). */
 export function TeacherHome() {
   const [main, setMain] = useState<MainState | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -54,6 +55,7 @@ export function TeacherHome() {
       <Tabs.Trigger value="cours">Mon cours</Tabs.Trigger>
       <Tabs.Trigger value="classe">Ma classe</Tabs.Trigger>
       <Tabs.Trigger value="resultats">Résultats</Tabs.Trigger>
+      <Tabs.Trigger value="observateurs">Observateurs</Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="cours" pt="6"><TeacherStudio mainCourseId={main.course.id} onPublished={() => void reload()} /></Tabs.Content>
     <Tabs.Content value="classe" pt="6">
@@ -71,5 +73,6 @@ export function TeacherHome() {
       </Stack>
     </Tabs.Content>
     <Tabs.Content value="resultats" pt="6">{main.assignment_id ? <Results assignmentId={main.assignment_id} /> : noClass}</Tabs.Content>
+    <Tabs.Content value="observateurs" pt="6"><ObserversPanel /></Tabs.Content>
   </Tabs.Root>
 }

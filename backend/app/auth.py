@@ -115,6 +115,20 @@ def require_teacher(auth: AuthContext = Depends(current_auth)) -> AuthContext:
     return auth
 
 
+def require_observer(auth: AuthContext = Depends(current_auth)) -> AuthContext:
+    """Read-only observer (ADR-0025): GET routes under /api/v1/observer/ only."""
+    if auth.user.role != "observer":
+        raise HTTPException(status_code=403, detail="forbidden")
+    return auth
+
+
+def require_member(auth: AuthContext = Depends(current_auth)) -> AuthContext:
+    """Students and teachers: presence, notifications, push and radio are not for observers (ADR-0025)."""
+    if auth.user.role not in ("student", "teacher"):
+        raise HTTPException(status_code=403, detail="forbidden")
+    return auth
+
+
 def require_csrf(
     request: Request,
     token: str | None = Header(default=None, alias="X-CSRF-Token"),
@@ -125,6 +139,12 @@ def require_csrf(
     cookie = request.cookies.get(cookie_name, "")
     if not token or not TOKEN_RE.fullmatch(cookie) or not compare_digest(cookie, token) or not compare_digest(auth.session.csrf_hash, digest(cookie)):
         raise HTTPException(status_code=403, detail="CSRF verification failed")
+    return auth
+
+
+def require_member_csrf(auth: AuthContext = Depends(require_csrf)) -> AuthContext:
+    if auth.user.role not in ("student", "teacher"):
+        raise HTTPException(status_code=403, detail="forbidden")
     return auth
 
 

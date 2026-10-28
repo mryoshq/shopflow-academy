@@ -1,4 +1,4 @@
-export type Role = "student" | "teacher"
+export type Role = "student" | "teacher" | "observer"
 export type User = { id: number; username: string; role: Role }
 export type CourseSummary = { id: number; slug: string; title: string; status: "draft" | "published" | "archived" }
 export type Objective = { id: number; code: string; statement: string; category?: string }

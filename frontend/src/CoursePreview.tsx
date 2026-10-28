@@ -16,7 +16,7 @@ function sameSet(a: string[], b: string[]): boolean {
   return a.length === b.length && a.every((value) => b.includes(value))
 }
 
-export function MissionPreview({ mission, correction }: { mission: StudentMission; correction?: MissionDefinition }) {
+export function MissionPreview({ mission, correction, readOnly = false }: { mission: StudentMission; correction?: MissionDefinition; readOnly?: boolean }) {
   const definition = mission.definition
   const [selected, setSelected] = useState<string[]>([])
   const [pairs, setPairs] = useState<Record<string, string>>({})
@@ -54,11 +54,11 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
     <Flex justify="space-between" align="center" gap="3" wrap="wrap"><Heading as="h4" size="md">{mission.title}</Heading><Badge colorPalette="brand" variant="subtle">{definition.kind.replaceAll("_", " ")}</Badge></Flex>
     {isUngraded(definition.kind) ? <LessonView definition={definition} headingAs="h5" media={<>
       <DataView data={definition.display_data} />
-      <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
+      <RunPanel runs={definition.run} missionId={readOnly ? undefined : mission.id} endpoint="teacher" />
     </>} /> : <>
       {definition.scenario && <RichText text={definition.scenario} />}
       <DataView data={definition.display_data} />
-      <RunPanel runs={definition.run} missionId={mission.id} endpoint="teacher" />
+      <RunPanel runs={definition.run} missionId={readOnly ? undefined : mission.id} endpoint="teacher" />
     </>}
     {definition.instructions && <RichText text={definition.instructions} fontWeight="semibold" />}
     {isUngraded(definition.kind) ? <Text color="app.muted">{definition.kind === "review" ? "Révision" : "Leçon"} non notée : l’étudiant clique « J’ai compris ».</Text>
@@ -66,13 +66,13 @@ export function MissionPreview({ mission, correction }: { mission: StudentMissio
       : definition.kind === "reorder" ? <Stack gap="2">{selected.map((id, index) => <Flex key={id} gap="2" align="center"><Text flex="1">{index + 1}. {definition.choices.find((choice) => choice.id === id)?.label}</Text><Button size="sm" variant="outline" onClick={() => moveChoice(index, -1)} disabled={index === 0}>Monter</Button><Button size="sm" variant="outline" onClick={() => moveChoice(index, 1)} disabled={index === selected.length - 1}>Descendre</Button></Flex>)}</Stack>
       : definition.kind === "matching" ? <Stack gap="3">{definition.choices.map((choice) => <Flex key={choice.id} align="center" gap="3"><Text flex="1">{choice.label}</Text><NativeSelect.Root maxW="52"><NativeSelect.Field aria-label={`Associer ${choice.label}`} value={pairs[choice.id] ?? ""} onChange={(event) => { setPairs({ ...pairs, [choice.id]: event.target.value }); setMessage("") }}><option value="">Choisir une cible</option>{definition.match_targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Flex>)}</Stack>
         : <Stack gap="2">{definition.choices.map((choice) => <label key={choice.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: 10, border: "1px solid var(--chakra-colors-app-border)", borderRadius: 8 }}><input type={definition.kind === "multiple_choice" ? "checkbox" : "radio"} name={`preview-${mission.id}`} checked={selected.includes(choice.id)} onChange={() => { setSelected(definition.kind === "multiple_choice" ? selected.includes(choice.id) ? selected.filter((id) => id !== choice.id) : [...selected, choice.id] : [choice.id]); setMessage("") }} />{choice.label}</label>)}</Stack>}
-    {definition.hints.length > 0 && <Box><Text fontWeight="semibold">Indices disponibles</Text><Stack gap="1" mt="2">{definition.hints.map((hint, index) => <Text key={index}>{index + 1}. {hint}</Text>)}</Stack></Box>}
-    {definition.resources.length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "var(--chakra-colors-brand-fg)", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
+    {(definition.hints ?? []).length > 0 && <Box><Text fontWeight="semibold">Indices disponibles</Text><Stack gap="1" mt="2">{(definition.hints ?? []).map((hint, index) => <Text key={index}>{index + 1}. {hint}</Text>)}</Stack></Box>}
+    {(definition.resources ?? []).length > 0 && <Box><Text fontWeight="semibold">Ressources</Text><Stack gap="1" mt="2">{definition.resources.map((url) => <a key={url} href={url} target="_blank" rel="noreferrer" style={{ color: "var(--chakra-colors-brand-fg)", textDecoration: "underline" }}>{url}</a>)}</Stack></Box>}
     {correction && !isUngraded(definition.kind) && definition.kind !== "sql_challenge" ? <><Button alignSelf="start" variant="outline" onClick={simulate}>Simuler cette réponse</Button><Text role="status" minH="5">{message || "Mode aperçu : aucune tentative et aucun point ne sont enregistrés."}</Text></> : <Text color="app.muted">La réponse et la notation seront disponibles dans le lecteur étudiant.</Text>}
   </Stack>
 }
 
-export function CoursePreview({ course, corrections }: { course: PreviewTree; corrections?: Record<number, MissionDefinition> }) {
+export function CoursePreview({ course, corrections, readOnly = false }: { course: PreviewTree; corrections?: Record<number, MissionDefinition>; readOnly?: boolean }) {
   const blocks = course.modules.flatMap((module) => module.chapters.filter((chapter) => chapter.missions.length > 0))
   const missions = blocks.flatMap((chapter) => chapter.missions)
   const [selectedId, setSelectedId] = useState<number | null>(missions[0]?.id ?? null)
@@ -89,7 +89,7 @@ export function CoursePreview({ course, corrections }: { course: PreviewTree; co
           <Text fontSize="sm" color="app.muted" textAlign="center">Bloc {blockIndex + 1} sur {blocks.length} : {blocks[blockIndex]?.title}</Text>
           <Button size="sm" variant="outline" disabled={blockIndex < 0 || blockIndex >= blocks.length - 1} onClick={() => goBlock(blockIndex + 1)}>Bloc suivant<Icon name="arrow-right" size={16} /></Button>
         </Flex>
-        {mission && <MissionPreview key={mission.id} mission={mission} correction={corrections?.[mission.id]} />}
+        {mission && <MissionPreview key={mission.id} mission={mission} correction={corrections?.[mission.id]} readOnly={readOnly} />}
       </Stack>
     </Grid>}
   </Stack>

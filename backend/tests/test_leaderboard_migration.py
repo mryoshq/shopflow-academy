@@ -18,7 +18,8 @@ def test_upgrade_from_production_L_head_preserves_rules_and_retained_points(tmp_
     config = Config(str(Path(__file__).parents[1] / "alembic.ini"))
     config.set_main_option("sqlalchemy.url", url)
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ["0012_live_tracking"]  # one head: H (ADR-0023) after K
+    assert scripts.get_heads() == ["0013_observers"]  # one head: J (ADR-0025) after H after K
+    assert scripts.get_revision("0013_observers").down_revision == "0012_live_tracking"
     assert scripts.get_revision("0011_leaderboard").down_revision == "0010_attempt_rules"
     assert scripts.get_revision("0012_live_tracking").down_revision == "0011_leaderboard"
     command.upgrade(config, "0010_attempt_rules")
@@ -47,7 +48,7 @@ def test_upgrade_from_production_L_head_preserves_rules_and_retained_points(tmp_
     command.upgrade(config, "head")
     unchanged_L_data()
     with Session(engine) as db:
-        assert db.scalar(text("select version_num from alembic_version")) == "0012_live_tracking"
+        assert db.scalar(text("select version_num from alembic_version")) == "0013_observers"
         settings = LeaderboardSettings(cohort_id=cohort_id, course_id=course_id)
         db.add(settings); db.commit()
         assert settings.enabled is False
