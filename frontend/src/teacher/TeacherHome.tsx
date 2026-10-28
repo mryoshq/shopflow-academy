@@ -4,6 +4,7 @@ import { api, ApiError } from "../api"
 import { TeacherStudio, Advanced } from "../TeacherStudio"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ClassTimeline } from "./ClassTimeline"
+import { AutoPlanPanel, LivePanel, NotificationSettingsPanel } from "./LivePanel"
 import { Results } from "./Results"
 import { TeacherDashboard } from "./TeacherDashboard"
 
@@ -58,10 +59,13 @@ export function TeacherHome() {
     <Tabs.Content value="classe" pt="6">
       <Stack gap="8">
         {main.assignment_id ? <>
+          <LivePanel assignmentId={main.assignment_id} />
           <ClassTimeline assignmentId={main.assignment_id} />
+          <AutoPlanPanel assignmentId={main.assignment_id} />
           <TeacherDashboard assignmentId={main.assignment_id} />
         </> : noClass}
         <Box borderTopWidth="1px" borderColor="app.border" pt="4">
+          <Advanced label="Réglages des notifications"><NotificationSettingsPanel /></Advanced>
           <Advanced label="Options avancées : autres classes"><TeacherDashboard /></Advanced>
         </Box>
       </Stack>

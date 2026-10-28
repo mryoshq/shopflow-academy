@@ -160,6 +160,18 @@ def block_states(db: Session, cohort_id: int) -> dict[int, BlockState]:
     return {item.chapter_id: item for item in db.scalars(select(BlockState).where(BlockState.cohort_id == cohort_id))}
 
 
+def notify_block_open(db: Session, assignment: Assignment, title: str, chapter_id: int, now) -> list[int]:
+    """Automatic notification to the class when a block opens (ADR-0023), unless switched off."""
+    from app.live import notify, teacher_settings
+
+    course = db.scalar(select(Course).join(CourseRelease, CourseRelease.course_id == Course.id).where(CourseRelease.id == assignment.course_release_id))
+    if course is None or not teacher_settings(db, course.created_by).get("student_block_open", True):
+        return []
+    students = [s.id for s in class_students(db, assignment.cohort_id) if s.enabled]
+    return notify(db, students, "block_open", f"Le bloc « {title} » est ouvert.", data={"chapter_id": chapter_id},
+                  dedup=f"open:{assignment.cohort_id}:{chapter_id}:{now.isoformat()}")
+
+
 def set_block(db: Session, auth: AuthContext, assignment: Assignment, release: CourseRelease, chapter_id: int, is_open: bool) -> dict:
     block = next((item for item in blocks_of(release.student_snapshot) if item["chapter_id"] == chapter_id), None)
     if block is None:
@@ -175,9 +187,16 @@ def set_block(db: Session, auth: AuthContext, assignment: Assignment, release: C
     elif not is_open and state.opened_at is not None:
         state.opened_at, state.closed_at, changed = None, now, True
     state.updated_by = auth.user.id
+    notified: list[int] = []
     if changed:
         audit(db, auth, "block.open" if is_open else "block.close", assignment.id, {"block": block["title"], "module": block["module"]})
+        if is_open:
+            notified = notify_block_open(db, assignment, block["title"], chapter_id, now)
     db.commit()
+    if notified:
+        from app.live import push_after_commit
+
+        push_after_commit(db, notified)
     return {"chapter_id": chapter_id, "title": block["title"], "open": is_open, "opened_at": iso(state.opened_at), "changed": changed}
 
 
@@ -292,7 +311,14 @@ def handle_help(help_id: int, auth: AuthContext = Depends(require_teacher_csrf),
         if assignment is not None:
             title = next((m["title"] for m in flatten(release.student_snapshot) if m["mission_version_id"] == item.mission_version_id), "")
             audit(db, auth, "help.handled", assignment, {"student": display_name(student.username) if student else "?", "mission": title})
+        notified: list[int] = []
+        from app.live import notify, push_after_commit, teacher_settings
+        if teacher_settings(db, auth.user.id).get("student_help_handled", True):
+            title = next((m["title"] for m in flatten(release.student_snapshot) if m["mission_version_id"] == item.mission_version_id), "")
+            notified = notify(db, [item.user_id], "help_handled", f"Votre demande d’aide sur « {title} » a été prise en compte.",
+                              sender_id=auth.user.id, data={"mission_version_id": item.mission_version_id}, dedup=f"help_handled:{item.id}")
         db.commit()
+        push_after_commit(db, notified)
     return {"id": item.id, "status": item.status, "handled_at": aware(item.handled_at).isoformat() if item.handled_at else None}
 
 

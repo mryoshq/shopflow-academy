@@ -108,6 +108,14 @@ def open_blocks(db: Session, cohort_ids: list[int]) -> set[int]:
                                                               BlockState.opened_at.is_not(None))).all())
 
 
+def all_open_blocks(db: Session, user_id: int, release_id: int) -> set[int]:
+    """Blocks open for the class, plus the blocks the teacher opened for this student only (ADR-0023)."""
+    from app.live import personal_blocks
+
+    cohorts = student_cohorts(db, user_id, release_id)
+    return open_blocks(db, cohorts) | personal_blocks(db, user_id, cohorts)
+
+
 def unlocked_versions(db: Session, user_id: int, version_ids: list[int]) -> set[int]:
     if not version_ids:
         return set()
@@ -118,7 +126,7 @@ def unlocked_versions(db: Session, user_id: int, version_ids: list[int]) -> set[
 def visible_missions(db: Session, user_id: int, release: CourseRelease, missions: list[dict] | None = None) -> list[dict]:
     """Missions of open blocks, plus missions a teacher unlocked for this student. A closed block exposes nothing."""
     missions = flatten(release.student_snapshot) if missions is None else missions
-    opened = open_blocks(db, student_cohorts(db, user_id, release.id))
+    opened = all_open_blocks(db, user_id, release.id)
     unlocked = unlocked_versions(db, user_id, [item["mission_version_id"] for item in missions])
     return [item for item in missions if item.get("chapter_id") in opened or item["mission_version_id"] in unlocked]
 
@@ -255,7 +263,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
         visible_ids = {item["mission_version_id"] for item in visible}
         state = statuses(db, auth.user.id, missions, visible_ids)
         scores = mission_scores(db, auth.user.id, [item["mission_version_id"] for item in missions])
-        opened = open_blocks(db, student_cohorts(db, auth.user.id, release.id))
+        class_open = open_blocks(db, student_cohorts(db, auth.user.id, release.id))
+        opened = all_open_blocks(db, auth.user.id, release.id)
         resources: list[str] = []
         for item in visible:
             for url in (item.get("definition") or {}).get("resources", []):
@@ -271,6 +280,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             shown = [vid for vid in ids if vid in visible_ids]
             modules[-1]["blocks"].append({
                 "id": block["chapter_id"], "title": block["title"], "open": is_open,
+                # ADR-0023: opened by the teacher for this student only (« ouvert pour vous »).
+                "for_you": is_open and block["chapter_id"] not in class_open,
                 "mission_count": len(core), "bonus_count": len(ids) - len(core),
                 "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
                 "done": is_open and bool(core) and all(scores[vid].completed for vid in core),
@@ -408,7 +419,41 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
             raise HTTPException(status_code=409, detail="idempotency key already used")
         response.status_code = 200
         return attempt_response(db, existing, definition, replayed=True)
+    if not attempt.is_correct and definition.kind != "lesson":
+        blocked_signal(db, auth, release, version_id)
     return attempt_response(db, attempt, definition, replayed=False)
+
+
+def mission_title(release: CourseRelease, version_id: int) -> str:
+    return next((m["title"] for m in flatten(release.student_snapshot) if m["mission_version_id"] == version_id), "")
+
+
+def teacher_signal(db: Session, release: CourseRelease, kind: str, text: str, data: dict, dedup: str) -> list[int]:
+    """Teacher's notification centre (ADR-0023): the course owner, unless the type is switched off."""
+    from app.live import teacher_event
+
+    course = db.get(Course, release.course_id)
+    return teacher_event(db, course.created_by, kind, text, data, dedup) if course else []
+
+
+def push_teacher(db: Session, user_ids: list[int]) -> None:
+    from app.live import push_after_commit
+
+    push_after_commit(db, user_ids)
+
+
+def blocked_signal(db: Session, auth: AuthContext, release: CourseRelease, version_id: int) -> None:
+    """« Étudiant bloqué » once, when the wrong attempts on a mission reach the help threshold without success."""
+    from app.teacher_dashboard import HELP_AFTER_FAILURES
+
+    rows = db.execute(select(MissionAttempt.is_correct).where(MissionAttempt.user_id == auth.user.id,
+                                                              MissionAttempt.mission_version_id == version_id)).scalars().all()
+    if any(rows) or len(rows) < HELP_AFTER_FAILURES:
+        return
+    notified = teacher_signal(db, release, "blocked", f"{display_name(auth.user.username)} semble bloqué sur « {mission_title(release, version_id)} » ({len(rows)} essais).",
+                              {"student_id": auth.user.id, "mission_version_id": version_id}, f"blocked:{auth.user.id}:{version_id}")
+    db.commit()
+    push_teacher(db, notified)
 
 
 @router.post("/missions/{version_id}/understood", status_code=201)
@@ -508,7 +553,11 @@ def ask_help(version_id: int, payload: HelpInput, response: Response, auth: Auth
         raise HTTPException(status_code=429, detail="too many help requests")
     item = HelpRequest(user_id=auth.user.id, mission_version_id=version_id, course_release_id=release.id, message=message)
     db.add(item)
+    db.flush()
+    notified = teacher_signal(db, release, "help", f"{display_name(auth.user.username)} demande de l’aide sur « {mission_title(release, version_id)} ».",
+                              {"help_id": item.id, "mission_version_id": version_id}, f"help:{item.id}")
     db.commit()
+    push_teacher(db, notified)
     return help_payload(item)  # type: ignore[return-value]
 
 

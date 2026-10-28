@@ -8,3 +8,4 @@ pwdlib[argon2]>=0.2,<1
 email-validator>=2,<3
 pyyaml>=6.0,<7
 sqlglot>=26,<27
+cryptography>=44,<47

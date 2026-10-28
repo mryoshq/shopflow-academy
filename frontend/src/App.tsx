@@ -4,6 +4,7 @@ import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
 import { Logo } from "./Logo"
+import { NotificationBell, NotificationProvider } from "./live/notifications"
 import type { User } from "./studioTypes"
 
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
@@ -88,7 +89,7 @@ export function App() {
     }
   }
 
-  return (
+  const page = (
     <Box minH="100vh" bg="app.canvas" color="app.ink">
       <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
         <Container maxW="7xl" py="3.5">
@@ -100,6 +101,7 @@ export function App() {
             <Flex align="center" gap="3" wrap="wrap" justify="end">
             <ThemeSwitch />
             {state === "authenticated" && user ? <Flex align="center" gap="3">
+              <NotificationBell />
               <Badge colorPalette={user.role === "teacher" ? "saffron" : "brand"} variant="subtle" rounded="full" px="2.5">{user.role === "teacher" ? "Enseignant" : "Étudiant"}</Badge>
               <Button size="sm" variant="outline" onClick={onLogout} loading={busy}>Se déconnecter</Button>
             </Flex> : <Text fontSize="sm" color="app.muted" display={{ base: "none", md: "block" }}>Python Data Engineering & SQL avancé</Text>}
@@ -151,4 +153,8 @@ export function App() {
       </Container>
     </Box>
   )
+  // ADR-0023: notifications for the signed-in user; students also send a presence heartbeat.
+  return state === "authenticated" && user
+    ? <NotificationProvider key={user.id} heartbeat={user.role === "student"}>{page}</NotificationProvider>
+    : page
 }

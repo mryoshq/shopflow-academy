@@ -25,6 +25,12 @@ class Settings(BaseSettings):
     # Student-written SQL (bonus sql_challenge): on only while the bypass battery passes.
     sql_challenge_enabled: bool = True
     ai_provider: str = "none"
+    # Web Push (ADR-0023): keys generated locally by scripts/vapid_keys.py into .env. Empty = off.
+    vapid_public_key: str = ""
+    vapid_private_key: str = ""
+    vapid_subject: str = ""
+    # Automatic block opening and teacher events (ADR-0023): background check every N seconds (0 = off).
+    live_tick_seconds: int = 15
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

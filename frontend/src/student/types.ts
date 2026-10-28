@@ -24,6 +24,8 @@ export type DashboardBlock = {
   /** The block's objective in one sentence, never its code (open blocks only). */
   objective?: string
   open: boolean
+  /** ADR-0023: opened by the teacher for this student only. */
+  for_you?: boolean
   mission_count: number
   bonus_count: number
   completed_count: number
