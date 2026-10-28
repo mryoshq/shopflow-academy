@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Résultats et accompagnement (`codex/resultats`)
+
+- Résultats : points principaux et bonus séparés, pourcentage principal, missions principales réussies/non réussies et détail par étudiant ; icône et texte « À accompagner » sous un seuil réglable (50 % par défaut), tri et filtre, top 5 des missions les moins réussies sur la classe entière.
+- Endpoint de lecture et CSV propres à Résultats, réservés au propriétaire ; points lus dans le moteur existant, dégressivité et meilleur essai compris. Format CSV conservé (BOM, séparateur, nombres et colonnes historiques), colonne `a_accompagner` ajoutée ; le compteur de réussite suit les missions principales affichées. Sans migration ni modification du suivi ou de la notation.
+
 ## 2026-10-28 — Sprint 2, partie K : classement facultatif (`codex/k-classement`)
 
 - Page « Classement » et onglet « Progression du jour », actualisation toutes les 5 secondes, points principaux et bonus distincts, ex æquo au même rang, ligne personnelle marquée « Vous ».
