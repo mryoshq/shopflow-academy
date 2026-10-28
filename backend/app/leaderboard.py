@@ -6,17 +6,16 @@ mission score, or other student's identifier crosses this API boundary.
 
 from datetime import datetime
 import re
-import unicodedata
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, HTTPException, Response
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, aware, require_csrf, require_student, require_teacher, require_teacher_csrf, utcnow
 from app.database import get_db
-from app.leaderboard_models import LeaderboardName, LeaderboardSettings
+from app.leaderboard_models import LeaderboardSettings
 from app.models import Assignment, BlockState, Cohort, Course, CourseRelease, Enrollment, MissionAttempt, User
 from app.progress import course_score, mission_scores
 from app.student import blocks_of, flatten
@@ -42,20 +41,6 @@ class SettingsInput(BaseModel):
     enabled: bool
     top_three: bool
     hide_open_block: bool
-
-
-class NameInput(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    display_name: str = Field(min_length=1, max_length=24)
-
-    @field_validator("display_name")
-    @classmethod
-    def safe_name(cls, value: str) -> str:
-        value = unicodedata.normalize("NFKC", value).strip()
-        # A first name/pseudonym, never a login address; exclude invisible/bidi controls.
-        if not value or len(value) > 24 or "@" in value or any(unicodedata.category(c).startswith("C") for c in value):
-            raise ValueError("Choisissez un prénom ou pseudonyme de 1 à 24 caractères, sans adresse e-mail.")
-        return value
 
 
 def no_store(response: Response) -> None:
@@ -126,9 +111,8 @@ def board(db: Session, auth: AuthContext, assignment: Assignment, release: Cours
     open_block = db.scalar(select(BlockState.id).where(BlockState.cohort_id == assignment.cohort_id,
                                                       BlockState.chapter_id.in_(chapter_ids), BlockState.opened_at.is_not(None)))
     hidden = not options["enabled"] or bool(options["hide_open_block"] and open_block is not None)
-    own_name = db.get(LeaderboardName, auth.user.id)
     result = {"settings": options, "hidden": hidden, "rows": [], "daily_rows": [],
-              "display_name": own_name.display_name if own_name else "", "day": utcnow().astimezone(DAY_ZONE).date().isoformat(),
+              "display_name": real_name(auth.user.username), "day": utcnow().astimezone(DAY_ZONE).date().isoformat(),
               "timezone": "Africa/Casablanca"}
     if hidden:
         return result
@@ -136,7 +120,6 @@ def board(db: Session, auth: AuthContext, assignment: Assignment, release: Cours
                          .where(Enrollment.cohort_id == assignment.cohort_id, User.role == "student", User.enabled.is_(True))
                          .order_by(User.id)).all()
     ids = [mission["mission_version_id"] for mission in flatten(release.student_snapshot)]
-    names = {row.user_id: row.display_name for row in db.scalars(select(LeaderboardName).where(LeaderboardName.user_id.in_([s.id for s in students])))}
     rows = []
     for order, student in enumerate(students, 1):
         scores = mission_scores(db, student.id, ids)
@@ -153,7 +136,7 @@ def board(db: Session, auth: AuthContext, assignment: Assignment, release: Cours
                     if m["mission_version_id"] in scores and not scores[m["mission_version_id"]].bonus]
             if core and all(vid in first_correct for vid in core):
                 completions.append(max(first_correct[vid] for vid in core))
-        rows.append({"order": order, "display_name": names.get(student.id) or real_name(student.username) or f"Élève {order}", "is_self": student.id == auth.user.id,
+        rows.append({"order": order, "display_name": real_name(student.username) or f"Élève {order}", "is_self": student.id == auth.user.id,
                      "core_points": totals["core_points"], "bonus_points": totals["bonus_points"], "completed_blocks": len(completions),
                      "today_blocks": sum(at.astimezone(DAY_ZONE).date().isoformat() == result["day"] for at in completions)})
     # Teachers see the same privacy limits; they have no personal row.
@@ -212,18 +195,3 @@ def update_settings(assignment_id: int, payload: SettingsInput, response: Respon
     audit(db, auth, "leaderboard.settings", assignment_id, payload.model_dump())
     db.commit()
     return preferences(row)
-
-
-@router.put("/api/v1/student/classes/{assignment_id}/leaderboard/name", dependencies=[Depends(require_student)])
-def update_name(assignment_id: int, payload: NameInput, response: Response,
-                auth: AuthContext = Depends(require_csrf), db: Session = Depends(get_db)) -> dict:
-    no_store(response)
-    student_class(db, auth, assignment_id)
-    row = db.get(LeaderboardName, auth.user.id)
-    if row is None:
-        row = LeaderboardName(user_id=auth.user.id, display_name=payload.display_name)
-        db.add(row)
-    else:
-        row.display_name = payload.display_name
-    db.commit()
-    return {"display_name": row.display_name}

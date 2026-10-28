@@ -38,33 +38,12 @@ it("refreshes within 10 seconds and removes stale names when access becomes unav
   expect(screen.getByRole("alert")).toHaveTextContent("n’est pas disponible")
 })
 
-it("clears the board on network failure and recovers without overwriting an unfinished name edit", async () => {
-  vi.useFakeTimers({ shouldAdvanceTime: true })
-  const fetcher = vi.fn().mockResolvedValueOnce(json(data())).mockRejectedValueOnce(new Error("offline")).mockResolvedValue(json(data()))
-  vi.stubGlobal("fetch", fetcher)
+it("shows the automatic name without any name field for students", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(data())))
   wrap()
-  const input = await screen.findByRole("textbox", { name: "Votre nom affiché" })
-  fireEvent.change(input, { target: { value: "Nouveau" } })
-  await act(async () => { await vi.advanceTimersByTimeAsync(5_100) })
-  expect(screen.queryByRole("table")).not.toBeInTheDocument()
-  await act(async () => { await vi.advanceTimersByTimeAsync(5_100) })
-  expect(screen.getByRole("textbox", { name: "Votre nom affiché" })).toHaveValue("Nouveau")
-})
-
-it("updates only the authenticated student's pseudonym with CSRF", async () => {
-  const fetcher = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
-    if (url.endsWith("/name")) return json({ display_name: "Toubkal" })
-    return json(data({ display_name: init ? "Toubkal" : "Atlas" }))
-  })
-  vi.stubGlobal("fetch", fetcher)
-  wrap()
-  fireEvent.change(await screen.findByRole("textbox", { name: "Votre nom affiché" }), { target: { value: "Toubkal" } })
-  fireEvent.click(screen.getByRole("button", { name: "Enregistrer le nom" }))
-  expect(await screen.findByText("Votre nom affiché est enregistré.")).toBeVisible()
-  const [, init] = fetcher.mock.calls.find(([url]) => String(url).endsWith("/name"))!
-  expect(init.method).toBe("PUT")
-  expect(init.headers["X-CSRF-Token"]).toBe("C".repeat(43))
-  expect(JSON.parse(init.body)).toEqual({ display_name: "Toubkal" })
+  expect(within(await screen.findByRole("table", { name: "Classement de la classe" })).getByText("Atlas")).toBeVisible()
+  expect(screen.queryByRole("textbox")).toBeNull()
+  expect(screen.queryByRole("button", { name: "Enregistrer le nom" })).toBeNull()
 })
 
 it("lets the teacher enable a board that starts disabled", async () => {
