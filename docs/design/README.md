@@ -1,6 +1,6 @@
 # Identité visuelle — sources du propriétaire
 
-- `shopflow-logo-source.png` : logo original fourni par le propriétaire (28/10/2026), 2000 × 2000 px, fond sable. Renard géométrique vert #146457 et safran #84521A dans un double anneau.
+- `shopflow-logo-source.png` : logo original fourni par le propriétaire (28/10/2026), 2048 × 2048 px, fond sable. Renard géométrique vert #146457 et safran #84521A dans un double anneau.
 
 ## Règles d'usage
 
