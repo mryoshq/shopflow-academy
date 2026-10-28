@@ -1,6 +1,6 @@
 # ShopFlow Academy
 
-**État au 27 octobre 2026 : P0-02 en revue, authentification locale.** Ce dépôt contient le kit documentaire original et un socle exécutable React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx local. La connexion, les rôles et les sessions sont implémentés ; le studio et les cours restent dans les lots suivants. Aucun contenu pédagogique définitif n'est publié.
+**État au 27 octobre 2026 : P0-03 en revue, référentiel pédagogique local.** Ce dépôt contient le kit documentaire original et un socle exécutable React/Chakra UI v3, FastAPI, Alembic, PostgreSQL et gateway Nginx local. La connexion, les rôles, les sessions et les versions de cours côté API sont implémentés ; le studio visuel et les cours définitifs restent dans les lots suivants. Aucun contenu pédagogique définitif n'est publié.
 
 ## Démarrer le socle en local sur Mac
 
@@ -68,4 +68,4 @@ La vérification documentaire du kit ne valide pas l'application. Les tests appl
 
 ## État vérifiable
 
-**Livré dans P0-01 et P0-02** : page React/Chakra v3, API FastAPI de santé, Compose Mac avec gateway loopback, authentification, rôles, sessions et tests. **À livrer dans les lots suivants** : référentiel, studio, lecteur, correction, dashboards et publication Cloudflare après accord.
+**Livré dans P0-01 à P0-03** : page React/Chakra v3, API FastAPI de santé, Compose Mac avec gateway loopback, authentification, rôles, sessions, référentiel versionné, projections étudiantes et tests. **À livrer dans les lots suivants** : studio visuel, lecteur, correction, dashboards et publication Cloudflare après accord.

@@ -1,8 +1,8 @@
 # HANDOFF — reprise Codex entre sessions, agents et modèles
 
-## État au 27/10/2026 — P0-02
+## État au 27/10/2026 — P0-03
 
-Kit documentaire **v2.0** importé sans perte. P0-01 fournit React/Chakra v3, FastAPI, Alembic, PostgreSQL, Nginx et Compose local. P0-02 ajoute l'authentification, les rôles et les sessions. Le studio de cours reste P0-04 ; les contenus définitifs restent P2. Lire le prompt exhaustif et les sources de vérité au début de la reprise.
+Kit documentaire **v2.0** importé sans perte. P0-01 fournit React/Chakra v3, FastAPI, Alembic, PostgreSQL, Nginx et Compose local. P0-02 ajoute l'authentification, les rôles et les sessions. P0-03 ajoute le référentiel, les brouillons et les versions figées avec projection étudiante. Le studio visuel reste P0-04 ; les contenus définitifs restent P2. Lire le prompt exhaustif et les sources de vérité au début de la reprise.
 
 ## Contexte à préserver impérativement
 
@@ -22,6 +22,7 @@ Kit documentaire **v2.0** importé sans perte. P0-01 fournit React/Chakra v3, Fa
 - **Sécurité :** aucun compte étudiant, secret ou corrigé dans Git. `.env` local généré et ignoré. Uniquement gateway sur `127.0.0.1:3080`; Postgres interne. Auth/RBAC reste P0-02.
 - **ADR et tunnel :** ADR-0006. NS publics `aria.ns.cloudflare.com` et `jobs.ns.cloudflare.com` observés en lecture seule ; un processus `cloudflared` hôte et un conteneur n8n existent sur ce Mac, sans preuve que ce processus dessert le hostname n8n. Une commande d'inventaire a affiché un jeton `cloudflared` dans sa sortie d'outil ; ne jamais le copier dans Git ou les réponses. Rotation manuelle requise avant toute publication. Aucun changement Cloudflare/DNS/n8n.
 - **P0-02 :** [PR #12](https://github.com/mryoshq/shopflow-academy/pull/12) sur branche `feat/p0-02-auth-rbac` empilée sur P0-01 ; sessions serveur à hash stocké, Argon2, cookies/CSRF, rate limit, rôles et contrôle propriétaire. Migration `0002_auth`; interface Chakra v3. Tests backend 10 PASS, Compose local build/health PASS, HTTP login/me/logout, 403 inter-rôle et inter-compte, CSRF PASS. Seed local 11 comptes fictifs ; les dix adresses fournies par le responsable sont importées séparément en local, sans message. `.local/student-emails.txt`, `.local/student-credentials.json` et `.local/demo-credentials.json` sont ignorés par Git et réservés à l'utilisateur local. Ne jamais imprimer ni committer adresses ou identifiants. Vitest local a expiré au démarrage du worker ; CI backend/frontend/Compose/kit PASS sur PR #12.
-- **Tâche suivante :** finaliser la PR P0-02 et ses checks, puis P0-03 (référentiel sans cours réels) sur une branche empilée si les PR précédentes restent ouvertes.
+- **P0-03 :** [PR #13](https://github.com/mryoshq/shopflow-academy/pull/13) sur branche `feat/p0-03-curriculum-model` empilée sur P0-02 ; migration `0003_curriculum`, schémas Pydantic stricts, CRUD de brouillons, preview non notée, versions immuables et projection étudiante, cohortes/assignations et audit. Tests backend 13 PASS, Compose/migration PostgreSQL PASS, parcours HTTP local avec comptes fictifs PASS, kit PASS ; CI backend/frontend/Compose/kit PASS. Une erreur `DISTINCT` sur JSON PostgreSQL a été trouvée et corrigée.
+- **Tâche suivante à la prochaine demande :** P0-04 (studio visuel no-code) sur une branche empilée. Arrêt demandé après P0-03 ; ne pas démarrer P0-04 dans cette session. Aucun cours réel avant P2.
 
 Trois tentatives de réparation maximum par **même** échec avant de documenter le blocage ; aucune boucle IA infinie ni publication non autorisée.
