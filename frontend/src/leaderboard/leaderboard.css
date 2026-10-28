@@ -1,0 +1,12 @@
+@keyframes leaderboard-arrive {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.leaderboard-podium { animation: leaderboard-arrive 220ms ease-out both; }
+.leaderboard-podium svg { display: block; width: 100%; height: auto; }
+.leaderboard-page th, .leaderboard-page td { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  .leaderboard-podium { animation: none; }
+}
