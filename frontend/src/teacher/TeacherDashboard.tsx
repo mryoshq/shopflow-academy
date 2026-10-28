@@ -185,7 +185,7 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
       {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
 
       <Panel p="0" overflow="hidden">
-        <Box overflowX="auto">
+        <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau de progression (défilement horizontal)">
           <Table.Root size="sm" variant="line" aria-label={`Progression de la classe ${overview.cohort}`}>
             <Table.Header><Table.Row bg="app.sunken">
               {["Étudiant", "Missions réussies", "Score", "Mission en cours", "Dernière activité", "Signal", ""].map((label, index) => <Table.ColumnHeader key={index} scope="col">{label}</Table.ColumnHeader>)}

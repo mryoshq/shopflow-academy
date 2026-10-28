@@ -90,6 +90,11 @@ test("390x844: one column, no horizontal scroll, shortcuts 1-9 and Enter", async
   await openMission(page, MISSION)
   expect(await noHorizontalScroll()).toBe(true)
   expect(await serious(page)).toEqual([])
+  // At 320 px the data table scrolls: its region must be reachable with the keyboard.
+  await page.setViewportSize({ width: 320, height: 800 })
+  expect(await noHorizontalScroll()).toBe(true)
+  expect(await serious(page)).toEqual([])
+  await page.setViewportSize({ width: 390, height: 844 })
 
   // Help folds into one line, and the choice is remembered on this browser.
   const help = page.getByRole("button", { name: /^Aide/ })

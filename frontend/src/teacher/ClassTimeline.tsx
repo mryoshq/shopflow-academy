@@ -151,7 +151,7 @@ export function ClassTimeline({ assignmentId }: { assignmentId: number }) {
     <Panel as="section" aria-labelledby="stats-title" p="0" overflow="hidden">
       <Box p={{ base: "5", md: "6" }} pb="3"><Heading as="h3" size="md" id="stats-title">Missions : réussites et difficultés</Heading>
         <Text fontSize="sm" color="app.muted">« Bloqués » : plusieurs essais sans réussite.</Text></Box>
-      <Box overflowX="auto">
+      <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des missions (défilement horizontal)">
         <Table.Root size="sm" variant="line" aria-label="Statistiques par mission">
           <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>
