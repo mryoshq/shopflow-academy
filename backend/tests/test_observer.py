@@ -47,6 +47,8 @@ def test_observer_reads_course_progress_results_and_csv_without_answer_keys_and_
     assignment = classes[0]["id"]
     course = observer.get(f"/api/v1/observer/classes/{assignment}/course").json()
     assert course["show_answers"] is False and course["corrections"] == {} and course["modules"]
+    shown = [m["definition"] for module in course["modules"] for chapter in module["chapters"] for m in chapter["missions"]]
+    assert shown and all(isinstance(item["hints"], list) for item in shown)  # same shape as the teacher preview
     progress = observer.get(f"/api/v1/observer/classes/{assignment}/progress").json()
     results = observer.get(f"/api/v1/observer/classes/{assignment}/results").json()
     for payload in (classes, course, progress, results):

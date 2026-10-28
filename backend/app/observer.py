@@ -9,6 +9,7 @@ have no write route besides logging out; every other route answers 403 or 404.
 
 from __future__ import annotations
 
+import copy
 import csv
 import re
 from io import StringIO
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session
 
 from app.auth import AuthContext, digest, password_hash, require_observer, require_teacher, require_teacher_csrf, utcnow
 from app.classroom import readable_password
+from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.models import AuditEvent, LoginThrottle, MissionVersion, Observer, User, UserSession
 from app.results import results_data
@@ -74,18 +76,21 @@ def observer_course(assignment_id: int, response: Response, auth: AuthContext = 
     response.headers["Cache-Control"] = "no-store"
     row, owner = observer_scope(db, auth)
     _, release, cohort = owned_class(db, owner, assignment_id)
-    snapshot = release.student_snapshot
+    snapshot = copy.deepcopy(release.student_snapshot)
+    missions = [m for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])
+                for m in chapter.get("missions", []) if isinstance(m.get("mission_version_id"), int)]
+    ids = [m["mission_version_id"] for m in missions]
+    versions = db.scalars(select(MissionVersion).where(MissionVersion.id.in_(ids))).all() if ids else []
+    private = {version.id: version.definition_private for version in versions}
     corrections: dict[str, dict] = {}
-    if row.show_answers:
-        ids = [m["mission_version_id"] for module in snapshot.get("modules", []) for chapter in module.get("chapters", [])
-               for m in chapter.get("missions", []) if isinstance(m.get("mission_version_id"), int)]
-        versions = db.scalars(select(MissionVersion).where(MissionVersion.id.in_(ids))).all() if ids else []
-        private = {version.id: version.definition_private for version in versions}
-        for module in snapshot.get("modules", []):
-            for chapter in module.get("chapters", []):
-                for mission in chapter.get("missions", []):
-                    if mission.get("mission_version_id") in private:
-                        corrections[str(mission["id"])] = private[mission["mission_version_id"]]
+    for mission in missions:
+        definition = private.get(mission["mission_version_id"])
+        if definition is None:
+            continue
+        # Same view as the teacher's preview (student view plus hints), never an answer key.
+        mission["definition"] = MissionDefinition.model_validate(definition).preview_projection()
+        if row.show_answers:
+            corrections[str(mission["id"])] = definition
     consulted(db, auth, "course", assignment_id, {"answers": row.show_answers})
     return {"assignment_id": assignment_id, "cohort": cohort.label, "version": release.version, "title": snapshot.get("title", ""),
             "description": snapshot.get("description", ""), "modules": snapshot.get("modules", []),
