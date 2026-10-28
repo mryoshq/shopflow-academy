@@ -1,5 +1,21 @@
 # HANDOFF — reprise ShopFlow Academy
 
+## K — Classement facultatif (Codex, 28/10/2026)
+
+Branche `codex/k-classement`, issue de `main` `14017c2`, une PR vers `main`, sans fusion ni déploiement. ADR `docs/DECISIONS/0026-classement.md`. API, modèles, migration, page et tests propres à K ; seules l’inclusion du routeur, la déclaration des modèles Alembic et la navigation App touchent des fichiers partagés. Ne pas modifier le chantier H/L. Si `main` avance, le fusionner dans cette branche sans force-push, et vérifier la tête de migration (actuellement `0010_leaderboard` après `0009_objective_category`).
+
+Livré : off par défaut, accès aux inscrits et au propriétaire seulement, pseudonymes sans login/e-mail, principaux/bonus séparés, rangs `1, 1, 3`, top 3 avec tous les ex æquo et sa position, masquage serveur si bloc ouvert, onglet du jour (`Africa/Casablanca`), polling 5 s, podium SVG original, clavier/AA/clair/sombre/mouvement réduit. Ni notation ni export modifiés.
+
+Tests ciblés : pytest classement + matrice **20 PASS** ; Vitest classement + App **11 PASS** ; TypeScript **PASS** ; une spec Playwright classement **PASS**, avec axe sans violation sur vues testées, captures enseignant/clair/sombre et actualisation ≤ 10 s. Le navigateur utilise uniquement des réponses fictives ; l’API et les migrations sont réellement exercées dans pytest sur SQLite. Suites complètes/Compose/PostgreSQL/production **NOT RUN localement**, laissées à la CI pour les suites et au propriétaire pour le déploiement.
+
+### K — À faire en local après revue et fusion par le propriétaire
+
+1. Sauvegarder la base selon `docs/RUNBOOK.md`, suffixe `avant-sprint2-k` ; vérifier la tête Alembic si H/L a été fusionné entre-temps.
+2. À une pause, redéployer par la procédure habituelle (service migrate compris), puis smoke test selon le runbook. Cette session n’a exécuté ni migration ni redéploiement en production.
+3. Ouvrir « Classement » comme enseignant : vérifier qu’il est désactivé, puis activer seulement si souhaité. Vérifier avec un compte étudiant autorisé le pseudonyme, les ex æquo, les deux options et le retour 404 après désactivation. Ne pas utiliser de vrais étudiants comme comptes de test automatisés.
+
+Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusion automatique.
+
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
 **Prochaine tâche unique : faire les sections « À faire en local » des PR déjà fusionnées (A, D, F, C, B, E, G) si ce n'est pas fait, puis relire et fusionner #33 (G2 : plan du cours, objectifs, icônes ; migration 0009) — accord et action du propriétaire.** Les parties suivantes, dans l'ordre : K (classement), H (suivi en direct), I (PWA, confort, couleurs), J (observateur).

@@ -1,5 +1,21 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## K — Classement facultatif, 28/10/2026
+
+Branche `codex/k-classement`, basée sur `main` `14017c2`, une PR vers `main`, sans fusion ni déploiement. ADR-0026, migration `0010_leaderboard` (deux nouvelles tables de préférences uniquement). Nouveaux fichiers dédiés pour API, modèles, page, tests ; fichiers partagés limités à l’enregistrement du routeur, des modèles Alembic et à l’entrée de navigation App. Les écrans « Ma classe » et le moteur de notation ne sont pas modifiés.
+
+Critères couverts : opt-in enseignant, 404 étudiant si désactivé, droits par classe/propriétaire, pseudonyme distinct du login, absence d’adresses et de détail par mission, tri principaux puis bonus et ex æquo, top 3 avec ex æquo/position personnelle, masquage serveur des deux onglets pendant un bloc ouvert, progression du jour au fuseau Maroc, rafraîchissement 5 s, clavier/clair/sombre/mouvement réduit, podium SVG et axe.
+
+Vérifications locales ciblées, copie isolée et données fictives :
+
+- **PASS** `cd backend && ../.venv/bin/python -m pytest -q tests/test_leaderboard.py tests/test_security_matrix.py` : 20 tests, dont droits de toutes les nouvelles routes, migration SQLite, points stockés inchangés, leçon requise, minuit marocain, nouvelle publication et retrait d’inscription.
+- **PASS** `cd frontend && npm run test -- src/leaderboard/LeaderboardPage.test.tsx src/App.test.tsx --maxWorkers=1` : 11 tests.
+- **PASS** `cd frontend && ./node_modules/.bin/tsc --noEmit`.
+- **PASS** `cd frontend && SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3185 npx playwright test e2e/leaderboard.spec.ts` : une spec ; actualisation observée dans la limite de 10 s ; axe WCAG A/AA sans violation sur les vues testées, 1366 px et 390 px ; captures enseignant/clair/sombre dans `frontend/test-results/` (ignorées par Git), relues visuellement.
+- **NOT RUN localement** : suites complètes, build de distribution, stack Compose/PostgreSQL complète et production, conformément à la demande de tests ciblés seulement ; suites complètes confiées à la CI. E2E navigateur avec API simulée ; accès et scores testés sur API réelle avec base migrée par pytest.
+
+À faire après revue : fusion par le propriétaire, sauvegarde/migration/redéploiement autorisés, puis activation facultative par l’enseignant. Aucun fichier du cours privé n’est intégré à la PR.
+
 **Date : 2026-10-28 · État : P0 entièrement fusionné dans `main` (PR #11 à #25), production `https://shopflow.rapidfox.io` sur `main`. Sprint 2 (session cloud) : A, D, F, C, B, E, G fusionnées (#26 à #32) ; G2 (#33 : plan du cours, objectifs, icônes) en PR ; puis K, H, I, J.** (Ligne d'état précédente : P0-01 à P0-10 livrés en PR empilées non fusionnées.)
 
 ## Livré et vérifiable dans le ZIP

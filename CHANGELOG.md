@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie K : classement facultatif (`codex/k-classement`)
+
+- Page « Classement » et onglet « Progression du jour », actualisation toutes les 5 secondes, points principaux et bonus distincts, ex æquo au même rang, ligne personnelle marquée « Vous ».
+- Réglages enseignant : désactivé par défaut, top 3 avec ex æquo et position personnelle, masquage pendant un bloc ouvert. Filtrage serveur, inscription/propriété, CSRF, aucun identifiant de connexion exposé. Pseudonyme choisi (24 caractères), nom neutre en attendant.
+- Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0010_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
+
 ## 2026-10-28 — Sprint 2, partie G2 : plan du cours, objectifs par catégorie, logo et icônes (`claude/lucid-brahmagupta-htwgun-g2`)
 
 - Studio et aperçu : plan module → bloc → éléments, blocs repliables (le bloc courant ouvert), une ligne par élément (type, points, durée, badges Leçon / Bonus / Exécution, état), en-tête de bloc (numéro, durée, points), compteurs, recherche et filtre par type ; navigation par bloc dans l'aperçu.

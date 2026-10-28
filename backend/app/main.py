@@ -10,6 +10,7 @@ from app.teacher_dashboard import router as teacher_dashboard_router
 from app.course_io import router as course_io_router
 from app.classroom import router as classroom_router
 from app.lab_api import router as lab_router
+from app.leaderboard import router as leaderboard_router
 
 
 class Health(BaseModel):
@@ -37,6 +38,7 @@ app.include_router(teacher_dashboard_router)
 app.include_router(course_io_router)
 app.include_router(classroom_router)
 app.include_router(lab_router)
+app.include_router(leaderboard_router)
 
 
 @app.get("/health/live", response_model=Health, tags=["health"])
