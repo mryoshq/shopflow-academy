@@ -111,3 +111,7 @@ Cloudflare est le **seul** mode public cible, Docker Compose sur Mac le seul mod
 ## Cours écrit en Markdown (sprint 2, partie D)
 
 `app/course_md.py` (compilateur et import du format `shopflow-course-md`, ADR-0020), `scripts/course_md.py` (côté Mac : envoie le dossier au conteneur backend par l'entrée standard, écrit `RETOURS-PLATEFORME.md`). `curriculum.reusable_version` : une mission inchangée garde sa version à la publication. `POST /api/v1/student/missions/{id}/understood` (leçon). Frontend : `src/student/displays.tsx` (courbes, code, comparaison, texte de leçon), `RunPanel.tsx`.
+
+## Médias codés (sprint 2, partie F)
+
+Schéma `AnimationDisplay`, `MindmapDisplay`, `FlowDisplay`, `VideoDisplay` (`app/curriculum_schema.py`) ; vidéos du cours copiées à l'import dans le volume `media_data` (`MEDIA_DIR`, défaut `/srv/media`), servies par le gateway sous `/media/<empreinte>.mp4|vtt`. Frontend : `src/student/media.tsx`. Voir ADR-0018.

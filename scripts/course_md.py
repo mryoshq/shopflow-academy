@@ -31,6 +31,7 @@ REPORT = "RETOURS-PLATEFORME.md"
 PRODUCTION = ["docker", "compose"]
 TEST_STACK = ["docker", "compose", "-p", "shopflow-academy-test", "-f", "compose.yaml", "--env-file", "config/test-stack.env"]
 MAX_BUNDLE = 5_000_000
+MAX_MEDIA = 50 * 1024 * 1024
 
 
 def bundle(folder: Path) -> dict[str, str]:
@@ -40,6 +41,19 @@ def bundle(folder: Path) -> dict[str, str]:
     if sum(len(text.encode("utf-8")) for text in files.values()) > MAX_BUNDLE:
         raise SystemExit("Dossier trop volumineux (5 Mo de Markdown au plus)")
     return files
+
+
+def media_bundle(folder: Path) -> dict[str, str]:
+    """Videos and captions of ``media/`` (checked again by the compiler: MP4 <= 50 Mo, WebVTT)."""
+    import base64
+
+    media = {}
+    for path in sorted((folder / "media").glob("*")):
+        if path.is_file() and path.suffix in {".mp4", ".vtt"}:
+            if path.stat().st_size > MAX_MEDIA:
+                raise SystemExit(f"{path.name} : plus de 50 Mo")
+            media[f"media/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
+    return media
 
 
 def run_backend(command: list[str], payload: dict, args: argparse.Namespace) -> tuple[int, dict]:
@@ -70,7 +84,7 @@ def main() -> int:
         raise SystemExit(f"Dossier introuvable : {folder}")
     if args.publish and args.action != "import":
         raise SystemExit("--publish ne s'utilise qu'avec import")
-    payload: dict = {"files": bundle(folder)}
+    payload: dict = {"files": bundle(folder), "media": media_bundle(folder)}
     command = ["compile-bundle"]
     if args.action == "import":
         if sys.stdin.isatty():

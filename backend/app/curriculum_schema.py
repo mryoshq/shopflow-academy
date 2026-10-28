@@ -18,6 +18,7 @@ MissionKind = Literal[
 CHOICE_KINDS = {"single_choice", "multiple_choice", "true_false", "reorder", "matching",
                 "data_interpretation", "scenario_choice", "guided_simulation"}
 MAX_CODE_LINES = 60
+RUN_ID_PATTERN = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
 SLUG = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 APPROVED_ACTIONS = {"choose_shipping_rule", "choose_quality_rule", "choose_incident_response"}
 HTML_TAG = re.compile(r"</?[A-Za-z][^>]{0,500}>|<!--|<!DOCTYPE|<\?", re.IGNORECASE)
@@ -188,9 +189,269 @@ class ComparisonDisplay(BaseModel):
         return self
 
 
-DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay, Field(discriminator="kind")]
+# Coded media (ADR-0018): drawn by the platform from data, no video file required -------------
 
-RUN_ID = r"^[a-z0-9]+(?:-[a-z0-9]+)*$"
+def short(value: str, limit: int) -> str:
+    value = plain(value)
+    if len(value) > limit:
+        raise ValueError(f"Text is limited to {limit} characters")
+    return value
+
+
+class Highlight(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    rows: list[int] = Field(default_factory=list, max_length=12)
+    cells: list[tuple[int, int]] = Field(default_factory=list, max_length=24)
+
+
+class SceneTable(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    title: str = Field(default="", max_length=80)
+    columns: list[str] = Field(min_length=1, max_length=8)
+    rows: list[list[Cell]] = Field(default_factory=list, max_length=12)
+    highlight: Highlight = Field(default_factory=Highlight)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+    @field_validator("columns")
+    @classmethod
+    def safe_columns(cls, value: list[str]) -> list[str]:
+        return [short(column, 60) for column in value]
+
+    @model_validator(mode="after")
+    def consistent(self) -> SceneTable:
+        for row in self.rows:
+            if len(row) != len(self.columns):
+                raise ValueError("Every table row must match the column count")
+            for cell in row:
+                if isinstance(cell, str):
+                    short(cell, 120) if cell.strip() else None
+                if isinstance(cell, float) and not isfinite(cell):
+                    raise ValueError("Table values must be finite")
+        if any(not 0 <= index < len(self.rows) for index in self.highlight.rows) or any(
+                not (0 <= row < len(self.rows) and 0 <= column < len(self.columns)) for row, column in self.highlight.cells):
+            raise ValueError("Highlight outside the table")
+        return self
+
+
+class Arrow(BaseModel):
+    """From a row of one table to a row of another: ``from: [table, row]`` and ``to: [table, row]`` (0-based)."""
+    model_config = ConfigDict(extra="forbid", populate_by_name=True)
+    source: tuple[int, int] = Field(alias="from")
+    target: tuple[int, int] = Field(alias="to")
+    label: str = Field(default="", max_length=40)
+
+    @field_validator("label")
+    @classmethod
+    def safe_label(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
+class Counter(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    label: str = Field(min_length=1, max_length=60)
+    value: str | int | float
+
+    @field_validator("label")
+    @classmethod
+    def safe_label(cls, value: str) -> str:
+        return plain(value)
+
+    @field_validator("value")
+    @classmethod
+    def safe_value(cls, value: str | int | float) -> str | int | float:
+        if isinstance(value, str):
+            return short(value, 40)
+        if isinstance(value, float) and not isfinite(value):
+            raise ValueError("Counter values must be finite")
+        return value
+
+
+class Badge(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["ok", "erreur", "attention"]
+    text: str = Field(min_length=1, max_length=80)
+
+    @field_validator("text")
+    @classmethod
+    def safe_text(cls, value: str) -> str:
+        return plain(value)
+
+
+class Scene(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    tables: list[SceneTable] = Field(min_length=1, max_length=3)
+    arrows: list[Arrow] = Field(default_factory=list, max_length=12)
+    counter: Counter | None = None
+    badge: Badge | None = None
+
+    @model_validator(mode="after")
+    def arrows_inside(self) -> Scene:
+        for arrow in self.arrows:
+            for table, row in (arrow.source, arrow.target):
+                if not (0 <= table < len(self.tables) and 0 <= row < len(self.tables[table].rows)):
+                    raise ValueError("Arrow outside the tables")
+            if arrow.source[0] == arrow.target[0]:
+                raise ValueError("An arrow links two different tables")
+        return self
+
+
+class AnimationStep(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    caption: str = Field(min_length=1, max_length=300)
+    scene: Scene
+
+    @field_validator("caption")
+    @classmethod
+    def safe_caption(cls, value: str) -> str:
+        return plain(value)
+
+
+class AnimationDisplay(BaseModel):
+    """Step-by-step animation drawn by the platform (no video file)."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["animation"]
+    title: str = Field(min_length=1, max_length=200)
+    steps: list[AnimationStep] = Field(min_length=2, max_length=20)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+
+class MindNode(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    label: str = Field(min_length=1, max_length=80)
+    children: list[MindNode] = Field(default_factory=list, max_length=12)
+
+    @field_validator("label")
+    @classmethod
+    def safe_label(cls, value: str) -> str:
+        return plain(value)
+
+
+MINDMAP_DEPTH = 3
+MINDMAP_NODES = 40
+
+
+class MindmapDisplay(BaseModel):
+    """Mind map: a root and up to three levels of children, 40 nodes at most."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["mindmap"]
+    title: str = Field(min_length=1, max_length=200)
+    root: MindNode
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @model_validator(mode="after")
+    def bounded(self) -> MindmapDisplay:
+        count = 0
+
+        def visit(node: MindNode, depth: int) -> None:
+            nonlocal count
+            count += 1
+            if depth > MINDMAP_DEPTH:
+                raise ValueError("A mind map has at most 3 levels below its root")
+            for child in node.children:
+                visit(child, depth + 1)
+
+        visit(self.root, 0)
+        if count > MINDMAP_NODES:
+            raise ValueError("A mind map has at most 40 nodes")
+        return self
+
+
+class FlowStep(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(pattern=RUN_ID_PATTERN, max_length=40)
+    label: str = Field(min_length=1, max_length=60)
+    rejects: int = Field(default=0, ge=0, le=1_000_000)
+    note: str = Field(default="", max_length=120)
+
+    @field_validator("label")
+    @classmethod
+    def safe_label(cls, value: str) -> str:
+        return plain(value)
+
+    @field_validator("note")
+    @classmethod
+    def safe_note(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
+class FlowDisplay(BaseModel):
+    """Animated pipeline: a token goes through the steps; some steps reject rows."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["flow"]
+    title: str = Field(min_length=1, max_length=200)
+    input: int = Field(ge=1, le=1_000_000)
+    unit: str = Field(default="lignes", max_length=20)
+    steps: list[FlowStep] = Field(min_length=2, max_length=8)
+
+    @field_validator("title", "unit")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @model_validator(mode="after")
+    def consistent(self) -> FlowDisplay:
+        ids = [step.id for step in self.steps]
+        if len(set(ids)) != len(ids):
+            raise ValueError("Duplicate step id")
+        if sum(step.rejects for step in self.steps) > self.input:
+            raise ValueError("A pipeline cannot reject more rows than it receives")
+        return self
+
+
+VIDEO_HOSTS = {"www.youtube-nocookie.com": r"^/embed/[A-Za-z0-9_-]{6,20}$", "youtube-nocookie.com": r"^/embed/[A-Za-z0-9_-]{6,20}$",
+               "player.vimeo.com": r"^/video/[0-9]{4,12}$"}
+MEDIA_SRC = re.compile(r"^/media/[0-9a-f]{16}\.(mp4|vtt)$")
+
+
+class VideoDisplay(BaseModel):
+    """Optional video: an embed from youtube-nocookie.com / player.vimeo.com, or a course file
+    copied at import (``src``, served by the gateway). Never required for the grade."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["video"]
+    title: str = Field(min_length=1, max_length=200)
+    url: str | None = Field(default=None, max_length=300)
+    src: str | None = Field(default=None, max_length=40)
+    captions_src: str | None = Field(default=None, max_length=40)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @model_validator(mode="after")
+    def one_source(self) -> VideoDisplay:
+        if (self.url is None) == (self.src is None):
+            raise ValueError("A video needs either url or file")
+        if self.url is not None:
+            parsed = urlparse(self.url)
+            pattern = VIDEO_HOSTS.get(parsed.netloc)
+            if parsed.scheme != "https" or pattern is None or not re.fullmatch(pattern, parsed.path) or parsed.params or parsed.fragment:
+                raise ValueError("Video url must be an https embed from youtube-nocookie.com or player.vimeo.com")
+            if self.captions_src:
+                raise ValueError("Captions files are for course videos only")
+        if self.src is not None and (not MEDIA_SRC.fullmatch(self.src) or not self.src.endswith(".mp4")):
+            raise ValueError("Invalid video file")
+        if self.captions_src is not None and (not MEDIA_SRC.fullmatch(self.captions_src) or not self.captions_src.endswith(".vtt")):
+            raise ValueError("Invalid captions file")
+        return self
+
+
+DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay, Field(discriminator="kind")]
+
+RUN_ID = RUN_ID_PATTERN
 
 
 class SqlRun(BaseModel):

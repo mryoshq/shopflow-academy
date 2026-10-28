@@ -11,7 +11,7 @@ const config = defineConfig({
     body: { lineHeight: "1.6" },
     "*:focus-visible": { outline: "3px solid", outlineColor: "brand.focusRing", outlineOffset: "2px" },
     "*, *::before, *::after": {
-      "@media (prefers-reduced-motion: reduce)": { animationDuration: "0.01ms !important", transitionDuration: "0.01ms !important" },
+      "@media (prefers-reduced-motion: reduce)": { animationDuration: "0.01ms !important", animationDelay: "0ms !important", transitionDuration: "0.01ms !important" },
     },
   },
   theme: {

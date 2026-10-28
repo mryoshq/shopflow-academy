@@ -30,6 +30,60 @@ data:
     JOIN order_items i ON i.order_id = o.order_id;
 ```
 
+### Leçon : La jointure pas à pas
+
+```yaml
+slug: demo-lecon-jointure-animee
+kind: lesson
+objectives: [DEMO-GRAIN]
+duration: 2
+body: |
+  Lancez l'animation : elle montre comment la jointure fait passer les frais de livraison de 70 DH à 100 DH, puis comment on corrige.
+data:
+  kind: animation
+  title: "Jointure orders et order_items : 70 DH deviennent 100 DH"
+  steps:
+    - caption: Deux commandes, une ligne chacune. Les frais attendus font 30 + 40 = 70 DH.
+      scene:
+        tables:
+          - title: orders (grain commande)
+            columns: [order_id, shipping_fee]
+            rows: [[C-101, 30], [C-102, 40]]
+        counter: {label: Total attendu, value: 70 DH}
+    - caption: Chaque article pointe vers sa commande. C-101 a deux articles.
+      scene:
+        tables:
+          - title: order_items (grain article)
+            columns: [item_id, order_id]
+            rows: [[I-1, C-101], [I-2, C-101], [I-3, C-102]]
+            highlight: {rows: [0, 1]}
+          - title: orders
+            columns: [order_id, shipping_fee]
+            rows: [[C-101, 30], [C-102, 40]]
+            highlight: {rows: [0]}
+        arrows:
+          - {from: [0, 0], to: [1, 0]}
+          - {from: [0, 1], to: [1, 0]}
+          - {from: [0, 2], to: [1, 1]}
+    - caption: Après la jointure, une ligne par article. Les 30 DH de C-101 apparaissent deux fois.
+      scene:
+        tables:
+          - title: Résultat de la jointure
+            columns: [order_id, item_id, shipping_fee]
+            rows: [[C-101, I-1, 30], [C-101, I-2, 30], [C-102, I-3, 40]]
+            highlight: {cells: [[0, 2], [1, 2]]}
+        counter: {label: SUM(shipping_fee), value: 100 DH}
+        badge: {kind: erreur, text: Les frais de C-101 sont comptés deux fois}
+    - caption: On calcule les frais au grain commande, puis on joint. Le total redevient 70 DH.
+      scene:
+        tables:
+          - title: Frais par commande (CTE)
+            columns: [order_id, shipping_fee]
+            rows: [[C-101, 30], [C-102, 40]]
+        counter: {label: Total corrigé, value: 70 DH}
+        badge: {kind: ok, text: Un seul comptage par commande}
+```
+
 ### Mission : Pourquoi 70 DH deviennent 100 DH ?
 
 ```yaml
@@ -134,6 +188,41 @@ explanation: Chaque table a son grain ; le connaître évite de répéter une va
 
 ## Bloc : Qualité et ingestion
 
+### Leçon : Carte des règles de qualité
+
+```yaml
+slug: demo-lecon-carte-qualite
+kind: lesson
+objectives: [DEMO-QUALITE]
+duration: 2
+body: |
+  Avant de charger un fichier, on vérifie quatre familles de règles. Dépliez chaque branche avec le clavier ou la souris.
+data:
+  kind: mindmap
+  title: Qualité d'un fichier importé
+  root:
+    label: Qualité des données
+    children:
+      - label: Types
+        children:
+          - label: Montants numériques
+          - label: Dates au format AAAA-MM-JJ
+      - label: Doublons
+        children:
+          - label: Clé métier
+            children:
+              - label: identifiant client
+              - label: numéro de commande
+      - label: Valeurs manquantes
+        children:
+          - label: Rejet journalisé
+          - label: Valeur par défaut documentée
+      - label: Cohérence
+        children:
+          - label: Montants positifs
+          - label: Totaux vérifiés après import
+```
+
 ### Mission : Lire l'évolution des rejets
 
 ```yaml
@@ -181,6 +270,17 @@ scoring: partial
 scenario: |
   Le service client de ShopFlow envoie chaque soir un fichier clients.csv. Avant le chargement dans l'entrepôt, l'équipe Data doit décider quelles règles de qualité appliquer. L'extrait du jour montre des montants écrits en lettres, deux formats de date et un client présent deux fois avec le même identifiant.
 instructions: Quelles règles appliquez-vous avant le chargement ? Plusieurs réponses sont possibles.
+data:
+  kind: flow
+  title: Import du fichier clients.csv de la nuit
+  input: 1000
+  unit: lignes
+  steps:
+    - {id: lire, label: Lire le fichier}
+    - {id: valider, label: Valider les types, rejects: 12, note: Montants écrits en lettres}
+    - {id: normaliser, label: Normaliser les dates, rejects: 5, note: Dates impossibles}
+    - {id: dedupliquer, label: Dédupliquer, rejects: 8, note: Même identifiant client}
+    - {id: charger, label: Charger}
 choices:
   - id: types
     label: Rejeter et journaliser les montants non numériques.
@@ -286,4 +386,20 @@ compare: rows
 hints:
   - Le résultat attendu est trié par ville.
 explanation: Il manquait un ORDER BY pour obtenir un résultat stable.
+```
+
+### Leçon : Vidéo facultative, le pipeline en quatre secondes
+
+```yaml
+slug: demo-lecon-video
+kind: lesson
+objectives: [DEMO-PIPELINE]
+duration: 1
+body: |
+  Une courte vidéo facultative, avec sous-titres. Elle ne compte jamais dans la note.
+data:
+  kind: video
+  title: Un lot de lignes traverse le pipeline
+  file: media/pipeline-demo.mp4
+  captions: media/pipeline-demo.vtt
 ```

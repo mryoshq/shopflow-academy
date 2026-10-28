@@ -74,16 +74,16 @@ def test_demonstration_course_compiles_without_error():
     assert data["course"]["slug"] == "demo-cours-markdown"
     [demo] = data["modules"]
     assert [b["title"] for b in demo["blocks"]] == ["Le grain des tables", "Qualité et ingestion"]
-    assert (demo["missions"], demo["lessons"], demo["bonus"], demo["points"], demo["bonus_points"]) == (7, 1, 1, 25, 5)
-    assert [b["duration"] for b in demo["blocks"]] == [15, 15]
+    assert (demo["missions"], demo["lessons"], demo["bonus"], demo["points"], demo["bonus_points"]) == (7, 4, 1, 25, 5)
+    assert [b["duration"] for b in demo["blocks"]] == [17, 18]
     kinds = {item.definition["kind"] for item in compiled.items()}
     assert kinds == {"lesson", "single_choice", "true_false", "matching", "data_interpretation", "multiple_choice",
                      "reorder", "scenario_choice", "sql_challenge"}
     data_kinds = {item.definition["display_data"]["kind"] for item in compiled.items() if item.definition["display_data"]}
-    assert data_kinds == {"code", "table", "line_chart", "comparison"}
+    assert data_kinds == {"code", "table", "line_chart", "comparison", "animation", "mindmap", "flow", "video"}
     assert compiled.modules[0].description.startswith("Une journée courte")
     report = report_markdown(compiled)
-    assert "État : OK, 0 erreur" in report and "| Le grain des tables | 3 | 1 | 0 | 10 | 0 | 15 |" in report
+    assert "État : OK, 0 erreur" in report and "| Le grain des tables | 3 | 2 | 0 | 10 | 0 | 17 |" in report
     # true/false ids stay text even though YAML reads them as booleans.
     tf = next(item for item in compiled.items() if item.slug == "demo-vrai-faux-grain")
     assert [c["id"] for c in tf.definition["choices"]] == ["true", "false"] and tf.definition["correct_ids"] == ["false"]
@@ -146,7 +146,7 @@ def test_student_projection_of_every_kind_has_no_answer_key(env):
     a = clients["a"]
     snapshot = a.get(f"/api/v1/student/courses/{release}").json()
     missions = [m for mod in snapshot["modules"] for ch in mod["chapters"] for m in ch["missions"]]
-    assert len(missions) == 9
+    assert len(missions) == 12
     payloads = [snapshot] + [a.get(f"/api/v1/student/missions/{m['mission_version_id']}").json() for m in missions]
     dashboard = a.get("/api/v1/student/dashboard").json()
     for payload in payloads + [dashboard]:
@@ -184,7 +184,7 @@ def test_markdown_import_export_roundtrip(env):
     with Session(engine, expire_on_commit=False) as db:
         owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
         result = import_compiled(db, owner, compiled)
-        assert result["created"] is True and result["published"] is None and result["missions"] == 9
+        assert result["created"] is True and result["published"] is None and result["missions"] == 12
         assert db.get(Course, result["course_id"]).status == "draft"
     exported = clients["teacher"].get(f"/api/v1/teacher/courses/{result['course_id']}/export").json()
     source = document(compiled)

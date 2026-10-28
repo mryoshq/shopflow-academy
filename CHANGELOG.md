@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie F : médias et animations codés (`claude/lucid-brahmagupta-htwgun-f`)
+
+- `data.kind` `animation` (tables, surlignage, flèches, compteur, badge ; lecture, pause, pas à pas, recommencer ; description textuelle), `mindmap` (arbre au clavier, repliable, apparition progressive, alternative en liste), `flow` (jeton animé, compteurs acceptées/rejetées), `video` (youtube-nocookie.com / player.vimeo.com en iframe isolée, ou fichier du cours avec sous-titres).
+- Vidéos du cours : adresse de contenu, volume `media_data` servi en lecture seule par le gateway ; CSP `frame-src` restreinte ; `prefers-reduced-motion` respecté. ADR-0018. Exemples dans `docs/examples/demo-course/`.
+
 ## 2026-10-28 — Sprint 2, partie D : chaîne d'import du cours Markdown (`claude/lucid-brahmagupta-htwgun-d`)
 
 - `scripts/course_md.py compile|import [--publish]` et `app.course_md` : erreurs en français avec fichier et ligne, résumé par module et par bloc, couverture des objectifs, rapport `RETOURS-PLATEFORME.md` ; import en brouillon du cours (création ou mise à jour), publication facultative.
