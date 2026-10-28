@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 — Sprint 3, partie S : laboratoire multi-schémas et téléchargements (`claude/lucid-brahmagupta-htwgun-s`)
+
+- La base de laboratoire accueille les schémas déclarés par le cours (`lab_schemas`, par exemple shopflow, support, perf), chargés depuis plusieurs `datasets/*.sql` dans l'ordre des noms ; `lab_reader` ne lit que ces schémas et `lab`.
+- `EXPLAIN (ANALYZE, BUFFERS…)` permis ; plans affichés en texte indenté ; index et partitions fournis par le cours seulement.
+- Nouveau `data.kind: download` (pdf, docx, zip, csv, sql, py, md ; 20 Mo) : fichiers copiés à l'import, servis aux seuls inscrits et à l'enseignant. ADR-0032.
+
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
 - Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.
