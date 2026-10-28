@@ -143,7 +143,7 @@ Notation : **toutes les tentatives sont permises, la meilleure est retenue.** Au
 Disponibles : `single_choice`, `multiple_choice`, `true_false` (choix `true` et `false`), `reorder` (`order`), `matching` (`targets` + `pairs`), `data_interpretation`, `scenario_choice`, `lesson`, `sql_challenge`.
 
 - `lesson` (titre `### Leçon :`) : courte leçon non notée (l'équivalent d'une slide). Champs : `slug`, `kind: lesson`, `objectives`, `duration`, `body` (≤ 4000 caractères, paragraphes séparés par une ligne vide, listes `- `), `data` et `run` facultatifs. Pas de `points`, `choices`, `scenario` ni `instructions`. L'étudiant clique « J'ai compris » : la leçon compte dans la progression (bloc terminé), jamais dans la note.
-- `sql_challenge` (bonus de préférence) : l'étudiant **modifie ou écrit** une requête `SELECT` sur la base de laboratoire ; le serveur l'exécute en lecture seule et compare **le résultat** au résultat attendu (`expected_sql`, privé, exécuté côté serveur). Champs : `starter_sql`, `expected_sql`, `compare: rows | rows_unordered | scalar` (défaut `rows`), `points`, `scenario`, `instructions` ; pas de `choices`. Notation tout ou rien. *État : accepté par le compilateur et stocké ; l'exécution arrive avec la base de laboratoire (partie C du sprint 2) ; d'ici là l'étudiant voit la requête de départ.*
+- `sql_challenge` (bonus de préférence) : l'étudiant **modifie ou écrit** une requête `SELECT` sur la base de laboratoire ; le serveur l'exécute en lecture seule et compare **le résultat** au résultat attendu (`expected_sql`, privé, exécuté côté serveur). Champs : `starter_sql`, `expected_sql`, `compare: rows | rows_unordered | scalar` (défaut `rows`), `points`, `scenario`, `instructions` ; pas de `choices`. Notation tout ou rien. Requêtes acceptées : **une seule** instruction `SELECT` (avec `WITH`, `UNION`, ou précédée d'`EXPLAIN [ANALYZE]`) sur les tables du laboratoire, fonctions usuelles (agrégats, fenêtres `ROW_NUMBER`, `RANK`, `NTILE`, `LAG`, `LEAD`, `PERCENT_RANK`…, dates et texte courants) ; jamais d'écriture. Le résultat doit être identique à celui d'`expected_sql` (avec `compare: rows`, l'ordre des lignes compte : mettez un `ORDER BY` dans `expected_sql`). Vérifiez que `starter_sql` ne donne **pas** déjà le bon résultat.
 
 `guided_simulation` reste réservé aux actions serveur déjà approuvées ; le compilateur le refuse.
 
@@ -208,13 +208,12 @@ data:
 
 ## 7. Exécution de code préconfiguré (`run`)
 
-Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai résultat**, sans rien installer. La réponse notée reste un choix ; le code sert à observer et comprendre.
+Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai résultat**, sans rien installer. La réponse notée reste un choix ; le code sert à observer et comprendre. `run` : 1 à 4 entrées, `id` unique dans la mission (`a-z0-9-`), `label` ≤ 120 caractères, code ≤ 60 lignes.
 
-- **SQL** : `run` est une liste de 1 à 4 requêtes `{id, label, sql}` exécutées **à la demande** sur une **base de laboratoire séparée** (PostgreSQL, données de `datasets/shopflow-lab.sql`, lecture seule, temps et nombre de lignes limités). Seules les requêtes écrites dans le cours sont exécutables ici ; l'écriture libre est réservée à `sql_challenge`. `EXPLAIN ANALYZE` est permis.
-- **Python** : `run` contient `{id, label, python}` ; le code est exécuté **une fois, à l'import du cours**, dans un conteneur jetable sans réseau, avec les fichiers de `datasets/python/` ; l'étudiant voit le code et le résultat réel quand il clique « Exécuter ». Pas d'exécution de Python libre écrit par les étudiants (sécurité du Mac) : les variantes se proposent sous forme de plusieurs extraits préconfigurés.
-- Résultats affichés en tableau (SQL) ou en sortie texte (Python), limités en taille.
-- Règles : 1 à 4 entrées, `id` unique dans la mission (`a-z0-9-`), `label` ≤ 120 caractères, code ≤ 60 lignes.
-- *État : accepté par le compilateur, stocké et affiché (code visible) ; le bouton « Exécuter » s'active avec la base de laboratoire (partie C du sprint 2).*
+- **SQL** (`{id, label, sql}`) : exécutée **à la demande** sur la **base de laboratoire** (PostgreSQL 16, données de `datasets/shopflow-lab.sql`, lecture seule, 3 secondes, 200 lignes affichées au plus). Seules les requêtes écrites dans le cours sont exécutables ; l'écriture libre est réservée à `sql_challenge`. `EXPLAIN ANALYZE` est permis.
+- **`datasets/shopflow-lab.sql`** : instructions `CREATE TABLE` / `INSERT` **sans préfixe de schéma** (le fichier est chargé dans le schéma `lab`, qui est vidé avant chaque import) ; pas de commande d'administration (`COPY … PROGRAM`, `ALTER ROLE`… sont refusés). Données **fictives** uniquement. Sans ce fichier, la base garde son contenu (au départ : un petit jeu de démonstration `orders`, `order_items`, `customers`).
+- **Python** (`{id, label, python}`) : exécuté **une fois, lors de la compilation sur le Mac**, dans un conteneur jetable sans réseau (Python 3.12, pandas 2.2.3 ; mémoire 256 Mo, 20 secondes) dont le répertoire de travail est `datasets/python/` (en lecture seule : lisez `"clients.csv"`, n'écrivez que dans `/tmp`). Seule la **sortie standard** (`print`) est conservée (20 000 caractères au plus) ; l'étudiant la révèle en cliquant « Exécuter ». Pas de Python libre écrit par les étudiants : proposez des variantes sous forme de plusieurs extraits.
+- Le compilateur exécute chaque requête et chaque extrait ; un échec est une **erreur avec fichier et ligne** (par exemple `relation "ordres" does not exist`).
 
 ## 8. Bonus
 
@@ -235,5 +234,6 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | Date | Changement |
 |---|---|
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |
+| 28/10/2026 (sprint 2, C) | Exécution livrée : `run` SQL (base de laboratoire, à la demande), `run` Python (exécuté à la compilation sur le Mac, sortie stockée), `sql_challenge` (corrigé par comparaison de résultats). `datasets/shopflow-lab.sql` chargé à l'import ; `datasets/python/` = répertoire de travail des extraits. Les échecs d'exécution sont des erreurs avec fichier et ligne. |
 | 28/10/2026 (sprint 2, F) | Livrés : `data.kind` `animation`, `mindmap`, `flow`, `video` (`url` youtube-nocookie.com / player.vimeo.com, ou `file` + `captions` dans `cours/media/`). |
 | 28/10/2026 (sprint 2, D) | Livrés : `lesson` (`body`, « J'ai compris »), `data.kind` `line_chart`, `code`, `comparison` (avec `title` de chaque côté), `title` facultatif d'un `table`. `run` et `sql_challenge` acceptés et stockés (exécution en partie C). Introduction de module = première ligne sous `# Module :`. Fichiers réservés ignorés. |

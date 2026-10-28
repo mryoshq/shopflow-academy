@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie C : exécution de code préconfiguré (`claude/lucid-brahmagupta-htwgun-c`)
+
+- Service `labdb` (PostgreSQL 16, réseau interne dédié, volume et identifiants à part) et `lab-init` (rôles `lab_reader` en lecture seule bornée, `lab_owner`) ; jeu fictif de démonstration ; `datasets/shopflow-lab.sql` chargé à l'import.
+- « Exécuter » sur les requêtes du cours (seulement celles stockées dans la mission), sortie des extraits Python exécutés une fois sur le Mac dans un conteneur jetable sans réseau ; défi SQL bonus : contrôle `sqlglot`, exécution en lecture seule, correction par comparaison avec le résultat attendu.
+- Le compilateur exécute les requêtes et extraits et signale les échecs avec fichier et ligne. 38 contournements testés. ADR-0017. `scripts/init_lab_env.py` (secrets du laboratoire).
+
 ## 2026-10-28 — Sprint 2, partie F : médias et animations codés (`claude/lucid-brahmagupta-htwgun-f`)
 
 - `data.kind` `animation` (tables, surlignage, flèches, compteur, badge ; lecture, pause, pas à pas, recommencer ; description textuelle), `mindmap` (arbre au clavier, repliable, apparition progressive, alternative en liste), `flow` (jeton animé, compteurs acceptées/rejetées), `video` (youtube-nocookie.com / player.vimeo.com en iframe isolée, ou fichier du cours avec sous-titres).

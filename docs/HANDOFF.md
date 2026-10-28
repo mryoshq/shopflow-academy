@@ -16,7 +16,8 @@
 |---|---|---|---|---|
 | 1 | A — blocs de 15 min, « Ma classe », aide, interface simplifiée, ménage, `APP_SECRET` | `claude/lucid-brahmagupta-htwgun` | [#26](https://github.com/mryoshq/shopflow-academy/pull/26) | ouverte, CI verte |
 | 2 | D — chaîne d'import du cours Markdown | `claude/lucid-brahmagupta-htwgun-d` | [#27](https://github.com/mryoshq/shopflow-academy/pull/27) (base : A) | ouverte |
-| 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | (PR F, base : D) | ouverte |
+| 3 | F — médias et animations codés | `claude/lucid-brahmagupta-htwgun-f` | [#28](https://github.com/mryoshq/shopflow-academy/pull/28) (base : D) | ouverte |
+| 4 | C — exécution de code préconfiguré | `claude/lucid-brahmagupta-htwgun-c` | (PR C, base : F) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10)** : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -37,6 +38,12 @@ Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Con
 1. Redéployer (`docker compose up -d --build --wait`) : nouveau volume `media_data` (créé automatiquement, vide), gateway et backend reconstruits. Pas de migration.
 2. `python3 scripts/smoke_public.py` puis, dans un navigateur, vérifier qu'une page s'affiche sans erreur de CSP (console).
 3. Vidéos du cours : les placer dans `cours/media/` (≤ 50 Mo, sous-titres `.vtt` conseillés) ; elles sont copiées à l'import. Les sauvegardes automatiques ne couvrent que PostgreSQL : le dossier du cours reste la source des vidéos.
+
+### À faire en local après la PR C
+1. Secrets du laboratoire, sans affichage : `python3 scripts/init_lab_env.py` (ajoute `LAB_POSTGRES_PASSWORD`, `LAB_OWNER_PASSWORD`, `LAB_READER_PASSWORD` dans `.env` s'ils manquent). Sans eux, `docker compose` refuse de démarrer.
+2. `docker compose up -d --build --wait` (nouveaux services `labdb`, `lab-init`, réseau `lab`), puis `docker compose logs lab-init` : une ligne `{"lab": "ready", …}` ; puis `python3 scripts/smoke_public.py`.
+3. Sur le Mac, une fois : `docker pull postgres:16-alpine` et `docker build -t shopflow-python-runner:1 runner/python` (sinon `scripts/course_md.py` le construit au premier usage).
+4. Recompiler le cours : les requêtes `run` et les extraits Python sont maintenant exécutés ; corriger les erreurs signalées dans `RETOURS-PLATEFORME.md`. L'import charge `datasets/shopflow-lab.sql` dans la base de laboratoire.
 
 ### Attend l'accord du propriétaire
 - Publication du cours réel pour la classe et ouverture des blocs (jamais faites par un agent).

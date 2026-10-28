@@ -19,6 +19,11 @@ class Settings(BaseSettings):
     class_label: str = "Classe B3 IA/Data"
     # Course videos copied at import, served read-only by the gateway under /media/.
     media_dir: str = "/srv/media"
+    # Laboratory database (service labdb, ADR-0017). Empty = SQL execution unavailable.
+    lab_reader_url: str = ""
+    lab_owner_url: str = ""
+    # Student-written SQL (bonus sql_challenge): on only while the bypass battery passes.
+    sql_challenge_enabled: bool = True
     ai_provider: str = "none"
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

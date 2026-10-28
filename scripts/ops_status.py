@@ -55,7 +55,7 @@ def main() -> int:
     try:
         raw = subprocess.run(["docker", "compose", "ps", "--format", "json"], cwd=ROOT, capture_output=True, text=True, check=True).stdout
         services = [json.loads(item) for item in raw.splitlines() if item.strip()]
-        expected = {"postgres", "backend", "frontend", "gateway", "backup"}
+        expected = {"postgres", "backend", "frontend", "gateway", "backup", "labdb"}
         running = {s["Service"]: s for s in services if s.get("State") == "running"}
         missing = sorted(expected - set(running))
         unhealthy = sorted(name for name, s in running.items() if s.get("Health") not in ("", "healthy"))
