@@ -105,7 +105,10 @@ test("a student completes the three demonstrations with the keyboard only", asyn
     let current = labels.findIndex((text) => text.includes(expected[target]))
     if (current <= target) continue
     const up = page.getByRole("button", { name: `Monter « ${expected[target]} »` })
-    await up.focus()
+    await expect(async () => {
+      await up.focus()
+      await expect(up).toBeFocused({ timeout: 300 })
+    }).toPass({ timeout: 10_000 })
     while (current > target) {
       // Focus follows the moved step, so a keyboard user simply presses Enter again.
       await expect(up).toBeFocused()

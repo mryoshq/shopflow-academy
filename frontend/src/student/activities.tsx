@@ -1,4 +1,4 @@
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { Box, Button, Flex, NativeSelect, Stack, Table, Text, VisuallyHidden } from "@chakra-ui/react"
 import type { Choice, DisplayData } from "../studioTypes"
 import type { Answer, PlayerDefinition } from "./types"
@@ -54,7 +54,13 @@ export function ChoiceActivity({ definition, answer, onChange, disabled, name }:
 export function ReorderActivity({ definition, answer, onChange, disabled }: ActivityProps) {
   const [announcement, setAnnouncement] = useState("")
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
+  const focusAfterMove = useRef<string | null>(null)
   const byId = new Map(definition.choices.map((choice) => [choice.id, choice]))
+  // Reordering keyed DOM nodes blurs them: restore focus once React has committed the new order.
+  useEffect(() => {
+    if (focusAfterMove.current) refs.current[focusAfterMove.current]?.focus()
+    focusAfterMove.current = null
+  }, [answer.choice_ids])
   function move(index: number, direction: -1 | 1) {
     const target = index + direction
     if (target < 0 || target >= answer.choice_ids.length) return
@@ -64,7 +70,7 @@ export function ReorderActivity({ definition, answer, onChange, disabled }: Acti
     const id = next[target]
     setAnnouncement(`« ${byId.get(id)?.label} » est maintenant en position ${target + 1} sur ${next.length}.`)
     const edge = target === 0 || target === next.length - 1
-    requestAnimationFrame(() => refs.current[`${id}:${edge ? (direction < 0 ? 1 : -1) : direction}`]?.focus())
+    focusAfterMove.current = `${id}:${edge ? (direction < 0 ? 1 : -1) : direction}`
   }
   return <Box><Stack gap="2" as="ol" listStyleType="none" m="0" p="0" aria-label="Étapes à ordonner">
     {answer.choice_ids.map((id, index) => <Flex as="li" key={id} align="center" gap="3" p="3" bg="app.surface"
