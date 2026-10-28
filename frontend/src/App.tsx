@@ -4,6 +4,7 @@ import { TeacherHome } from "./teacher/TeacherHome"
 import { StudentHome } from "./StudentHome"
 import { ThemeSwitch } from "./ThemeSwitch"
 import { Logo } from "./Logo"
+import { LeaderboardNavigation } from "./leaderboard/LeaderboardPage"
 import type { User } from "./studioTypes"
 
 type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
@@ -138,7 +139,7 @@ export function App() {
             </Box>
           </Flex>
         )}
-        {state === "authenticated" && user && (user.role === "teacher" ? (
+        {state === "authenticated" && user && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
           <Stack gap="8">
             <Stack gap="2">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>
@@ -147,7 +148,7 @@ export function App() {
             <TeacherHome />
             {message && <Text role="alert" color="red.fg">{message}</Text>}
           </Stack>
-        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>)}
+        ) : <Stack gap="4"><StudentHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}</LeaderboardNavigation>}
       </Container>
     </Box>
   )

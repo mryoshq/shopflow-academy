@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-28 — Sprint 2, partie K : classement facultatif (`codex/k-classement`)
+
+- Page « Classement » et onglet « Progression du jour », actualisation toutes les 5 secondes, points principaux et bonus distincts, ex æquo au même rang, ligne personnelle marquée « Vous ».
+- Réglages enseignant : désactivé par défaut, top 3 avec ex æquo et position personnelle, masquage pendant un bloc ouvert. Filtrage serveur, inscription/propriété, CSRF, aucun identifiant de connexion exposé. Pseudonyme choisi (24 caractères), nom neutre en attendant.
+- Podium SVG original, Chakra v3, clavier, clair/sombre, mouvement réduit et contrôle axe. Migration `0011_leaderboard` limitée aux préférences et pseudonymes. ADR-0026. Aucun changement de notation ou d’export ; aucun contenu de cours ajouté.
+- Retours CI K : propriété vérifiée avant validation des réglages (404 pour une autre classe même avec un corps invalide), navigation sans débordement mobile avec libellés longs ; régressions ciblées ajoutées.
+
 ## 2026-10-28 — Correctif : blocs terminés et republication (`claude/lucid-brahmagupta-htwgun-lecons`)
 
 - Un bloc est « terminé » quand toutes ses missions notées sont réussies (hors bonus et hors leçons) ; « leçons lues x/y » s'affiche à part (étudiant, « Ma classe », vue de classe). Le score « missions réussies » ne compte plus les leçons.
