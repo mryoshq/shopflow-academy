@@ -154,7 +154,9 @@ test("automatic opening: plan shown before activation, the server opens the bloc
   try {
     await teacher.getByRole("tab", { name: "Ma classe" }).click()
     const section = teacher.getByRole("region", { name: "Ouverture automatique des blocs" })
-    const end = new Date(Date.now() + 3 * 3600_000)
+    // « Heure de fin » is a time of today: after 21:00 « now + 3 h » would wrap past midnight into the past.
+    const now = new Date()
+    const end = new Date(Math.min(now.getTime() + 3 * 3600_000, new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59).getTime()))
     await section.getByLabel("Heure de fin").fill(`${String(end.getHours()).padStart(2, "0")}:${String(end.getMinutes()).padStart(2, "0")}`)
     await section.getByRole("button", { name: "Voir le planning" }).click()
     await expect(section.getByRole("list", { name: "Planning d’ouverture" }).getByText(BLOCK)).toBeVisible()
