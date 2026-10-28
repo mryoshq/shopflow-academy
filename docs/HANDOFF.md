@@ -32,7 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire #53 (P), #54 (S), #55 (Q, cadre) et la PR R (espace projet, migration `0014_project`), fusionner dans cet ordre, puis faire les « À faire en local » — accord et action du propriétaire.** Ensuite : O (interface enseignant), et l'intégration du voyage à réception de l'archive.
+**Prochaine tâche unique : relire #53 (P), #54 (S), #55 (Q, cadre) et #56 (R, espace projet, migration `0014_project`), fusionner dans cet ordre, puis faire les « À faire en local » — accord et action du propriétaire.** Ensuite : O (interface enseignant), et l'intégration du voyage à réception de l'archive.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -63,7 +63,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
-| 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | PR R (base : `main`) | ouverte |
+| 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
