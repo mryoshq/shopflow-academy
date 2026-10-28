@@ -30,6 +30,7 @@
 - [x] **S2-I** PWA, radio, pomodoro, couleurs (ADR-0024). Preuves : voir PROGRESS.
 - [x] **S2-K** Classement de la classe (ADR-0026), livré par #37.
 - [x] **S2-M** Cartes à retourner et élément « Révision » (ADR-0028). Preuves : voir PROGRESS.
+- [x] **S2-N** Confort et finitions : session persistante, code Catppuccin, images, passe mobile (ADR-0029). Preuves : voir PROGRESS.
 - [ ] Ordre restant : **S2-J** Observateur en lecture seule (ADR-0025).
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable

@@ -11,6 +11,13 @@ const config = defineConfig({
     html: { colorScheme: "light" },
     "html.dark": { colorScheme: "dark" },
     body: { lineHeight: "1.6" },
+    // ADR-0029: 44 px touch targets on phones and touch screens (WCAG 2.5.5), without changing the desktop layout.
+    "button, [role=button], [role=tab], select, input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea": {
+      "@media (max-width: 47.99em), (pointer: coarse)": { minHeight: "44px" },
+    },
+    "button, [role=button], [role=tab]": {
+      "@media (max-width: 47.99em), (pointer: coarse)": { minWidth: "44px" },
+    },
     "*:focus-visible": { outline: "3px solid", outlineColor: "brand.focusRing", outlineOffset: "2px" },
     "*, *::before, *::after": {
       "@media (prefers-reduced-motion: reduce)": { animationDuration: "0.01ms !important", animationDelay: "0ms !important", transitionDuration: "0.01ms !important" },
@@ -76,15 +83,17 @@ const config = defineConfig({
           // Form field borders: >= 3:1 against canvas, surface and sunken (WCAG 1.4.11), ADR-0024.
           field: { value: { base: "#7D8884", _dark: "#667874" } },
         },
-        // Code blocks: syntax colours at least 4.5:1 on code.bg in both themes.
+        // Code blocks: Catppuccin (MIT, ADR-0029), Latte in light mode and Mocha in dark mode. Mocha colours are
+        // official; Latte green, peach and blue are darkened (same hue) so every token is at least 4.5:1 on Latte base.
         code: {
-          bg: { value: { base: "#F4F1EA", _dark: "#101917" } },
-          fg: { value: { base: "#14211F", _dark: "#E6EEEB" } },
-          keyword: { value: { base: "#0F5047", _dark: "#7FD1BE" } },
-          string: { value: { base: "#7A4A12", _dark: "#F2C27A" } },
-          comment: { value: { base: "#566460", _dark: "#9DAEA9" } },
-          number: { value: { base: "#6B2C91", _dark: "#D9AEF2" } },
-          border: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
+          bg: { value: { base: "#EFF1F5", _dark: "#1E1E2E" } },
+          fg: { value: { base: "#4C4F69", _dark: "#CDD6F4" } },
+          keyword: { value: { base: "#8839EF", _dark: "#CBA6F7" } },
+          string: { value: { base: "#317A21", _dark: "#A6E3A1" } },
+          comment: { value: { base: "#5C5F77", _dark: "#9399B2" } },
+          number: { value: { base: "#BC4501", _dark: "#FAB387" } },
+          function: { value: { base: "#145FF5", _dark: "#89B4FA" } },
+          border: { value: { base: "#CCD0DA", _dark: "#313244" } },
         },
         chart: {
           grid: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },

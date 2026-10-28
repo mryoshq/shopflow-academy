@@ -61,7 +61,7 @@ for (const theme of ["light", "dark"] as const) {
     await openMarkdownCourse(page)
     const outline = page.getByLabel("Plan du cours")
     await expect(outline.getByLabel("Compteurs du cours")).toContainText("Blocs2")
-    await expect(outline.getByLabel("Compteurs du cours")).toContainText("Leçons6")
+    await expect(outline.getByLabel("Compteurs du cours")).toContainText("Leçons7")
     await expect(outline.getByRole("button", { name: /^1\s*Le grain des tables/ })).toHaveAttribute("aria-expanded", "true")
     await expect(outline.getByRole("button", { name: /^2\s*Qualité et ingestion/ })).toHaveAttribute("aria-expanded", "false")
     const row = outline.getByRole("button", { name: "La jointure pas à pas", exact: true }).locator("xpath=ancestor::li")

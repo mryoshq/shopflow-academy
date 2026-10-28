@@ -60,7 +60,9 @@ def test_example_media_compile_and_are_content_addressed():
     assert compiled.errors == []
     video = next(item.definition["display_data"] for item in compiled.items() if item.slug == "demo-lecon-video")
     assert video["src"].startswith("/media/") and video["src"].endswith(".mp4") and video["captions_src"].endswith(".vtt")
-    assert set(compiled.media_out) == {video["src"], video["captions_src"]}
+    image = next(item.definition["display_data"] for item in compiled.items() if item.slug == "demo-lecon-image")
+    assert set(compiled.media_out) == {video["src"], video["captions_src"], image["src"]}
+    assert image["src"].endswith(".svg") and image["alt"].startswith("Schéma")
     animation = next(item.definition["display_data"] for item in compiled.items() if item.slug == "demo-lecon-jointure-animee")
     assert [step["scene"]["counter"]["value"] for step in animation["steps"] if step["scene"]["counter"]] == ["70 DH", "100 DH", "70 DH"]
     import json

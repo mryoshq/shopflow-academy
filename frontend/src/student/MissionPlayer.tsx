@@ -323,7 +323,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       </Stack>
 
       <Box as="aside" aria-label="Aide" borderWidth="1px" borderColor="app.border" rounded="card" bg="app.sunken" p={{ base: "3", md: "4" }}>
-        <Button variant="ghost" size="sm" px="1" h="auto" minH="8" py="1" whiteSpace="normal" textAlign="start" aria-expanded={helpOpen} aria-controls="mission-help" onClick={() => toggleHelp()}>
+        <Button variant="ghost" size="sm" px="1" h="auto" minH={{ base: "11", md: "8" }} py="1" whiteSpace="normal" textAlign="start" aria-expanded={helpOpen} aria-controls="mission-help" onClick={() => toggleHelp()}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
             style={{ transform: helpOpen ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>
           Aide : indices, question à l’enseignant{mission.attempts_count > 0 ? ", historique" : ""}

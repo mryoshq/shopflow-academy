@@ -182,7 +182,7 @@ export function NotificationBell() {
         <Text fontWeight="semibold">Notifications</Text>
         <Flex gap="1">
           <Button size="xs" variant="ghost" disabled={!unread} onClick={() => void markAll()}>Tout marquer comme lu</Button>
-          <CloseButton size="xs" aria-label="Fermer l’historique" onClick={() => setOpen(false)} />
+          <CloseButton size={{ base: "md", md: "xs" }} minW={{ base: "11", md: "auto" }} aria-label="Fermer l’historique" onClick={() => setOpen(false)} />
         </Flex>
       </Flex>
       <SystemNotificationsSwitch />

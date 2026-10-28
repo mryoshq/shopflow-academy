@@ -3,15 +3,16 @@ import { Box, Button, Flex, Grid, Stack, Table, Text, VisuallyHidden } from "@ch
 import type { CodeDisplay, ComparisonDisplay, LineChartDisplay, TableDisplay } from "../studioTypes"
 
 const SQL_WORDS = new Set(("select from where join inner left right full outer on and or not as group by order having limit offset " +
-  "with union all distinct case when then else end sum count avg min max over partition rank row_number dense_rank ntile lag lead " +
-  "percent_rank insert into values update set delete create table index explain analyze is null in between like asc desc " +
-  "conflict do excluded recursive coalesce cast interval date").split(" "))
+  "with union all distinct case when then else end over partition insert into values update set delete create table index explain " +
+  "analyze is null in between like asc desc conflict do excluded recursive interval date true false").split(" "))
+const SQL_FUNCTIONS = new Set(("sum count avg min max rank row_number dense_rank ntile lag lead percent_rank coalesce cast " +
+  "round lower upper trim length substring extract date_trunc now nullif abs string_agg").split(" "))
 const PYTHON_WORDS = new Set(("def return import from as for in if elif else while with try except finally raise class " +
-  "lambda and or not is none true false print pass break continue yield").split(" "))
+  "lambda and or not is none true false pass break continue yield async await global nonlocal assert del").split(" "))
 
-type Token = { text: string; kind: "keyword" | "string" | "comment" | "number" | "plain" }
+export type Token = { text: string; kind: "keyword" | "string" | "comment" | "number" | "function" | "plain" }
 
-/** Tiny tokenizer for readable colours; the code is shown as text, never interpreted. */
+/** Tiny tokenizer for the Catppuccin colours (ADR-0029); the code is shown as text, never interpreted. */
 export function tokenize(line: string, language: CodeDisplay["language"]): Token[] {
   if (language === "text") return [{ text: line, kind: "plain" }]
   const words = language === "sql" ? SQL_WORDS : PYTHON_WORDS
@@ -20,19 +21,34 @@ export function tokenize(line: string, language: CodeDisplay["language"]): Token
   const tokens: Token[] = []
   for (const match of line.matchAll(pattern)) {
     const text = match[0]
+    const lower = text.toLowerCase()
+    const rest = line.slice((match.index ?? 0) + text.length)
     let kind: Token["kind"] = "plain"
     if (text.startsWith(comment)) kind = "comment"
     else if (text.startsWith("'") || text.startsWith("\"")) kind = "string"
     else if (/^\d/.test(text)) kind = "number"
-    else if (words.has(text.toLowerCase())) kind = "keyword"
-    else if ((text.startsWith("--") && language === "python") || (text.startsWith("#") && language === "sql")) kind = "plain"
+    else if (words.has(lower)) kind = "keyword"
+    else if (language === "sql" ? SQL_FUNCTIONS.has(lower) : /^[A-Za-z_]/.test(text) && /^\s*\(/.test(rest)) kind = "function"
     tokens.push({ text, kind })
   }
   return tokens
 }
 
 const TOKEN_COLOR: Record<Token["kind"], string | undefined> = {
-  keyword: "code.keyword", string: "code.string", comment: "code.comment", number: "code.number", plain: undefined,
+  keyword: "code.keyword", string: "code.string", comment: "code.comment", number: "code.number", function: "code.function", plain: undefined,
+}
+export const MONO = "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace"
+
+/** Coloured lines of code (Catppuccin Latte in light mode, Mocha in dark mode). */
+export function Highlighted({ code, language }: { code: string; language: CodeDisplay["language"] }) {
+  const lines = code.split("\n")
+  return <>{lines.map((line, index) => <Fragment key={index}>
+    {tokenize(line, language).map((token, position) => TOKEN_COLOR[token.kind]
+      ? <Text as="span" key={position} color={TOKEN_COLOR[token.kind]} fontStyle={token.kind === "comment" ? "italic" : undefined}
+        data-token={token.kind}>{token.text}</Text>
+      : <Fragment key={position}>{token.text}</Fragment>)}
+    {index < lines.length - 1 ? "\n" : null}
+  </Fragment>)}</>
 }
 
 export function CodeBlock({ code, language, title, label }: { code: string; language: CodeDisplay["language"]; title?: string; label?: string }) {
@@ -40,19 +56,13 @@ export function CodeBlock({ code, language, title, label }: { code: string; lang
   const name = language === "sql" ? "SQL" : language === "python" ? "Python" : "Texte"
   return <Box as="figure" m="0" borderWidth="1px" borderColor="code.border" rounded="lg" overflow="hidden" bg="code.bg">
     <Flex as="figcaption" justify="space-between" gap="2" px="3" py="1.5" borderBottomWidth="1px" borderColor="code.border" fontSize="sm">
-      <Text fontWeight="semibold" color="app.ink">{title || label || "Code"}</Text>
-      <Text color="app.muted">{name}</Text>
+      <Text fontWeight="semibold" color="code.fg">{title || label || "Code"}</Text>
+      <Text color="code.comment">{name}</Text>
     </Flex>
     <Box as="pre" m="0" p="3" overflowX="auto" fontSize="sm" lineHeight="1.55" color="code.fg" tabIndex={0}
       aria-label={`${title || "Code"} (${name}, ${lines.length} ligne${lines.length > 1 ? "s" : ""})`}
-      css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace", tabSize: 4 }}>
-      <code>{lines.map((line, index) => <Fragment key={index}>
-        {tokenize(line, language).map((token, position) => TOKEN_COLOR[token.kind]
-          ? <Text as="span" key={position} color={TOKEN_COLOR[token.kind]} fontWeight={token.kind === "keyword" ? "semibold" : undefined}
-            fontStyle={token.kind === "comment" ? "italic" : undefined}>{token.text}</Text>
-          : <Fragment key={position}>{token.text}</Fragment>)}
-        {index < lines.length - 1 ? "\n" : null}
-      </Fragment>)}</code>
+      css={{ fontFamily: MONO, tabSize: 4 }}>
+      <code><Highlighted code={code} language={language} /></code>
     </Box>
   </Box>
 }
@@ -60,11 +70,12 @@ export function CodeBlock({ code, language, title, label }: { code: string; lang
 export function DataTable({ columns, rows, caption }: { columns: string[]; rows: (string | number | boolean | null)[][]; caption: string }) {
   // Focusable named region: a narrow screen can scroll the table with the keyboard (WCAG 2.1.1).
   return <Box overflowX="auto" tabIndex={0} role="region" aria-label={caption} borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
-    <Table.Root size="sm" variant="line" css={{ "& td, & th": { fontVariantNumeric: "tabular-nums" } }}>
+    <Table.Root size="sm" variant="line" css={{ "& td, & th": { fontVariantNumeric: "tabular-nums" }, "& th": { whiteSpace: "nowrap" } }}>
       <Table.Caption captionSide="top" textAlign="left" px="3" pt="2" color="app.muted" fontSize="sm">{caption}</Table.Caption>
       <Table.Header><Table.Row bg="app.sunken">{columns.map((column, index) => <Table.ColumnHeader key={index} scope="col">{column}</Table.ColumnHeader>)}</Table.Row></Table.Header>
       <Table.Body>{rows.map((row, rowIndex) => <Table.Row key={rowIndex}>{row.map((cell, index) =>
-        <Table.Cell key={index} color={cell === null ? "app.muted" : undefined}>{cell === null ? "vide" : String(cell)}</Table.Cell>)}</Table.Row>)}
+        <Table.Cell key={index} color={cell === null ? "app.muted" : undefined} whiteSpace={String(cell ?? "").length <= 32 ? "nowrap" : undefined}
+          minW={String(cell ?? "").length > 32 ? "48" : undefined}>{cell === null ? "vide" : String(cell)}</Table.Cell>)}</Table.Row>)}
       </Table.Body>
     </Table.Root>
   </Box>
