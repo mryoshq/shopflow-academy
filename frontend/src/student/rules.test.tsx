@@ -54,7 +54,7 @@ it("announces the percentage of the next attempt, then counts the pause down aft
   fireEvent.click(screen.getByRole("button", { name: "Tester ma décision" }))
   expect(await screen.findByText("Presque ! Réessayez")).toBeInTheDocument()
   expect(screen.getByText("Pause de 10 s : relisez la situation.")).toBeInTheDocument()
-  expect(screen.getByRole("button", { name: "Afficher un indice" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Voir un indice" })).toBeInTheDocument()
   const again = screen.getByRole("button", { name: "Réessayer dans 10 s" })
   expect(again).toBeDisabled()
   await act(async () => { await vi.advanceTimersByTimeAsync(10_500) })

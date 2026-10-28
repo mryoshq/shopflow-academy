@@ -81,7 +81,7 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
     await expect(page.getByText("Presque ! Réessayez")).toBeVisible()
     await expect(page.getByText(/^Pause de \d+ s : relisez la situation\.$/)).toBeVisible()
     await expect(page.getByRole("button", { name: /^Réessayer dans \d+ s$/ })).toBeDisabled()
-    await expect(page.getByRole("button", { name: "Afficher un indice" }).first()).toBeVisible()
+    await expect(page.getByRole("button", { name: "Voir un indice" })).toBeVisible()
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/42-pause-${size}.png`, fullPage: true, animations: "disabled" })
     // The server refuses an attempt during the pause.
@@ -96,21 +96,25 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
     await page.getByRole("radio", { name: /La jointure passe au grain article/ }).check()
     await page.getByRole("button", { name: "Tester ma décision" }).click()
     await expect(page.getByText("Bonne décision")).toBeVisible()
-    await expect(page.getByText(new RegExp(`: ${Number(percent) / 10} / 10 pts`))).toBeVisible()
+    await expect(page.getByText(new RegExp(`^Essai n° \\d+ : ${Number(percent) / 10} / 10 pts`))).toBeVisible()
     await context.close()
   })
 }
 
-test("« Ma classe » shows fast clicks, then the rules are switched off", async ({ page }) => {
+test("« Ma classe » shows fast clicks", async ({ page }) => {
   await login(page, "demo.enseignant")
-  try {
-    await page.getByRole("tab", { name: "Ma classe" }).click()
-    const row = page.getByRole("row").filter({ hasText: STUDENT })
-    await expect(row.getByText(/Clics rapides : \d+/)).toBeVisible()
-    await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
-    await page.screenshot({ path: `${shots}/43-ma-classe-clics-rapides.png`, fullPage: true, animations: "disabled" })
-  } finally {
-    const main = await (await page.request.get("/api/v1/teacher/main")).json() as { course: { id: number } }
-    await putRules(page.request, await csrf(page), main.course.id, { decay_enabled: false, pause_enabled: false, reading_enabled: false })
-  }
+  await page.getByRole("tab", { name: "Ma classe" }).click()
+  const row = page.getByRole("row").filter({ hasText: STUDENT })
+  await expect(row.getByText(/Clics rapides : \d+/)).toBeVisible()
+  await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
+  await page.screenshot({ path: `${shots}/43-ma-classe-clics-rapides.png`, fullPage: true, animations: "disabled" })
+})
+
+// Always switch the rules off again, even after a failure, so the other specs keep the defaults.
+test.afterAll(async ({ browser }) => {
+  const page = await browser.newPage()
+  await login(page, "demo.enseignant")
+  const main = await (await page.request.get("/api/v1/teacher/main")).json() as { course: { id: number } }
+  await putRules(page.request, await csrf(page), main.course.id, { decay_enabled: false, pause_enabled: false, reading_enabled: false })
+  await page.close()
 })

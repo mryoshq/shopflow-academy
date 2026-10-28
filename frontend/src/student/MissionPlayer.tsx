@@ -381,7 +381,7 @@ function PauseNotice({ seconds, canHint, hintBusy, onHint }: { seconds: number; 
   return <Flex role="status" gap="3" align="center" wrap="wrap" p="3" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
     <Box color="saffron.fg"><Icon name="clock" /></Box>
     <Text flex="1" minW="48"><Text as="span" fontWeight="semibold">Pause de {seconds} s : relisez la situation.</Text> Un indice peut vous aider avant le prochain essai.</Text>
-    {canHint && <Button size="sm" colorPalette="brand" onClick={onHint} loading={hintBusy}><Icon name="bulb" size={16} />Afficher un indice</Button>}
+    {canHint && <Button size="sm" colorPalette="brand" onClick={onHint} loading={hintBusy}><Icon name="bulb" size={16} />Voir un indice</Button>}
   </Flex>
 }
 
