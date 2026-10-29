@@ -37,6 +37,7 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
 - Chaîne, quand l'enseignant annonce « le cours est prêt » : l'agent plateforme lance `scripts/course_md.py compile "<dossier du cours>/cours"` (validation, erreurs avec fichier et ligne), écrit ses retours dans `<dossier du cours>/RETOURS-PLATEFORME.md`, puis, à 0 erreur, importe **en brouillon** (`import`) → aperçu par l'enseignant → publication **sur son accord écrit seulement** → les modules s'ouvrent ensuite un par un depuis le suivi de classe.
 - **Sauvegarde versionnée** : après chaque étape validée, l'agent plateforme copie `cours/` et les fichiers `.md` du dossier dans le dépôt GitHub **privé** `mryoshq/shopflow-courses`, après avoir vérifié qu'il est privé. Personne d'autre n'y pousse ; le dossier local reste la source.
 - Ajouter un module plus tard = ajouter un fichier, recompiler, republier : la progression et les notes déjà obtenues sur les missions inchangées sont conservées.
+- Reformuler une mission publiée (situation, consigne, explication, retours, indices, médias, libellés des choix) garde les réussites (ADR-0030). Changer la notation (bonne réponse, identifiants des choix, ordre attendu, `expected_sql`/`compare`, `points`, `scoring`, `bonus`, type) les remet à zéro : vérifiez avant de publier avec `python -m app.carryover --course <slug>`.
 
 ## 3. Syntaxe
 

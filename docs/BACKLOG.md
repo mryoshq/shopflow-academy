@@ -38,6 +38,9 @@
 - [ ] **S3-Q** Animation « Le voyage d'une donnée » (ADR-0033), en attente de l'archive du propriétaire.
 - [ ] **S3-R** Espace projet CampusEquip : binômes, jalons, dépôts, grille, soutenances (ADR-0034).
 - [ ] **S3-O** Interface enseignant en application à une page (ADR-0031), avec l'espace projet.
+### Sprint 3 (ordre fixé par le propriétaire)
+- [x] **S3-P** Report des réussites quand seul le texte change + vérification avant publication (ADR-0030). Preuves : voir PROGRESS.
+- [ ] **S3-O** Interface enseignant en application à une page : barre latérale, vues avec adresses, « Aujourd'hui », Cmd+K, panneaux latéraux (ADR-0031).
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
