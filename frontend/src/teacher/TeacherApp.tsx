@@ -161,8 +161,8 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   const topbar = <Flex as="header" align="center" gap={{ base: "2", md: "3" }} px={{ base: "3", md: "6" }} py="2.5" minH="16" wrap="wrap"
     borderBottomWidth="1px" borderColor="app.border" bg="app.surface" position="sticky" top="0" zIndex="sticky">
     {route.view === "aujourdhui"
-      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="0">{info.title}</Text>
-      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="0">{info.title}</Heading>}
+      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Text>
+      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Heading>}
     {online && <Link href="#/classe/etudiants" display="inline-flex" alignItems="center" gap="2" minH="11" px="2" rounded="md" fontSize="sm" color="app.ink"
       textDecoration="none" aria-label={`${online.online} étudiant${online.online > 1 ? "s" : ""} en ligne sur ${online.total}`}>
       <Box w="2.5" h="2.5" rounded="full" bg={online.online ? "green.solid" : "app.border"} aria-hidden="true" />
@@ -222,7 +222,7 @@ function ViewContent({ route, main, username, go, navigate, reload }: {
 }) {
   const assignmentId = main.assignment_id
   const context = <Flex gap="3" align="center" wrap="wrap" mb="4">
-    <Badge colorPalette="brand" variant="subtle" rounded="full">{main.cohort!.label} · {main.cohort!.student_count} étudiants</Badge>
+    <Badge colorPalette="brand" variant="subtle" rounded="full" whiteSpace="normal" maxW="full" lineHeight="1.4" py="0.5">{main.cohort!.label} · {main.cohort!.student_count} étudiants</Badge>
     <Text fontSize="sm" color="app.muted">{main.course!.title}{main.assigned_version ? ` · version ${main.assigned_version} pour la classe` : " · pas encore publié"}</Text>
   </Flex>
 
