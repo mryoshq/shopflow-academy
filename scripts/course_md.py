@@ -117,7 +117,7 @@ def last_error(stderr: str) -> str:
 
 def check_sql(folder: Path, entries: list[dict], results: dict, schemas: list[str] | None = None) -> None:
     files = datasets_bundle(folder) or {"lab_demo.sql": (ROOT / "backend" / "app" / "lab_demo.sql").read_text(encoding="utf-8")}
-    search_path = ", ".join([*(schemas or []), "lab"])
+    search_path = ", ".join(["lab", *(schemas or [])])
     name = f"shopflow-labcheck-{os.getpid()}"
     docker("run", "-d", "--rm", "--name", name, "--network", "none", "-e", "POSTGRES_PASSWORD=check-only", LAB_IMAGE, check=True)
     try:

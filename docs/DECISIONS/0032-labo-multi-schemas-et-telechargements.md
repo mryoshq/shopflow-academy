@@ -10,7 +10,7 @@
   - avant le chargement, tous les schémas possédés par `lab_owner` sont supprimés, puis `lab` est recréé ;
   - un schéma créé mais non déclaré refuse tout le jeu de données (rien n'est changé) ;
   - `lab_reader` reçoit `USAGE` et `SELECT` sur `lab` et les schémas déclarés **seulement** ;
-  - le chemin de recherche (schémas déclarés, puis `lab`) est enregistré en commentaire du schéma `lab`.
+  - le chemin de recherche (`lab`, puis les schémas déclarés ; révisé le 29 octobre : une table du kit de même nom masquait la table du cours dans `lab`) est enregistré en commentaire du schéma `lab`.
 - **Liste blanche sans migration** : le serveur lit, avec `lab_reader`, les tables qu'il peut lire (`information_schema.tables`) et ce chemin. Les deux sont mis en cache 30 s. `run` et `sql_challenge` ont les mêmes protections qu'avant :
   - une seule requête `SELECT` / `WITH` / `EXPLAIN`, analysée par sqlglot, avec une liste de fonctions permises ;
   - chaque table doit être lisible : qualifiée (`support.tickets`) ou résolue par le chemin ;
