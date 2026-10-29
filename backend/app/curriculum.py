@@ -325,6 +325,17 @@ def get_course(course_id: int, auth: AuthContext = Depends(require_teacher), db:
     return course_tree(db, course_or_404(db, course_id, auth), private=True)
 
 
+@router.get("/teacher/courses/{course_id}/carryover-check")
+def carryover_check(course_id: int, response: Response, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
+    """ADR-0030, read-only: successes the classes would stop seeing if the draft were published now."""
+    from app.carryover import report, simulate
+
+    response.headers["Cache-Control"] = "no-store"
+    result = simulate(db, course_or_404(db, course_id, auth).id)
+    db.rollback()
+    return {**result, "message": report(result)}
+
+
 @router.patch("/teacher/courses/{course_id}")
 def update_course(course_id: int, payload: CoursePatch, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     course = editable_course(db, course_id, auth)

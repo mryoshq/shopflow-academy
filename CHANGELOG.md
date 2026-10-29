@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-10-28 — Sprint 3, partie P : report des réussites (`claude/lucid-brahmagupta-htwgun-p`)
+
+- Une réussite et ses points restent acquis d'une version à l'autre d'une mission quand seul le texte change (explication, consigne, retours, indices, médias, libellés). Si la notation change, la mission repart de zéro, comme avant. Les leçons ne rapportent toujours aucun point.
+- Vérification en lecture seule avant publication : `python -m app.carryover --course <slug>` et `GET /teacher/courses/{id}/carryover-check` listent les réussites qui seraient perdues. ADR-0030.
+
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
 - Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.
