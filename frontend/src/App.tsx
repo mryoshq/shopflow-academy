@@ -1,6 +1,8 @@
-import { useEffect, useState, type FormEvent } from "react"
+import { Suspense, useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherHome } from "./teacher/TeacherHome"
+import { useHashRoute } from "./useHashRoute"
+import { VoyagePage } from "./voyage"
 import { StudentHome } from "./StudentHome"
 import { ObserverHome } from "./observer/ObserverHome"
 import { ThemeSwitch } from "./ThemeSwitch"
@@ -29,6 +31,7 @@ export function App() {
   const [remember, setRemember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
+  const { route, navigate } = useHashRoute()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -156,7 +159,10 @@ export function App() {
           </Flex>
         )}
         {state === "authenticated" && user?.role === "observer" && <Stack gap="4"><ObserverHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}
-        {state === "authenticated" && user && user.role !== "observer" && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" ? (
+        {state === "authenticated" && user && user.role !== "observer" && <LeaderboardNavigation key={user.id} role={user.role}>{user.role === "teacher" && route.name === "voyage" ? (
+          <Suspense fallback={<Text role="status" color="app.muted">Chargement de l’expérience…</Text>}>
+            <VoyagePage scene={route.scene} onScene={(scene) => navigate(`/voyage/${scene}`)} /></Suspense>
+        ) : user.role === "teacher" ? (
           <Stack gap="8">
             <Stack gap="2">
               <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {user.username}</Heading>

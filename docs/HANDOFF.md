@@ -64,6 +64,9 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
 | 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
+| 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
+| 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
+| 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -139,6 +142,21 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 2. Redéployer à une pause (`docker compose up -d --build --wait`, service migrate compris, passerelle comprise : limite de 21 Mo sur l'envoi de fichiers). Vérifier la tête Alembic `0014_project`.
 3. Onglet « Projet » : publier le jalon « Conception du 29 octobre » (tableau des sources, règles, schéma, graphe, scénarios, plan), puis « Rendu final » (lien du dépôt, README, rapport ≤ 6 pages, `journal_IA.md`) et « Soutenance » ; créer les créneaux du 23 novembre.
 4. Vérifier avec deux comptes étudiants de démonstration : binôme, invitation, dépôt d'un PDF, commentaire.
+### À faire en local après la PR Q
+
+1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
+2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
+### À faire en local après la PR S
+
+1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).
+2. Dans le dossier du cours : ajouter `lab_schemas: [shopflow, support, perf]` à `00-cours.md`, déposer les fichiers SQL du kit dans `cours/datasets/` en préfixant les noms pour l'ordre (`01-…`, `02-…`), les documents dans `cours/downloads/`.
+3. `python3 scripts/course_md.py compile "<dossier>/cours"` (vérifie les requêtes sur une base jetable avec les mêmes schémas), puis import en brouillon. **L'import remplace tout le contenu de la base de laboratoire.**
+4. Vérifier un `run` `EXPLAIN (ANALYZE, BUFFERS)` dans l'aperçu, et un téléchargement depuis un compte étudiant de démonstration.
+### À faire en local après la PR P
+
+1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde nécessaire** : rien n'est écrit, le report se fait à la lecture.
+2. Vérifier dans « Ma classe » ou « Résultats » que les réussites des missions dont seul le texte avait changé sont revenues.
+3. Avant chaque publication : `docker compose exec -T backend python -m app.carryover --course <slug>` (code 1 et liste si des réussites seraient perdues).
 
 ### À faire en local après la PR J
 

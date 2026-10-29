@@ -29,7 +29,7 @@ from app.curriculum import mission_course
 from app.curriculum_schema import MissionDefinition, PythonRun, SqlRun
 from app.database import get_db
 from app.grading import score
-from app.lab import LabError, LabRefused, check_challenge_sql, lab_tables, run_query, same_result
+from app.lab import LabError, LabRefused, check_challenge_sql, lab_catalog, run_query, same_result
 from app.models import MissionAttempt
 from app.student import ATTEMPTS_PER_MINUTE, attempt_response, ensure_open, locate, private_definition, statuses
 
@@ -122,7 +122,7 @@ def sql_challenge(version_id: int, payload: SqlAnswer, response: Response, auth:
         raise HTTPException(status_code=429, detail="too many attempts")
     throttle(auth.user.id)
     try:
-        check_challenge_sql(payload.sql, lab_tables())
+        check_challenge_sql(payload.sql, *reversed(lab_catalog()))
         mine = run_query(payload.sql)
         expected = run_query(definition.expected_sql)
     except LabRefused as exc:

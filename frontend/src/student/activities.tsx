@@ -5,6 +5,8 @@ import { DescribedMedia } from "./Lesson"
 import { Box, Button, Flex, NativeSelect, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
 import { CodeBlock, Comparison, DataTable, LineChart } from "./displays"
 import { ImageView } from "./ImageView"
+import { ExperienceCard } from "./ExperienceCard"
+import { Downloads } from "./Downloads"
 import { AnimationPlayer, FlowDiagram, MindMap, VideoView } from "./media"
 import type { Choice, DisplayData } from "../studioTypes"
 import type { Answer, PlayerDefinition } from "./types"
@@ -137,6 +139,8 @@ function MediaBody({ data }: { data: DisplayData | null }) {
   if (data.kind === "video") return <VideoView data={data} />
   if (data.kind === "flashcards") return <Flashcards data={data} />
   if (data.kind === "image") return <ImageView data={data} />
+  if (data.kind === "experience") return <ExperienceCard data={data} />
+  if (data.kind === "download") return <Downloads data={data} />
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3">
     {asTable ? <DataTable caption={data.title} columns={["Libellé", data.unit ? `Valeur (${data.unit})` : "Valeur"]}

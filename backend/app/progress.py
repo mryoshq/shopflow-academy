@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.carryover import carries_over
 from app.curriculum_schema import UNGRADED_KINDS
 from app.curriculum_schema import MissionDefinition
 from app.grading import score
@@ -53,8 +54,9 @@ def equivalents(db: Session, version_ids: list[int]) -> dict[int, set[int]]:
     Same mission = same mission row, or, for a mission re-created at import, same slug at the
     same place (module and block positions) in the same course: a slug reused in another block
     is another mission. A lesson stays read when it was validated as a lesson in any version (a
-    graded version never makes it read); a graded mission keeps its success only when its private
-    definition is identical. Read-time only: the stored attempts are never copied or changed.
+    graded version never makes it read); a graded mission keeps its success when everything used
+    for grading is identical (ADR-0030: text-only changes keep it, see ``app.carryover``).
+    Read-time only: the stored attempts are never copied or changed.
     """
     if not version_ids:
         return {}
@@ -69,14 +71,9 @@ def equivalents(db: Session, version_ids: list[int]) -> dict[int, set[int]]:
         family.setdefault((row.course_id, row.slug), []).append(row)
     result = {vid: {vid} for vid in version_ids}
     for row in targets:
-        kind = (row.definition_private or {}).get("kind")
         for other in family.get((row.course_id, row.slug), []):
             same_mission = other.mission_id == row.mission_id or (other.module_order, other.chapter_order) == (row.module_order, row.chapter_order)
-            if not same_mission:
-                continue
-            if kind in UNGRADED_KINDS and (other.definition_private or {}).get("kind") == kind:
-                result[row.id].add(other.id)
-            elif kind not in UNGRADED_KINDS and other.definition_private == row.definition_private:
+            if same_mission and carries_over(other.definition_private, row.definition_private):
                 result[row.id].add(other.id)
     return result
 

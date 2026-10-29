@@ -6,6 +6,20 @@
 - Jalons (consignes, date limite, livrables) et dépôts versionnés : texte avec tableaux, lien HTTPS, fichiers (pdf, png, jpg, md, zip ; 20 Mo) stockés hors base ; retard signalé.
 - Enseignant : dépôts par jalon, commentaires visibles du binôme, grille sur 20 séparée du cours, export CSV, planning des soutenances visible des étudiants. Observateur : rien sans autorisation. Tout est audité. Migration `0014_project`. ADR-0034.
 
+## 2026-10-29 — Sprint 3, partie Q (cadre) : « Le voyage d'une donnée » (`claude/lucid-brahmagupta-htwgun-q`)
+
+- Page `#/voyage[/<scène>]` chargée à la demande, navigation entre 7 scènes (boutons, flèches, retour arrière), valeurs exactes lues depuis le cours (`experiences/voyage.json`) avec valeurs par défaut.
+- Nouveau `data.kind: experience` pour l'ouvrir depuis une leçon. L'application du propriétaire sera intégrée à réception de l'archive (ADR-0033).
+## 2026-10-29 — Sprint 3, partie S : laboratoire multi-schémas et téléchargements (`claude/lucid-brahmagupta-htwgun-s`)
+
+- La base de laboratoire accueille les schémas déclarés par le cours (`lab_schemas`, par exemple shopflow, support, perf), chargés depuis plusieurs `datasets/*.sql` dans l'ordre des noms ; `lab_reader` ne lit que ces schémas et `lab`.
+- `EXPLAIN (ANALYZE, BUFFERS…)` permis ; plans affichés en texte indenté ; index et partitions fournis par le cours seulement.
+- Nouveau `data.kind: download` (pdf, docx, zip, csv, sql, py, md ; 20 Mo) : fichiers copiés à l'import, servis aux seuls inscrits et à l'enseignant. ADR-0032.
+## 2026-10-28 — Sprint 3, partie P : report des réussites (`claude/lucid-brahmagupta-htwgun-p`)
+
+- Une réussite et ses points restent acquis d'une version à l'autre d'une mission quand seul le texte change (explication, consigne, retours, indices, médias, libellés). Si la notation change, la mission repart de zéro, comme avant. Les leçons ne rapportent toujours aucun point.
+- Vérification en lecture seule avant publication : `python -m app.carryover --course <slug>` et `GET /teacher/courses/{id}/carryover-check` listent les réussites qui seraient perdues. ADR-0030.
+
 ## 2026-10-28 — Sprint 2, partie J : observateur en lecture seule (`claude/lucid-brahmagupta-htwgun-j`)
 
 - Rôle « observateur » créé, réglé et désactivé par l'enseignant (onglet « Observateurs ») ; mot de passe affiché une seule fois.

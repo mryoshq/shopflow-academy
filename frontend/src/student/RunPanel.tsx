@@ -12,6 +12,13 @@ type State = { status: "idle" | "loading" | "done" | "error" | "timeout"; result
 export function ResultView({ result, label }: { result: RunResult; label: string }) {
   if (result.kind === "python") return <Box as="pre" m="0" p="3" bg="code.bg" color="code.fg" borderWidth="1px" borderColor="code.border" rounded="lg"
     overflowX="auto" fontSize="sm" tabIndex={0} aria-label={`Sortie de ${label}`} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>{result.output || "(aucune sortie)"}</Box>
+  // ADR-0032: an EXPLAIN plan keeps its indentation (one text column « QUERY PLAN »).
+  if (result.columns.length === 1 && result.columns[0].toUpperCase() === "QUERY PLAN") return <Stack gap="1">
+    <Box as="pre" m="0" p="3" bg="code.bg" color="code.fg" borderWidth="1px" borderColor="code.border" rounded="lg" overflowX="auto" fontSize="sm"
+      tabIndex={0} aria-label={`Plan d’exécution de ${label}`} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>
+      {result.rows.map((row) => String(row[0] ?? "")).join("\n")}</Box>
+    <Text fontSize="xs" color="app.muted">Plan exécuté en {result.elapsed_ms} ms sur la base de laboratoire (lecture seule).</Text>
+  </Stack>
   return <Stack gap="1">
     {result.columns.length === 0 ? <Text fontSize="sm">La requête n’a renvoyé aucune ligne.</Text>
       : <DataTable caption={`Résultat : ${result.rows.length} ligne${result.rows.length > 1 ? "s" : ""}${result.truncated ? " (200 premières seulement)" : ""}`} columns={result.columns} rows={result.rows} />}

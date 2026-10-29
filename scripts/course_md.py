@@ -19,8 +19,9 @@ Python, from ``backend/``, for development and CI), ``--skip-runs`` (do not exec
 
 Preconfigured executions (ADR-0017) are checked HERE, on the Mac, never in FastAPI:
 * every SQL ``run`` and the ``expected_sql``/``starter_sql`` of challenges run in a
-  disposable PostgreSQL 16 container without network, on ``datasets/shopflow-lab.sql``
-  (or the demonstration dataset), read only, 3 s maximum;
+  disposable PostgreSQL 16 container without network, on the course ``datasets/*.sql``
+  files loaded in name order (or the demonstration dataset), with the course search path
+  (``lab_schemas`` then ``lab``, ADR-0032), read only, 3 s maximum;
 * every Python ``run`` runs once in a disposable container (image ``runner/python``:
   no network, read-only file system except /tmp, non-root user, no capabilities,
   256 Mo, half a CPU, 64 processes, 20 s), with ``datasets/python/`` mounted read-only
@@ -54,11 +55,25 @@ def bundle(folder: Path) -> dict[str, str]:
     return files
 
 
+def datasets_bundle(folder: Path) -> dict[str, str]:
+    """``datasets/*.sql`` of the course, loaded in name order at import (ADR-0032)."""
+    return {f"datasets/{path.name}": path.read_text(encoding="utf-8") for path in sorted((folder / "datasets").glob("*.sql"))}
+
+
 def media_bundle(folder: Path) -> dict[str, str]:
-    """Videos, captions and pictures of ``media/`` (checked again by the compiler: MP4 <= 50 Mo, WebVTT, images <= 2 Mo)."""
+    """Videos, captions, pictures of ``media/`` and files of ``downloads/`` (checked again by the compiler)."""
     import base64
 
     media = {}
+    for path in sorted((folder / "experiences").glob("*.json")):  # ADR-0033: exact values of an experience
+        if path.stat().st_size > 200_000:
+            raise SystemExit(f"{path.name} : plus de 200 Ko")
+        media[f"experiences/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
+    for path in sorted((folder / "downloads").glob("*")):
+        if path.is_file() and path.suffix.lower() in {".pdf", ".docx", ".zip", ".csv", ".sql", ".py", ".md"}:
+            if path.stat().st_size > 20 * 1024 * 1024:
+                raise SystemExit(f"{path.name} : plus de 20 Mo")
+            media[f"downloads/{path.name}"] = base64.b64encode(path.read_bytes()).decode("ascii")
     for path in sorted((folder / "media").glob("*")):
         if path.is_file() and path.suffix.lower() in {".mp4", ".vtt", ".png", ".jpg", ".jpeg", ".webp", ".svg"}:
             if path.stat().st_size > MAX_MEDIA:
@@ -100,9 +115,9 @@ def last_error(stderr: str) -> str:
     return message.strip()[:300]
 
 
-def check_sql(folder: Path, entries: list[dict], results: dict) -> None:
-    dataset_file = folder / "datasets" / "shopflow-lab.sql"
-    dataset = dataset_file.read_text(encoding="utf-8") if dataset_file.is_file() else (ROOT / "backend" / "app" / "lab_demo.sql").read_text(encoding="utf-8")
+def check_sql(folder: Path, entries: list[dict], results: dict, schemas: list[str] | None = None) -> None:
+    files = datasets_bundle(folder) or {"lab_demo.sql": (ROOT / "backend" / "app" / "lab_demo.sql").read_text(encoding="utf-8")}
+    search_path = ", ".join([*(schemas or []), "lab"])
     name = f"shopflow-labcheck-{os.getpid()}"
     docker("run", "-d", "--rm", "--name", name, "--network", "none", "-e", "POSTGRES_PASSWORD=check-only", LAB_IMAGE, check=True)
     try:
@@ -113,13 +128,19 @@ def check_sql(folder: Path, entries: list[dict], results: dict) -> None:
                     docker("exec", name, "psql", "-U", "postgres", "-X", "-q", "-c", "SELECT 1").returncode == 0:
                 break
             time.sleep(1)
-        loaded = docker("exec", "-i", name, "psql", "-U", "postgres", "-X", "-q", "-v", "ON_ERROR_STOP=1",
-                        input_text="CREATE SCHEMA lab;\nSET search_path = lab;\n" + dataset, timeout=120)
-        for entry in entries:
+        failed = ""
+        docker("exec", name, "psql", "-U", "postgres", "-X", "-q", "-c", "CREATE SCHEMA lab", check=True)
+        for file_name, text in files.items():
+            loaded = docker("exec", "-i", name, "psql", "-U", "postgres", "-X", "-q", "-v", "ON_ERROR_STOP=1",
+                            input_text="SET search_path = lab;\n" + text, timeout=120)
             if loaded.returncode != 0:
-                outcome = {"ok": False, "error": f"jeu de données datasets/shopflow-lab.sql invalide : {last_error(loaded.stderr)}"}
+                failed = f"jeu de données {file_name} invalide : {last_error(loaded.stderr)}"
+                break
+        for entry in entries:
+            if failed:
+                outcome = {"ok": False, "error": failed}
             else:
-                script = ("BEGIN READ ONLY;\nSET LOCAL statement_timeout = 3000;\nSET LOCAL search_path = lab;\n"
+                script = (f"BEGIN READ ONLY;\nSET LOCAL statement_timeout = 3000;\nSET LOCAL search_path = {search_path};\n"
                           + entry["sql"].rstrip().rstrip(";") + "\n;\nROLLBACK;\n")
                 run = docker("exec", "-i", name, "psql", "-U", "postgres", "-X", "-q", "-v", "ON_ERROR_STOP=1", "-o", "/dev/null", input_text=script)
                 outcome = {"ok": run.returncode == 0} if run.returncode == 0 else {"ok": False, "error": last_error(run.stderr)}
@@ -162,7 +183,7 @@ def execute_runs(folder: Path, payload: dict, args: argparse.Namespace) -> dict 
     results: dict = {}
     if plan.get("sql"):
         print(f"Vérification de {len(plan['sql'])} requête(s) SQL sur une base de laboratoire jetable…")
-        check_sql(folder, plan["sql"], results)
+        check_sql(folder, plan["sql"], results, plan.get("lab_schemas") or [])
     if plan.get("python"):
         print(f"Exécution de {len(plan['python'])} extrait(s) Python dans des conteneurs jetables…")
         run_python(folder, plan["python"], results)
@@ -184,9 +205,9 @@ def main() -> int:
     if args.publish and args.action != "import":
         raise SystemExit("--publish ne s'utilise qu'avec import")
     payload: dict = {"files": bundle(folder), "media": media_bundle(folder)}
-    dataset = folder / "datasets" / "shopflow-lab.sql"
-    if dataset.is_file():
-        payload["dataset"] = dataset.read_text(encoding="utf-8")
+    datasets = datasets_bundle(folder)
+    if datasets:
+        payload["dataset"] = datasets
     payload["runs"] = execute_runs(folder, payload, args)
     command = ["compile-bundle"]
     if args.action == "import":

@@ -485,6 +485,81 @@ class ImageDisplay(Described):
         return self
 
 
+DOWNLOAD_ID = re.compile(r"^[0-9a-f]{16}\.(pdf|docx|zip|csv|sql|py|md)$")
+MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024
+
+
+class DownloadFile(BaseModel):
+    """One course file copied at import (ADR-0032), served only to signed-in, enrolled users."""
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(max_length=40)
+    name: str = Field(min_length=1, max_length=120)
+    title: str = Field(min_length=1, max_length=200)
+    size: int = Field(ge=0, le=MAX_DOWNLOAD_BYTES)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @model_validator(mode="after")
+    def course_file(self) -> DownloadFile:
+        if not DOWNLOAD_ID.fullmatch(self.id) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", self.name) \
+                or self.name.rsplit(".", 1)[-1].lower() != self.id.rsplit(".", 1)[-1]:
+            raise ValueError("Invalid download file")
+        return self
+
+
+class DownloadDisplay(Described):
+    """Files to download (support documents, datasets, starter code), 1 to 10 per item."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["download"]
+    title: str = Field(default="", max_length=200)
+    files: list[DownloadFile] = Field(min_length=1, max_length=10)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
+MAX_EXPERIENCE_DATA = 200_000
+
+
+def json_depth(value: object, depth: int = 0) -> int:
+    if isinstance(value, dict):
+        return max([json_depth(item, depth + 1) for item in value.values()], default=depth + 1)
+    if isinstance(value, list):
+        return max([json_depth(item, depth + 1) for item in value], default=depth + 1)
+    return depth
+
+
+class ExperienceDisplay(Described):
+    """An interactive experience of the Academy opened from a lesson (ADR-0033): « voyage » = « Le voyage d'une donnée ».
+
+    ``scene`` is the optional starting scene (1 to 7); ``data`` holds the exact values given by the course
+    (JSON file of the course folder), merged over the experience's own defaults."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["experience"]
+    experience: Literal["voyage"]
+    title: str = Field(default="", max_length=200)
+    scene: int | None = Field(default=None, ge=1, le=7)
+    data: dict | None = None
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+    @model_validator(mode="after")
+    def bounded_data(self) -> ExperienceDisplay:
+        import json
+
+        if self.data is not None and (len(json.dumps(self.data, ensure_ascii=False)) > MAX_EXPERIENCE_DATA or json_depth(self.data) > 8):
+            raise ValueError("Experience data too large")
+        return self
+
+
 class Flashcard(BaseModel):
     """One card: a short front (question, term) and its back, light formatting allowed (ADR-0028)."""
     model_config = ConfigDict(extra="forbid")
@@ -511,7 +586,7 @@ class FlashcardsDisplay(Described):
 
 
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | ExperienceDisplay | DownloadDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 
