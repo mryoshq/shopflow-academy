@@ -485,6 +485,44 @@ class ImageDisplay(Described):
         return self
 
 
+DOWNLOAD_ID = re.compile(r"^[0-9a-f]{16}\.(pdf|docx|zip|csv|sql|py|md)$")
+MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024
+
+
+class DownloadFile(BaseModel):
+    """One course file copied at import (ADR-0032), served only to signed-in, enrolled users."""
+    model_config = ConfigDict(extra="forbid")
+    id: str = Field(max_length=40)
+    name: str = Field(min_length=1, max_length=120)
+    title: str = Field(min_length=1, max_length=200)
+    size: int = Field(ge=0, le=MAX_DOWNLOAD_BYTES)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value)
+
+    @model_validator(mode="after")
+    def course_file(self) -> DownloadFile:
+        if not DOWNLOAD_ID.fullmatch(self.id) or not re.fullmatch(r"[A-Za-z0-9_.-]{1,120}", self.name) \
+                or self.name.rsplit(".", 1)[-1].lower() != self.id.rsplit(".", 1)[-1]:
+            raise ValueError("Invalid download file")
+        return self
+
+
+class DownloadDisplay(Described):
+    """Files to download (support documents, datasets, starter code), 1 to 10 per item."""
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["download"]
+    title: str = Field(default="", max_length=200)
+    files: list[DownloadFile] = Field(min_length=1, max_length=10)
+
+    @field_validator("title")
+    @classmethod
+    def safe_title(cls, value: str) -> str:
+        return plain(value) if value.strip() else ""
+
+
 MAX_EXPERIENCE_DATA = 200_000
 
 
@@ -548,7 +586,7 @@ class FlashcardsDisplay(Described):
 
 
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | ExperienceDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | ExperienceDisplay | DownloadDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 

@@ -23,7 +23,9 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
     media/                    vidéos .mp4 (≤ 50 Mo), sous-titres .vtt (§ 6, `data.kind: video`) et images png/jpg/webp/svg (≤ 2 Mo, `data.kind: image`)
     datasets/
       shopflow-lab.sql        données fictives ShopFlow chargées dans la base de laboratoire (§ 7)
+      01-shopflow.sql …       ou plusieurs fichiers *.sql, exécutés dans l'ordre des noms (schémas du kit, § 7)
       python/                 petits fichiers CSV/JSON fictifs utilisés par les extraits Python
+    downloads/                fichiers à télécharger : pdf, docx, zip, csv, sql, py, md (≤ 20 Mo chacun, `data.kind: download`)
   COVERAGE.md                 objectif → missions → points → durée
   QUESTIONS.md                points à trancher par l'enseignant
   RETOURS-PLATEFORME.md       écrit par l'agent plateforme après chaque compilation (à lire, ne pas éditer)
@@ -36,6 +38,7 @@ La **source** du cours est un **dossier local** sur le Mac de l'enseignant, écr
 - Chaîne, quand l'enseignant annonce « le cours est prêt » : l'agent plateforme lance `scripts/course_md.py compile "<dossier du cours>/cours"` (validation, erreurs avec fichier et ligne), écrit ses retours dans `<dossier du cours>/RETOURS-PLATEFORME.md`, puis, à 0 erreur, importe **en brouillon** (`import`) → aperçu par l'enseignant → publication **sur son accord écrit seulement** → les modules s'ouvrent ensuite un par un depuis le suivi de classe.
 - **Sauvegarde versionnée** : après chaque étape validée, l'agent plateforme copie `cours/` et les fichiers `.md` du dossier dans le dépôt GitHub **privé** `mryoshq/shopflow-courses`, après avoir vérifié qu'il est privé. Personne d'autre n'y pousse ; le dossier local reste la source.
 - Ajouter un module plus tard = ajouter un fichier, recompiler, republier : la progression et les notes déjà obtenues sur les missions inchangées sont conservées.
+- Reformuler une mission publiée (situation, consigne, explication, retours, indices, médias, libellés des choix) garde les réussites (ADR-0030). Changer la notation (bonne réponse, identifiants des choix, ordre attendu, `expected_sql`/`compare`, `points`, `scoring`, `bonus`, type) les remet à zéro : vérifiez avant de publier avec `python -m app.carryover --course <slug>`.
 
 ## 3. Syntaxe
 
@@ -290,6 +293,17 @@ data:
   experience: voyage
   scene: 3
   data_file: experiences/voyage.json
+- `download` (ADR-0032, leçons et missions) : fichiers du dossier `cours/downloads/` à télécharger (fiches, jeux de données, code de départ). `title` facultatif, `files` : 1 à 10 entrées `{file: downloads/<nom>, title}` ; formats **pdf, docx, zip, csv, sql, py, md**, **20 Mo au plus** par fichier (contenu vérifié : un `.pdf` doit être un PDF, `.csv/.sql/.py/.md` en UTF-8). Copiés à l'import, servis **seulement** aux étudiants inscrits dans une classe qui a le cours et à l'enseignant propriétaire, toujours en pièce jointe ; l'étudiant voit le titre, le type et la taille. Jamais de corrigé dans ces fichiers.
+
+```yaml
+data:
+  kind: download
+  title: Documents du bloc
+  files:
+    - file: downloads/fiche-sql-fenetres.pdf
+      title: Fiche mémo des fonctions de fenêtre
+    - file: downloads/commandes-octobre.csv
+      title: Commandes d'octobre (jeu fictif)
 ```
 
 Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
@@ -323,6 +337,8 @@ Dans certaines missions, l'étudiant clique « Exécuter » et voit le **vrai r�
 
 - **SQL** (`{id, label, sql}`) : exécutée **à la demande** sur la **base de laboratoire** (PostgreSQL 16, données de `datasets/shopflow-lab.sql`, lecture seule, 3 secondes, 200 lignes affichées au plus). Seules les requêtes écrites dans le cours sont exécutables ; l'écriture libre est réservée à `sql_challenge`. `EXPLAIN ANALYZE` est permis.
 - **`datasets/shopflow-lab.sql`** : instructions `CREATE TABLE` / `INSERT` **sans préfixe de schéma** (le fichier est chargé dans le schéma `lab`, qui est vidé avant chaque import) ; pas de commande d'administration (`COPY … PROGRAM`, `ALTER ROLE`… sont refusés). Données **fictives** uniquement. Sans ce fichier, la base garde son contenu (au départ : un petit jeu de démonstration `orders`, `order_items`, `customers`).
+- **Plusieurs schémas (ADR-0032)** : déclarez-les dans l'en-tête `00-cours.md` avec `lab_schemas: [shopflow, support, perf]` (8 au plus ; ni `public`, ni `lab`, ni `pg_…`). Placez autant de fichiers `datasets/*.sql` que nécessaire : ils sont exécutés **dans l'ordre des noms** (`01-shopflow.sql`, `02-support.sql`, `03-perf.sql`…), chacun avec `search_path = lab` au départ ; créez vos schémas (`CREATE SCHEMA IF NOT EXISTS shopflow;`) et préfixez les tables (`shopflow.orders`). Tous les schémas du cours sont **vidés avant chaque import**. Un schéma créé mais non déclaré refuse tout le jeu de données. Les requêtes des étudiants et des `run` voient les schémas déclarés puis `lab` (`search_path`) : `SELECT * FROM orders` lit `shopflow.orders` si elle existe ; `support.tickets` s'écrit avec son schéma s'il y a ambiguïté.
+- **Index et partitions** : seules les données du cours peuvent en créer (`CREATE INDEX`, `PARTITION BY`, `ANALYZE` dans `datasets/*.sql`). Les étudiants ne peuvent ni créer d'index ni modifier une partition ; comparez les plans avec des `run` préconfigurés, par exemple `EXPLAIN (ANALYZE, BUFFERS) SELECT … FROM perf.events WHERE day = DATE '2026-10-03'`. Options d'`EXPLAIN` permises : `ANALYZE`, `BUFFERS`, `COSTS`, `VERBOSE`, `TIMING`, `SUMMARY`, `SETTINGS`, `WAL` (pas `FORMAT`). Le plan s'affiche en texte indenté.
 - **Python** (`{id, label, python}`) : exécuté **une fois, lors de la compilation sur le Mac**, dans un conteneur jetable sans réseau (Python 3.12, pandas 2.2.3 ; mémoire 256 Mo, 20 secondes) dont le répertoire de travail est `datasets/python/` (en lecture seule : lisez `"clients.csv"`, n'écrivez que dans `/tmp`). Seule la **sortie standard** (`print`) est conservée (20 000 caractères au plus) ; l'étudiant la révèle en cliquant « Exécuter ». Pas de Python libre écrit par les étudiants : proposez des variantes sous forme de plusieurs extraits.
 - Le compilateur exécute chaque requête et chaque extrait ; un échec est une **erreur avec fichier et ligne** (par exemple `relation "ordres" does not exist`).
 
@@ -347,6 +363,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
 | 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
 | 29/10/2026 (sprint 3, Q) | `data.kind: experience` (`experience: voyage`, `scene`, `data_file: experiences/voyage.json`). ADR-0033. |
+| 29/10/2026 (sprint 3, S) | En-tête `lab_schemas: [...]` et plusieurs `datasets/*.sql` (ordre des noms) ; `EXPLAIN (ANALYZE, BUFFERS, …)` ; nouveau `data.kind: download` (`cours/downloads/`, 20 Mo). ADR-0032. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |

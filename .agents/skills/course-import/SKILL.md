@@ -19,8 +19,9 @@ Chaîne du cours écrit en Markdown (`docs/COURSE-AUTHORING.md`, format `shopflo
 3. **Sauvegarder le dossier** après chaque étape validée :
    - copie datée : `cp -R "<dossier du cours>" ~/Developer/shopflow-backups/cours/cours-$(date +%Y%m%d-%H%M%S)` ;
    - dépôt privé `mryoshq/shopflow-courses` : **vérifier d'abord qu'il est privé** (`gh repo view mryoshq/shopflow-courses --json visibility` → `PRIVATE`), puis y copier `cours/` et les `.md` du dossier, commit et push. Personne d'autre n'y pousse ; le dossier local reste la source.
-4. **Publier** (`--publish`) : **uniquement sur accord écrit du propriétaire dans la conversation**. `python3 scripts/course_md.py import "<dossier>/cours" --publish < .local/teacher-email.txt`. Les missions inchangées gardent leur version (progression et notes conservées) ; les nouveaux blocs arrivent fermés.
-5. Les blocs s'ouvrent **seulement par l'enseignant**, dans « Ma classe ».
+4. **Avant de publier**, vérifier en lecture seule les réussites qui seraient perdues : `docker compose exec -T backend python -m app.carryover --course <slug>` (code 1 si des réussites seraient perdues ; les signaler au propriétaire).
+5. **Publier** (`--publish`) : **uniquement sur accord écrit du propriétaire dans la conversation**. `python3 scripts/course_md.py import "<dossier>/cours" --publish < .local/teacher-email.txt`. Les missions inchangées gardent leur version (progression et notes conservées) ; les nouveaux blocs arrivent fermés.
+6. Les blocs s’ouvrent **seulement par l'enseignant**, dans « Ma classe ».
 
 ## Interdits
 - Publier ou ouvrir un bloc sans accord écrit du propriétaire.
