@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     media_dir: str = "/srv/media"
     # Files to download (ADR-0032): same volume, sub-folder never served by the gateway; the API checks access.
     downloads_dir: str = "/srv/media/downloads"
+    # Project files of the teams (ADR-0034): same volume, sub-folder never served by the gateway.
+    project_dir: str = "/srv/media/project"
     # Laboratory database (service labdb, ADR-0017). Empty = SQL execution unavailable.
     lab_reader_url: str = ""
     lab_owner_url: str = ""

@@ -32,9 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : transmettre l'archive `ShopFlow-voyage.zip` (et `experiences/voyage.json` du kit) pour intégrer l'application dans `frontend/src/voyage/` ; en parallèle, relire #53 (P), #54 (S) et #55 (Q, cadre, sans migration) — action du propriétaire.** Ensuite : R (projet CampusEquip), puis O.
-**Prochaine tâche unique : relire et fusionner #53 (P) puis #54 (S, laboratoire multi-schémas, téléchargements ; sans migration), redéployer et réimporter le cours avec le kit de l'axe 1 (`lab_schemas`, `datasets/*.sql`, `downloads/`) — accord et action du propriétaire.** Ensuite : Q (voyage d'une donnée, archive attendue), R (projet), O (interface enseignant).
-**Prochaine tâche unique : relire et fusionner #53 (P, report des réussites, sans migration), redéployer, puis lancer `python -m app.carryover --course <slug>` avant toute nouvelle publication — accord et action du propriétaire.** Ensuite : PR O (interface enseignant en application à une page).
+**Prochaine tâche unique : relire #53 (P), #54 (S), #55 (Q, cadre) et #56 (R, espace projet, migration `0014_project`), fusionner dans cet ordre, puis faire les « À faire en local » — accord et action du propriétaire.** Ensuite : O (interface enseignant), et l'intégration du voyage à réception de l'archive.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -65,6 +63,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
+| 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
 | 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
 | 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
@@ -137,6 +136,12 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
 
+### À faire en local après la PR R
+
+1. **Sauvegarder la base** selon `docs/RUNBOOK.md`, suffixe `avant-sprint3-r` (migration `0014_project`).
+2. Redéployer à une pause (`docker compose up -d --build --wait`, service migrate compris, passerelle comprise : limite de 21 Mo sur l'envoi de fichiers). Vérifier la tête Alembic `0014_project`.
+3. Onglet « Projet » : publier le jalon « Conception du 29 octobre » (tableau des sources, règles, schéma, graphe, scénarios, plan), puis « Rendu final » (lien du dépôt, README, rapport ≤ 6 pages, `journal_IA.md`) et « Soutenance » ; créer les créneaux du 23 novembre.
+4. Vérifier avec deux comptes étudiants de démonstration : binôme, invitation, dépôt d'un PDF, commentaire.
 ### À faire en local après la PR Q
 
 1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).

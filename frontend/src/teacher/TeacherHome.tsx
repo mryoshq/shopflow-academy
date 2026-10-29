@@ -6,6 +6,7 @@ import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ClassTimeline } from "./ClassTimeline"
 import { AutoPlanPanel, LivePanel, NotificationSettingsPanel } from "./LivePanel"
 import { ObserversPanel } from "./ObserversPanel"
+import { TeacherProject } from "../project/TeacherProject"
 import { Results } from "./Results"
 import { TeacherDashboard } from "./TeacherDashboard"
 
@@ -51,10 +52,11 @@ export function TeacherHome() {
       <Badge colorPalette="brand" variant="subtle" rounded="full">{main.cohort.label} · {main.cohort.student_count} étudiants</Badge>
       <Text fontSize="sm" color="app.muted">{main.course.title}{main.assigned_version ? ` · version ${main.assigned_version} pour la classe` : " · pas encore publié"}</Text>
     </Flex>
-    <Tabs.List aria-label="Espace enseignant">
+    <Tabs.List aria-label="Espace enseignant" overflowX="auto" overflowY="hidden">
       <Tabs.Trigger value="cours">Mon cours</Tabs.Trigger>
       <Tabs.Trigger value="classe">Ma classe</Tabs.Trigger>
       <Tabs.Trigger value="resultats">Résultats</Tabs.Trigger>
+      <Tabs.Trigger value="projet">Projet</Tabs.Trigger>
       <Tabs.Trigger value="observateurs">Observateurs</Tabs.Trigger>
     </Tabs.List>
     <Tabs.Content value="cours" pt="6"><TeacherStudio mainCourseId={main.course.id} onPublished={() => void reload()} /></Tabs.Content>
@@ -73,6 +75,7 @@ export function TeacherHome() {
       </Stack>
     </Tabs.Content>
     <Tabs.Content value="resultats" pt="6">{main.assignment_id ? <Results assignmentId={main.assignment_id} /> : noClass}</Tabs.Content>
+    <Tabs.Content value="projet" pt="6">{main.assignment_id ? <TeacherProject assignmentId={main.assignment_id} /> : noClass}</Tabs.Content>
     <Tabs.Content value="observateurs" pt="6"><ObserversPanel /></Tabs.Content>
   </Tabs.Root>
 }
