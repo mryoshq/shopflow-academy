@@ -78,7 +78,7 @@ export function CommandPalette({ open, onClose, onGo, assignmentId }: {
             <Stack as="ul" id="palette-list" role="listbox" aria-label="Résultats" listStyleType="none" p="0" m="0" mt="3" gap="0.5" maxH="60vh" overflowY="auto">
               {items.length === 0 && <Text as="li" color="app.muted" p="3">Aucun résultat.</Text>}
               {items.map((item, index) => <chakra.li key={item.id} id={`palette-${item.id}`} role="option" aria-selected={index === active}
-                onMouseEnter={() => setActive(index)} onClick={() => go(item)} cursor="pointer" px="3" py="2.5" rounded="md" display="flex" gap="3" alignItems="center"
+                /* Real pointer movement only: a list opening under a still pointer keeps the first result. */ onMouseMove={() => { if (active !== index) setActive(index) }} onClick={() => go(item)} cursor="pointer" px="3" py="2.5" rounded="md" display="flex" gap="3" alignItems="center"
                 bg={index === active ? "brand.subtle" : "transparent"} color={index === active ? "brand.fg" : undefined}>
                 <Box flex="1" minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.label}</Box>
                 <Text fontSize="xs" color="app.muted">{item.group}</Text>
