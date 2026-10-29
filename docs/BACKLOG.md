@@ -34,6 +34,7 @@
 - [x] **S2-J** Observateur en lecture seule (ADR-0025). Preuves : voir PROGRESS.
 
 ### Sprint 3 (ordre fixé par le propriétaire le 29/10 : P, S, Q, R, puis O)
+- [ ] **S3-Q** « Le voyage d'une donnée » (ADR-0033) : cadre livré (route, chargement différé, `data.kind: experience`, valeurs du cours) ; **intégration de l'application en attente de l'archive** `ShopFlow-voyage.zip`.
 - [x] **S3-S** Laboratoire multi-schémas (shopflow, support, perf), `datasets/*.sql`, `EXPLAIN (ANALYZE, BUFFERS)`, `data.kind: download` (ADR-0032). Preuves : voir PROGRESS.
 - [ ] **S3-Q** Animation « Le voyage d'une donnée » (ADR-0033), en attente de l'archive du propriétaire.
 - [ ] **S3-R** Espace projet CampusEquip : binômes, jalons, dépôts, grille, soutenances (ADR-0034).

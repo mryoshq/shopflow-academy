@@ -32,6 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
+**Prochaine tâche unique : transmettre l'archive `ShopFlow-voyage.zip` (et `experiences/voyage.json` du kit) pour intégrer l'application dans `frontend/src/voyage/` ; en parallèle, relire #53 (P), #54 (S) et #55 (Q, cadre, sans migration) — action du propriétaire.** Ensuite : R (projet CampusEquip), puis O.
 **Prochaine tâche unique : relire et fusionner #53 (P) puis #54 (S, laboratoire multi-schémas, téléchargements ; sans migration), redéployer et réimporter le cours avec le kit de l'axe 1 (`lab_schemas`, `datasets/*.sql`, `downloads/`) — accord et action du propriétaire.** Ensuite : Q (voyage d'une donnée, archive attendue), R (projet), O (interface enseignant).
 **Prochaine tâche unique : relire et fusionner #53 (P, report des réussites, sans migration), redéployer, puis lancer `python -m app.carryover --course <slug>` avant toute nouvelle publication — accord et action du propriétaire.** Ensuite : PR O (interface enseignant en application à une page).
 
@@ -64,6 +65,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
+| 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
 | 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
 
@@ -135,6 +137,10 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
 
+### À faire en local après la PR Q
+
+1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
+2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
 ### À faire en local après la PR S
 
 1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).

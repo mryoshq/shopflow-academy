@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-10-29 — Sprint 3, partie Q (cadre) : « Le voyage d'une donnée » (`claude/lucid-brahmagupta-htwgun-q`)
+
+- Page `#/voyage[/<scène>]` chargée à la demande, navigation entre 7 scènes (boutons, flèches, retour arrière), valeurs exactes lues depuis le cours (`experiences/voyage.json`) avec valeurs par défaut.
+- Nouveau `data.kind: experience` pour l'ouvrir depuis une leçon. L'application du propriétaire sera intégrée à réception de l'archive (ADR-0033).
 ## 2026-10-29 — Sprint 3, partie S : laboratoire multi-schémas et téléchargements (`claude/lucid-brahmagupta-htwgun-s`)
 
 - La base de laboratoire accueille les schémas déclarés par le cours (`lab_schemas`, par exemple shopflow, support, perf), chargés depuis plusieurs `datasets/*.sql` dans l'ordre des noms ; `lab_reader` ne lit que ces schémas et `lab`.

@@ -19,6 +19,7 @@ from app.autoplan import router as autoplan_router, start_background
 from app.results import router as results_router
 from app.comfort import router as comfort_router
 from app.observer import router as observer_router
+from app.experiences import router as experiences_router
 from app.downloads import router as downloads_router
 
 
@@ -65,6 +66,7 @@ app.include_router(autoplan_router)
 app.include_router(results_router)
 app.include_router(comfort_router)
 app.include_router(observer_router)
+app.include_router(experiences_router)
 app.include_router(downloads_router)
 
 
