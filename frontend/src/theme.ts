@@ -46,7 +46,7 @@ const config = defineConfig({
   theme: {
     keyframes: {
       viewEnter: { from: { opacity: 0, transform: "translateY(4px)" }, to: { opacity: 1, transform: "none" } },
-      toastIn: { from: { opacity: 0, transform: "translateY(6px) scale(0.98)" }, to: { opacity: 1, transform: "none" } },
+      toastIn: { from: { opacity: 0, transform: "translate(-50%, 6px) scale(0.98)" }, to: { opacity: 1, transform: "translate(-50%, 0)" } },
       indicatorIn: { from: { opacity: 0, transform: "scaleY(0.4)" }, to: { opacity: 1, transform: "none" } },
     },
     tokens: {
@@ -171,6 +171,8 @@ const config = defineConfig({
     recipes: {
       // Serif only for large headings (page titles); card and section titles stay in the sans body font.
       heading: { variants: { size: { xs: { fontFamily: "body" }, sm: { fontFamily: "body" }, md: { fontFamily: "body" }, lg: { fontFamily: "body" } } } },
+      // Solid buttons darken on hover (Chakra lightens them, which drops white text under 4.5:1 on the clay accent).
+      button: { variants: { variant: { solid: { _hover: { bg: "colorPalette.solid", filter: "brightness(0.92)" }, _expanded: { bg: "colorPalette.solid", filter: "brightness(0.92)" } } } } },
       input: { variants: { variant: { outline: { borderColor: "app.field" } } } },
       textarea: { variants: { variant: { outline: { borderColor: "app.field" } } } },
     },

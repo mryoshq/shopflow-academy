@@ -59,9 +59,9 @@ export function PreferencesProvider({ account, children }: { account: Account | 
   return <Context.Provider value={value}>
     {children}
     <SettingsDialog open={open} onClose={() => setOpen(false)} tab={tab} onTab={setTab} account={account} />
-    <Box role="status" aria-live="polite" position="fixed" bottom="6" left="50%" transform="translateX(-50%)" zIndex="toast" pointerEvents="none">
-      {toast && <Box key={toast.key} className="zoom-toast" px="4" py="2" rounded="full" bg="app.ink" color="app.canvas" fontSize="sm" fontWeight="medium"
-        boxShadow="lg" css={{ fontVariantNumeric: "tabular-nums" }}>Taille du texte : {percent(toast.zoom)}</Box>}
-    </Box>
+    {/* Rendered only with a message: an empty, always-present status region would compete with the page's own. */}
+    {toast && <Box key={toast.key} role="status" className="zoom-toast" position="fixed" bottom="6" left="50%" transform="translateX(-50%)" zIndex="toast"
+      pointerEvents="none" px="4" py="2" rounded="full" bg="app.ink" color="app.canvas" fontSize="sm" fontWeight="medium" boxShadow="lg"
+      css={{ fontVariantNumeric: "tabular-nums" }}>Taille du texte : {percent(toast.zoom)}</Box>}
   </Context.Provider>
 }
