@@ -109,7 +109,7 @@ def run_query(sql: str, *, url: str | None = None, timeout_ms: int = TIMEOUT_MS,
               search_path: list[str] | None = None) -> Result:
     """Run one query with the read-only role, in a READ ONLY transaction always rolled back.
 
-    ``search_path`` defaults to the one recorded by the course dataset (declared schemas, then lab)."""
+    ``search_path`` defaults to the one recorded by the course dataset (lab, then the declared schemas)."""
     import psycopg
 
     url = url or get_settings().lab_reader_url
@@ -278,7 +278,7 @@ def load_dataset(dataset_sql: str | list[tuple[str, str]], url: str | None = Non
     ``dataset_sql`` is one script or the course files ``[(name, sql)]`` run in that order (ADR-0032). Every schema
     owned by lab_owner is dropped first; the files may create the declared ``schemas`` (``lab`` always exists).
     lab_reader then gets USAGE and SELECT on lab and the declared schemas only; a schema created but not declared
-    refuses the whole dataset. The search path (declared schemas, then lab) is recorded on schema lab."""
+    refuses the whole dataset. The search path (lab, then the declared schemas) is recorded on schema lab."""
     import psycopg
     from psycopg import sql as pgsql
 
@@ -315,7 +315,7 @@ def load_dataset(dataset_sql: str | list[tuple[str, str]], url: str | None = Non
                     cursor.execute(pgsql.SQL("CREATE SCHEMA IF NOT EXISTS {}").format(pgsql.Identifier(name)))
                     cursor.execute(pgsql.SQL("GRANT USAGE ON SCHEMA {} TO lab_reader").format(pgsql.Identifier(name)))
                     cursor.execute(pgsql.SQL("GRANT SELECT ON ALL TABLES IN SCHEMA {} TO lab_reader").format(pgsql.Identifier(name)))
-                cursor.execute(pgsql.SQL("COMMENT ON SCHEMA lab IS {}").format(pgsql.Literal("search_path=" + ",".join([*schemas, SCHEMA]))))
+                cursor.execute(pgsql.SQL("COMMENT ON SCHEMA lab IS {}").format(pgsql.Literal("search_path=" + ",".join([SCHEMA, *schemas]))))
                 count = cursor.execute("SELECT count(*) FROM information_schema.tables WHERE table_schema = ANY(%s)", ([SCHEMA, *schemas],)).fetchone()[0]
             connection.commit()
     except psycopg.Error as exc:

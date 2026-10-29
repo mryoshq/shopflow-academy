@@ -1172,7 +1172,7 @@ def load_lab_dataset(compiled: Compiled) -> str:
     if not get_settings().lab_owner_url:
         return "base de laboratoire non configurée : jeu de données non chargé"
     tables = load_dataset(compiled.datasets, schemas=compiled.lab_schemas)
-    schemas = ", ".join([*compiled.lab_schemas, "lab"])
+    schemas = ", ".join(["lab", *compiled.lab_schemas])
     return f"jeu de données chargé dans la base de laboratoire ({len(compiled.datasets)} fichier(s), {tables} tables ; schémas : {schemas})"
 
 

@@ -64,7 +64,7 @@ def test_compiler_reads_lab_schemas_and_sql_files_in_name_order():
 def test_kit_schemas_are_readable_partitioned_and_explained(labdb):
     assert lab.load_dataset(KIT, schemas=SCHEMAS) == 4  # orders, tickets, events and its partition (lab stays empty)
     path, tables = lab.lab_catalog()
-    assert path == ["shopflow", "support", "perf", "lab"]
+    assert path == ["lab", "shopflow", "support", "perf"]
     assert {"shopflow.orders", "support.tickets", "perf.events"} <= tables
     assert run_query("SELECT o.city, t.status FROM orders o JOIN support.tickets t USING (order_id) ORDER BY 1").rows == [["Fès", "clos"], ["Tanzar", "ouvert"]]
     plan = run_query("EXPLAIN (ANALYZE, BUFFERS) SELECT * FROM perf.events WHERE day = DATE '2026-10-03'")
@@ -75,6 +75,17 @@ def test_kit_schemas_are_readable_partitioned_and_explained(labdb):
                 "DELETE FROM support.tickets", "CREATE SCHEMA evil"):
         with pytest.raises(LabError):
             run_query(sql)
+
+
+@needs_db
+def test_course_tables_in_lab_keep_their_meaning_when_a_kit_reuses_their_names(labdb):
+    """A kit table of the same name (shopflow.orders) never hides the course table (lab.orders): lab comes first."""
+    course = ("CREATE TABLE orders (order_id text PRIMARY KEY, amount numeric);\n"
+              "INSERT INTO orders VALUES ('A-1', 70), ('A-2', 30);\n")
+    lab.load_dataset([("datasets/00-course.sql", course), *KIT], schemas=SCHEMAS)
+    assert run_query("SELECT sum(amount) FROM orders").rows[0][0] == 100
+    assert run_query("SELECT count(*) FROM shopflow.orders").rows[0][0] == 2
+    assert run_query("SELECT count(*) FROM tickets").rows[0][0] == 2  # absent from lab: found in a declared schema
 
 
 @needs_db
