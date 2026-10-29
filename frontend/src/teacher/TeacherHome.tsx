@@ -52,7 +52,7 @@ export function TeacherHome() {
       <Badge colorPalette="brand" variant="subtle" rounded="full">{main.cohort.label} · {main.cohort.student_count} étudiants</Badge>
       <Text fontSize="sm" color="app.muted">{main.course.title}{main.assigned_version ? ` · version ${main.assigned_version} pour la classe` : " · pas encore publié"}</Text>
     </Flex>
-    <Tabs.List aria-label="Espace enseignant">
+    <Tabs.List aria-label="Espace enseignant" overflowX="auto" overflowY="hidden">
       <Tabs.Trigger value="cours">Mon cours</Tabs.Trigger>
       <Tabs.Trigger value="classe">Ma classe</Tabs.Trigger>
       <Tabs.Trigger value="resultats">Résultats</Tabs.Trigger>
