@@ -33,6 +33,11 @@
 - [x] **S2-N** Confort et finitions : session persistante, code Catppuccin, images, passe mobile (ADR-0029). Preuves : voir PROGRESS.
 - [x] **S2-J** Observateur en lecture seule (ADR-0025). Preuves : voir PROGRESS.
 
+### Sprint 3 (ordre fixé par le propriétaire le 29/10 : P, S, Q, R, puis O)
+- [x] **S3-S** Laboratoire multi-schémas (shopflow, support, perf), `datasets/*.sql`, `EXPLAIN (ANALYZE, BUFFERS)`, `data.kind: download` (ADR-0032). Preuves : voir PROGRESS.
+- [ ] **S3-Q** Animation « Le voyage d'une donnée » (ADR-0033), en attente de l'archive du propriétaire.
+- [ ] **S3-R** Espace projet CampusEquip : binômes, jalons, dépôts, grille, soutenances (ADR-0034).
+- [ ] **S3-O** Interface enseignant en application à une page (ADR-0031), avec l'espace projet.
 ### Sprint 3 (ordre fixé par le propriétaire)
 - [x] **S3-P** Report des réussites quand seul le texte change + vérification avant publication (ADR-0030). Preuves : voir PROGRESS.
 - [ ] **S3-O** Interface enseignant en application à une page : barre latérale, vues avec adresses, « Aujourd'hui », Cmd+K, panneaux latéraux (ADR-0031).

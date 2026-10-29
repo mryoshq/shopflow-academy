@@ -32,6 +32,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
+**Prochaine tâche unique : relire et fusionner #53 (P) puis #54 (S, laboratoire multi-schémas, téléchargements ; sans migration), redéployer et réimporter le cours avec le kit de l'axe 1 (`lab_schemas`, `datasets/*.sql`, `downloads/`) — accord et action du propriétaire.** Ensuite : Q (voyage d'une donnée, archive attendue), R (projet), O (interface enseignant).
 **Prochaine tâche unique : relire et fusionner #53 (P, report des réussites, sans migration), redéployer, puis lancer `python -m app.carryover --course <slug>` avant toute nouvelle publication — accord et action du propriétaire.** Ensuite : PR O (interface enseignant en application à une page).
 
 **État réel (vérifié dans Git le 28/10/2026)** :
@@ -63,6 +64,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
+| 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
@@ -133,6 +135,12 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
 
+### À faire en local après la PR S
+
+1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).
+2. Dans le dossier du cours : ajouter `lab_schemas: [shopflow, support, perf]` à `00-cours.md`, déposer les fichiers SQL du kit dans `cours/datasets/` en préfixant les noms pour l'ordre (`01-…`, `02-…`), les documents dans `cours/downloads/`.
+3. `python3 scripts/course_md.py compile "<dossier>/cours"` (vérifie les requêtes sur une base jetable avec les mêmes schémas), puis import en brouillon. **L'import remplace tout le contenu de la base de laboratoire.**
+4. Vérifier un `run` `EXPLAIN (ANALYZE, BUFFERS)` dans l'aperçu, et un téléchargement depuis un compte étudiant de démonstration.
 ### À faire en local après la PR P
 
 1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde nécessaire** : rien n'est écrit, le report se fait à la lecture.

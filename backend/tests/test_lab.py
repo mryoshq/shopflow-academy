@@ -136,7 +136,7 @@ def test_reader_role_is_read_only_bounded_and_isolated(labdb):
     assert len(capped.rows) == 200 and capped.truncated is True
     plan = run_query("EXPLAIN ANALYZE SELECT * FROM orders WHERE total > 100")
     assert plan.columns == ["QUERY PLAN"] and any("Execution Time" in str(row[0]) for row in plan.rows)
-    assert lab.lab_tables() == TABLES | {"order_items"}
+    assert lab.lab_tables() == {f"lab.{name}" for name in TABLES}
 
 
 @needs_db

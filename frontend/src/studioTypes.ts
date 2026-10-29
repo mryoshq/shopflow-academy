@@ -21,8 +21,10 @@ export type FlowDisplay = { kind: "flow"; description?: string; title: string; i
 export type VideoDisplay = { kind: "video"; description?: string; title: string; url: string | null; src: string | null; captions_src: string | null }
 export type Flashcard = { front: string; back: string }
 export type FlashcardsDisplay = { kind: "flashcards"; description?: string; title?: string; cards: Flashcard[] }
+export type DownloadFile = { id: string; name: string; title: string; size: number }
+export type DownloadDisplay = { kind: "download"; description?: string; title?: string; files: DownloadFile[] }
 export type ImageDisplay = { kind: "image"; description?: string; src: string; alt: string; caption?: string }
-export type DisplayData = ImageDisplay | TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay
+export type DisplayData = DownloadDisplay | ImageDisplay | TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay
 /** Not graded, validated with « J'ai compris » and counted like a lesson (ADR-0028). */
 export function isUngraded(kind: string): boolean {
   return kind === "lesson" || kind === "review"
