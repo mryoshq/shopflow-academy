@@ -3,26 +3,28 @@
 Thème unique Chakra UI v3 : `frontend/src/theme.ts` (`createSystem(defaultConfig, defineConfig(...))`). Toute nouvelle interface (studio compris) utilise ces jetons plutôt que des couleurs codées en dur.
 
 ## Intention
-Professionnelle, chaleureuse, légèrement ludique, jamais enfantine. Français clair et **vouvoiement**. Contexte marocain fictif (DH, villes fictives : Tanzar, Oued Lmal), sans caricature. Aucun emoji ; icônes SVG en ligne toujours accompagnées de texte.
+Professionnelle, calme et chaleureuse, dans l'esprit éditorial des interfaces de Claude (ADR-0035) : fond ivoire, gris chauds, un seul accent terre cuite utilisé avec parcimonie, grands titres en serif, coins doux, ombres légères ; anthracite chaud en mode sombre. Légèrement ludique, jamais enfantine. Français clair et **vouvoiement**. Contexte marocain fictif (DH, villes fictives : Tanzar, Oued Lmal), sans caricature. Aucun emoji ; icônes SVG en ligne toujours accompagnées de texte. Aucun logo, nom ni police propriétaire d'Anthropic.
 
 ## Jetons
 Chaque jeton sémantique a une valeur claire et une valeur `_dark` ; les paires texte/fond respectent WCAG AA dans les deux thèmes (axe en CI).
 
 | Rôle | Jeton | Clair | Sombre | Usage |
 |---|---|---|---|---|
-| Marque | `brand.solid` | `#146457` (texte blanc 6,9:1) | `#1F7A6B` (texte blanc) | actions principales, progression |
-| Marque texte | `brand.fg` | `#0F5047` | `#6FB6A6` | liens, intitulés de section |
+| Marque (terre cuite) | `brand.solid` | `#B5532F` (texte blanc 4,95:1) | `#B5532F` (texte blanc) | actions principales, progression |
+| Marque texte | `brand.fg` | `#9C4426` (6,1:1 sur le fond) | `#E0967A` (6,4:1) | liens, intitulés de section |
 | Accent | `saffron.solid` / `saffron.fg` / `saffron.subtle` | `#84521A` / `#643E16` / `#FDF6EA` | `#EDB458` (texte `#1B1206`) / `#EDB458` / `#2A1F10` | « Démonstration », « En cours », indices, demandes d'aide |
 | Succès | `green.solid` | `green.700` (blanc ≥ 4,5:1) | `green.700` | « Réussie », « Bonne décision » |
-| Fond | `app.canvas` | `#F7F4EE` (sable) | `#0D1513` | page |
-| Surface | `app.surface` / `app.sunken` | blanc / `#F1EDE4` | `#151F1D` / `#1B2724` | cartes / zones secondaires |
-| Surfaces Chakra | `bg` / `bg.panel` | blanc | `#151F1D` | tableaux, champs, menus (alignés sur `app.surface`) |
-| Bordure | `app.border` | `#E2DDD3` | `#2E3D3A` | cartes, options |
-| Texte | `app.ink` / `app.muted` | `#14211F` / `#4A5A56` (7,6:1) | `#E6EEEB` / `#A9B8B4` | texte courant / secondaire |
-| Code | `code.*` | fond `#F4F1EA`, mots-clés `#0F5047` | fond `#101917`, mots-clés `#7FD1BE` | blocs de code, coloration ≥ 4,5:1 |
+| Gris | `gray.50` à `gray.950` | gris chauds `#FAF9F5` → `#1F1E1D` | idem | remplacent les gris froids de Chakra |
+| Fond | `app.canvas` | `#FAF9F5` (ivoire) | `#262624` | page |
+| Surface | `app.surface` / `app.sunken` | blanc / `#F0EEE6` | `#30302E` / `#1F1E1D` | cartes / zones secondaires |
+| Surfaces Chakra | `bg` / `bg.panel` | blanc | `#30302E` | tableaux, champs, menus (alignés sur `app.surface`) |
+| Bordure | `app.border` / `app.field` | `#E6E3D9` / `#8A877D` (≥ 3:1) | `#3E3E3A` / `#807E74` (≥ 3:1) | cartes, options / champs |
+| Texte | `app.ink` / `app.muted` | `#141413` / `#5E5D59` (6,3:1) | `#FAF9F5` / `#B7B5A9` | texte courant / secondaire |
+| Code | `code.*` | Catppuccin Latte | Catppuccin Mocha | blocs de code, coloration ≥ 4,5:1 |
 | Graphiques | `chart.*` | séries `brand.600` / `saffron.700` | `brand.300` / `saffron.300` | courbes, axes, grille |
-| Rayon | `card` | 14px | 14px | cartes |
-| Ombre | `card` | double ombre douce | ombre plus dense | cartes |
+| Police | `heading` / `body` | serif système (Iowan Old Style, Charter, Palatino Linotype, Georgia) pour les grands titres ; sans-serif système pour le texte et les petits titres | idem | aucune police web (CSP) |
+| Rayon | `card`, `l1`/`l2`/`l3` | 12px ; 6/8/12px | idem | cartes ; boutons, champs, menus |
+| Ombre | `card` | très légère | légère | cartes |
 
 Règle Chakra : pour redéfinir un jeton qui existe déjà dans Chakra (`green.solid`, `bg`), utiliser les clés `_light` et `_dark`, pas `base` (la valeur `_light` de Chakra l'emporterait sur `base`).
 
@@ -53,7 +55,7 @@ Typographie : pile système (`Segoe UI Variable` sous Windows, `-apple-system` s
 - **PWA et confort (ADR-0024)** : bouton « Confort » (horloge) dans l'en-tête étudiant, temps restant affiché quand le pomodoro tourne ; panneau avec pomodoro (badge Travail `brand` / Pause `saffron`, chiffres tabulaires) et radio (rien avant « Écouter », son coupé au départ) ; bandeau bas gauche « Nouvelle version disponible » / « Installer l'application » ; lien « Aller au contenu ». Bordure des champs `app.field` (3:1), bouton principal sombre `brand.600` (AAA) ; tableau des contrastes dans l'ADR-0024.
 - **Suivi en direct (ADR-0023)** : grille étudiants × blocs, état toujours en texte (« fait » vert, « x/y » safran, « — », cadenas « fermé », icône personne « ouvert pour lui »), pastille de présence doublée du texte « en ligne / vu à HH:MM » ; message à droite (compteur 280) avec accusés de lecture ; cloche dans l'en-tête (pastille safran du nombre non lu) et historique groupé ; toasts en bas à droite (pleine largeur à 390 px), 10 s, bouton « J'ai lu » ; « Ouvert pour vous » en badge plein `brand` côté étudiant ; aucune couleur seule ne porte une information.
 - **Règles contre le clic au hasard (ADR-0027)** : onglet « Règles » du studio, une carte par mesure (case, explication, champs, « Active depuis le … » en `brand.fg`). Étudiant : « Essai N : jusqu'à P % des points » au-dessus de « Tester ma décision » ; pause en encadré `saffron.subtle` avec icône horloge, « Pause de N s : relisez la situation. » et le bouton « Voir un indice » mis en avant, bouton « Réessayer dans N s » désactivé ; barre « Temps de lecture » sous une leçon ; bandeau d'annonce en tête du tableau de bord. Enseignant : badge contour safran « Clics rapides : N » (jamais rouge, aucune sanction).
-- **Logo et icônes (ADR-0022c)** : logo du propriétaire (`docs/design/`, règles dans son README), jamais redessiné. Clair : logo complet (renard + anneaux), fond rendu transparent, `logo-light.png`. Sombre : variante verte du propriétaire (renard sable sur vert #146457) en pastille ronde, `logo-dark.png`. En-tête (32 px) et carte de connexion (56 px) : logo à côté du nom « ShopFlow Academy » écrit en texte (`src/Logo.tsx`, image décorative `alt=""`). Favicon `favicon.svg` et PNG 16/32 : tête du renard seule, sans anneaux ni points, traits épaissis (84, 98 en 16 px sans le trait intérieur de l'oreille) ; en sombre, le SVG prend les couleurs de la variante verte (sable sur carreau vert). Icônes sur fond plein (`icon-192.png`, `icon-512.png`, `apple-touch-icon.png` 180, `icon-maskable-512.png`) : variante verte, dont les anneaux tiennent dans le cercle sûr de 80 %. Image de partage `share-1200x630.png` (logo complet + nom en texte, fond sable). Contrastes : sable sur vert 6,25:1, vert #166359 sur blanc 7,09:1, safran sur sable 5,62:1. `theme-color` : #F7F4EE en clair, #0D1513 en sombre. Tout est régénéré par `frontend/scripts/make-icons.mjs` ; planche de contrôle : `frontend/scripts/icon-sheet.mjs`.
+- **Logo et icônes (ADR-0022c)** : logo du propriétaire (`docs/design/`, règles dans son README), jamais redessiné. Clair : logo complet (renard + anneaux), fond rendu transparent, `logo-light.png`. Sombre : variante verte du propriétaire (renard sable sur vert #146457) en pastille ronde, `logo-dark.png`. En-tête (32 px) et carte de connexion (56 px) : logo à côté du nom « ShopFlow Academy » écrit en texte (`src/Logo.tsx`, image décorative `alt=""`). Favicon `favicon.svg` et PNG 16/32 : tête du renard seule, sans anneaux ni points, traits épaissis (84, 98 en 16 px sans le trait intérieur de l'oreille) ; en sombre, le SVG prend les couleurs de la variante verte (sable sur carreau vert). Icônes sur fond plein (`icon-192.png`, `icon-512.png`, `apple-touch-icon.png` 180, `icon-maskable-512.png`) : variante verte, dont les anneaux tiennent dans le cercle sûr de 80 %. Image de partage `share-1200x630.png` (logo complet + nom en texte, fond sable). Contrastes : sable sur vert 6,25:1, vert #166359 sur blanc 7,09:1, safran sur sable 5,62:1. `theme-color` : #FAF9F5 en clair, #262624 en sombre. Tout est régénéré par `frontend/scripts/make-icons.mjs` ; planche de contrôle : `frontend/scripts/icon-sheet.mjs`.
 - **Interface enseignant (ADR-0031)** : barre latérale `app.surface` (240 px, 80 px repliée, 64 px sur téléphone en icônes), vue courante en `brand.subtle` / `brand.fg` avec `aria-current="page"` ; barre haute collante (titre `h1`, pastille verte + « N en ligne », « Rechercher Ctrl K », cloche, thème, compte) ; sous-vues en onglets `line` ; détails dans un tiroir droit ; « Aujourd'hui » en grille de cartes (bordure safran quand une action attend) ; palette Cmd+K en dialogue centré.
 
 ## Accessibilité vérifiée

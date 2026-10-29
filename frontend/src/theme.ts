@@ -1,9 +1,9 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react"
 
 /**
- * ShopFlow Academy visual direction (see docs/DESIGN.md).
- * Brand: deep teal (trust, data). Accent: saffron (warmth, used sparingly).
- * Neutrals: warm sand canvas and white surfaces. All text pairs meet WCAG AA.
+ * ShopFlow Academy visual direction (see docs/DESIGN.md, ADR-0035).
+ * Calm, editorial interface: warm ivory canvas and warm greys, a clay accent used sparingly,
+ * serif headings, soft corners and light shadows. Warm charcoal in dark mode. All text pairs meet WCAG AA.
  */
 const config = defineConfig({
   globalCss: {
@@ -11,6 +11,7 @@ const config = defineConfig({
     html: { colorScheme: "light" },
     "html.dark": { colorScheme: "dark" },
     body: { lineHeight: "1.6" },
+    "h1, h2, h3": { letterSpacing: "-0.01em" },
     // ADR-0029: 44 px touch targets on phones and touch screens (WCAG 2.5.5), without changing the desktop layout.
     "button, [role=button], [role=tab], select, input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea": {
       "@media (max-width: 47.99em), (pointer: coarse)": { minHeight: "44px" },
@@ -31,14 +32,22 @@ const config = defineConfig({
     },
     tokens: {
       fonts: {
-        heading: { value: "'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" },
+        // Serif headings with fonts already installed (CSP: no web font): Iowan/Charter on Mac, Palatino Linotype or Georgia on Windows.
+        heading: { value: "'Iowan Old Style', Charter, 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, ui-serif, serif" },
         body: { value: "'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" },
       },
       colors: {
+        // Clay accent (ADR-0035).
         brand: {
-          50: { value: "#EAF5F2" }, 100: { value: "#CFE8E1" }, 200: { value: "#A3D2C6" }, 300: { value: "#6FB6A6" },
-          400: { value: "#3F9585" }, 500: { value: "#1F7A6B" }, 600: { value: "#146457" }, 700: { value: "#0F5047" },
-          800: { value: "#0D3F39" }, 900: { value: "#0B302C" }, 950: { value: "#061C1A" },
+          50: { value: "#FBF2ED" }, 100: { value: "#F6E0D6" }, 200: { value: "#EDC0AC" }, 300: { value: "#E0967A" },
+          400: { value: "#D97757" }, 500: { value: "#C96442" }, 600: { value: "#B5532F" }, 700: { value: "#9C4426" },
+          800: { value: "#7A3620" }, 900: { value: "#5A2918" }, 950: { value: "#331710" },
+        },
+        // Warm greys replace Chakra's cool greys everywhere (buttons, tags, tables, menus).
+        gray: {
+          50: { value: "#FAF9F5" }, 100: { value: "#F0EEE6" }, 200: { value: "#E6E3D9" }, 300: { value: "#D1CFC5" },
+          400: { value: "#A8A69B" }, 500: { value: "#87867F" }, 600: { value: "#5E5D59" }, 700: { value: "#3E3E3A" },
+          800: { value: "#30302E" }, 900: { value: "#262624" }, 950: { value: "#1F1E1D" },
         },
         saffron: {
           50: { value: "#FDF6EA" }, 100: { value: "#FAE8C7" }, 200: { value: "#F4D08E" }, 300: { value: "#EDB458" },
@@ -46,20 +55,20 @@ const config = defineConfig({
           800: { value: "#643E16" }, 900: { value: "#4A2F12" }, 950: { value: "#2B1B0A" },
         },
       },
-      radii: { card: { value: "14px" } },
+      radii: { card: { value: "12px" } },
     },
     semanticTokens: {
       // Every colour has a light value and a `_dark` value (docs/DESIGN.md). Pairs meet WCAG AA in both.
       colors: {
         brand: {
-          // ADR-0024: white on brand.600 = 7.02:1 (AAA) in both themes (was 5.18:1 in dark).
+          // White on brand.600 = 4.95:1 (AA) in both themes; fg = 6.1:1 on the light canvas, 6.4:1 on the dark one.
           solid: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.600}" } },
           contrast: { value: { base: "white", _dark: "white" } },
           fg: { value: { base: "{colors.brand.700}", _dark: "{colors.brand.300}" } },
-          muted: { value: { base: "{colors.brand.100}", _dark: "{colors.brand.800}" } },
-          subtle: { value: { base: "{colors.brand.50}", _dark: "#10302A" } },
-          emphasized: { value: { base: "{colors.brand.200}", _dark: "{colors.brand.700}" } },
-          focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.300}" } },
+          muted: { value: { base: "{colors.brand.100}", _dark: "#4A2A1E" } },
+          subtle: { value: { base: "{colors.brand.50}", _dark: "#33241E" } },
+          emphasized: { value: { base: "{colors.brand.200}", _dark: "{colors.brand.800}" } },
+          focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.400}" } },
         },
         saffron: {
           solid: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
@@ -75,18 +84,18 @@ const config = defineConfig({
         green: { solid: { value: { _light: "{colors.green.700}", _dark: "{colors.green.700}" } } },
         // Chakra's own surfaces (tables, inputs, menus) follow the app surfaces, not pure black.
         bg: {
-          DEFAULT: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
-          panel: { value: { _light: "#FFFFFF", _dark: "#151F1D" } },
+          DEFAULT: { value: { _light: "#FFFFFF", _dark: "#30302E" } },
+          panel: { value: { _light: "#FFFFFF", _dark: "#30302E" } },
         },
         app: {
-          canvas: { value: { base: "#F7F4EE", _dark: "#0D1513" } },
-          surface: { value: { base: "#FFFFFF", _dark: "#151F1D" } },
-          sunken: { value: { base: "#F1EDE4", _dark: "#1B2724" } },
-          border: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
-          ink: { value: { base: "#14211F", _dark: "#E6EEEB" } },
-          muted: { value: { base: "#4A5A56", _dark: "#A9B8B4" } },
+          canvas: { value: { base: "#FAF9F5", _dark: "#262624" } },
+          surface: { value: { base: "#FFFFFF", _dark: "#30302E" } },
+          sunken: { value: { base: "#F0EEE6", _dark: "#1F1E1D" } },
+          border: { value: { base: "#E6E3D9", _dark: "#3E3E3A" } },
+          ink: { value: { base: "#141413", _dark: "#FAF9F5" } },
+          muted: { value: { base: "#5E5D59", _dark: "#B7B5A9" } },
           // Form field borders: >= 3:1 against canvas, surface and sunken (WCAG 1.4.11), ADR-0024.
-          field: { value: { base: "#7D8884", _dark: "#667874" } },
+          field: { value: { base: "#8A877D", _dark: "#807E74" } },
         },
         // Code blocks: Catppuccin (MIT, ADR-0029), Latte in light mode and Mocha in dark mode. Mocha colours are
         // official; Latte green, peach and blue are darkened (same hue) so every token is at least 4.5:1 on Latte base.
@@ -101,18 +110,26 @@ const config = defineConfig({
           border: { value: { base: "#CCD0DA", _dark: "#313244" } },
         },
         chart: {
-          grid: { value: { base: "#E2DDD3", _dark: "#2E3D3A" } },
-          axis: { value: { base: "#4A5A56", _dark: "#A9B8B4" } },
+          grid: { value: { base: "#E6E3D9", _dark: "#3E3E3A" } },
+          axis: { value: { base: "#5E5D59", _dark: "#B7B5A9" } },
           one: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.300}" } },
           two: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
         },
       },
       shadows: {
-        card: { value: { base: "0 1px 2px rgba(20, 33, 31, 0.06), 0 4px 16px rgba(20, 33, 31, 0.04)", _dark: "0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.25)" } },
+        card: { value: { base: "0 1px 2px rgba(20, 20, 19, 0.04), 0 2px 8px rgba(20, 20, 19, 0.04)", _dark: "0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2)" } },
+      },
+      // Softer corners for every Chakra component (buttons, inputs, cards, menus).
+      radii: {
+        l1: { value: "0.375rem" },
+        l2: { value: "0.5rem" },
+        l3: { value: "0.75rem" },
       },
     },
     // ADR-0024: visible field boundaries (3:1) for text inputs, text areas and selects.
     recipes: {
+      // Serif only for large headings (page titles); card and section titles stay in the sans body font.
+      heading: { variants: { size: { xs: { fontFamily: "body" }, sm: { fontFamily: "body" }, md: { fontFamily: "body" }, lg: { fontFamily: "body" } } } },
       input: { variants: { variant: { outline: { borderColor: "app.field" } } } },
       textarea: { variants: { variant: { outline: { borderColor: "app.field" } } } },
     },
