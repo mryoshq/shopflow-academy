@@ -586,7 +586,7 @@ class FlashcardsDisplay(Described):
 
 
 DisplayData = Annotated[TableDisplay | BarChartDisplay | LineChartDisplay | CodeDisplay | ComparisonDisplay
-                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | DownloadDisplay | ExperienceDisplay, Field(discriminator="kind")]
+                        | AnimationDisplay | MindmapDisplay | FlowDisplay | VideoDisplay | FlashcardsDisplay | ImageDisplay | ExperienceDisplay | DownloadDisplay, Field(discriminator="kind")]
 
 RUN_ID = RUN_ID_PATTERN
 

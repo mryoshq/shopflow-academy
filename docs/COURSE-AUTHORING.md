@@ -285,6 +285,14 @@ data:
   caption: Un pipeline sépare les lignes valides des rejets.
 ```
 
+- `experience` (ADR-0033, leçons) : ouvre une expérience interactive de l'Academy. Aujourd'hui : `experience: voyage` (« Le voyage d'une donnée », 7 scènes), `scene` de départ facultative (1 à 7), `title` facultatif, `data_file: experiences/voyage.json` facultatif : valeurs exactes du cours (lignes CSV, rejets et motifs, événements, empreintes ; JSON objet, 200 Ko au plus), fusionnées avec les valeurs par défaut de l'expérience.
+
+```yaml
+data:
+  kind: experience
+  experience: voyage
+  scene: 3
+  data_file: experiences/voyage.json
 - `download` (ADR-0032, leçons et missions) : fichiers du dossier `cours/downloads/` à télécharger (fiches, jeux de données, code de départ). `title` facultatif, `files` : 1 à 10 entrées `{file: downloads/<nom>, title}` ; formats **pdf, docx, zip, csv, sql, py, md**, **20 Mo au plus** par fichier (contenu vérifié : un `.pdf` doit être un PDF, `.csv/.sql/.py/.md` en UTF-8). Copiés à l'import, servis **seulement** aux étudiants inscrits dans une classe qui a le cours et à l'enseignant propriétaire, toujours en pièce jointe ; l'étudiant voit le titre, le type et la taille. Jamais de corrigé dans ces fichiers.
 
 ```yaml
@@ -296,11 +304,6 @@ data:
       title: Fiche mémo des fonctions de fenêtre
     - file: downloads/commandes-octobre.csv
       title: Commandes d'octobre (jeu fictif)
-- `experience` (ADR-0033, leçons) : ouvre une expérience interactive de l'Academy. Aujourd'hui : `experience: voyage` (« Le voyage d'une donnée », 7 scènes), `scene` de départ facultative (1 à 7), `title` facultatif, `data_file: experiences/voyage.json` facultatif : valeurs exactes du cours (lignes CSV, rejets et motifs, événements, empreintes ; JSON objet, 200 Ko au plus), fusionnées avec les valeurs par défaut de l'expérience.
-  kind: experience
-  experience: voyage
-  scene: 3
-  data_file: experiences/voyage.json
 ```
 
 Exemple (extrait de `docs/examples/demo-course/10-module-demo.md`) :
@@ -359,8 +362,8 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 |---|---|
 | 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
 | 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
-| 29/10/2026 (sprint 3, S) | En-tête `lab_schemas: [...]` et plusieurs `datasets/*.sql` (ordre des noms) ; `EXPLAIN (ANALYZE, BUFFERS, …)` ; nouveau `data.kind: download` (`cours/downloads/`, 20 Mo). ADR-0032. |
 | 29/10/2026 (sprint 3, Q) | `data.kind: experience` (`experience: voyage`, `scene`, `data_file: experiences/voyage.json`). ADR-0033. |
+| 29/10/2026 (sprint 3, S) | En-tête `lab_schemas: [...]` et plusieurs `datasets/*.sql` (ordre des noms) ; `EXPLAIN (ANALYZE, BUFFERS, …)` ; nouveau `data.kind: download` (`cours/downloads/`, 20 Mo). ADR-0032. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |
 | 28/10/2026 (sprint 2, A) | `## Bloc : <titre>` accepté comme synonyme de `## Chapitre :`. Les blocs nouvellement importés arrivent fermés. |

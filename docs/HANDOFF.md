@@ -8,10 +8,10 @@ Branche `claude/lucid-brahmagupta-htwgun-o`, partie de P, avec S, Q et R fusionn
 Tests : `vitest run` PASS 107, `tsc -b` PASS ; E2E mis à jour pour la nouvelle navigation (`e2e/teacher-nav.ts`) et nouvelle spec `e2e/teacher-shell.spec.ts`, exécutés par la CI seulement.
 
 ### O — À faire en local après fusion
-1. Fusionner dans l'ordre P, S, Q, R puis O (O contient les quatre : sa PR se réduit à mesure).
+1. P, S et Q sont fusionnées ; fusionner R (#56) puis O (#57).
 2. Pas de migration propre à O (celle de R, `0014_project`, demande une sauvegarde). Redéployer le frontend à une pause, puis recharger la page enseignant.
 
-Prochaine action unique : attendre la CI verte de la PR O, puis revue par le propriétaire.
+Prochaine action unique : revue et fusion de #56 (R) puis #57 (O) par le propriétaire.
 
 ## Résultats — branche `codex/resultats`, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41) (28/10/2026)
 
@@ -45,7 +45,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 
 ## Reprise unique — sprint 2 (28/10/2026, session cloud Claude Code)
 
-**Prochaine tâche unique : relire et fusionner dans l'ordre #53 (P), #54 (S), #55 (Q, cadre), #56 (R, migration `0014_project`), puis la PR O (interface enseignant), et faire leurs « À faire en local » — accord et action du propriétaire.** Ensuite : intégration du voyage à réception de l'archive.
+**Prochaine tâche unique : relire #53 (P), #54 (S), #55 (Q, cadre) et #56 (R, espace projet, migration `0014_project`), fusionner dans cet ordre, puis faire les « À faire en local » — accord et action du propriétaire.** Ensuite : O (interface enseignant), et l'intégration du voyage à réception de l'archive.
 
 **État réel (vérifié dans Git le 28/10/2026)** :
 - Toute la phase P0 (P0-01 à P0-10) est **fusionnée dans `main`** (pile #11 → #24 fusionnée), CI verte. La [PR #25](https://github.com/mryoshq/shopflow-academy/pull/25) (format du cours `docs/COURSE-AUTHORING.md`) est fusionnée aussi.
@@ -76,11 +76,11 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 17 | M — cartes à retourner, élément « Révision » (ADR-0028) | `claude/lucid-brahmagupta-htwgun-m` | [#49](https://github.com/mryoshq/shopflow-academy/pull/49) (base : `main`) | ouverte |
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
-| 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
-| 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
-| 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
 | 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
-| 24 | O — interface enseignant à une page (ADR-0031) | `claude/lucid-brahmagupta-htwgun-o` (contient P, S, Q, R par fusion) | PR à venir (base : `main`) | ouverte |
+| 24 | O — interface enseignant à une page (ADR-0031) | `claude/lucid-brahmagupta-htwgun-o` (contient P, S, Q, R par fusion) | [#57](https://github.com/mryoshq/shopflow-academy/pull/57) (base : `main`) | ouverte |
+| 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
+| 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
+| 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
 
 Chaque PR part de la précédente : fusionner dans l'ordre (merge commit). **Consigne du propriétaire (28/10, mise à jour)** : plus de force-push ; quand une PR est fusionnée, l'agent fusionne `main` dans la suivante si nécessaire. Ancienne consigne : dès qu'une PR est fusionnée, l'agent rebase la suivante sur `main`, change sa base vers `main` et pousse avec `--force-with-lease` (sur ses propres branches seulement, accord écrit donné dans la conversation), puis attend la CI verte.
 
@@ -150,24 +150,27 @@ Rien à exécuter. Lire `docs/SUGGESTIONS.md` et indiquer les suggestions retenu
 3. Mesurer Lighthouse sur `https://shopflow.rapidfox.io` (objectif ≥ 90) ; noter le résultat dans PROGRESS.
 4. Après le premier déploiement, une recharge de page suffit ; ensuite les mises à jour s'annoncent par « Nouvelle version disponible ».
 
+### À faire en local après la PR R
+
+1. **Sauvegarder la base** selon `docs/RUNBOOK.md`, suffixe `avant-sprint3-r` (migration `0014_project`).
+2. Redéployer à une pause (`docker compose up -d --build --wait`, service migrate compris, passerelle comprise : limite de 21 Mo sur l'envoi de fichiers). Vérifier la tête Alembic `0014_project`.
+3. Onglet « Projet » : publier le jalon « Conception du 29 octobre » (tableau des sources, règles, schéma, graphe, scénarios, plan), puis « Rendu final » (lien du dépôt, README, rapport ≤ 6 pages, `journal_IA.md`) et « Soutenance » ; créer les créneaux du 23 novembre.
+4. Vérifier avec deux comptes étudiants de démonstration : binôme, invitation, dépôt d'un PDF, commentaire.
+### À faire en local après la PR Q
+
+1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
+2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
+### À faire en local après la PR S
+
+1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).
+2. Dans le dossier du cours : ajouter `lab_schemas: [shopflow, support, perf]` à `00-cours.md`, déposer les fichiers SQL du kit dans `cours/datasets/` en préfixant les noms pour l'ordre (`01-…`, `02-…`), les documents dans `cours/downloads/`.
+3. `python3 scripts/course_md.py compile "<dossier>/cours"` (vérifie les requêtes sur une base jetable avec les mêmes schémas), puis import en brouillon. **L'import remplace tout le contenu de la base de laboratoire.**
+4. Vérifier un `run` `EXPLAIN (ANALYZE, BUFFERS)` dans l'aperçu, et un téléchargement depuis un compte étudiant de démonstration.
 ### À faire en local après la PR P
 
 1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde nécessaire** : rien n'est écrit, le report se fait à la lecture.
 2. Vérifier dans « Ma classe » ou « Résultats » que les réussites des missions dont seul le texte avait changé sont revenues.
 3. Avant chaque publication : `docker compose exec -T backend python -m app.carryover --course <slug>` (code 1 et liste si des réussites seraient perdues).
-### À faire en local après la PR S
-1. Redéployer à une pause (`docker compose up -d --build --wait`). **Pas de migration, pas de sauvegarde de la base plateforme nécessaire.** Le volume `media_data` reçoit le sous-dossier `downloads/` (créé à l'import).
-2. Dans le dossier du cours : ajouter `lab_schemas: [shopflow, support, perf]` à `00-cours.md`, déposer les fichiers SQL du kit dans `cours/datasets/` en préfixant les noms pour l'ordre (`01-…`, `02-…`), les documents dans `cours/downloads/`.
-3. `python3 scripts/course_md.py compile "<dossier>/cours"` (vérifie les requêtes sur une base jetable avec les mêmes schémas), puis import en brouillon. **L'import remplace tout le contenu de la base de laboratoire.**
-4. Vérifier un `run` `EXPLAIN (ANALYZE, BUFFERS)` dans l'aperçu, et un téléchargement depuis un compte étudiant de démonstration.
-### À faire en local après la PR Q
-1. Redéployer à une pause. **Pas de migration.** Aucune entrée de menu n'apparaît tant que l'application n'est pas intégrée (`VOYAGE_READY`).
-2. Transmettre l'archive `ShopFlow-voyage.zip` et, si possible, `experiences/voyage.json` du kit (valeurs exactes).
-### À faire en local après la PR R
-1. **Sauvegarder la base** selon `docs/RUNBOOK.md`, suffixe `avant-sprint3-r` (migration `0014_project`).
-2. Redéployer à une pause (`docker compose up -d --build --wait`, service migrate compris, passerelle comprise : limite de 21 Mo sur l'envoi de fichiers). Vérifier la tête Alembic `0014_project`.
-3. Onglet « Projet » : publier le jalon « Conception du 29 octobre » (tableau des sources, règles, schéma, graphe, scénarios, plan), puis « Rendu final » (lien du dépôt, README, rapport ≤ 6 pages, `journal_IA.md`) et « Soutenance » ; créer les créneaux du 23 novembre.
-4. Vérifier avec deux comptes étudiants de démonstration : binôme, invitation, dépôt d'un PDF, commentaire.
 
 ### À faire en local après la PR J
 
