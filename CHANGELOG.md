@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-29 — Sprint 3, partie Q2 : « Le voyage d'une donnée » intégré (`claude/lucid-brahmagupta-htwgun-q2`)
+
+- L'application du propriétaire (7 scènes, lecture, scénarios de panne, glossaire, architecture) est dans l'Academy : `#/voyage/<scène>`, entrée de menu étudiant et enseignant, lien depuis les leçons.
+- Thème de l'Academy en clair et en sombre, contrastes AA, téléphone sans défilement horizontal, aucune police téléchargée ; chargée seulement à l'ouverture.
+- Valeurs du cours lues depuis `experiences/voyage.json` (`base`, `batch`, `files`). ADR-0033.
+
 ## 2026-10-29 — Sprint 3, partie R : espace projet CampusEquip (`claude/lucid-brahmagupta-htwgun-r`)
 
 - Binômes par invitation (ou seul), une personne par binôme ; l'enseignant corrige la composition.

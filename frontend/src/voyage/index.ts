@@ -1,8 +1,8 @@
 import { lazy } from "react"
 
-/** ADR-0033: true once the owner's application (ShopFlow-voyage.zip) is integrated in src/voyage/. Until then
- *  no menu entry is shown and lessons announce the experience without a link. */
-export const VOYAGE_READY = false
+/** ADR-0033: the owner's application (ShopFlow-voyage.zip) is integrated in src/voyage/: menu entries
+ *  (student and teacher) and the lesson links are shown. */
+export const VOYAGE_READY = true
 
-/** Loaded on demand: the experience never weighs on the rest of the application. */
+/** Loaded on demand: the experience (code and styles) never weighs on the rest of the application. */
 export const VoyagePage = lazy(() => import("./VoyagePage"))

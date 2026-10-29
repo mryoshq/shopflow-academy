@@ -4,6 +4,7 @@ import { api, ApiError } from "../api"
 import { lastMission } from "./storage"
 import type { Dashboard, DashboardBlock, DashboardCourse, DashboardMission } from "./types"
 import { useNotificationFeed } from "../live/notifications"
+import { VOYAGE_READY } from "../voyage"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
 
 type Props = { navigate: (path: string) => void }
@@ -56,6 +57,12 @@ export function StudentDashboard({ navigate }: Props) {
       <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">Projet CampusEquip</Text>
         <Text fontSize="sm" color="app.muted">Binôme, jalons, dépôts et soutenance.</Text></Stack>
       <Button variant="outline" colorPalette="brand" onClick={() => navigate("/projet")}>Ouvrir l’espace projet<Icon name="arrow-right" /></Button>
+    </Flex>}
+    {/* ADR-0033: the experience is in the menu once integrated. */}
+    {data.courses.length > 0 && VOYAGE_READY && <Flex as="nav" aria-label="Expérience interactive" gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">Le voyage d’une donnée</Text>
+        <Text fontSize="sm" color="app.muted">Sept scènes : une commande traverse le pipeline ShopFlow.</Text></Stack>
+      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/voyage/1")}>Ouvrir l’expérience<Icon name="arrow-right" /></Button>
     </Flex>}
 
     {data.courses.length === 0 ? <Panel>

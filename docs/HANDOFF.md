@@ -1,6 +1,20 @@
 # HANDOFF — reprise ShopFlow Academy
 
 
+
+## Q2 — « Le voyage d'une donnée » intégré (29/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-q2` depuis `main` (`2d55de2`, après #57). Archive lue dans le dépôt privé `mryoshq/shopflow-courses` (`assets/ShopFlow-voyage.zip`, commit `62cd2d8`) ; le zip n'est pas copié dans ce dépôt, seules les sources de `src/` le sont (`frontend/src/voyage/`). Détails et limites : ADR-0033, section « Intégration (Q2) ».
+
+Tests : `vitest` ciblés PASS 94, `tsc -b` PASS, `vite build` PASS ; E2E `voyage.spec.ts` par la CI.
+
+### Q2 — À faire en local après fusion
+1. Pas de migration. Redéployer le frontend à une pause, recharger la page.
+2. Facultatif : déposer `experiences/voyage.json` dans le dossier du cours (clés `base`, `batch`, `files`, voir COURSE-AUTHORING) puis recompiler et réimporter le cours.
+3. Décider MAD ou DH pour les montants de l'expérience (texte du propriétaire en MAD).
+
+Prochaine action unique : revue et fusion de la PR Q2 par le propriétaire.
+
 ## O — interface enseignant à une page (29/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-o`, partie de P, avec S, Q et R fusionnées (merge, sans force-push). Coquille `frontend/src/teacher/TeacherApp.tsx`, adresses `routes.ts`, `Today.tsx`, `CommandPalette.tsx`, `SidePanel.tsx` ; `TeacherHome.tsx` supprimé. ADR-0031. Aucune modification backend.
@@ -78,6 +92,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
 | 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
 | 24 | O — interface enseignant à une page (ADR-0031) | `claude/lucid-brahmagupta-htwgun-o` (contient P, S, Q, R par fusion) | [#57](https://github.com/mryoshq/shopflow-academy/pull/57) (base : `main`) | ouverte |
+| 25 | Q2 — voyage d'une donnée intégré (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q2` | PR à venir (base : `main`) | ouverte |
 | 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
 | 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |
