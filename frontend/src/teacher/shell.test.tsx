@@ -40,7 +40,7 @@ it("routes: one address per view and sub-view; the last view only for a resumed 
 it("quick search matches views, students and blocks without accents", () => {
   const items = viewItems()
   expect(items.some((item) => item.label === "Ma classe · Difficultés")).toBe(true)
-  expect(items.some((item) => item.route.view === "voyage")).toBe(false)  // not in the menu until integrated
+  expect(items.some((item) => item.route.view === "voyage")).toBe(true)  // in the menu since the integration (ADR-0033)
   expect(matches(items.find((item) => item.label === "Ma classe · Difficultés")!, "difficultes classe")).toBe(true)
 })
 
