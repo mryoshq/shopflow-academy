@@ -1,4 +1,5 @@
 import { test, expect, type APIRequestContext, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -44,7 +45,7 @@ const suffix = (theme: string) => theme === "light" ? "clair" : "sombre"
 
 test("the teacher turns the rules on in « Mon cours » → Règles", async ({ page }) => {
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Règles" }).click()
+  await teacherView(page, "Mon cours", "Règles")
   await expect(page.getByRole("heading", { name: "Règles contre le clic au hasard" })).toBeVisible()
   await page.getByLabel(/Points dégressifs/).check()
   await page.getByLabel(/Pause après une erreur/).check()
@@ -103,14 +104,16 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
 
 test("« Ma classe » shows fast clicks", async ({ page }) => {
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await teacherView(page, "Ma classe", "Étudiants")
   // Shown in the class progress table and in the live grid (ADR-0023).
   for (const table of [/^Progression de la classe/, "Étudiants par blocs"]) {
     const row = page.getByRole("table", { name: table }).getByRole("row").filter({ hasText: STUDENT })
     await expect(row.getByText(/Clics rapides : \d+/)).toBeVisible()
   }
-  await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
   await page.screenshot({ path: `${shots}/43-ma-classe-clics-rapides.png`, fullPage: true, animations: "disabled" })
+  await page.getByRole("tab", { name: "Difficultés", exact: true }).click()
+  await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
+  await page.screenshot({ path: `${shots}/44-ma-classe-difficultes.png`, fullPage: true, animations: "disabled" })
 })
 
 // Always switch the rules off again, even after a failure, so the other specs keep the defaults.

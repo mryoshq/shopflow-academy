@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import { readFileSync } from "node:fs"
 
 const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test-stack-credentials.json"
@@ -11,12 +12,13 @@ async function login(page: Page) {
   await page.getByRole("textbox", { name: "Identifiant" }).fill(teacher.username)
   await page.getByLabel("Mot de passe").fill(teacher.password)
   await page.getByRole("button", { name: "Se connecter" }).click()
-  await expect(page.getByRole("heading", { name: "Studio de cours" })).toBeVisible()
+  await expect(page.getByRole("heading", { name: /^Bonjour/ })).toBeVisible()
+  await teacherView(page, "Mon cours")
 }
 
 test("course roundtrip: export, import, validate, preview, publish, search and restore", async ({ page }) => {
   await login(page)
-  await page.getByRole("button", { name: /Options avancées : autres cours/ }).click()
+  await teacherView(page, "Mon cours", "Import")
   const search = await (await page.request.get("/api/v1/teacher/course-search?q=demo-shopflow-donnees")).json() as { id: number }[]
   const exported = await (await page.request.get(`/api/v1/teacher/courses/${search[0].id}/export`)).json()
   const suffix = Date.now().toString(36)

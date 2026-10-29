@@ -37,7 +37,10 @@ test("K: teacher settings, automatic names, tied ranks, refresh, daily tab, AA a
           day: "2026-10-28", timezone: "Africa/Casablanca", rows: !enabled || hidden ? [] : rows,
           daily_rows: !enabled || hidden ? [] : rows.map(({ rank, display_name, is_self, today_blocks }) => ({ rank, display_name, is_self, today_blocks })) }
       }
-    } else if (path.endsWith("/notifications")) body = { unread: 0, items: [] } // ADR-0023: polled on every page
+    } else if (path.endsWith("/teacher/main/setup")) body = { course: { id: 1, slug: "cours-fictif", title: "Cours fictif K", status: "published" }, // ADR-0031: teacher shell
+      cohort: { id: 1, label: "Classe fictive K", student_count: 2 }, assignment_id: 4, assigned_version: 1, latest_version: 1 }
+    else if (path.endsWith("/classes/4/live")) body = { online_count: 1, student_count: 2, students: [], blocks: [] } // ADR-0031: top-bar online count
+    else if (path.endsWith("/notifications")) body = { unread: 0, items: [] } // ADR-0023: polled on every page
     else if (path.endsWith("/presence")) body = { interval_seconds: 30, unread: 0 } // ADR-0023: student heartbeat
     else if (path.endsWith("/radio")) body = { streams: [] } // ADR-0024: student comfort panel
     else { unexpected.push(path); status = 500; body = { detail: "Unexpected fixture request" } }

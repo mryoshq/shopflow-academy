@@ -1,4 +1,5 @@
 import { test, expect, type Page, type BrowserContext } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -35,7 +36,7 @@ async function serious(page: Page) {
 
 test("the teacher closes and reopens a block; a closed block exposes nothing", async ({ page, browser }) => {
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await teacherView(page, "Ma classe", "Frise")
   const blocks = page.getByRole("list", { name: "Blocs de la journée" })
   await expect(blocks.getByText(BLOCK)).toBeVisible()
   const main = await (await page.request.get("/api/v1/teacher/main")).json() as { assignment_id: number }
@@ -103,7 +104,7 @@ test("a help request goes from 'reçue' to 'traitée' and stays private", async 
   await otherContext.close()
 
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await teacherView(page, "Ma classe", "Demandes d’aide")
   const help = page.getByRole("region", { name: /Demandes d’aide en attente/ })
   const item = help.getByRole("listitem").filter({ hasText: "demo.etudiant05" }).first()
   await expect(item).toBeVisible({ timeout: 10_000 })
@@ -118,7 +119,7 @@ test("a help request goes from 'reçue' to 'traitée' and stays private", async 
 
 test("results list the class grades and export them", async ({ page }) => {
   await login(page, "demo.enseignant")
-  await page.getByRole("tab", { name: "Résultats" }).click()
+  await teacherView(page, "Résultats")
   const table = page.getByRole("table", { name: "Notes de la classe" })
   await expect(table.getByRole("row").filter({ hasText: "demo.etudiant01" })).toBeVisible()
   const link = page.getByRole("link", { name: "Exporter les notes (CSV)" })

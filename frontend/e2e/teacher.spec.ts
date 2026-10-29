@@ -1,4 +1,5 @@
 import { test, expect, type Page } from "@playwright/test"
+import { teacherView } from "./teacher-nav"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -18,7 +19,7 @@ async function login(page: Page, name: string) {
 
 async function openClass(page: Page) {
   // The single class of the test stack is the demonstration cohort (config/test-stack.env).
-  await page.getByRole("tab", { name: "Ma classe" }).click()
+  await teacherView(page, "Ma classe", "Étudiants")
   await expect(page.getByRole("table", { name: /Progression de la classe Cohorte démonstration/ })).toBeVisible()
   const main = await (await page.request.get("/api/v1/teacher/main")).json() as { assignment_id: number }
   return main.assignment_id

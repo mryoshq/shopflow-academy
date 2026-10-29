@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
+import { SidePanel } from "./SidePanel"
 import { ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "../student/ui"
 import type { MissionStatus } from "../student/types"
 
@@ -41,7 +42,12 @@ function since(iso: string | null, now: number): string {
 }
 
 /** Class tracking. With ``assignmentId`` (the single class) there is no class selector. */
-export function TeacherDashboard({ assignmentId = null }: { assignmentId?: number | null } = {}) {
+export function TeacherDashboard({ assignmentId = null, studentId = null, onStudent }: {
+  assignmentId?: number | null
+  /** ADR-0031: the student whose panel is open (from the address), and how to change it. */
+  studentId?: number | null
+  onStudent?: (id: number | null) => void
+} = {}) {
   const [classes, setClasses] = useState<ClassSummary[] | null>(null)
   const [selected, setSelected] = useState<number | null>(assignmentId)
   const [overview, setOverview] = useState<Overview | null>(null)
@@ -131,8 +137,19 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
     }
   }
 
-  async function openStudent(id: number) {
+  function closeStudent() {
+    setDetail(null); setReset(null); detailId.current = null
+    onStudent?.(null)
+  }
+
+  useEffect(() => {
+    if (studentId !== null && selected && detailId.current !== studentId) void openStudent(studentId, false)
+    if (studentId === null && onStudent && detailId.current !== null) { setDetail(null); setReset(null); detailId.current = null }
+  }, [studentId, selected])
+
+  async function openStudent(id: number, notify = true) {
     if (!selected) return
+    if (notify) onStudent?.(id)
     detailId.current = id
     try { setDetail(await api<StudentDetail>(`/teacher/classes/${selected}/students/${id}`)) }
     catch { setNotice("Impossible de charger le détail de cet étudiant.") }
@@ -207,11 +224,10 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
         {overview.students.length === 0 && <Text p="5" color="app.muted">Aucun étudiant inscrit dans cette cohorte.</Text>}
       </Panel>
 
-      {detail && <Panel as="section" aria-labelledby="student-detail-title">
-        <Stack gap="4">
-          <Flex justify="space-between" align="center"><Heading as="h3" size="md" id="student-detail-title">Détail : {detail.display_name}</Heading>
-            <Flex gap="2"><Button size="sm" variant="outline" colorPalette="saffron" loading={busy} onClick={() => void resetPassword(detail.id, detail.display_name)}>Réinitialiser le mot de passe</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setDetail(null); setReset(null); detailId.current = null }}>Fermer</Button></Flex></Flex>
+      {/* ADR-0031: the student's detail opens in a right-hand panel, without leaving the view. */}
+      <SidePanel open={detail !== null} title={detail ? `Détail : ${detail.display_name}` : "Détail"} onClose={closeStudent}>
+        {detail && <Stack gap="4">
+          <Flex gap="2" wrap="wrap"><Button size="sm" variant="outline" colorPalette="saffron" loading={busy} onClick={() => void resetPassword(detail.id, detail.display_name)}>Réinitialiser le mot de passe</Button></Flex>
           {reset && reset.student === detail.display_name && <Box role="status" p="4" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
             <Text fontWeight="semibold">Nouveau mot de passe de {reset.student}</Text>
             <Flex gap="3" align="center" wrap="wrap" mt="2">
@@ -237,8 +253,8 @@ export function TeacherDashboard({ assignmentId = null }: { assignmentId?: numbe
             : <Stack as="ol" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{detail.attempts.slice(0, 15).map((item) => <Flex as="li" key={item.id} justify="space-between" gap="3">
               <Text>{item.mission}</Text><Text color="app.muted">{new Date(item.created_at).toLocaleTimeString("fr-FR")} · {item.correct ? "réussi" : "à revoir"} · {formatPoints(item.points)} pts{item.percent != null ? ` (${item.percent} %)` : ""}{item.fast ? " · clic rapide" : ""}</Text>
             </Flex>)}</Stack>}
-        </Stack>
-      </Panel>}
+        </Stack>}
+      </SidePanel>
 
       <Panel as="section" aria-labelledby="interventions-title">
         <Stack gap="2">

@@ -18,12 +18,17 @@ const config = defineConfig({
     "button, [role=button], [role=tab]": {
       "@media (max-width: 47.99em), (pointer: coarse)": { minWidth: "44px" },
     },
+    // ADR-0031: short fade between teacher views (zeroed by prefers-reduced-motion below).
+    ".view-enter": { animation: "viewEnter 160ms ease-out" },
     "*:focus-visible": { outline: "3px solid", outlineColor: "brand.focusRing", outlineOffset: "2px" },
     "*, *::before, *::after": {
       "@media (prefers-reduced-motion: reduce)": { animationDuration: "0.01ms !important", animationDelay: "0ms !important", transitionDuration: "0.01ms !important" },
     },
   },
   theme: {
+    keyframes: {
+      viewEnter: { from: { opacity: 0, transform: "translateY(4px)" }, to: { opacity: 1, transform: "none" } },
+    },
     tokens: {
       fonts: {
         heading: { value: "'Segoe UI Variable Display', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" },

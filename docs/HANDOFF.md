@@ -1,5 +1,18 @@
 # HANDOFF — reprise ShopFlow Academy
 
+
+## O — interface enseignant à une page (29/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-o`, partie de P, avec S, Q et R fusionnées (merge, sans force-push). Coquille `frontend/src/teacher/TeacherApp.tsx`, adresses `routes.ts`, `Today.tsx`, `CommandPalette.tsx`, `SidePanel.tsx` ; `TeacherHome.tsx` supprimé. ADR-0031. Aucune modification backend.
+
+Tests : `vitest run` PASS 107, `tsc -b` PASS ; E2E mis à jour pour la nouvelle navigation (`e2e/teacher-nav.ts`) et nouvelle spec `e2e/teacher-shell.spec.ts`, exécutés par la CI seulement.
+
+### O — À faire en local après fusion
+1. P, S et Q sont fusionnées ; fusionner R (#56) puis O (#57).
+2. Pas de migration propre à O (celle de R, `0014_project`, demande une sauvegarde). Redéployer le frontend à une pause, puis recharger la page enseignant.
+
+Prochaine action unique : revue et fusion de #56 (R) puis #57 (O) par le propriétaire.
+
 ## Résultats — branche `codex/resultats`, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41) (28/10/2026)
 
 Nouvelle page Résultats et deux endpoints dédiés en lecture/export, sans migration. Seuil d’accompagnement réglable, défaut 50 %, comparaison strictement inférieure au seuil, bonus exclus du pourcentage ; compteurs/difficultés sur missions principales seulement, leçons et bonus exclus. Points retenus fournis par `mission_scores`/`course_score` sans re-noter. Top 5 classe entière ; détail des missions non réussies par étudiant ; icône/texte « À accompagner », tri et filtre.
@@ -64,6 +77,7 @@ Prochaine action unique pour K : relire la PR et ses résultats CI ; aucune fusi
 | 18 | N — rester connecté, code Catppuccin, images, passe mobile (ADR-0029) | `claude/lucid-brahmagupta-htwgun-n` (depuis la branche M) | [#51](https://github.com/mryoshq/shopflow-academy/pull/51) (base : `main`, contient M tant que #49 n'est pas fusionnée) | ouverte |
 | 19 | J — observateur en lecture seule (ADR-0025) | `claude/lucid-brahmagupta-htwgun-j` (depuis la branche N) | [#52](https://github.com/mryoshq/shopflow-academy/pull/52) (base : `main`, contient M et N tant qu'elles ne sont pas fusionnées) | fusionnée |
 | 23 | R — espace projet CampusEquip (ADR-0034) | `claude/lucid-brahmagupta-htwgun-r` | [#56](https://github.com/mryoshq/shopflow-academy/pull/56) (base : `main`) | ouverte |
+| 24 | O — interface enseignant à une page (ADR-0031) | `claude/lucid-brahmagupta-htwgun-o` (contient P, S, Q, R par fusion) | [#57](https://github.com/mryoshq/shopflow-academy/pull/57) (base : `main`) | ouverte |
 | 22 | Q — voyage d'une donnée, cadre (ADR-0033) | `claude/lucid-brahmagupta-htwgun-q` | [#55](https://github.com/mryoshq/shopflow-academy/pull/55) (base : `main`) | ouverte, application en attente de l'archive |
 | 21 | S — laboratoire multi-schémas, téléchargements (ADR-0032) | `claude/lucid-brahmagupta-htwgun-s` | [#54](https://github.com/mryoshq/shopflow-academy/pull/54) (base : `main`) | ouverte |
 | 20 | P — report des réussites quand seul le texte change (ADR-0030) | `claude/lucid-brahmagupta-htwgun-p` | [#53](https://github.com/mryoshq/shopflow-academy/pull/53) (base : `main`) | ouverte |

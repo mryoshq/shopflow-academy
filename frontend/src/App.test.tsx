@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react"
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react"
 import { ChakraProvider } from "@chakra-ui/react"
 import { system } from "./theme"
 import { afterEach, expect, it, vi } from "vitest"
@@ -29,7 +29,9 @@ const main = {
   cohort: { id: 3, label: "Classe B3 IA/Data", student_count: 10 }, assignment_id: null, assigned_version: null, latest_version: null,
 }
 
-it("opens the teacher home on the single course and logs out with CSRF", async () => {
+it("a fresh teacher login lands on « Aujourd’hui »; the sidebar, sub-views, addresses and logout with CSRF work", async () => {
+  window.history.replaceState(null, "", "/")
+  localStorage.setItem("shopflow:teacher:route", "#/cours/regles")  // ignored after a fresh login
   const fetchMock = vi.fn().mockImplementation(async (url: string) => {
     if (url.endsWith("/auth/me")) return { status: 401, ok: false }
     if (url.endsWith("/auth/login")) return json({ id: 1, username: "demo.enseignant", role: "teacher" })
@@ -40,6 +42,7 @@ it("opens the teacher home on the single course and logs out with CSRF", async (
     if (url.endsWith("/teacher/courses/5/releases")) return json([])
     if (url.endsWith("/teacher/cohorts") || url.endsWith("/teacher/students")) return json([])
     if (url.includes("/teacher/cohorts/")) return json({ id: 3, label: "Classe B3 IA/Data", student_ids: [], release_ids: [] })
+    if (url.includes("/notifications")) return json({ unread: 0, items: [] })
     throw new Error(`Unexpected path ${url}`)
   })
   vi.stubGlobal("fetch", fetchMock)
@@ -48,26 +51,54 @@ it("opens the teacher home on the single course and logs out with CSRF", async (
   fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "local-secret" } })
   fireEvent.click(screen.getByRole("checkbox", { name: /Rester connecté/ }))
   fireEvent.click(screen.getByRole("button", { name: "Se connecter" }))
-  expect(await screen.findByRole("heading", { name: "Studio de cours" })).toBeInTheDocument()
+  expect(await screen.findByRole("heading", { name: "Bonjour, demo.enseignant" })).toBeInTheDocument()
   const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/login"))
   expect(JSON.parse(sent?.[1].body)).toEqual({ username: "demo.enseignant", password: "local-secret", remember: true })
   expect(Object.keys(localStorage).filter((key) => /session|csrf|token/i.test(key))).toEqual([])
-  // Three zones, the single course opened directly; other courses are folded in the advanced options.
-  for (const name of ["Mon cours", "Ma classe", "Résultats"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument()
-  expect(await screen.findByRole("heading", { name: "Python Data Engineering & SQL Avancé" })).toBeInTheDocument()
-  expect(screen.getByText(/Classe B3 IA\/Data · 10 étudiants/)).toBeInTheDocument()
-  expect(screen.queryByText("Nouveau cours")).not.toBeInTheDocument()
-  fireEvent.click(screen.getByRole("button", { name: /Options avancées : autres cours/ }))
-  expect(screen.getByText("Nouveau cours")).toBeInTheDocument()
+  expect(window.location.hash).toBe("#/aujourdhui")
+  expect(screen.getByText("Votre cours n’est pas encore publié")).toBeInTheDocument()
+  const nav = screen.getByRole("navigation", { name: "Navigation enseignant" })
+  for (const name of ["Aujourd’hui", "Ma classe", "Mon cours", "Résultats", "Projet", "Leaderboard", "Réglages"]) expect(within(nav).getByRole("link", { name })).toBeInTheDocument()
+  expect(within(nav).getByRole("link", { name: "Aujourd’hui" })).toHaveAttribute("aria-current", "page")
+  // Mon cours: the studio with its sub-views as tabs, each with its own address.
+  window.location.hash = "#/cours/plan"
+  window.dispatchEvent(new HashChangeEvent("hashchange"))
+  expect(await screen.findByRole("heading", { name: "Studio de cours" })).toBeInTheDocument()
+  expect(await screen.findByRole("tab", { name: "Plan", selected: true })).toBeInTheDocument()
+  for (const name of ["Missions", "Aperçu", "Import", "Règles", "Publication"]) expect(screen.getByRole("tab", { name })).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("tab", { name: "Import" }))
+  await vi.waitFor(() => expect(window.location.hash).toBe("#/cours/import"))
+  expect(await screen.findByText("Nouveau cours")).toBeInTheDocument()
+  expect(localStorage.getItem("shopflow:teacher:route")).toBe("#/cours/import")
   const setup = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/teacher/main/setup"))
   expect(setup?.[1].method).toBe("POST")
-  fireEvent.click(screen.getByRole("tab", { name: "Ma classe" }))
-  expect(await screen.findByText("Votre cours n’est pas encore publié")).toBeInTheDocument()
   document.cookie = `academy_csrf=${"A".repeat(43)}; Path=/`
   fireEvent.click(screen.getByRole("button", { name: "Se déconnecter" }))
   expect(await screen.findByRole("heading", { name: "Connexion" })).toBeInTheDocument()
   const logout = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/logout"))
   expect(logout?.[1].headers["X-CSRF-Token"]).toBe("A".repeat(43))
+})
+
+it("a resumed session reopens the last view; a direct address wins over it", async () => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+    if (url.endsWith("/auth/me")) return json({ id: 1, username: "demo.enseignant", role: "teacher" })
+    if (url.endsWith("/teacher/main/setup")) return json(main)
+    if (url.includes("/notifications")) return json({ unread: 0, items: [] })
+    if (url.endsWith("/teacher/notification-settings")) return json({ help: true, block: true })
+    if (url.endsWith("/teacher/observers") || url.endsWith("/teacher/observers/views")) return json([])
+    return json([])
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  window.history.replaceState(null, "", "/")
+  localStorage.setItem("shopflow:teacher:route", "#/reglages/observateurs")
+  show()
+  expect(await screen.findByRole("heading", { name: "Observateurs en lecture seule" })).toBeInTheDocument()
+  expect(window.location.hash).toBe("#/reglages/observateurs")
+  cleanup()
+  window.history.replaceState(null, "", "/#/reglages/notifications")
+  show()
+  expect(await screen.findByRole("tab", { name: "Notifications", selected: true })).toBeInTheDocument()
+  localStorage.clear()
 })
 
 it("greets a student by the local part of the identifier and shows the empty state", async () => {

@@ -38,7 +38,7 @@
 - [x] **S3-S** Laboratoire multi-schémas (shopflow, support, perf), `datasets/*.sql`, `EXPLAIN (ANALYZE, BUFFERS)`, `data.kind: download` (ADR-0032). Preuves : voir PROGRESS.
 - [ ] **S3-Q** « Le voyage d'une donnée » (ADR-0033) : cadre livré (route, chargement différé, `data.kind: experience`, valeurs du cours) ; **intégration de l'application en attente de l'archive** `ShopFlow-voyage.zip`.
 - [x] **S3-R** Espace projet CampusEquip : binômes, jalons, dépôts versionnés, commentaires, grille sur 20, CSV, soutenances, droits et audit (ADR-0034). Preuves : voir PROGRESS.
-- [ ] **S3-O** Interface enseignant en application à une page : barre latérale, vues avec adresses, « Aujourd'hui », Cmd+K, panneaux latéraux (ADR-0031).
+- [x] **S3-O** Interface enseignant en application à une page : barre latérale, vues avec adresses, « Aujourd'hui », Cmd+K, panneaux latéraux (ADR-0031).
 
 ## P1 — Extensions pédagogiques et expériences avancées, après P0 stable
 
