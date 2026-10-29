@@ -136,6 +136,15 @@ def check_sql(folder: Path, entries: list[dict], results: dict, schemas: list[st
             if loaded.returncode != 0:
                 failed = f"jeu de données {file_name} invalide : {last_error(loaded.stderr)}"
                 break
+        if not failed:
+            # Same rule as the import (backend/app/lab.py): every schema created by the datasets is declared.
+            listed = docker("exec", name, "psql", "-U", "postgres", "-X", "-q", "-At", "-c",
+                            "SELECT nspname FROM pg_namespace WHERE nspname NOT LIKE 'pg\\_%' "
+                            "AND nspname NOT IN ('public', 'information_schema', 'lab') ORDER BY 1", check=True)
+            undeclared = sorted(set(listed.stdout.split()) - set(schemas or []))
+            if undeclared:
+                failed = ("jeu de données refusé : schéma non déclaré dans `lab_schemas` (00-cours.md) : "
+                          + ", ".join(undeclared))
         for entry in entries:
             if failed:
                 outcome = {"ok": False, "error": failed}
