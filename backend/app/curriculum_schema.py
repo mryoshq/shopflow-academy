@@ -534,6 +534,20 @@ def json_depth(value: object, depth: int = 0) -> int:
     return depth
 
 
+MAX_DISPLAY_DATA = 32_000
+
+
+def display_too_large(display: object) -> bool:
+    """General cap for what an item shows; an experience has its own data cap (200 Ko) plus a small margin."""
+    import json
+
+    if display is None:
+        return False
+    size = len(json.dumps(display.model_dump(), ensure_ascii=False))
+    limit = MAX_EXPERIENCE_DATA + 4_000 if getattr(display, "kind", None) == "experience" else MAX_DISPLAY_DATA
+    return size > limit
+
+
 class ExperienceDisplay(Described):
     """An interactive experience of the Academy opened from a lesson (ADR-0033): « voyage » = « Le voyage d'une donnée ».
 
@@ -782,7 +796,7 @@ class MissionDefinition(BaseModel):
         elif self.starter_sql or self.expected_sql:
             raise ValueError("starter_sql and expected_sql are only for SQL challenges")
         if self.kind not in CHOICE_KINDS:
-            if self.display_data is not None and len(json.dumps(self.display_data.model_dump(), ensure_ascii=False)) > 32_000:
+            if display_too_large(self.display_data):
                 raise ValueError("Display data is too large")
             return self
         if len(self.choices) < 2:
@@ -820,7 +834,7 @@ class MissionDefinition(BaseModel):
             raise ValueError("Feedback must use choice IDs")
         if self.scoring == "partial" and self.kind not in {"multiple_choice", "reorder", "matching"}:
             raise ValueError("Partial scoring is only for multiple choice, ordering and matching")
-        if self.display_data is not None and len(json.dumps(self.display_data.model_dump(), ensure_ascii=False)) > 32_000:
+        if display_too_large(self.display_data):
             raise ValueError("Display data is too large")
         return self
 

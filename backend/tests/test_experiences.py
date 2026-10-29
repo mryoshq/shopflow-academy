@@ -44,6 +44,14 @@ def test_lesson_opens_the_experience_at_a_scene_with_the_course_values():
     assert compile_with("").errors == []  # without a data file: built-in default values
 
 
+def test_a_real_size_experience_file_passes_the_general_display_cap():
+    """voyage.json of the course is about 116 Ko: over the 32 000 characters of other displays, under 200 Ko."""
+    big = {"csv": {"lines": [f"C-{i};Tanzar;{i}" for i in range(6_000)]}}
+    assert 100_000 < len(json.dumps(big)) < 190_000
+    compiled = compile_with("  data_file: experiences/voyage.json\n", {"experiences/voyage.json": json.dumps(big).encode()})
+    assert compiled.errors == []
+
+
 @pytest.mark.parametrize(("extra", "media", "message"), [
     ("  data_file: experiences/absent.json\n", {}, "introuvable"),
     ("  data_file: experiences/voyage.json\n", {"experiences/voyage.json": b"{pas du json"}, "JSON valide"),
