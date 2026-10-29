@@ -1,8 +1,8 @@
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react"
-import { Badge, Box, Button, Flex, Heading, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
+import { Badge, Box, Button, Flex, Heading, IconButton, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { Logo } from "../Logo"
-import { ThemeSwitch } from "../ThemeSwitch"
+import { AccountMenu } from "../preferences/AccountMenu"
 import { TeacherStudio } from "../TeacherStudio"
 import { LeaderboardPage } from "../leaderboard/LeaderboardPage"
 import { NotificationBell } from "../live/notifications"
@@ -133,33 +133,42 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   const info = viewInfo(route.view)
   const go = (view: ViewKey, sub = "", params: Record<string, string> = {}) => navigate({ view, sub, params })
 
+  const wide = !collapsed
   const sidebar = <chakra.nav aria-label="Navigation enseignant" position="sticky" top="0" h="100dvh" flexShrink={0}
-    w={{ base: "16", md: collapsed ? "20" : "60" }} bg="app.surface" borderRightWidth="1px" borderColor="app.border"
-    display="flex" flexDirection="column" py="3" px={{ base: "2", md: collapsed ? "2" : "3" }} gap="1"
-    css={{ transition: "width 160ms ease" }}>
-    <Flex align="center" gap="2.5" px="1.5" mb="4" minH="11">
-      <Logo size={30} />
-      {!collapsed && <Text display={{ base: "none", md: "block" }} fontWeight="bold" letterSpacing="0.02em" lineHeight="1.1">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>}
+    w={{ base: "16", md: wide ? "17rem" : "16" }} bg="app.canvas" borderRightWidth="1px" borderColor="app.border"
+    display="flex" flexDirection="column" pb="2" px="2" gap="0.5"
+    css={{ transition: "width 180ms cubic-bezier(0.2, 0, 0, 1)" }}>
+    {/* Same height as the top bar, so the logo and the page title share one line. */}
+    <Flex align="center" gap="2.5" h="16" flexShrink={0} px="2" justify={{ base: "center", md: wide ? "space-between" : "center" }}>
+      <Flex align="center" gap="2.5" minW="0">
+        <Logo size={28} />
+        {wide && <Text display={{ base: "none", md: "block" }} fontWeight="semibold" letterSpacing="0.01em" lineHeight="1.1" whiteSpace="nowrap">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>}
+      </Flex>
+      {wide && <IconButton display={{ base: "none", md: "inline-flex" }} variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={true}
+        aria-label="Replier la navigation" title="Replier la navigation"><NavIcon name="collapse" size={18} /></IconButton>}
     </Flex>
+    {!wide && <Flex display={{ base: "none", md: "flex" }} justify="center" mb="1">
+      <IconButton variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={false} aria-label="Déplier la navigation" title="Déplier la navigation">
+        <NavIcon name="expand" size={18} /></IconButton></Flex>}
     {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
       const current = route.view === view.key
       return <Link key={view.key} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
-        aria-label={view.label} title={view.label} display="flex" alignItems="center" gap="3" minH="11" px="3" rounded="lg" fontWeight={current ? "semibold" : "medium"}
-        color={current ? "brand.fg" : "app.ink"} bg={current ? "brand.subtle" : "transparent"} textDecoration="none"
-        _hover={{ bg: current ? "brand.subtle" : "app.sunken", textDecoration: "none" }} justifyContent={{ base: "center", md: collapsed ? "center" : "flex-start" }}>
-        <NavIcon name={view.icon} />
-        <Box as="span" display={{ base: "none", md: collapsed ? "none" : "inline" }} aria-hidden="true">{view.label}</Box>
+        aria-label={view.label} title={view.label} display="flex" alignItems="center" gap="3" minH="10" px="2.5" rounded="lg" fontSize="sm"
+        fontWeight={current ? "semibold" : "medium"} color={current ? "app.ink" : "app.muted"} bg={current ? "app.sunken" : "transparent"} textDecoration="none"
+        position="relative" className="nav-item"
+        _hover={{ bg: "app.sunken", color: "app.ink", textDecoration: "none" }} justifyContent={{ base: "center", md: wide ? "flex-start" : "center" }}>
+        <Box as="span" color={current ? "brand.fg" : "inherit"} display="inline-flex"><NavIcon name={view.icon} size={18} /></Box>
+        <Box as="span" display={{ base: "none", md: wide ? "block" : "none" }} minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" aria-hidden="true">{view.label}</Box>
       </Link>
     })}
-    <Box mt="auto" display={{ base: "none", md: "block" }}>
-      <Button variant="ghost" size="sm" w="full" justifyContent={collapsed ? "center" : "flex-start"} onClick={toggleSidebar} aria-expanded={!collapsed}
-        aria-label={collapsed ? "Déplier la navigation" : "Replier la navigation"}>
-        <NavIcon name={collapsed ? "expand" : "collapse"} size={18} />{!collapsed && <span>Replier</span>}</Button>
+    <Box mt="auto" pt="2" borderTopWidth="1px" borderColor="app.border">
+      <AccountMenu account={{ username, role: "teacher" }} onLogout={onLogout} busy={busy} variant="sidebar" collapsed={!wide} />
     </Box>
   </chakra.nav>
 
-  const topbar = <Flex as="header" align="center" gap={{ base: "2", md: "3" }} px={{ base: "3", md: "6" }} py="2.5" minH="16" wrap="wrap"
-    borderBottomWidth="1px" borderColor="app.border" bg="app.surface" position="sticky" top="0" zIndex="sticky">
+  const topbar = <Flex as="header" align="center" gap={{ base: "2", md: "3" }} px={{ base: "3", md: "8" }} minH="16" wrap="wrap"
+    borderBottomWidth="1px" borderColor="app.border" bg="color-mix(in srgb, var(--chakra-colors-app-canvas) 88%, transparent)"
+    backdropFilter="saturate(1.4) blur(8px)" position="sticky" top="0" zIndex="sticky">
     {route.view === "aujourdhui"
       ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Text>
       : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Heading>}
@@ -172,13 +181,6 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
       <NavIcon name="search" size={16} /><Box as="span" display={{ base: "none", lg: "inline" }}>Rechercher</Box>
       <Box as="span" display={{ base: "none", lg: "inline" }} fontSize="xs" borderWidth="1px" borderColor="app.border" rounded="sm" px="1">Ctrl K</Box></Button>
     <NotificationBell />
-    <ThemeSwitch />
-    <Flex align="center" gap="2">
-      <Text fontSize="sm" color="app.muted" display={{ base: "none", xl: "block" }} maxW="48" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{username}</Text>
-      <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette="saffron" variant="subtle" rounded="full" px="2.5">Enseignant</Badge>
-      <Button size="sm" variant="outline" onClick={onLogout} loading={busy} aria-label="Se déconnecter">
-        <NavIcon name="logout" size={18} /><Box as="span" display={{ base: "none", sm: "inline" }}>Se déconnecter</Box></Button>
-    </Flex>
   </Flex>
 
   let content: ReactNode

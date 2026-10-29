@@ -20,7 +20,24 @@ const config = defineConfig({
       "@media (max-width: 47.99em), (pointer: coarse)": { minWidth: "44px" },
     },
     // ADR-0031: short fade between teacher views (zeroed by prefers-reduced-motion below).
-    ".view-enter": { animation: "viewEnter 160ms ease-out" },
+    ".view-enter": { animation: "viewEnter 180ms cubic-bezier(0.2, 0, 0, 1)" },
+    // ADR-0036: one motion language, short and smooth: colours ease in 120 ms, a press sinks by 2 %.
+    "button, a, [role=menuitem], [role=menuitemradio], [role=tab], [role=radio], input, textarea, select": {
+      transitionProperty: "background-color, border-color, color, box-shadow, transform, opacity",
+      transitionDuration: "120ms",
+      transitionTimingFunction: "cubic-bezier(0.2, 0, 0, 1)",
+    },
+    "button:not(:disabled):active, [role=button]:not([aria-disabled=true]):active": { transform: "scale(0.98)" },
+    ".menu-pop[data-state=open]": { animationDuration: "140ms !important", animationTimingFunction: "cubic-bezier(0.2, 0, 0, 1) !important" },
+    ".zoom-toast": { animation: "toastIn 160ms cubic-bezier(0.2, 0, 0, 1)" },
+    ".nav-item[aria-current=page]::before": {
+      content: '""', position: "absolute", insetInlineStart: "-0.5rem", top: "25%", bottom: "25%", width: "3px", borderRadius: "full",
+      background: "var(--chakra-colors-brand-solid)", animation: "indicatorIn 180ms cubic-bezier(0.2, 0, 0, 1)",
+    },
+    // Settings > Animations > « Réduire les animations » (this browser), on top of the system setting below.
+    "html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after": {
+      animationDuration: "0.01ms !important", animationDelay: "0ms !important", transitionDuration: "0.01ms !important",
+    },
     "*:focus-visible": { outline: "3px solid", outlineColor: "brand.focusRing", outlineOffset: "2px" },
     "*, *::before, *::after": {
       "@media (prefers-reduced-motion: reduce)": { animationDuration: "0.01ms !important", animationDelay: "0ms !important", transitionDuration: "0.01ms !important" },
@@ -29,6 +46,8 @@ const config = defineConfig({
   theme: {
     keyframes: {
       viewEnter: { from: { opacity: 0, transform: "translateY(4px)" }, to: { opacity: 1, transform: "none" } },
+      toastIn: { from: { opacity: 0, transform: "translateY(6px) scale(0.98)" }, to: { opacity: 1, transform: "none" } },
+      indicatorIn: { from: { opacity: 0, transform: "scaleY(0.4)" }, to: { opacity: 1, transform: "none" } },
     },
     tokens: {
       fonts: {
@@ -69,6 +88,8 @@ const config = defineConfig({
           subtle: { value: { base: "{colors.brand.50}", _dark: "#33241E" } },
           emphasized: { value: { base: "{colors.brand.200}", _dark: "{colors.brand.800}" } },
           focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.400}" } },
+          // Outline buttons keep a neutral border (calm interface); the label carries the accent.
+          border: { value: { base: "#E6E3D9", _dark: "#45453F" } },
         },
         saffron: {
           solid: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
@@ -78,14 +99,34 @@ const config = defineConfig({
           subtle: { value: { base: "{colors.saffron.50}", _dark: "#2A1F10" } },
           emphasized: { value: { base: "{colors.saffron.200}", _dark: "{colors.saffron.800}" } },
           focusRing: { value: { base: "{colors.saffron.500}", _dark: "{colors.saffron.400}" } },
+          border: { value: { base: "{colors.saffron.200}", _dark: "{colors.saffron.800}" } },
         },
         // Default green.solid (600) fails AA with white text; use 700 everywhere. `_light`, not `base`:
         // Chakra's own token has a `_light` value that would win over `base`.
         green: { solid: { value: { _light: "{colors.green.700}", _dark: "{colors.green.700}" } } },
+        // Grey palette of Chakra (outline and ghost buttons, tags): borders and fills visible on the dark surfaces.
+        gray: {
+          subtle: { value: { _light: "#F0EEE6", _dark: "#2B2B29" } },
+          muted: { value: { _light: "#E6E3D9", _dark: "#45453F" } },
+          emphasized: { value: { _light: "#D1CFC5", _dark: "#5A5A54" } },
+          // Outline buttons read `colorPalette.border`.
+          border: { value: { _light: "#E6E3D9", _dark: "#45453F" } },
+        },
         // Chakra's own surfaces (tables, inputs, menus) follow the app surfaces, not pure black.
         bg: {
           DEFAULT: { value: { _light: "#FFFFFF", _dark: "#30302E" } },
           panel: { value: { _light: "#FFFFFF", _dark: "#30302E" } },
+          // Fills of Chakra controls (switch track, subtle tabs, tags): one step away from the surfaces in both themes.
+          subtle: { value: { _light: "#F5F4EF", _dark: "#2B2B29" } },
+          muted: { value: { _light: "#F0EEE6", _dark: "#383835" } },
+          emphasized: { value: { _light: "#E6E3D9", _dark: "#45453F" } },
+        },
+        // Chakra's borders (outline buttons, radio cards, inputs, menus) stay visible on the dark surfaces.
+        border: {
+          DEFAULT: { value: { _light: "#E6E3D9", _dark: "#45453F" } },
+          subtle: { value: { _light: "#F0EEE6", _dark: "#383835" } },
+          muted: { value: { _light: "#E6E3D9", _dark: "#3E3E3A" } },
+          emphasized: { value: { _light: "#D1CFC5", _dark: "#5A5A54" } },
         },
         app: {
           canvas: { value: { base: "#FAF9F5", _dark: "#262624" } },

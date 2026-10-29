@@ -73,7 +73,11 @@ it("a fresh teacher login lands on « Aujourd’hui »; the sidebar, sub-views, 
   const setup = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/teacher/main/setup"))
   expect(setup?.[1].method).toBe("POST")
   document.cookie = `academy_csrf=${"A".repeat(43)}; Path=/`
-  fireEvent.click(screen.getByRole("button", { name: "Se déconnecter" }))
+  fireEvent.click(screen.getByRole("button", { name: /Compte et paramètres/ }))
+  const logoutItem = await screen.findByRole("menuitem", { name: "Se déconnecter" })
+  fireEvent.pointerMove(logoutItem, { pointerType: "mouse" })
+  fireEvent.pointerDown(logoutItem, { pointerType: "mouse", button: 0 })
+  fireEvent.click(logoutItem)
   expect(await screen.findByRole("heading", { name: "Connexion" })).toBeInTheDocument()
   const logout = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/logout"))
   expect(logout?.[1].headers["X-CSRF-Token"]).toBe("A".repeat(43))

@@ -9,7 +9,8 @@ import { chromium } from "@playwright/test"
 const dir = new URL("../public/icons/", import.meta.url)
 const source = "data:image/png;base64," + readFileSync(new URL("../../docs/design/shopflow-logo-source.png", import.meta.url)).toString("base64")
 const faviconSvg = readFileSync(new URL("favicon.svg", dir), "utf8")
-const green = "data:image/png;base64," + readFileSync(new URL("../../docs/design/shopflow-logo-vert.png", import.meta.url)).toString("base64")
+// ADR-0035: the dark theme and the full-bleed icons use the clay variant (scripts/recolor-logo.py, same drawing).
+const green = "data:image/png;base64," + readFileSync(new URL("../../docs/design/shopflow-logo-terre-cuite.png", import.meta.url)).toString("base64")
 const favicon = "data:image/svg+xml;base64," + Buffer.from(faviconSvg).toString("base64")
 // 16 px: even thicker strokes, and the inner ear line (the finest detail) left out.
 const favicon16 = "data:image/svg+xml;base64," + Buffer.from(faviconSvg.replace("stroke-width: 84", "stroke-width: 98")
@@ -92,11 +93,11 @@ await save("logo-dark.png", await render({ size: 256, green: true, scale: 1 / 0.
 // Share image 1200×630: full logo and the name in text.
 const logo = await render({ size: 512, recolor: "light" })
 await page.setViewportSize({ width: 1200, height: 630 })
-await page.setContent(`<html><body style="margin:0;width:1200px;height:630px;background:${sand};display:flex;align-items:center;gap:56px;padding:0 80px;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;color:#14211F">
+await page.setContent(`<html><body style="margin:0;width:1200px;height:630px;background:#FAF9F5;display:flex;align-items:center;gap:56px;padding:0 80px;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;color:#141413">
   <img src="${logo}" width="420" height="420" alt="">
-  <div><div style="font-size:72px;font-weight:700;letter-spacing:-0.01em;line-height:1.05">ShopFlow<br><span style="color:#146457">Academy</span></div>
-  <div style="margin-top:24px;font-size:30px;color:#4A5A56">Python Data Engineering &amp; SQL avancé</div>
-  <div style="margin-top:28px;height:10px;width:160px;border-radius:5px;background:#84521A"></div></div></body></html>`)
+  <div><div style="font-size:72px;font-weight:700;letter-spacing:-0.01em;line-height:1.05">ShopFlow<br><span style="color:#9C4426">Academy</span></div>
+  <div style="margin-top:24px;font-size:30px;color:#5E5D59">Python Data Engineering &amp; SQL avancé</div>
+  <div style="margin-top:28px;height:10px;width:160px;border-radius:5px;background:#B5532F"></div></div></body></html>`)
 await page.screenshot({ path: new URL("share-1200x630.png", dir).pathname })
 console.log("share-1200x630.png")
 await browser.close()
