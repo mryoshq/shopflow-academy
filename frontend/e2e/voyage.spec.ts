@@ -70,6 +70,8 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
 }
 
 test("teacher: the experience is in the menu and keeps its address", async ({ page }) => {
+  // The pipeline animations loop until « Animations réduites »: axe waits for still animations.
+  await page.emulateMedia({ reducedMotion: "reduce" })
   await login(page, "demo.enseignant")
   await teacherView(page, "Le voyage d’une donnée")
   await expect(page).toHaveURL(/#\/voyage(\/1)?$/)
