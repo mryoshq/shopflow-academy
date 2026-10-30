@@ -47,7 +47,7 @@ function timeOf(iso: string): string {
 function systemNotify(note: Note) {
   try {
     if (typeof Notification === "undefined" || Notification.permission !== "granted" || !document.hidden) return
-    new Notification("ShopFlow Academy", { body: note.text, tag: `academy-${note.id}`, icon: "/icons/icon-192.png" })
+    new Notification("Rapidfox Academy", { body: note.text, tag: `academy-${note.id}`, icon: "/icons/icon-192.png" })
   } catch { /* not supported */ }
 }
 

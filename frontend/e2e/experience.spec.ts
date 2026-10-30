@@ -55,7 +55,8 @@ for (const theme of ["light", "dark"] as const) {
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/${theme}-03-mission.png`, fullPage: true, animations: "disabled" })
 
-    await page.getByRole("button", { name: "Se déconnecter" }).click()
+    await page.getByRole("button", { name: /Compte et paramètres/ }).click()
+    await page.getByRole("menuitem", { name: "Se déconnecter" }).click()
     await login(page, "demo.enseignant")
     await teacherView(page, "Ma classe", "Frise")
     await expect(page.getByRole("heading", { name: "Déroulé de la journée" })).toBeVisible()

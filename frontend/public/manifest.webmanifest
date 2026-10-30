@@ -1,13 +1,13 @@
 {
-  "name": "ShopFlow Academy",
-  "short_name": "ShopFlow",
-  "description": "Plateforme pédagogique de la classe : Python Data Engineering et SQL avancé.",
+  "name": "Rapidfox Academy",
+  "short_name": "Rapidfox",
+  "description": "Rapidfox Academy, module Python Data Engineering & SQL Avancé (cas d’étude ShopFlow et CampusEquip).",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#F7F4EE",
-  "theme_color": "#146457",
+  "background_color": "#FAF9F5",
+  "theme_color": "#B5532F",
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },

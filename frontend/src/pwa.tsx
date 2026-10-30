@@ -64,7 +64,7 @@ export function PwaBanner({ register = registerServiceWorker }: { register?: typ
       <Button size="sm" colorPalette="brand" onClick={reload}>Recharger</Button>
     </Flex>}
     {showInstall && <Flex gap="2" align="center" wrap="wrap" p="3" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg">
-      <Text flex="1" minW="40" fontSize="sm">Installer ShopFlow Academy sur cet appareil ?</Text>
+      <Text flex="1" minW="40" fontSize="sm">Installer Rapidfox Academy sur cet appareil ?</Text>
       <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void installApp()}>Installer l’application</Button>
       <CloseButton size="sm" aria-label="Ne plus proposer l’installation" onClick={hideInstall} />
     </Flex>}

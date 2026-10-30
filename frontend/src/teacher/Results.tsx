@@ -72,7 +72,7 @@ export function Results({ assignmentId, scope = "teacher" }: { assignmentId: num
             </Field.Root><Button type="submit" size="sm" colorPalette="brand">Appliquer le seuil</Button>
           </Flex>
         </form>
-        <Text fontSize="sm" color="app.muted">« À accompagner » signale un pourcentage strictement inférieur à {data?.threshold ?? threshold} %. Missions principales uniquement dans les compteurs et les points faibles ; leçons et bonus exclus. Les missions non commencées restent à réussir. Le CSV porte sur toute la classe avec le seuil appliqué.</Text>
+        <Text fontSize="sm" color="app.muted">« À accompagner » signale un pourcentage strictement inférieur à {data?.threshold ?? threshold} %. Missions principales uniquement dans les compteurs et les points faibles ; leçons et bonus exclus. Les missions non commencées restent à réussir. Le CSV porte sur toute la classe avec le seuil appliqué.</Text>
         <Flex gap="4" wrap="wrap">
           <Field.Root maxW="72"><Field.Label>Trier les étudiants</Field.Label>
             <NativeSelect.Root><NativeSelect.Field value={sort} onChange={event => setSort(event.target.value as Sort)}>

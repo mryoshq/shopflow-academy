@@ -47,7 +47,7 @@ async def lifespan(_: FastAPI):
 
 app = FastAPI(
     lifespan=lifespan,
-    title="ShopFlow Academy API",
+    title="Rapidfox Academy API",
     version="0.1.0",
     openapi_url=openapi_url_for(get_settings().app_env),
     docs_url=None,
