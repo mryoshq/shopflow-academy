@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-30 — Accueil et suivi (`claude/lucid-brahmagupta-htwgun-accueil`)
+
+- Page de connexion : nouveau texte (Rapidfox Academy, module, classe B3 IA/Data, ShopFlow et CampusEquip), plus de sélecteur de thème (système ou choix mémorisé), ouverture animée du logo une fois par session, jamais avec les animations réduites.
+- `remember` retiré de l'API de connexion ; un ancien client qui l'envoie est accepté (champ ignoré).
+- Ma classe > Étudiants : message aux étudiants en haut, suivi en direct sur toute la largeur.
+- Pastille du nombre de demandes d'aide en attente sur « Ma classe » et sur l'onglet « Demandes d'aide », mise à jour en direct.
+- Service worker : `/health/` reste hors du cache (vérifié par un test).
+
 ## 2026-10-30 — Résilience aux coupures et sessions de 30 jours (`claude/lucid-brahmagupta-htwgun-resilience`)
 
 - Page et bandeau « La plateforme est momentanément indisponible… » : nouvelles tentatives automatiques (1, 2, 4, 8, 16 s puis 30 s) et retour à la page demandée ; une erreur 502, 503 ou 504 ou une coupure du réseau ne déconnecte jamais, seul un 401 le fait.

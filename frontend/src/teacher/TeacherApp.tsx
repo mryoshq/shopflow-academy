@@ -6,7 +6,8 @@ import { MODULE, SchoolName } from "../BrandName"
 import { AccountMenu } from "../preferences/AccountMenu"
 import { TeacherStudio } from "../TeacherStudio"
 import { LeaderboardPage } from "../leaderboard/LeaderboardPage"
-import { NotificationBell } from "../live/notifications"
+import { NotificationBell, useNotificationFeed } from "../live/notifications"
+import { HELP_CHANGED, HelpBadge, HelpText } from "./HelpBadge"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ClassTimeline } from "./ClassTimeline"
 import { CommandPalette } from "./CommandPalette"
@@ -89,6 +90,10 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [palette, setPalette] = useState(false)
   const [online, setOnline] = useState<{ online: number; total: number } | null>(null)
+  const [helpPending, setHelpPending] = useState(0)
+  // A new help request arrives as a notification: refresh the badge then, without polling more often.
+  const { items: notes } = useNotificationFeed()
+  const lastHelp = notes.find((note) => note.kind === "help")?.id ?? 0
 
   const setup = useCallback(async () => {
     setError(null)
@@ -106,15 +111,21 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   useEffect(() => { void setup() }, [setup])
 
   const assignmentId = main?.assignment_id ?? null
+  // Same request as the online count (every 15 s), plus at once on a help notification or a handled request.
   useEffect(() => {
     if (!assignmentId) return
     let active = true
     const load = () => api<Live>(`/teacher/classes/${assignmentId}/live`)
-      .then((data) => { if (active) setOnline({ online: data.online_count, total: data.student_count }) }).catch(() => undefined)
+      .then((data) => {
+        if (!active) return
+        setOnline({ online: data.online_count, total: data.student_count })
+        setHelpPending(data.help_pending ?? 0)
+      }).catch(() => undefined)
     void load()
     const timer = window.setInterval(load, ONLINE_REFRESH_MS)
-    return () => { active = false; window.clearInterval(timer) }
-  }, [assignmentId])
+    window.addEventListener(HELP_CHANGED, load)
+    return () => { active = false; window.clearInterval(timer); window.removeEventListener(HELP_CHANGED, load) }
+  }, [assignmentId, lastHelp])
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -155,13 +166,19 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
         <NavIcon name="expand" size={18} /></IconButton></Flex>}
     {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
       const current = route.view === view.key
-      return <Link key={view.key} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
+      const help = view.key === "classe" ? helpPending : 0
+      return <Link key={view.key} aria-describedby={help ? "help-badge-nav" : undefined} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
         aria-label={view.label} title={view.label} display="flex" alignItems="center" gap="3" minH="10" px="2.5" rounded="lg" fontSize="sm"
         fontWeight={current ? "semibold" : "medium"} color={current ? "app.ink" : "app.muted"} bg={current ? "app.sunken" : "transparent"} textDecoration="none"
         position="relative" className="nav-item"
         _hover={{ bg: "app.sunken", color: "app.ink", textDecoration: "none" }} justifyContent={{ base: "center", md: wide ? "flex-start" : "center" }}>
         <Box as="span" color={current ? "brand.fg" : "inherit"} display="inline-flex"><NavIcon name={view.icon} size={18} /></Box>
         <Box as="span" display={{ base: "none", md: wide ? "block" : "none" }} minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" aria-hidden="true">{view.label}</Box>
+        {help > 0 && <>
+          {/* Wide sidebar: badge at the end of the row; icons only (collapsed, phone): a small pill on the icon. */}
+          <Box as="span" ms="auto" display={{ base: "none", md: wide ? "inline-flex" : "none" }}><HelpBadge count={help} id="help-badge-nav" /></Box>
+          <Box as="span" display={{ base: "inline", md: wide ? "none" : "inline" }}><HelpBadge count={help} dot /></Box>
+        </>}
       </Link>
     })}
     <Box mt="auto" pt="2" borderTopWidth="1px" borderColor="app.border">
@@ -189,7 +206,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   let content: ReactNode
   if (error) content = <ErrorState message={error} onRetry={() => void setup()} />
   else if (!main?.course || !main.cohort) content = <LoadingState label="Préparation de votre classe…" />
-  else content = <ViewContent route={route} main={main} username={username} go={go} navigate={navigate} reload={reload} />
+  else content = <ViewContent route={route} main={main} username={username} go={go} navigate={navigate} reload={reload} helpPending={helpPending} />
 
   return <Flex minH="100dvh" bg="app.canvas" color="app.ink">
     <Link href="#contenu" position="absolute" left="2" top="-16" minH="11" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
@@ -205,10 +222,14 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   </Flex>
 }
 
-function SubTabs({ route, go, children, label }: { route: TeacherRoute; go: (view: ViewKey, sub: string) => void; children: ReactNode; label: string }) {
+function SubTabs({ route, go, children, label, counts = {} }: { route: TeacherRoute; go: (view: ViewKey, sub: string) => void; children: ReactNode; label: string; counts?: Record<string, number> }) {
   const info = viewInfo(route.view)
   return <Tabs.Root value={route.sub} onValueChange={(event) => go(route.view, event.value)} variant="line" colorPalette="brand" lazyMount unmountOnExit>
-    <Tabs.List aria-label={label} overflowX="auto" mb="6">{info.subs.map((sub) => <Tabs.Trigger key={sub.key} value={sub.key}>{sub.label}</Tabs.Trigger>)}</Tabs.List>
+    {/* Outside the tab list: the hidden text describes the tab without becoming part of its name. */}
+    {info.subs.map((sub) => <HelpText key={sub.key} count={counts[sub.key] ?? 0} id={`help-badge-tab-${sub.key}`} />)}
+    <Tabs.List aria-label={label} overflowX="auto" mb="6">{info.subs.map((sub) => <Tabs.Trigger key={sub.key} value={sub.key} gap="2"
+      aria-describedby={counts[sub.key] ? `help-badge-tab-${sub.key}` : undefined}>
+      {sub.label}{counts[sub.key] ? <HelpBadge count={counts[sub.key]} /> : null}</Tabs.Trigger>)}</Tabs.List>
     {children}
   </Tabs.Root>
 }
@@ -221,9 +242,9 @@ function NoClass() {
   </Stack></Panel>
 }
 
-function ViewContent({ route, main, username, go, navigate, reload }: {
+function ViewContent({ route, main, username, go, navigate, reload, helpPending }: {
   route: TeacherRoute; main: MainState; username: string; go: (view: ViewKey, sub?: string, params?: Record<string, string>) => void
-  navigate: (route: TeacherRoute, replace?: boolean) => void; reload: () => Promise<void>
+  navigate: (route: TeacherRoute, replace?: boolean) => void; reload: () => Promise<void>; helpPending: number
 }) {
   const assignmentId = main.assignment_id
   const context = <Flex gap="3" align="center" wrap="wrap" mb="4">
@@ -235,7 +256,7 @@ function ViewContent({ route, main, username, go, navigate, reload }: {
     case "aujourdhui":
       return <Today username={username} assignmentId={assignmentId} />
     case "classe":
-      return <Stack gap="0">{context}<SubTabs route={route} go={go} label="Ma classe">
+      return <Stack gap="0">{context}<SubTabs route={route} go={go} label="Ma classe" counts={{ aide: helpPending }}>
         {!assignmentId ? <NoClass /> : <>
           <Tabs.Content value="frise"><Stack gap="8"><ClassTimeline assignmentId={assignmentId} section="frise" /><AutoPlanPanel assignmentId={assignmentId} /></Stack></Tabs.Content>
           <Tabs.Content value="etudiants"><Stack gap="8">

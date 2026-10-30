@@ -58,10 +58,11 @@ def check_origin(request: Request) -> None:
 
 
 class LoginRequest(BaseModel):
+    """Unknown fields are ignored (Pydantic's default): an older page that still sends « remember » (removed by
+    ADR-0038, every session lasts 30 days) signs in normally, without a 422."""
+
     username: str = Field(min_length=1, max_length=128)
     password: str = Field(min_length=1, max_length=1024)
-    # Ignored since ADR-0038 (every session lasts 30 days); still accepted from an older page in cache.
-    remember: bool | None = None
 
 
 class UserOut(BaseModel):
