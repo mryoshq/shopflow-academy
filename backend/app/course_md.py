@@ -226,6 +226,9 @@ def load_yaml(text: str, first_line: int) -> tuple[object, dict]:
             for key, value in current.value:
                 child = path + (str(key.value),)
                 lines[child] = first_line + key.start_mark.line
+                if isinstance(value, yaml.ScalarNode) and value.style == "|":
+                    # Literal block: its text starts on the next line, one source line per text line.
+                    lines[child + ("|",)] = first_line + value.start_mark.line + 1
                 walk(value, child)
         elif isinstance(current, yaml.SequenceNode):
             for index, value in enumerate(current.value):
@@ -564,6 +567,7 @@ def build_definition(compiled: Compiled, item: Item, codes: set[str], earlier: l
     body.pop("prerequisite_mission_ids")
     item.definition = body
     readability(compiled, item, parsed)
+    table_warnings(compiled, item, parsed.body)
     if kind not in UNGRADED_KINDS:
         words = len(parsed.scenario.split())
         if words < 40 or words > 90:
@@ -585,6 +589,61 @@ def readability(compiled: Compiled, item: Item, parsed: MissionDefinition) -> No
                 compiled.warn(item.file, line_for(item, (key,)),
                               f"`{key}` : paragraphe de {words} mots, découpez-le (liste, sous-titre, exemple) : {MAX_PARAGRAPH_WORDS} au plus")
                 break
+
+
+TABLE_MAX_COLUMNS = 12  # as a `data.kind: table` media, and RichText.tsx
+TABLE_MAX_ROWS = 100
+TABLE_SEPARATOR = re.compile(r"^:?-+:?$")
+
+
+def table_cells(line: str) -> list[str]:
+    """Cells of a « | a | b | » line, as RichText.tsx reads them (« \\| » is a literal pipe)."""
+    inner = re.sub(r"(?<!\\)\|$", "", re.sub(r"^\|", "", line.strip()))
+    return [cell.strip() for cell in re.split(r"(?<!\\)\|", inner)]
+
+
+def cells(count: int) -> str:
+    return f"{count} cellule{'s' if count > 1 else ''}"
+
+
+def table_problems(text: str) -> list[tuple[int, str]]:
+    """(index of the text line, problem) for each Markdown table the lesson page would leave as text."""
+    problems: list[tuple[int, str]] = []
+    lines = text.replace("\r\n", "\n").split("\n")
+    index = 0
+    while index < len(lines):
+        if not lines[index].lstrip().startswith("|"):
+            index += 1
+            continue
+        end = index
+        while end + 1 < len(lines) and lines[end + 1].lstrip().startswith("|"):
+            end += 1
+        run = lines[index:end + 1]
+        head = table_cells(run[0])
+        separator = table_cells(run[1]) if len(run) > 1 else []
+        if not separator or not all(TABLE_SEPARATOR.match(cell) for cell in separator):
+            problems.append((index, "pas de ligne de séparation `| --- |` sous l'en-tête"))
+        elif len(separator) != len(head):
+            problems.append((index + 1, f"la ligne de séparation a {cells(len(separator))}, l'en-tête {len(head)}"))
+        elif len(head) > TABLE_MAX_COLUMNS:
+            problems.append((index, f"{len(head)} colonnes ({TABLE_MAX_COLUMNS} au plus)"))
+        elif len(run) - 2 > TABLE_MAX_ROWS:
+            problems.append((index, f"{len(run) - 2} lignes de données ({TABLE_MAX_ROWS} au plus)"))
+        else:
+            for offset, line in enumerate(run[2:], start=2):
+                if len(table_cells(line)) != len(head):
+                    problems.append((index + offset, f"{cells(len(table_cells(line)))}, l'en-tête en a {len(head)}"))
+                    break
+        index = end + 1
+    return problems
+
+
+def table_warnings(compiled: Compiled, item: Item, body: str) -> None:
+    """Warnings only: a malformed table in `body` is shown as plain text to the student."""
+    for offset, problem in table_problems(body):
+        start = item.lines.get(("body", "|"))
+        line = start + offset if start else line_for(item, ("body",))
+        compiled.warn(item.file, line, f"`body` : tableau mal formé, affiché en texte brut : {problem}")
 
 
 def message_key(message: str, kind: str) -> str:

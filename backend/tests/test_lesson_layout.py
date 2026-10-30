@@ -119,3 +119,41 @@ def test_compiler_refuses_layout_fields_on_a_mission_and_warns_on_walls_of_text(
     warnings = [issue.message for issue in compiled.warnings]
     assert any("une seule phrase conseillée" in text for text in warnings)
     assert any("`practice` : paragraphe de 90 mots" in text for text in warnings)
+
+
+def test_compiler_warns_on_a_malformed_body_table_with_its_file_and_line():
+    lesson = STRUCTURED_MD.replace("practice: Ouvrez la mission suivante.\n", """practice: Ouvrez la mission suivante.
+body: |
+  Les contrats :
+
+  | contract_id | client | montant |
+  | :--- | :---: | ---: |
+  | 2001 | **Atlas** | `1 200 DH` |
+  | 2002 | Rif \\| Nord | 950 DH |
+
+  | contract_id | 2001 |
+  | client | Atlas |
+
+  | a | b |
+  | --- | --- |
+  | 1 | 2 | 3 |
+""")
+    compiled = compile_files({"00-cours.md": HEADER, "10-m.md": module(lesson)})
+    assert compiled.errors == []
+    found = [(issue.file, issue.line, issue.message) for issue in compiled.warnings if "tableau" in issue.message]
+    # The well-formed table (with a « \| » inside a cell) gives nothing; the module header adds 5 lines.
+    assert found == [
+        ("10-m.md", 30, "`body` : tableau mal formé, affiché en texte brut : pas de ligne de séparation `| --- |` sous l'en-tête"),
+        ("10-m.md", 35, "`body` : tableau mal formé, affiché en texte brut : 3 cellules, l'en-tête en a 2"),
+    ], found
+
+
+def test_table_limits_and_separator_width_are_reported():
+    from app.course_md import table_problems
+    wide = "| " + " | ".join(f"c{i}" for i in range(13)) + " |\n| " + " | ".join(["---"] * 13) + " |"
+    long = "\n".join(["| a |", "| --- |"] + [f"| {i} |" for i in range(101)])
+    assert table_problems(wide) == [(0, "13 colonnes (12 au plus)")]
+    assert table_problems(long) == [(0, "101 lignes de données (100 au plus)")]
+    assert table_problems("| a | b |\n| --- |\n| 1 | 2 |") == [(1, "la ligne de séparation a 1 cellule, l'en-tête 2")]
+    assert table_problems("| a |\n| --- |\n" + "\n".join(f"| {i} |" for i in range(100))) == []
+    assert table_problems("Texte sans tableau.\n- liste") == []

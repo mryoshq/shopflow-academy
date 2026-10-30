@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-30 — Tableaux Markdown dans les leçons (`claude/lucid-brahmagupta-htwgun-tableaux`)
+
+- Texte des leçons : les tableaux Markdown simples (en-tête, séparation `| --- |`, alignement facultatif) s'affichent en vrai tableau, avec gras et code dans les cellules ; cadre qui défile seul sur téléphone, en clair et en sombre. Un tableau mal formé reste du texte. 12 colonnes et 100 lignes au plus.
+- Compilateur : avertissement avec fichier et ligne pour un tableau mal formé dans un `body`.
+- `docs/COURSE-AUTHORING.md` : syntaxe et exemple. ADR-0022 complété.
+
 ## 2026-10-30 — Accueil et suivi (`claude/lucid-brahmagupta-htwgun-accueil`)
 
 - Page de connexion : nouveau texte (Rapidfox Academy, module, classe B3 IA/Data, ShopFlow et CampusEquip), plus de sélecteur de thème (système ou choix mémorisé), ouverture animée du logo une fois par session, jamais avec les animations réduites.

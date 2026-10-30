@@ -4,7 +4,7 @@ import { afterEach, expect, it } from "vitest"
 import { system } from "../theme"
 import { DataView } from "./activities"
 import { LessonView } from "./Lesson"
-import { RichText, parseRich } from "./RichText"
+import { RichText, parseRich, parseTable } from "./RichText"
 
 const wrap = (node: React.ReactNode) => render(<ChakraProvider value={system}>{node}</ChakraProvider>)
 afterEach(cleanup)
@@ -30,6 +30,55 @@ it("renders bold and inline code as elements, and any HTML as plain text", () =>
   expect(container).toHaveTextContent("<img src=x onerror=alert(1)> <script>alert(1)</script>")
   expect(container.querySelector("ol")).not.toBeNull()
   expect(screen.getAllByRole("listitem")).toHaveLength(2)
+})
+
+const CONTRACTS = "Les contrats :\n\n| contract_id | client | montant |\n| :--- | :---: | ---: |\n| 2001 | **Atlas** SARL | `1 200 DH` |\n| 2002 | Rif \\| Nord | 950 DH |\n\nFin."
+
+it("renders a Markdown table as an accessible table with its headers, cells keeping bold and code", () => {
+  const { container } = wrap(<RichText text={CONTRACTS} headings />)
+  const table = screen.getByRole("table")
+  expect(screen.getAllByRole("columnheader").map((cell) => cell.textContent)).toEqual(["contract_id", "client", "montant"])
+  expect(screen.getAllByRole("columnheader").every((cell) => cell.getAttribute("scope") === "col")).toBe(true)
+  expect(screen.getAllByRole("row")).toHaveLength(3)
+  expect(screen.getByRole("cell", { name: "Atlas SARL" }).querySelector("strong")).toHaveTextContent("Atlas")
+  expect(screen.getByRole("cell", { name: "1 200 DH" }).querySelector("code")).toHaveTextContent("1 200 DH")
+  expect(screen.getByRole("cell", { name: "Rif | Nord" })).toBeInTheDocument()
+  expect(screen.getByRole("cell", { name: "950 DH" })).toHaveStyle({ textAlign: "right" })
+  // The table scrolls inside its own keyboard-reachable frame: never the page.
+  const frame = screen.getByRole("region", { name: /Tableau : contract_id, client, montant/ })
+  expect(frame).toContainElement(table)
+  expect(frame).toHaveAttribute("tabindex", "0")
+  expect(frame).toHaveStyle({ overflowX: "auto", maxWidth: "100%" })
+  expect(container).not.toHaveTextContent("| ---")
+  expect(container).toHaveTextContent("Les contrats :")
+  expect(container).toHaveTextContent("Fin.")
+})
+
+it("leaves a malformed table as text, without error", () => {
+  const noSeparator = "| contract_id | 2001 |\n| client | Atlas |"
+  const wrongCount = "| a | b |\n| --- | --- |\n| 1 | 2 | 3 |"
+  const tooWide = `| ${Array.from({ length: 13 }, (_, i) => `c${i}`).join(" | ")} |\n| ${Array(13).fill("---").join(" | ")} |`
+  const tooLong = ["| a |", "| --- |", ...Array.from({ length: 101 }, (_, i) => `| ${i} |`)].join("\n")
+  for (const text of [noSeparator, wrongCount, tooWide, tooLong]) {
+    expect(parseTable(text.split("\n"))).toBeNull()
+    expect(parseRich(text).every((block) => block.type === "paragraph")).toBe(true)
+  }
+  expect(parseTable(["| a |", "| --- |", ...Array.from({ length: 100 }, (_, i) => `| ${i} |`)])?.rows).toHaveLength(100)
+  const { container } = wrap(<RichText text={wrongCount} />)
+  expect(container.querySelector("table")).toBeNull()
+  expect(container).toHaveTextContent("| 1 | 2 | 3 |")
+})
+
+it("keeps a table within a 390 px page: the frame scrolls, the page does not", () => {
+  const before = window.innerWidth
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 })
+  const wide = `| ${Array.from({ length: 12 }, (_, i) => `colonne_longue_${i}`).join(" | ")} |\n| ${Array(12).fill("---").join(" | ")} |\n| ${Array(12).fill("valeur").join(" | ")} |`
+  const { container } = wrap(<div style={{ width: 390 }}><RichText text={wide} /></div>)
+  const frame = screen.getByRole("region", { name: /Tableau/ })
+  expect(frame).toHaveStyle({ overflowX: "auto", maxWidth: "100%" })
+  expect(container.firstElementChild).toContainElement(frame)
+  expect(screen.getAllByRole("columnheader")).toHaveLength(12)
+  Object.defineProperty(window, "innerWidth", { configurable: true, value: before })
 })
 
 it("lays out a structured lesson in reading order, the media between the example and « À vous »", () => {

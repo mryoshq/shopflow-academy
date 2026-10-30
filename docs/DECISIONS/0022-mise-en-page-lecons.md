@@ -33,10 +33,11 @@ Une leçon n'avait qu'un `body` libre : les auteurs produisaient des pavés de t
 - **Mise en forme légère** dans `body`, `scenario`, `instructions`, `explanation`, `hook`, `example`, `practice` et `description` :
   - `**gras**`, `` `code` `` ;
   - listes `- ` et `1. ` ;
-  - `### ` (sous-titre) dans `body` seulement.
+  - `### ` (sous-titre) dans `body` seulement ;
+  - tableaux Markdown simples (complément du 30/10/2026, prévus pour `body`) : en-tête, séparation `| --- |`, autant de cellules par ligne, alignement `:---` / `---:` / `:---:` facultatif, 12 colonnes et 100 lignes au plus (comme `data.kind: table`). Rendus en tableau accessible (en-têtes de colonne, cadre qui défile seul) ; un tableau mal formé reste du texte, sans erreur.
 
   Analyse dans le navigateur (`frontend/src/student/RichText.tsx`), rendu en nœuds React : **aucun HTML interprété, pas de `dangerouslySetInnerHTML`**. Le serveur continue de refuser tout texte contenant du HTML (`plain()`).
-- **Lisibilité** : le compilateur avertit (sans bloquer) pour un paragraphe de plus de 80 mots ou un `objective` de plus d'une phrase.
+- **Lisibilité** : le compilateur avertit (sans bloquer) pour un paragraphe de plus de 80 mots, un `objective` de plus d'une phrase ou un tableau mal formé dans `body` (avec la ligne exacte du tableau).
 
 ## Conséquences
 

@@ -5,6 +5,16 @@
 
 
 
+## Tableaux Markdown dans les leçons (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée). Fichiers clés : `frontend/src/student/RichText.tsx` (`parseTable`, `RichTable`), `backend/app/course_md.py` (`table_problems`, `table_warnings` ; ligne exacte pour un `body: |`), `docs/COURSE-AUTHORING.md` § 5 ter, ADR-0022. `ProjectText.tsx` (espace projet) garde son rendu tolérant pour les textes des binômes.
+
+### Tableaux — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`).
+2. Recompiler le module CampusEquip (`python3 scripts/course_md.py compile "<dossier du cours>/cours"`) : chaque tableau mal formé est signalé avec sa ligne. Les versions déjà publiées s'affichent avec les tableaux dès le redéploiement (rendu côté navigateur), sans republier.
+
+Prochaine action unique : revue et fusion de la PR « Tableaux Markdown dans les leçons ».
+
 ## PR 1 « Accueil et suivi » (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-accueil` depuis `main` (#62, #63, #64 fusionnées). Fichiers clés : `frontend/src/App.tsx` (page de connexion), `frontend/src/LoginIntro.tsx` (ouverture), `frontend/src/teacher/HelpBadge.tsx` et `TeacherApp.tsx` (pastille), `frontend/src/teacher/LivePanel.tsx` (message en haut), `backend/app/live.py` (`help_pending`), `backend/app/auth.py` (`remember` retiré). `ThemeSwitch.tsx` supprimé (plus utilisé). Captures : `docs/captures/accueil/`.
@@ -12,7 +22,7 @@ Branche `claude/lucid-brahmagupta-htwgun-accueil` depuis `main` (#62, #63, #64 f
 ### PR 1 — À faire en local après fusion
 1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`), puis recharger la page.
 
-Prochaine action unique : revue et fusion de la PR « Accueil et suivi ».
+PR #65 fusionnée le 30/10/2026.
 
 ## PR B — résilience et sessions de 30 jours (30/10/2026)
 
