@@ -18,3 +18,8 @@ if (!("PointerEvent" in globalThis)) {
   }
   globalThis.PointerEvent = PointerEventPolyfill as unknown as typeof PointerEvent
 }
+
+// ADR-0038: the outage state is shared by the whole page; each test starts with the platform reachable.
+import { afterEach } from "vitest"
+import { resetOutage } from "./resilience"
+afterEach(() => resetOutage())

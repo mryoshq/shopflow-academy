@@ -47,6 +47,11 @@ Typographie : pile système (`Segoe UI Variable` sous Windows, `-apple-system` s
 - **Boutons à contour de la marque** : bordure neutre `brand.border` (`#E6E3D9` en clair, `#45453F` en sombre) ; le texte garde l'accent (`brand.fg`) ; survol `brand.subtle`.
 - **Onglets** : libellé sur une ligne (`whiteSpace: nowrap`) ; une liste plus large que l'écran défile dans son cadre.
 
+## Coupures (ADR-0038)
+- **Page « Momentanément indisponible »** : carte centrée `app.surface` sur `app.canvas`, logo 48 px + nom de l'école et module, titre serif, texte `app.muted` « La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique… », bouton à contour « Réessayer maintenant » et « Prochaine tentative dans N s » (chiffres tabulaires). Même rendu dans `public/offline.html` (autonome, thème de l'application via `theme-init.js`).
+- **Bandeau** sur une page déjà ouverte : en bas au centre, `app.surface`, liseré gauche `saffron.solid` 4 px, même texte et même bouton ; l'en-tête reste utilisable.
+- **Connexion** : plus de case ; sous « Se connecter », en `xs` `app.muted` centré : « Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte. »
+
 ## Préférences d'affichage (ADR-0036)
 - **Menu de compte** : pastille d'initiales (`brand.solid`) dans l'en-tête étudiant, ligne nom + rôle en bas de la barre latérale enseignante (initiales seules quand la barre est repliée). Menu `app.surface`, bord `app.border`, coins `xl`, ombre `lg`, apparition courte (fondu et léger zoom, coupés en mouvement réduit). Entrées : Paramètres (raccourci affiché à droite), Thème, Taille du texte et Langue en sous-menus (valeur courante à droite en `app.muted`, coche `brand.fg` dans une colonne fixe), Raccourcis clavier, Se déconnecter.
 - **Paramètres** : dialogue à onglets verticaux (Général, Apparence, Raccourcis) ; Apparence = trois cartes d'aperçu Clair / Sombre / Système (carte choisie bordée `brand.solid`), taille du texte (−, valeur, +, Réinitialiser) et interrupteur « Réduire les animations ».

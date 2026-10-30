@@ -87,7 +87,7 @@ it("does not label a student as weak when no principal points exist", async () =
 })
 
 it("clears stale results on error and supports an explicit retry", async () => {
-  const fetcher = vi.fn().mockResolvedValueOnce(json(data())).mockRejectedValueOnce(new Error("offline")).mockResolvedValue(json(data()))
+  const fetcher = vi.fn().mockResolvedValueOnce(json(data())).mockResolvedValueOnce(json({ detail: "boom" }, 500)).mockResolvedValue(json(data()))
   vi.stubGlobal("fetch", fetcher)
   wrap()
   await screen.findByRole("table")

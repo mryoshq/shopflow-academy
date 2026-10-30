@@ -12,6 +12,7 @@ const json = (body: unknown) => ({ status: 200, ok: true, json: async () => body
 
 afterEach(() => {
   cleanup()
+  window.location.hash = ""
   vi.unstubAllGlobals()
   document.cookie = "academy_csrf=; Max-Age=0; Path=/"
 })
@@ -49,11 +50,11 @@ it("a fresh teacher login lands on « Aujourd’hui »; the sidebar, sub-views, 
   show()
   fireEvent.change(await screen.findByRole("textbox", { name: "Identifiant" }), { target: { value: "demo.enseignant" } })
   fireEvent.change(screen.getByLabelText("Mot de passe"), { target: { value: "local-secret" } })
-  fireEvent.click(screen.getByRole("checkbox", { name: /Rester connecté/ }))
   fireEvent.click(screen.getByRole("button", { name: "Se connecter" }))
   expect(await screen.findByRole("heading", { name: "Bonjour, demo.enseignant" })).toBeInTheDocument()
   const sent = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/login"))
-  expect(JSON.parse(sent?.[1].body)).toEqual({ username: "demo.enseignant", password: "local-secret", remember: true })
+  // ADR-0038: no « Rester connecté » box any more; every session lasts 30 days.
+  expect(JSON.parse(sent?.[1].body)).toEqual({ username: "demo.enseignant", password: "local-secret" })
   expect(Object.keys(localStorage).filter((key) => /session|csrf|token/i.test(key))).toEqual([])
   expect(window.location.hash).toBe("#/aujourdhui")
   expect(screen.getByText("Votre cours n’est pas encore publié")).toBeInTheDocument()
@@ -118,8 +119,67 @@ it("greets a student by the local part of the identifier and shows the empty sta
   expect(screen.queryByRole("button", { name: /Continuer/ })).not.toBeInTheDocument()
 })
 
-it("shows a useful network error during session recovery", async () => {
-  vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("offline")))
+/** What nginx or Cloudflare answers when the backend is down: an HTML page, never JSON. */
+const gateway = (status = 502) => ({ status, ok: false, headers: { get: () => "text/html" }, json: async () => { throw new Error("html") } })
+const student = { id: 7, username: "demo.etudiant01", role: "student" }
+function studentApi(url: string) {
+  if (url.endsWith("/student/dashboard")) return json({ display_name: "demo.etudiant01", ai_enabled: false, courses: [] })
+  if (url.includes("/notifications")) return json({ unread: 0, items: [] })
+  if (url.includes("/presence")) return json({ interval_seconds: 30, unread: 0 })
+  if (url.includes("/radio")) return json({ streams: [] })
+  if (url.includes("/leaderboard/classes")) return json([])
+  return json({})
+}
+
+it("502 during session recovery: « momentanément indisponible », never the login, then back to the requested page", async () => {
+  window.location.hash = "#/projet"
+  let down = true
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+    if (url === "/health/live") return down ? gateway(502) : json({ status: "ok" })
+    if (down) return gateway(502)
+    if (url.endsWith("/auth/me")) return json(student)
+    return studentApi(url)
+  })
+  vi.stubGlobal("fetch", fetchMock)
   show()
-  expect(await screen.findByRole("alert")).toHaveTextContent("momentanément indisponible")
+  expect(await screen.findByText(/La plateforme est momentanément indisponible\. Votre session et votre travail sont conservés\. Nouvelle tentative automatique/)).toBeInTheDocument()
+  expect(screen.getByText(/^Rapidfox/)).toHaveTextContent("Rapidfox Academy")
+  expect(screen.queryByRole("textbox", { name: "Identifiant" })).not.toBeInTheDocument()
+  expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith("/auth/logout"))).toBe(false)
+  down = false
+  // The automatic attempt (1 s, then 2 s…) finds the platform and reopens the session at the same address.
+  expect(await screen.findByRole("button", { name: /^Compte et paramètres/ }, { timeout: 5000 })).toBeInTheDocument()
+  expect(window.location.hash).toBe("#/projet")
+  expect(screen.queryByText(/Nouvelle tentative automatique/)).not.toBeInTheDocument()
+  window.location.hash = ""
+}, 10000)
+
+it("401 shows the login, without « Rester connecté », with the 30-day notice", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 401, ok: false }))
+  show()
+  expect(await screen.findByRole("textbox", { name: "Identifiant" })).toBeInTheDocument()
+  expect(screen.queryByRole("checkbox")).not.toBeInTheDocument()
+  expect(screen.getByText("Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte.")).toBeInTheDocument()
 })
+
+it("a 502 on a page already open shows the banner and keeps the session; a 401 alone signs out", async () => {
+  window.location.hash = ""
+  let down = false
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
+    if (down && url !== "/health/live") return gateway(504)
+    if (url === "/health/live") return down ? gateway(504) : json({ status: "ok" })
+    if (url.endsWith("/auth/me")) return json(student)
+    return studentApi(url)
+  }))
+  show()
+  expect(await screen.findByRole("heading", { name: "Bonjour, demo.etudiant01" })).toBeInTheDocument()
+  down = true
+  const { api } = await import("./api")
+  const read = api<{ courses: unknown[] }>("/student/dashboard")
+  expect(await screen.findByText(/Nouvelle tentative automatique/)).toBeInTheDocument()
+  expect(screen.getByRole("heading", { name: "Bonjour, demo.etudiant01" })).toBeInTheDocument()  // still signed in
+  down = false
+  // The read that waited is sent again and succeeds; the banner leaves.
+  expect((await read).courses).toEqual([])
+  await vi.waitFor(() => expect(screen.queryByText(/Nouvelle tentative automatique/)).not.toBeInTheDocument(), { timeout: 5000 })
+}, 10000)

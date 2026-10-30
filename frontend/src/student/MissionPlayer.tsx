@@ -140,7 +140,8 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         if (error.message === "sequence paused") setMission((current) => current && { ...current, paused: true })
       }
       else if (error instanceof ApiError && error.status === 422) setSubmitError("Votre réponse est incomplète. Vérifiez chaque élément.")
-      else setSubmitError("Connexion interrompue : votre réponse n’a pas pu être envoyée.")
+      // ADR-0038: the answer stays on screen and in memory; the same key is sent again on the next try.
+      else setSubmitError("La plateforme est momentanément indisponible : votre réponse est conservée. Réessayez dans un instant.")
     } finally {
       setBusy(false)
     }

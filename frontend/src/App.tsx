@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useState, type FormEvent } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"
@@ -12,8 +12,10 @@ import { NotificationBell, NotificationProvider } from "./live/notifications"
 import { ComfortButton } from "./comfort/Comfort"
 import { LeaderboardNavigation } from "./leaderboard/LeaderboardPage"
 import type { User } from "./studioTypes"
+import { RECOVERED_EVENT, isGatewayFailure, reportOutage } from "./resilience"
+import { OutageBanner, UnavailablePage } from "./Unavailable"
 
-type PageState = "loading" | "anonymous" | "authenticated" | "network_error"
+type PageState = "loading" | "anonymous" | "authenticated" | "unavailable"
 
 function csrfToken(): string {
   const names = ["academy_csrf", "__Host-academy_csrf"]
@@ -29,27 +31,46 @@ export function App() {
   const [user, setUser] = useState<User | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
-  const [remember, setRemember] = useState(false)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
   // ADR-0031: a resumed session reopens the teacher's last view; a fresh login starts on « Aujourd’hui ».
   const [resumed, setResumed] = useState(false)
 
-  useEffect(() => {
-    const controller = new AbortController()
-    fetch("/api/v1/auth/me", { credentials: "same-origin", signal: controller.signal })
+  // ADR-0038: only a 401 means « signed out ». A gateway error or a cut network shows the « momentanément
+  // indisponible » page, which tries again by itself and then opens the requested address (the hash is kept).
+  const check = useCallback((signal?: AbortSignal) => {
+    fetch("/api/v1/auth/me", { credentials: "same-origin", signal })
       .then(async (response) => {
         if (response.status === 401) return setState("anonymous")
-        if (!response.ok) throw new Error("API unavailable")
+        if (!response.ok) {
+          setState("unavailable")
+          reportOutage()
+          return
+        }
         setUser(await response.json() as User)
         setResumed(true)
         setState("authenticated")
       })
       .catch((error: unknown) => {
-        if (error instanceof Error && error.name !== "AbortError") setState("network_error")
+        if (error instanceof Error && error.name === "AbortError") return
+        setState("unavailable")
+        reportOutage()
       })
-    return () => controller.abort()
   }, [])
+
+  useEffect(() => {
+    const controller = new AbortController()
+    check(controller.signal)
+    return () => controller.abort()
+  }, [check])
+
+  const stateRef = useRef(state)
+  stateRef.current = state
+  useEffect(() => {
+    const again = () => { if (stateRef.current === "unavailable") check() }
+    window.addEventListener(RECOVERED_EVENT, again)
+    return () => window.removeEventListener(RECOVERED_EVENT, again)
+  }, [check])
 
   useEffect(() => {
     const reset = () => { setUser(null); setState("anonymous") }
@@ -66,9 +87,10 @@ export function App() {
         method: "POST",
         credentials: "same-origin",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, password, remember }),
+        body: JSON.stringify({ username, password }),
       })
       if (response.status === 429) return setMessage("Trop de tentatives. Réessayez dans une minute.")
+      if (isGatewayFailure(response)) return setMessage("La plateforme est momentanément indisponible. Réessayez dans un instant.")
       if (!response.ok) return setMessage("Identifiant ou mot de passe incorrect.")
       setUser(await response.json() as User)
       setResumed(false)
@@ -125,7 +147,6 @@ export function App() {
       </Box>
       <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW="7xl" py={{ base: "8", md: "12" }}>
         {state === "loading" && <Text role="status" color="app.muted">Chargement de votre espace…</Text>}
-        {state === "network_error" && <Box role="alert" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" p="6">L’Academy est momentanément indisponible. Rechargez la page dans quelques instants.</Box>}
         {state === "anonymous" && (
           <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
@@ -147,13 +168,10 @@ export function App() {
                   <Field.Label>Mot de passe</Field.Label>
                   <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
-                {/* ADR-0029: a 30-day session kept by the server cookie only, never a token in localStorage. */}
-                <chakra.label display="flex" alignItems="center" gap="3" minH="11" cursor="pointer" fontSize="sm">
-                  <chakra.input type="checkbox" checked={remember} onChange={(event) => setRemember(event.target.checked)} w="5" h="5" accentColor="var(--chakra-colors-brand-solid)" />
-                  <span>Rester connecté <Text as="span" color="app.muted">(30 jours sur cet appareil)</Text></span>
-                </chakra.label>
                 {message && <Text role="alert" color="red.fg" fontSize="sm">{message}</Text>}
                 <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText="Connexion…">Se connecter</Button>
+                {/* ADR-0038: every session lasts 30 days, kept by the server cookie only (never a token in localStorage). */}
+                <Text fontSize="xs" color="app.muted" textAlign="center">Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte.</Text>
               </Stack>
               </form>
             </Box>
@@ -166,14 +184,16 @@ export function App() {
     </Box>
   )
   const account = state === "authenticated" && user ? { username: user.username, role: user.role } : null
+  if (state === "unavailable") return <UnavailablePage />
   if (state === "authenticated" && user?.role === "teacher") {
     return <PreferencesProvider account={account}><NotificationProvider key={user.id}>
+      <OutageBanner />
       <TeacherApp username={user.username} onLogout={() => void onLogout()} busy={busy} resumed={resumed} />
       {message && <Text role="alert" color="red.fg" position="fixed" bottom="4" left="50%" transform="translateX(-50%)" bg="app.surface" px="4" py="2" rounded="md" boxShadow="card">{message}</Text>}
     </NotificationProvider></PreferencesProvider>
   }
   // ADR-0023: notifications for the signed-in user; students also send a presence heartbeat.
-  return <PreferencesProvider account={account}>{state === "authenticated" && user && user.role !== "observer"
+  return <PreferencesProvider account={account}>{state === "authenticated" && <OutageBanner />}{state === "authenticated" && user && user.role !== "observer"
     ? <NotificationProvider key={user.id} heartbeat={user.role === "student"}>{page}</NotificationProvider>
     : page}</PreferencesProvider>
 }

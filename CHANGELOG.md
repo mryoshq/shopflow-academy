@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-30 — Résilience aux coupures et sessions de 30 jours (`claude/lucid-brahmagupta-htwgun-resilience`)
+
+- Page et bandeau « La plateforme est momentanément indisponible… » : nouvelles tentatives automatiques (1, 2, 4, 8, 16 s puis 30 s) et retour à la page demandée ; une erreur 502, 503 ou 504 ou une coupure du réseau ne déconnecte jamais, seul un 401 le fait.
+- Service worker : en cas d'échec d'une page, dernière version de l'application en cache ou page hors ligne autonome au nouveau style ; l'API n'est jamais mise en cache.
+- Plus de case « Rester connecté » : toute connexion dure 30 jours et se prolonge à chaque visite ; les sessions survivent à un redémarrage.
+- Runbook : construire les images avant de remplacer les conteneurs, et mesurer la coupure (`scripts/ops/measure_downtime.py`). ADR-0038.
+
 ## 2026-10-30 — Style inspiré de Claude, Rapidfox Academy, préférences d'affichage (`feat/theme-claude-style`, PR #62)
 
 - Nom affiché : **Rapidfox Academy** (l'école), avec le module « Python Data Engineering & SQL Avancé » et ses cas d'étude ShopFlow · CampusEquip ; sous-domaine inchangé. ADR-0037.

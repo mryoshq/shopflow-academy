@@ -1,3 +1,5 @@
+import { isGatewayFailure, reportOutage } from "./resilience"
+
 export class ApiError extends Error {
   constructor(public status: number, message: string, public detail?: unknown) {
     super(message)
@@ -32,16 +34,28 @@ function messageOf(detail: unknown): string {
   return "La requête a échoué. Réessayez."
 }
 
+export const UNAVAILABLE = "La plateforme est momentanément indisponible. Votre travail est conservé : réessayez dans un instant."
+
+/** Reads that wait for the end of an outage, one per address (a polling view never piles them up). */
+const pending = new Map<string, Promise<unknown>>()
+
 export async function api<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
   if (body !== undefined) headers["Content-Type"] = "application/json"
   if (method !== "GET") headers["X-CSRF-Token"] = csrfToken()
-  const response = await fetch(`/api/v1${path}`, {
-    method,
-    credentials: "same-origin",
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  let response: Response
+  try {
+    response = await fetch(`/api/v1${path}`, {
+      method,
+      credentials: "same-origin",
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+    })
+  } catch {
+    return outage<T>(path, method)
+  }
+  // ADR-0038: a gateway error or a cut network never signs out; only a 401 does.
+  if (isGatewayFailure(response)) return outage<T>(path, method)
   if (response.status === 401) {
     window.dispatchEvent(new Event("academy:unauthorized"))
     throw new ApiError(401, "Votre session a expiré. Connectez-vous à nouveau.")
@@ -52,4 +66,16 @@ export async function api<T>(path: string, method = "GET", body?: unknown): Prom
     throw new ApiError(response.status, messageOf(detail), detail)
   }
   return response.status === 204 ? undefined as T : await response.json() as T
+}
+
+/** A read waits for the platform and is sent again; a write fails at once (the page keeps its draft). */
+function outage<T>(path: string, method: string): Promise<T> {
+  const back = reportOutage()
+  if (method !== "GET") return Promise.reject(new ApiError(503, UNAVAILABLE, { code: "unavailable" }))
+  let retry = pending.get(path) as Promise<T> | undefined
+  if (!retry) {
+    retry = back.then(() => api<T>(path)).finally(() => pending.delete(path))
+    pending.set(path, retry)
+  }
+  return retry
 }

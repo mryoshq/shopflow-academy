@@ -1,4 +1,4 @@
-# Runbook d'exploitation — ShopFlow Academy (Mac + Docker Compose + Cloudflare Tunnel)
+# Runbook d'exploitation — Rapidfox Academy (shopflow.rapidfox.io, Mac + Docker Compose + Cloudflare Tunnel)
 
 Clone de travail : `~/Developer/shopflow-academy`. Projet Compose `shopflow-academy` (services `postgres`, `migrate`, `backend`, `frontend`, `gateway`, `backup`, `labdb`, `lab-init`). `labdb` est la base de laboratoire des exercices SQL (données fictives, non sauvegardée, rechargée à chaque import du cours, ADR-0017). Gateway : `127.0.0.1:3080` uniquement. Sauvegardes : `~/Developer/shopflow-backups` (hors dépôt, hors iCloud, disque chiffré FileVault, fichiers 0600). n8n (projet `wordpress`) et le connecteur `cloudflared` (LaunchDaemon) ne font **pas** partie de ShopFlow : ne jamais les arrêter ni les modifier.
 
@@ -28,12 +28,29 @@ E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test
 |---|---|
 | Démarrer / après redémarrage du Mac | `cd ~/Developer/shopflow-academy && docker compose up -d --wait` |
 | Arrêter ShopFlow seul | `docker compose stop` (ou `down` **sans** `-v`) |
-| Redéployer une branche | `git switch <branche> && docker compose up -d --build --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080` |
+| Redéployer une branche (coupure réduite, ADR-0038) | `git switch <branche> && docker compose build && docker compose up -d --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080` |
 | Journaux | `docker compose logs --tail 200 backend` (rotation 3 × 10 Mo par service) |
 | Test public complet | `python3 scripts/smoke_public.py` (16 contrôles, connexion du propriétaire, compte de démo refusé, n8n inchangé) |
 | État complet | `python3 scripts/ops_status.py` |
 
 Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauvegarde manuelle avant tout redéploiement qui ajoute une migration.
+
+### Redéployer avec une coupure minimale (ADR-0038)
+1. **Construire d'abord, remplacer ensuite.**
+   - `docker compose build` prépare toutes les images pendant que l'ancienne version sert toujours les étudiants (plusieurs minutes, sans coupure).
+   - `docker compose up -d --wait` ne remplace ensuite que les conteneurs dont l'image a changé. La coupure se limite au redémarrage du backend (et des migrations s'il y en a).
+   - Éviter `up -d --build` pendant un cours : il enchaîne construction et remplacement.
+2. **Mesurer la coupure.**
+   - Dans un second terminal, avant l'étape 1 : `python3 scripts/ops/measure_downtime.py http://127.0.0.1:3080`.
+   - Après le smoke test : Ctrl+C. Le script affiche la plus longue coupure de `/health/ready`, en lecture seule.
+   - Noter la valeur dans `docs/PROGRESS.md`.
+   - Repère mesuré le 30/10/2026, hors Docker : redémarrage du seul processus backend = 1,2 s. La mesure du redéploiement Compose complet sur le Mac reste à faire (NOT RUN dans la session cloud, sans démon Docker).
+3. **Pendant la coupure, côté étudiants** :
+   - Les sessions sont en base : un redémarrage ou un redéploiement ne déconnecte personne. Une connexion dure 30 jours et se prolonge à chaque visite.
+   - Une page déjà ouverte affiche un bandeau « La plateforme est momentanément indisponible… ». Elle retente seule, après 1, 2, 4, 8, 16 s puis toutes les 30 s. Les réponses en cours de saisie restent à l'écran.
+   - Une page rechargée pendant la coupure affiche la page « momentanément indisponible » de l'application, servie par le service worker depuis la dernière version en cache. Elle revient seule à l'adresse demandée.
+   - Seul un 401 (session expirée ou révoquée) ramène à la connexion. Une erreur 502, 503 ou 504, ou une coupure du réseau, ne déconnecte jamais.
+   - **Limite** : un étudiant qui ouvre le site **pour la première fois** pendant une panne voit encore la page d'erreur de Cloudflare, car le service worker n'est pas encore installé sur son appareil. Il suffit de recharger après le rétablissement.
 
 ## Sauvegardes et restauration
 
@@ -81,7 +98,7 @@ Raccourcis : `make test-stack-up`, `make test-e2e`, `make test-load`, `make test
 | Symptôme | Cause probable | Action |
 |---|---|---|
 | `shopflow.rapidfox.io` : erreur Cloudflare 1033/502 | Mac en veille, Docker arrêté, ou connecteur coupé | Réveiller le Mac, `docker compose up -d --wait`, `python3 scripts/ops_status.py`. Si n8n répond aussi en erreur, le connecteur `cloudflared` est en cause : `sudo launchctl kickstart -k system/com.cloudflare.cloudflared` (coupe n8n quelques secondes). |
-| Page « Academy momentanément indisponible » | backend ou base arrêtés | `docker compose ps`, `docker compose logs --tail 100 backend postgres`, `docker compose up -d --wait` |
+| Page ou bandeau « La plateforme est momentanément indisponible » | backend ou base arrêtés (la page retente seule ; personne n'est déconnecté) | `docker compose ps`, `docker compose logs --tail 100 backend postgres`, `docker compose up -d --wait` |
 | Un étudiant est bloqué « trop de tentatives » | 5 mots de passe faux en 15 min | Attendre 1 minute (verrou par identifiant). |
 | « Beaucoup d’essais en peu de temps » | plus de 20 réponses/min | Attendre 1 minute (protection voulue). |
 | Mission verrouillée pour un étudiant | prérequis non réussi | Suivi de classe → Détail → « Débloquer pour cet étudiant » (audité). |
