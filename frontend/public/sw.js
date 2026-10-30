@@ -5,7 +5,8 @@
  * (« Nouvelle version disponible »), then takes over.
  * ADR-0023 (Web Push): the push carries no content; the worker reads the user's unread
  * notifications from the API (never cached) and shows the newest. */
-const CACHE = "shopflow-static-v1"
+// Bump on every change of a file under /icons/ or of offline.html: they are served from this cache first.
+const CACHE = "shopflow-static-v2"
 const PRECACHE = ["/offline.html", "/manifest.webmanifest", "/icons/icon-192.png", "/icons/favicon.svg"]
 
 function cacheable(url) {
