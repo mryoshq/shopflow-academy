@@ -90,12 +90,12 @@ const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
 
 /** Small drawing of the interface in each theme (decorative). */
 function ThemePreview({ value }: { value: ThemeChoice }) {
-  const light = { bg: "#FAF9F5", card: "#FFFFFF", line: "#E6E3D9", ink: "#141413" }
-  const dark = { bg: "#262624", card: "#30302E", line: "#3E3E3A", ink: "#FAF9F5" }
+  const light = { bg: "#FAF9F5", card: "#FFFFFF", line: "#E6E3D9", ink: "#141413", accent: "#146457" }
+  const dark = { bg: "#262624", card: "#30302E", line: "#3E3E3A", ink: "#FAF9F5", accent: "#B5532F" }
   const half = (colours: typeof light, clip?: string) => <Box position="absolute" inset="0" bg={colours.bg} css={clip ? { clipPath: clip } : undefined}>
     <Box position="absolute" left="10%" top="16%" w="50%" h="10%" rounded="sm" bg={colours.ink} opacity="0.85" />
     <Box position="absolute" left="10%" top="38%" w="80%" h="46%" rounded="md" bg={colours.card} borderWidth="1px" borderColor={colours.line} />
-    <Box position="absolute" left="16%" top="50%" w="30%" h="8%" rounded="full" bg="#B5532F" />
+    <Box position="absolute" left="16%" top="50%" w="30%" h="8%" rounded="full" bg={colours.accent} />
   </Box>
   return <Box position="relative" w="full" h="20" rounded="lg" overflow="hidden" borderWidth="1px" borderColor="app.border" aria-hidden="true">
     {value === "dark" ? half(dark) : half(light)}

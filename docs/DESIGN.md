@@ -15,8 +15,8 @@ Chaque jeton sémantique a une valeur claire et une valeur `_dark` ; les paires 
 
 | Rôle | Jeton | Clair | Sombre | Usage |
 |---|---|---|---|---|
-| Marque (terre cuite) | `brand.solid` | `#B5532F` (texte blanc 4,95:1) | `#B5532F` (texte blanc) | actions principales, progression |
-| Marque texte | `brand.fg` | `#9C4426` (6,1:1 sur le fond) | `#E0967A` (6,4:1) | liens, intitulés de section |
+| Marque | `brand.solid` | vert du logo `#146457` (`pine.600`, texte blanc 7,0:1) | terre cuite `#B5532F` (texte blanc 4,95:1) | actions principales, progression |
+| Marque texte | `brand.fg` | `#0F5047` (`pine.700`, 8,9:1 sur le fond) | `#E0967A` (6,4:1) | liens, intitulés de section |
 | Accent | `saffron.solid` / `saffron.fg` / `saffron.subtle` | `#84521A` / `#643E16` / `#FDF6EA` | `#EDB458` (texte `#1B1206`) / `#EDB458` / `#2A1F10` | « Démonstration », « En cours », indices, demandes d'aide |
 | Succès | `green.solid` | `green.700` (blanc ≥ 4,5:1) | `green.700` | « Réussie », « Bonne décision » |
 | Gris | `gray.50` à `gray.950` | gris chauds `#FAF9F5` → `#1F1E1D` | idem | remplacent les gris froids de Chakra |
