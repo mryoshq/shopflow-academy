@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     vapid_public_key: str = ""
     vapid_private_key: str = ""
     vapid_subject: str = ""
-    # Optional radio (ADR-0024): JSON list of {"label", "url"} YouTube nocookie embeds. Empty = no radio.
+    # Optional radio (ADR-0024): JSON list of {"label", "url"} https audio streams (hosts in comfort.RADIO_HOSTS). Empty = no radio.
     radio_streams: str = ""
     # Automatic block opening and teacher events (ADR-0023): background check every N seconds (0 = off).
     live_tick_seconds: int = 15

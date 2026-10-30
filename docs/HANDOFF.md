@@ -5,6 +5,17 @@
 
 
 
+## Radio simplifiée — PR 1/3 (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). Fichiers clés : `frontend/src/comfort/Comfort.tsx` (`Radio`, `loadVolume`), `backend/app/comfort.py` (`RADIO_HOSTS`, `stream_url`), `gateway/nginx.conf` (`media-src`), `.env.example`, `docs/RUNBOOK.md` (« Radio d'ambiance »), ADR-0024 (révision du 30/10). Captures : `docs/captures/radio/`.
+
+### Radio — À faire en local après fusion
+1. Dans `.env`, remplacer `RADIO_STREAMS` par la ligne de `.env.example` (les anciens liens YouTube sont désormais ignorés).
+2. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la passerelle doit être reconstruite pour la nouvelle CSP.
+3. `python3 scripts/smoke_public.py http://127.0.0.1:3080` : le contrôle « CSP media-src : radios seulement » doit passer.
+
+Prochaine action unique : revue et fusion de la PR « Radio simplifiée », puis PR 2 « Plus de plaisir ».
+
 ## Tableaux Markdown dans les leçons (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée). Fichiers clés : `frontend/src/student/RichText.tsx` (`parseTable`, `RichTable`), `backend/app/course_md.py` (`table_problems`, `table_warnings` ; ligne exacte pour un `body: |`), `docs/COURSE-AUTHORING.md` § 5 ter, ADR-0022. `ProjectText.tsx` (espace projet) garde son rendu tolérant pour les textes des binômes.
@@ -13,7 +24,7 @@ Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée
 1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`).
 2. Recompiler le module CampusEquip (`python3 scripts/course_md.py compile "<dossier du cours>/cours"`) : chaque tableau mal formé est signalé avec sa ligne. Les versions déjà publiées s'affichent avec les tableaux dès le redéploiement (rendu côté navigateur), sans republier.
 
-Prochaine action unique : revue et fusion de la PR « Tableaux Markdown dans les leçons ».
+PR #66 fusionnée le 30/10/2026.
 
 ## PR 1 « Accueil et suivi » (30/10/2026)
 

@@ -57,6 +57,9 @@ export function ComfortButton() {
   const pomodoro = usePomodoro()
   const [open, setOpen] = useState(false)
   const [announce, setAnnounce] = useState("")
+  // On a phone the header buttons wrap to the left: the panel then spans the screen just below them.
+  const [top, setTop] = useState(0)
+  const button = useRef<HTMLButtonElement>(null)
   const previous = useRef(pomodoro.state.phase)
   useEffect(() => {
     if (previous.current !== pomodoro.state.phase) {
@@ -72,14 +75,17 @@ export function ComfortButton() {
   }, [open])
   const { state } = pomodoro
   return <Box position="relative">
-    <Button size="sm" variant="outline" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}
+    <Button ref={button} size="sm" variant="outline" aria-expanded={open} aria-haspopup="dialog"
+      onClick={() => { setTop(Math.round(button.current?.getBoundingClientRect().bottom ?? 0) + 8); setOpen((value) => !value) }}
       aria-label={state.running ? `Confort : ${state.phase === "work" ? "travail" : "pause"}, ${clock(state.remaining)} restantes` : "Confort : minuteur et radio"}>
       <Icon name="clock" size={16} />{state.running ? <Text as="span" css={{ fontVariantNumeric: "tabular-nums" }}>{clock(state.remaining)}</Text> : null}
     </Button>
     <Text role="status" aria-live="polite" position="absolute" w="1px" h="1px" overflow="hidden" css={{ clip: "rect(0 0 0 0)" }}>{announce}</Text>
     {/* Kept mounted when closed so the radio keeps playing; hidden from view and from assistive tech. */}
-    <Box role="dialog" aria-label="Confort" hidden={!open} position="absolute" right="0" top="calc(100% + 8px)" zIndex="popover"
-      w={{ base: "min(92vw, 20rem)", md: "20rem" }} bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg" p="3">
+    <Box role="dialog" aria-label="Confort" hidden={!open} zIndex="popover"
+      position={{ base: "fixed", md: "absolute" }} top={{ base: `${top}px`, md: "calc(100% + 8px)" }}
+      left={{ base: "3", md: "auto" }} right={{ base: "3", md: "0" }} w={{ base: "auto", md: "20rem" }}
+      maxH={{ base: `calc(100dvh - ${top + 12}px)`, md: "none" }} overflowY={{ base: "auto", md: "visible" }} bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg" p="3">
       <Flex justify="space-between" align="center" mb="2"><Text fontWeight="semibold">Confort</Text>
         <CloseButton size={{ base: "md", md: "xs" }} minW={{ base: "11", md: "auto" }} aria-label="Fermer le panneau Confort" onClick={() => setOpen(false)} /></Flex>
       <Pomodoro {...pomodoro} />
@@ -113,29 +119,84 @@ function Pomodoro({ state, start, pause, reset, configure }: ReturnType<typeof u
   </Stack>
 }
 
-/** Optional radio: streams set by the teacher on the server; nothing loads before « Écouter », and it starts muted. */
+const VOLUME_KEY = "shopflow:radio-volume"
+export const RADIO_DOWN = "Radio indisponible pour le moment"
+
+/** Remembered volume, 0 to 100 (50 by default, or when the browser forbids storage). */
+export function loadVolume(): number {
+  try {
+    const raw = window.localStorage.getItem(VOLUME_KEY)
+    const value = raw === null ? NaN : Number(raw)
+    return Number.isFinite(value) ? Math.min(100, Math.max(0, Math.round(value))) : 50
+  } catch { return 50 }
+}
+
+/**
+ * Optional radio (ADR-0024, revised 30/10/2026): direct HTTPS audio streams set on the server. The
+ * browser plays them itself in a plain <audio>, never relayed by the platform; nothing loads before
+ * « Lecture », and a pause drops the connection. Play/pause and volume only.
+ */
 function Radio() {
   const [streams, setStreams] = useState<Stream[] | null>(null)
   const [choice, setChoice] = useState("")
-  const [playing, setPlaying] = useState<Stream | null>(null)
+  const [playing, setPlaying] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const [volume, setVolume] = useState(loadVolume)
+  const audio = useRef<HTMLAudioElement>(null)
+  const live = useRef(false)
   useEffect(() => { void api<{ streams: Stream[] }>("/radio").then((r) => { setStreams(r.streams); setChoice(r.streams[0]?.id ?? "") }).catch(() => setStreams([])) }, [])
+  useEffect(() => {
+    if (audio.current) audio.current.volume = volume / 100
+    try { window.localStorage.setItem(VOLUME_KEY, String(volume)) } catch { /* not remembered */ }
+  }, [volume])
+  const stop = () => {
+    live.current = false
+    setPlaying(false)
+    const element = audio.current
+    if (!element) return
+    element.pause()
+    // Dropping the source closes the connection: a live stream is never buffered in the background.
+    element.removeAttribute("src")
+    element.load()
+  }
+  const fail = () => { stop(); setFailed(true) }
+  const play = (id: string) => {
+    const element = audio.current
+    const stream = streams?.find((item) => item.id === id)
+    if (!element || !stream) return
+    live.current = true
+    setFailed(false)
+    setPlaying(true)
+    element.src = stream.url
+    element.volume = volume / 100
+    element.play()?.catch((error: unknown) => { if (!(error instanceof DOMException && error.name === "AbortError")) fail() })
+  }
   if (!streams) return null
+  const current = streams.find((item) => item.id === choice)
   return <Stack gap="2" as="section" aria-label="Radio" pt="3">
     <Text fontWeight="medium" fontSize="sm">Radio d’ambiance</Text>
     {streams.length === 0 ? <Text fontSize="xs" color="app.muted">Aucune radio proposée par votre enseignant.</Text> : <>
       <Flex gap="2" align="center">
-        <NativeSelect.Root size="xs" flex="1">
-          <NativeSelect.Field aria-label="Choisir une radio" value={choice} onChange={(event) => setChoice(event.target.value)}>
+        <NativeSelect.Root size="xs" flex="1" minW="0">
+          <NativeSelect.Field aria-label="Station" value={choice} onChange={(event) => { setChoice(event.target.value); if (playing) play(event.target.value) }}>
             {streams.map((stream) => <option key={stream.id} value={stream.id}>{stream.label}</option>)}
           </NativeSelect.Field>
           <NativeSelect.Indicator />
         </NativeSelect.Root>
-        {playing ? <Button size="xs" variant="outline" onClick={() => setPlaying(null)}>Arrêter</Button>
-          : <Button size="xs" colorPalette="brand" onClick={() => setPlaying(streams.find((s) => s.id === choice) ?? null)}>Écouter</Button>}
+        {playing ? <Button size="xs" variant="outline" onClick={stop}><Icon name="pause" size={14} />Pause</Button>
+          : <Button size="xs" colorPalette="brand" onClick={() => play(choice)}><Icon name="play" size={14} />Lecture</Button>}
       </Flex>
-      {playing && <iframe title={`Radio : ${playing.label}`} src={`${playing.url}?autoplay=1&mute=1&playsinline=1&rel=0`}
-        allow="autoplay; encrypted-media" referrerPolicy="strict-origin-when-cross-origin" style={{ width: "100%", height: "9rem", border: 0, borderRadius: "6px" }} />}
-      <Text fontSize="xs" color="app.muted">Démarre sans le son : activez-le dans le lecteur. Le service vidéo ne charge rien avant « Écouter ».</Text>
+      <Flex as="label" gap="2" align="center" fontSize="sm">
+        <Icon name="volume" size={16} /><Text as="span">Volume</Text>
+        <input type="range" min={0} max={100} step={5} value={volume} aria-valuetext={`${volume} %`}
+          onChange={(event) => setVolume(Number(event.target.value))}
+          style={{ flex: 1, minWidth: 0, accentColor: "var(--chakra-colors-brand-solid)" }} />
+        <Text as="span" w="3rem" textAlign="right" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{volume} %</Text>
+      </Flex>
+      <Text role="status" fontSize="xs" color={failed ? "saffron.fg" : "app.muted"}>
+        {failed ? `${RADIO_DOWN}. Réessayez plus tard.` : playing && current ? `Lecture : ${current.label}` : "Rien n’est chargé avant « Lecture ». Le son vient directement de la station."}
+      </Text>
+      <audio ref={audio} preload="none" onError={() => { if (live.current) fail() }} />
     </>}
   </Stack>
 }
