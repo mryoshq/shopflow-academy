@@ -110,8 +110,8 @@ it("dashboard shows courses, locked missions and a Continue target", async () =>
   expect(continueTarget(data, 11)?.mission_version_id).toBe(12)
 })
 
-it("dashboard network error offers a retry", async () => {
-  const fetchMock = vi.fn().mockRejectedValueOnce(new TypeError("offline")).mockResolvedValue(json({ display_name: "x", ai_enabled: false, courses: [] }))
+it("dashboard error of the application offers a retry", async () => {
+  const fetchMock = vi.fn().mockResolvedValueOnce(json({ detail: "boom" }, 500)).mockResolvedValue(json({ display_name: "x", ai_enabled: false, courses: [] }))
   vi.stubGlobal("fetch", fetchMock)
   wrap(<StudentDashboard navigate={vi.fn()} />)
   expect(await screen.findByRole("alert")).toHaveTextContent("Impossible de charger")
@@ -138,7 +138,7 @@ it("player submits with an idempotency key, shows server feedback and reuses the
   expect(submit).toBeDisabled()
   fireEvent.click(screen.getByLabelText("SUM(DISTINCT)"))
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Tester ma décision" })) })
-  expect(await screen.findByText("Connexion interrompue : votre réponse n’a pas pu être envoyée.")).toBeInTheDocument()
+  expect(await screen.findByText("La plateforme est momentanément indisponible : votre réponse est conservée. Réessayez dans un instant.")).toBeInTheDocument()
   await act(async () => { fireEvent.click(screen.getByRole("button", { name: "Renvoyer ma décision" })) })
   expect(await screen.findByText("Presque ! Réessayez")).toBeInTheDocument()
   expect(screen.getByText("Juste ici par hasard.")).toBeInTheDocument()

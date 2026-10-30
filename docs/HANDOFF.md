@@ -3,6 +3,17 @@
 
 
 
+
+## PR B — résilience et sessions de 30 jours (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-resilience`, partie de la PR #62 puis à jour avec `main`. ADR-0038. Fichiers clés : `frontend/src/resilience.ts`, `frontend/src/Unavailable.tsx`, `frontend/src/api.ts`, `frontend/src/App.tsx`, `frontend/public/sw.js`, `frontend/public/offline.html` et `offline.js`, `backend/app/auth.py`, `scripts/ops/measure_downtime.py`, `docs/RUNBOOK.md`.
+
+### PR B — À faire en local après fusion
+1. Pas de migration. Redéployer selon le runbook : `docker compose build`, puis `docker compose up -d --wait`, avec `python3 scripts/ops/measure_downtime.py http://127.0.0.1:3080` lancé dans un second terminal ; noter la coupure mesurée dans PROGRESS.
+2. Recharger la page une fois : le nouveau service worker s'installe et garde l'application en cache pour les coupures suivantes.
+
+Prochaine action unique : revue et fusion de la PR B, puis mesure de la coupure d'un redéploiement sur le Mac.
+
 ## PR #62 — style, Rapidfox Academy, préférences (30/10/2026)
 
 Branche `feat/theme-claude-style` (base `main`). ADR-0035 (style), ADR-0036 (préférences d'affichage et menu de compte), ADR-0037 (nom affiché). Composant du nom : `frontend/src/BrandName.tsx`. Favicons `favicon-light.png` et `favicon-dark.png` produits par `node scripts/make-icons.mjs favicon-light.png favicon-dark.png` (le script accepte maintenant une liste de fichiers). Relecture : `docs/captures/pr62/`.

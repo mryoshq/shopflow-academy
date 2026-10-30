@@ -20,10 +20,17 @@ export function lastMission(): number | null {
   return Number.isInteger(value) && value > 0 ? value : null
 }
 
-export function saveDraft(id: number, answer: Answer) { write(() => sessionStorage, `shopflow:draft:${id}`, JSON.stringify(answer)) }
-export function clearDraft(id: number) { write(() => sessionStorage, `shopflow:draft:${id}`, null) }
+/** ADR-0038: the draft also stays in memory until it is sent successfully (storage may be blocked). */
+const drafts = new Map<number, string>()
+
+export function saveDraft(id: number, answer: Answer) {
+  const raw = JSON.stringify(answer)
+  drafts.set(id, raw)
+  write(() => sessionStorage, `shopflow:draft:${id}`, raw)
+}
+export function clearDraft(id: number) { drafts.delete(id); write(() => sessionStorage, `shopflow:draft:${id}`, null) }
 export function loadDraft(id: number): Answer | null {
-  const raw = read(() => sessionStorage, `shopflow:draft:${id}`)
+  const raw = drafts.get(id) ?? read(() => sessionStorage, `shopflow:draft:${id}`)
   if (!raw) return null
   try {
     const parsed = JSON.parse(raw) as Answer

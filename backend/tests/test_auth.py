@@ -148,25 +148,25 @@ def test_demo_seed_is_fictional_idempotent_and_disabled_in_production(auth_env, 
         seed_demo(db, path, "production")
 
 
-def test_remember_me_keeps_a_30_day_session_renewed_at_each_visit_and_logout_revokes_it(auth_env):
-    """ADR-0029: « Rester connecté » = 30 days renewed by /auth/me; otherwise 8 h, unchanged."""
+def test_every_session_lasts_30_days_is_renewed_at_each_visit_and_logout_revokes_it(auth_env):
+    """ADR-0038: every sign-in lasts 30 days, renewed by /auth/me; « remember » is ignored if an old page sends it."""
     client, engine = auth_env
 
     def stored():
         with Session(engine) as db:
             return db.get(UserSession, sha256(client.cookies["academy_session"].encode()).hexdigest())
 
-    response = login(client, "student.a", "student-a-test")
-    assert "Max-Age=28800" in response.headers["set-cookie"]
-    assert timedelta(hours=7) < stored().expires_at.replace(tzinfo=None) - utcnow().replace(tzinfo=None) <= timedelta(hours=8)
-    me = client.get("/api/v1/auth/me")
-    assert "set-cookie" not in me.headers  # a normal session is never extended
-    client.post("/api/v1/auth/logout", headers={"X-CSRF-Token": client.cookies["academy_csrf"]})
-
-    response = client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test", "remember": True})
-    cookies = response.headers.get_list("set-cookie")
-    assert all("Max-Age=2592000" in cookie for cookie in cookies) and any("HttpOnly" in cookie for cookie in cookies)
+    for body in ({"username": "student.a", "password": "student-a-test"},
+                 {"username": "student.a", "password": "student-a-test", "remember": False},
+                 {"username": "student.a", "password": "student-a-test", "remember": True}):
+        response = client.post("/api/v1/auth/login", json=body)
+        assert response.status_code == 200
+        cookies = response.headers.get_list("set-cookie")
+        assert all("Max-Age=2592000" in cookie for cookie in cookies) and any("HttpOnly" in cookie for cookie in cookies)
+        assert timedelta(days=29) < stored().expires_at.replace(tzinfo=None) - utcnow().replace(tzinfo=None) <= timedelta(days=30)
     session, csrf = client.cookies["academy_session"], client.cookies["academy_csrf"]
+    # A visit within the hour does not rewrite the cookies.
+    assert "set-cookie" not in client.get("/api/v1/auth/me").headers
     # Ten days later, a visit pushes the end back to 30 days, with the same tokens (CSRF unchanged).
     with Session(engine) as db:
         record = db.get(UserSession, sha256(session.encode()).hexdigest())
@@ -182,4 +182,30 @@ def test_remember_me_keeps_a_30_day_session_renewed_at_each_visit_and_logout_rev
     with Session(engine) as db:
         assert db.get(UserSession, sha256(session.encode()).hexdigest()).revoked_at is not None
     client.cookies.set("academy_session", session)
-    assert client.get("/api/v1/auth/me").status_code == 401  # the revoked long session is refused
+    assert client.get("/api/v1/auth/me").status_code == 401  # the revoked session is refused
+
+
+def test_a_restart_or_redeployment_signs_nobody_out(auth_env, tmp_path):
+    """ADR-0038: sessions are rows in the database; a new process (new engine, new client) still accepts them."""
+    client, engine = auth_env
+    assert login(client, "student.a", "student-a-test").status_code == 200
+    session, csrf = client.cookies["academy_session"], client.cookies["academy_csrf"]
+    url = str(engine.url)
+    engine.dispose()
+    app.dependency_overrides.clear()
+    restarted = create_engine(url, connect_args={"check_same_thread": False})
+
+    def override_db():
+        with Session(restarted, expire_on_commit=False) as db:
+            yield db
+
+    app.dependency_overrides[get_db] = override_db
+    try:
+        with TestClient(app) as fresh:
+            fresh.cookies.set("academy_session", session)
+            fresh.cookies.set("academy_csrf", csrf)
+            me = fresh.get("/api/v1/auth/me")
+            assert me.status_code == 200 and me.json()["username"] == "student.a"
+            assert fresh.post("/api/v1/auth/logout", headers={"X-CSRF-Token": csrf}).status_code == 204
+    finally:
+        restarted.dispose()

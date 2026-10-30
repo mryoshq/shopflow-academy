@@ -163,7 +163,7 @@ test("a second student is isolated, sees the locked state and survives a network
   })
   await press(page, page.getByRole("radio", { name: /Corriger les frais/ }), "Space")
   await press(page, page.getByRole("button", { name: "Tester ma décision" }))
-  await expect(page.getByText("Connexion interrompue : votre réponse n’a pas pu être envoyée.")).toBeVisible()
+  await expect(page.getByText("La plateforme est momentanément indisponible : votre réponse est conservée. Réessayez dans un instant.")).toBeVisible()
   await expect(page.getByRole("radio", { name: /Corriger les frais/ })).toBeChecked()
   await page.screenshot({ path: `${shots}/07-erreur-reseau.png`, fullPage: true, animations: "disabled" })
   await press(page, page.getByRole("button", { name: "Renvoyer ma décision" }))
