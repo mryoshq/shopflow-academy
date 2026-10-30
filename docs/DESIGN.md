@@ -34,7 +34,7 @@ Chaque jeton sémantique a une valeur claire et une valeur `_dark` ; les paires 
 Règle Chakra : pour redéfinir un jeton qui existe déjà dans Chakra (`green.solid`, `bg`), utiliser les clés `_light` et `_dark`, pas `base` (la valeur `_light` de Chakra l'emporterait sur `base`).
 
 ### Mode sombre
-- Sélecteur « Système / Clair / Sombre » dans l'en-tête (groupe de boutons radio, flèches du clavier), mémorisé dans ce navigateur (`localStorage` `shopflow:theme`). « Système » suit `prefers-color-scheme`, y compris en direct.
+- Choix « Système / Clair / Sombre » dans le menu de compte et le dialogue Paramètres (ADR-0036), mémorisé dans ce navigateur (`localStorage` `shopflow:theme`). « Système » suit `prefers-color-scheme`, y compris en direct. La page de connexion n'a pas de sélecteur : elle suit le système, ou le choix déjà mémorisé.
 - Pas de flash : `frontend/public/theme-init.js` pose la classe `dark` ou `light` et `color-scheme` sur `<html>` avant le premier rendu. Fichier externe, car la CSP interdit les scripts en ligne.
 - Interdit : couleur de texte ou de fond codée en dur dans un composant (`red.700`, `#fff`…) ; utiliser `*.fg`, `*.solid`, `*.subtle`, `app.*`. Seuls les liserés décoratifs gardent une teinte fixe (`saffron.400`, `green.600`), lisible dans les deux thèmes.
 
@@ -50,6 +50,12 @@ Typographie : pile système (`Segoe UI Variable` sous Windows, `-apple-system` s
 ## Coupures (ADR-0038)
 - **Page « Momentanément indisponible »** : carte centrée `app.surface` sur `app.canvas`, logo 48 px + nom de l'école et module, titre serif, texte `app.muted` « La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique… », bouton à contour « Réessayer maintenant » et « Prochaine tentative dans N s » (chiffres tabulaires). Même rendu dans `public/offline.html` (autonome, thème de l'application via `theme-init.js`).
 - **Bandeau** sur une page déjà ouverte : en bas au centre, `app.surface`, liseré gauche `saffron.solid` 4 px, même texte et même bouton ; l'en-tête reste utilisable.
+- **Page de connexion** : à gauche, surtitre « RAPIDFOX ACADEMY » (`saffron.fg`, capitales espacées), titre h1 serif « Apprenez la data en prenant de vraies décisions. », ligne « Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data » (espaces insécables), puis le texte de présentation en `app.muted`. À droite, la carte de connexion.
+- **Ouverture de la page de connexion** (`src/LoginIntro.tsx`) : le logo apparaît en grand au centre (fondu sur 30 % du temps), puis rétrécit et glisse jusqu'au logo de la carte. Environ 700 ms, courbe `cubic-bezier(0.2, 0, 0, 1)`, `transform` et `opacity` seulement. Une fois par session de navigateur (`sessionStorage`), jamais avec les animations réduites (système ou réglage). La copie animée est décorative et inerte : le formulaire et le clavier sont utilisables dès le premier instant.
+- **Pastille « Demandes d'aide »** : même style que la pastille des notifications (`saffron`, plein, arrondi, chiffres tabulaires). Elle est en bout de ligne sur l'entrée « Ma classe » de la barre latérale ; petite pastille en haut à droite de l'icône quand la barre est repliée ou sur téléphone ; et sur l'onglet « Demandes d'aide ».
+  - Le chiffre est décoratif. Le texte « 3 demandes d'aide en attente » est annoncé en description (`aria-describedby`), sans changer le nom du lien ou de l'onglet. Rien à zéro.
+  - Mise à jour avec la requête de suivi déjà faite toutes les 15 s (`help_pending` du suivi en direct), et tout de suite à l'arrivée d'une notification d'aide ou quand une demande est traitée.
+- **Ma classe > Étudiants** : le message aux étudiants est en haut, sur toute la largeur (destinataires, texte et « Envoyer » sur une ligne dès la tablette, empilés sur téléphone). Le suivi en direct prend ensuite toute la largeur.
 - **Connexion** : plus de case ; sous « Se connecter », en `xs` `app.muted` centré : « Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte. »
 
 ## Préférences d'affichage (ADR-0036)

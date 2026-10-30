@@ -404,8 +404,9 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
     for item in db.scalars(select(MissionAttempt).where(MissionAttempt.user_id.in_(ids), MissionAttempt.mission_version_id.in_(vids),
                                                         MissionAttempt.fast.is_(True))).all() if ids and vids else []:
         fast[item.user_id] = fast.get(item.user_id, 0) + 1
-    help_by = {h.user_id for h in db.scalars(select(HelpRequest).where(HelpRequest.user_id.in_(ids), HelpRequest.status == "pending",
-                                                                      HelpRequest.mission_version_id.in_(vids))).all()} if ids and vids else set()
+    pending_help = db.scalars(select(HelpRequest).where(HelpRequest.user_id.in_(ids), HelpRequest.status == "pending",
+                                                        HelpRequest.mission_version_id.in_(vids))).all() if ids and vids else []
+    help_by = {h.user_id for h in pending_help}
     opened = {s.chapter_id for s in db.scalars(select(BlockState).where(BlockState.cohort_id == cohort.id, BlockState.opened_at.is_not(None)))}
     personal: dict[int, set[int]] = {}
     for item in db.scalars(select(BlockUnlock).where(BlockUnlock.cohort_id == cohort.id)):
@@ -437,5 +438,7 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
                      "help": student.id in help_by, "fast_attempts": fast.get(student.id, 0), "cells": cells})
     return {"generated_at": now.isoformat(), "assignment_id": assignment.id,
             "online_count": sum(1 for r in rows if r["online"]), "student_count": len(rows),
+            # Badge « Demandes d'aide » of the teacher (same requests as the timeline's « en attente » list).
+            "help_pending": len(pending_help),
             "blocks": [{k: v for k, v in b.items() if k not in ("core", "lessons")} | {"mission_count": len(b["core"]), "lesson_count": len(b["lessons"])}
                        for b in blocks], "students": rows}

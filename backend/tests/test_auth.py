@@ -10,7 +10,7 @@ import pytest
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
-from app.auth import password_hash, utcnow
+from app.auth import LoginRequest, password_hash, utcnow
 from app.database import get_db
 from app.main import app
 from app.models import AuthEvent, User, UserSession
@@ -183,6 +183,18 @@ def test_every_session_lasts_30_days_is_renewed_at_each_visit_and_logout_revokes
         assert db.get(UserSession, sha256(session.encode()).hexdigest()).revoked_at is not None
     client.cookies.set("academy_session", session)
     assert client.get("/api/v1/auth/me").status_code == 401  # the revoked session is refused
+
+
+def test_an_older_page_that_still_sends_remember_signs_in_without_422(auth_env):
+    """ADR-0038: the « remember » field is gone from the API; an old client sending it is accepted (field ignored)."""
+    client, _ = auth_env
+    assert "remember" not in LoginRequest.model_fields
+    for value in (True, False, "oui", None):
+        response = client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test", "remember": value})
+        assert response.status_code == 200, response.text
+        assert all("Max-Age=2592000" in cookie for cookie in response.headers.get_list("set-cookie"))
+    # Unknown fields are ignored, but the required ones are still checked.
+    assert client.post("/api/v1/auth/login", json={"username": "student.a", "remember": True}).status_code == 422
 
 
 def test_a_restart_or_redeployment_signs_nobody_out(auth_env, tmp_path):

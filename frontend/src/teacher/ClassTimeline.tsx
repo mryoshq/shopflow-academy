@@ -3,6 +3,7 @@ import { Badge, Box, Button, Flex, Heading, Stack, Table, Text } from "@chakra-u
 import { api, ApiError } from "../api"
 import { Icon, Panel } from "../student/ui"
 import { SidePanel } from "./SidePanel"
+import { HELP_CHANGED } from "./HelpBadge"
 
 export const TIMELINE_REFRESH_MS = 5000
 
@@ -70,6 +71,8 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
     try {
       const result = await api<{ title?: string }>(path, "POST")
       setNotice(success(result))
+      // The « Demandes d'aide » badge of the sidebar refreshes at once (TeacherApp).
+      if (path.includes("/help/")) window.dispatchEvent(new Event(HELP_CHANGED))
       setNow(Date.now())
       await refresh()
     } catch (reason) {

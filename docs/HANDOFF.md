@@ -4,6 +4,16 @@
 
 
 
+
+## PR 1 « Accueil et suivi » (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-accueil` depuis `main` (#62, #63, #64 fusionnées). Fichiers clés : `frontend/src/App.tsx` (page de connexion), `frontend/src/LoginIntro.tsx` (ouverture), `frontend/src/teacher/HelpBadge.tsx` et `TeacherApp.tsx` (pastille), `frontend/src/teacher/LivePanel.tsx` (message en haut), `backend/app/live.py` (`help_pending`), `backend/app/auth.py` (`remember` retiré). `ThemeSwitch.tsx` supprimé (plus utilisé). Captures : `docs/captures/accueil/`.
+
+### PR 1 — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`), puis recharger la page.
+
+Prochaine action unique : revue et fusion de la PR « Accueil et suivi ».
+
 ## PR B — résilience et sessions de 30 jours (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-resilience`, partie de la PR #62 puis à jour avec `main`. ADR-0038. Fichiers clés : `frontend/src/resilience.ts`, `frontend/src/Unavailable.tsx`, `frontend/src/api.ts`, `frontend/src/App.tsx`, `frontend/public/sw.js`, `frontend/public/offline.html` et `offline.js`, `backend/app/auth.py`, `scripts/ops/measure_downtime.py`, `docs/RUNBOOK.md`.

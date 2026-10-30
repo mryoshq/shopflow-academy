@@ -12,7 +12,7 @@ export type LiveCell = { chapter_id: number; state: "closed" | "not_started" | "
   lessons_read?: number; lesson_count?: number }
 export type LiveStudent = { id: number; name: string; online: boolean; seen_at: string | null; mission: string | null; help: boolean; fast_attempts: number; cells: LiveCell[] }
 export type LiveBlock = { chapter_id: number; position: number; title: string; module: string; open: boolean; mission_count: number }
-export type Live = { generated_at: string; assignment_id: number; online_count: number; student_count: number; blocks: LiveBlock[]; students: LiveStudent[] }
+export type Live = { generated_at: string; assignment_id: number; online_count: number; student_count: number; help_pending?: number; blocks: LiveBlock[]; students: LiveStudent[] }
 type Sent = { message_id: string; text: string; created_at: string; whole_class: boolean; read_count: number; recipients: { student: string; read_at: string | null }[] }
 export type PlanItem = { chapter_id: number; title: string; minutes: number; at: string; opened?: boolean }
 export type Plan = { enabled: boolean; paused: boolean; end_at: string | null; items: PlanItem[]; proposal: PlanItem[]; server_time: string }
@@ -73,7 +73,9 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
   const blocks = visibleBlocks(data, all)
   const index = new Map(data.blocks.map((block, i) => [block.chapter_id, i]))
 
-  return <Grid templateColumns={{ base: "1fr", xl: "minmax(0, 1fr) 21rem" }} gap="4" alignItems="start">
+  // The message form comes first, the live grid takes the whole width under it.
+  return <Stack gap="4">
+    <MessageComposer assignmentId={assignmentId} students={data.students} />
     <Panel as="section" aria-labelledby="live-title" p="0" overflow="hidden">
       <Flex p="4" pb="2" gap="3" align="center" wrap="wrap" justify="space-between">
         <Stack gap="0">
@@ -132,8 +134,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
         <Flex gap="1" align="center"><Icon name="user" size={12} />ouvert pour lui seul</Flex>
       </Flex>
     </Panel>
-    <MessageComposer assignmentId={assignmentId} students={data.students} />
-  </Grid>
+  </Stack>
 }
 
 /** Message to the class or to one student (280 characters), with read receipts. */
@@ -169,21 +170,25 @@ function MessageComposer({ assignmentId, students }: { assignmentId: number; stu
   return <Panel as="section" aria-labelledby="message-title" p="4">
     <Stack gap="3">
       <Heading as="h3" size="sm" id="message-title">Message aux étudiants</Heading>
-      <NativeSelect.Root size="sm">
-        <NativeSelect.Field aria-label="Destinataires" value={target} onChange={(event) => setTarget(event.target.value)}>
-          <option value="all">Toute la classe</option>
-          {students.map((student) => <option key={student.id} value={String(student.id)}>{student.name}</option>)}
-        </NativeSelect.Field>
-        <NativeSelect.Indicator />
-      </NativeSelect.Root>
-      <Box>
-        <Textarea aria-label="Texte du message" value={text} maxLength={MAX_MESSAGE} rows={3} placeholder="Ex. : pause de 5 minutes, reprise à 10 h 35."
-          onChange={(event) => setText(event.target.value)} />
-        <Text fontSize="xs" color={text.length >= MAX_MESSAGE ? "saffron.fg" : "app.muted"} textAlign="end">{text.length} / {MAX_MESSAGE}</Text>
-      </Box>
-      <Button size="sm" colorPalette="brand" disabled={!text.trim()} loading={busy} onClick={() => void send()}><Icon name="send" size={14} />Envoyer</Button>
+      {/* One row from tablet width up: recipients, text, send; stacked on a phone. */}
+      <Grid templateColumns={{ base: "1fr", md: "14rem minmax(0, 1fr) auto" }} gap="3" alignItems="start">
+        <NativeSelect.Root size="sm">
+          <NativeSelect.Field aria-label="Destinataires" value={target} onChange={(event) => setTarget(event.target.value)}>
+            <option value="all">Toute la classe</option>
+            {students.map((student) => <option key={student.id} value={String(student.id)}>{student.name}</option>)}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+        <Box>
+          <Textarea aria-label="Texte du message" value={text} maxLength={MAX_MESSAGE} rows={2} placeholder="Ex. : pause de 5 minutes, reprise à 10 h 35."
+            onChange={(event) => setText(event.target.value)} />
+          <Text fontSize="xs" color={text.length >= MAX_MESSAGE ? "saffron.fg" : "app.muted"} textAlign="end">{text.length} / {MAX_MESSAGE}</Text>
+        </Box>
+        <Button size="sm" colorPalette="brand" disabled={!text.trim()} loading={busy} onClick={() => void send()}><Icon name="send" size={14} />Envoyer</Button>
+      </Grid>
       {status && <Text role="status" fontSize="sm" color="brand.fg">{status}</Text>}
-      {sent.length > 0 && <Stack gap="2" as="ul" listStyleType="none" p="0" m="0" aria-label="Messages envoyés" maxH="15rem" overflowY="auto">
+      {sent.length > 0 && <Grid as="ul" templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }} gap="2"
+        listStyleType="none" p="0" m="0" aria-label="Messages envoyés" maxH="15rem" overflowY="auto">
         {sent.slice(0, 6).map((item) => <Box as="li" key={item.message_id} p="2" rounded="md" bg="app.sunken" fontSize="sm">
           <Text>{item.text}</Text>
           <Text fontSize="xs" color="app.muted">{hhmm(item.created_at)} · {item.whole_class ? "classe" : item.recipients.map((r) => r.student).join(", ")} · lu par {item.read_count}/{item.recipients.length}</Text>
@@ -191,7 +196,7 @@ function MessageComposer({ assignmentId, students }: { assignmentId: number; stu
             <Stack gap="0" mt="1">{item.recipients.map((r) => <Text key={r.student} fontSize="xs" color={r.read_at ? "green.fg" : "app.muted"}>{r.student} : {r.read_at ? `lu à ${hhmm(r.read_at)}` : "non lu"}</Text>)}</Stack>
           </details>
         </Box>)}
-      </Stack>}
+      </Grid>}
     </Stack>
   </Panel>
 }

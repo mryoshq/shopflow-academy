@@ -259,6 +259,22 @@ def test_help_handled_notifies_the_student(env):
     assert notes(a)[0]["kind"] == "help_handled"
 
 
+
+def test_live_grid_counts_pending_help_requests_for_the_teacher_badge(env):
+    """« Demandes d'aide » badge: the live grid (already polled) gives the number of pending requests of the class."""
+    clients, _ = env
+    teacher, a, b = clients["teacher"], clients["a"], clients["b"]
+    klass = the_class(teacher)
+    live = lambda: teacher.get(f"/api/v1/teacher/classes/{klass['id']}/live").json()  # noqa: E731
+    assert live()["help_pending"] == 0
+    first = missions_of(a)[0]["mission_version_id"]
+    one = post(a, f"/api/v1/student/missions/{first}/help", {"message": "?"}).json()["id"]
+    post(b, f"/api/v1/student/missions/{missions_of(b)[0]['mission_version_id']}/help", {"message": "Aide"})
+    assert live()["help_pending"] == 2
+    post(teacher, f"/api/v1/teacher/help/{one}/handle")
+    assert live()["help_pending"] == 1
+
+
 # Web Push --------------------------------------------------------------------------------
 
 def test_web_push_keys_endpoints_and_vapid_signature(env, monkeypatch):

@@ -3,7 +3,8 @@ import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack
 import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"
 import { ObserverHome } from "./observer/ObserverHome"
-import { ThemeSwitch } from "./ThemeSwitch"
+import { useColorMode } from "./useColorMode"
+import { LoginIntro } from "./LoginIntro"
 import { AccountMenu } from "./preferences/AccountMenu"
 import { PreferencesProvider } from "./preferences/PreferencesProvider"
 import { Logo } from "./Logo"
@@ -28,6 +29,9 @@ function csrfToken(): string {
 
 export function App() {
   const [state, setState] = useState<PageState>("loading")
+  // The login page has no theme switch: it follows the system, or the choice already remembered (ADR-0036).
+  useColorMode()
+  const cardLogo = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<User | null>(null)
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -140,7 +144,7 @@ export function App() {
               {user.role !== "observer" && <NotificationBell />}
               {user.role === "observer" && <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette="gray" variant="subtle" rounded="full" px="2.5">Observateur (lecture seule)</Badge>}
               <AccountMenu account={{ username: user.username, role: user.role }} onLogout={() => void onLogout()} busy={busy} variant="header" />
-            </Flex> : <ThemeSwitch />}
+            </Flex> : null}
             </Flex>
           </Flex>
         </Container>
@@ -150,14 +154,16 @@ export function App() {
         {state === "anonymous" && (
           <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
-              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">Module B3 IA/Data</Text>
-              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">Apprendre en décidant sur de vraies situations de données.</Heading>
-              <Text fontSize="lg" color="app.muted" lineHeight="1.7">Des missions courtes autour de ShopFlow : vous observez les données, vous choisissez, et vous recevez un retour immédiat. Aucun code à écrire pour avancer.</Text>
+              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">Rapidfox Academy</Text>
+              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">Apprenez la data en prenant de vraies décisions.</Heading>
+              <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data</Text>
+              <Text fontSize="lg" color="app.muted" lineHeight="1.7">Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.</Text>
             </Stack>
             <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label="Connexion">
               <form onSubmit={onLogin}>
               <Stack gap="5">
-                <Flex align="center" gap="3"><Logo size={56} />
+                {/* The opening animation (LoginIntro) lands on this logo, once per browser session. */}
+                <Flex align="center" gap="3"><Box ref={cardLogo} w="56px" h="56px" flexShrink={0}><Logo size={56} /></Box>
                   <BrandName size="lg" /></Flex>
                 <Stack gap="1"><Heading as="h2" size="xl">Connexion</Heading><Text color="app.muted" fontSize="sm">Utilisez l’identifiant transmis par votre enseignant.</Text></Stack>
                 <Field.Root required>
@@ -175,6 +181,7 @@ export function App() {
               </Stack>
               </form>
             </Box>
+            <LoginIntro target={cardLogo} size={56} />
           </Flex>
         )}
         {state === "authenticated" && user?.role === "observer" && <Stack gap="4"><ObserverHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}

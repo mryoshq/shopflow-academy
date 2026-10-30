@@ -101,3 +101,30 @@ it("the shell: sidebar views, back button, Ctrl+K to a sub-view, students online
   fireEvent.keyDown(search, { key: "Enter" })
   await vi.waitFor(() => expect(window.location.hash).toBe("#/classe/difficultes"))
 })
+
+it("« Demandes d’aide » badge: on « Ma classe » and on its tab, accessible text, nothing at zero, refreshed when a request is handled", async () => {
+  const main = { course: { id: 5, slug: "c", title: "Cours", status: "published" }, cohort: { id: 3, label: "Classe B3", student_count: 10 }, assignment_id: 7, assigned_version: 1, latest_version: 1 }
+  let pending = 3
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+    if (url.endsWith("/teacher/main/setup")) return json(main)
+    if (url.endsWith("/live")) return json({ online_count: 3, student_count: 10, help_pending: pending, blocks: [], students: [] })
+    if (url.endsWith("/timeline")) return json(timeline)
+    if (url.includes("/notifications")) return json({ unread: 0, items: [] })
+    return json([])
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  window.location.hash = "#/classe/aide"
+  wrap(<NotificationProvider><TeacherApp username="demo.enseignant" onLogout={vi.fn()} busy={false} resumed /></NotificationProvider>)
+  const nav = await screen.findByRole("navigation", { name: "Navigation enseignant" })
+  const classe = within(nav).getByRole("link", { name: "Ma classe" })  // the name does not change
+  await vi.waitFor(() => expect(classe).toHaveAccessibleDescription("3 demandes d’aide en attente"))
+  expect(await screen.findByRole("tab", { name: "Demandes d’aide" })).toHaveAccessibleDescription("3 demandes d’aide en attente")
+  // A handled request refreshes the badge at once (no faster polling).
+  const lives = () => fetchMock.mock.calls.filter(([url]) => String(url).endsWith("/live")).length
+  const before = lives()
+  pending = 0
+  window.dispatchEvent(new Event("academy:help-changed"))
+  await vi.waitFor(() => expect(lives()).toBe(before + 1))
+  await vi.waitFor(() => expect(classe).not.toHaveAttribute("aria-describedby"))
+  expect(screen.queryByText(/demandes? d’aide en attente/)).not.toBeInTheDocument()
+})

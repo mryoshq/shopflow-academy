@@ -43,8 +43,9 @@ for (const theme of ["light", "dark"] as const) {
     await page.goto("/", { waitUntil: "commit" })
     await page.waitForFunction(() => document.documentElement.classList.length > 0)
     expect(await page.evaluate(() => document.documentElement.className)).toContain(theme)
-    const radio = page.getByRole("radio", { name: theme === "dark" ? "Sombre" : "Clair" })
-    await expect(radio).toHaveAttribute("aria-checked", "true")
+    // The login page has no theme switch any more: it applies the remembered choice (class on <html>).
+    await expect(page.getByRole("radiogroup", { name: "Thème" })).toHaveCount(0)
+    await expect(page.locator("html")).toHaveClass(new RegExp(`\\b${theme}\\b`))
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/${theme}-01-connexion.png`, animations: "disabled" })
 
@@ -68,19 +69,19 @@ for (const theme of ["light", "dark"] as const) {
   })
 }
 
-test("the theme switch follows the system, then remembers an explicit choice", async ({ page }) => {
+test("the login page follows the system theme, live, unless a choice is remembered", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "dark" })
   await page.goto("/")
-  await expect(page.getByRole("radio", { name: "Système" })).toHaveAttribute("aria-checked", "true")
-  await expect(page.locator("html")).toHaveClass(/dark/)
-  // Arrow keys move inside the radio group.
-  await page.getByRole("radio", { name: "Système" }).focus()
-  await page.keyboard.press("ArrowRight")
-  await expect(page.getByRole("radio", { name: "Clair" })).toHaveAttribute("aria-checked", "true")
-  await expect(page.locator("html")).toHaveClass(/light/)
+  await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible()
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/)
+  // « Système »: a change of the system theme applies at once.
+  await page.emulateMedia({ colorScheme: "light" })
+  await expect(page.locator("html")).toHaveClass(/\blight\b/)
+  // A choice made earlier in the account menu wins over the system.
+  await page.evaluate(() => window.localStorage.setItem("shopflow:theme", "dark"))
   await page.reload()
-  await expect(page.locator("html")).toHaveClass(/light/)
-  await page.getByRole("radio", { name: "Système" }).click()
+  await expect(page.locator("html")).toHaveClass(/\bdark\b/)
+  await page.evaluate(() => window.localStorage.removeItem("shopflow:theme"))
 })
 
 test("390x844: one column, no horizontal scroll, shortcuts 1-9 and Enter", async ({ page }) => {
