@@ -7,6 +7,7 @@ import { ThemeSwitch } from "./ThemeSwitch"
 import { AccountMenu } from "./preferences/AccountMenu"
 import { PreferencesProvider } from "./preferences/PreferencesProvider"
 import { Logo } from "./Logo"
+import { BrandName } from "./BrandName"
 import { NotificationBell, NotificationProvider } from "./live/notifications"
 import { ComfortButton } from "./comfort/Comfort"
 import { LeaderboardNavigation } from "./leaderboard/LeaderboardPage"
@@ -109,7 +110,7 @@ export function App() {
           <Flex align="center" justify="space-between" gap="3" wrap="wrap">
             <Flex align="center" gap="2.5">
               <Logo size={32} />
-              <Text fontWeight="bold" letterSpacing="0.02em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>
+              <BrandName />
             </Flex>
             <Flex align="center" gap={{ base: "2", md: "3" }} wrap="wrap" justify="end">
             {state === "authenticated" && user ? <Flex align="center" gap={{ base: "1.5", md: "2" }} wrap="wrap" justify="end">
@@ -117,7 +118,7 @@ export function App() {
               {user.role !== "observer" && <NotificationBell />}
               {user.role === "observer" && <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette="gray" variant="subtle" rounded="full" px="2.5">Observateur (lecture seule)</Badge>}
               <AccountMenu account={{ username: user.username, role: user.role }} onLogout={() => void onLogout()} busy={busy} variant="header" />
-            </Flex> : <><ThemeSwitch /><Text fontSize="sm" color="app.muted" display={{ base: "none", md: "block" }}>Python Data Engineering & SQL avancé</Text></>}
+            </Flex> : <ThemeSwitch />}
             </Flex>
           </Flex>
         </Container>
@@ -136,7 +137,7 @@ export function App() {
               <form onSubmit={onLogin}>
               <Stack gap="5">
                 <Flex align="center" gap="3"><Logo size={56} />
-                  <Text fontWeight="bold" fontSize="xl" letterSpacing="0.01em">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text></Flex>
+                  <BrandName size="lg" /></Flex>
                 <Stack gap="1"><Heading as="h2" size="xl">Connexion</Heading><Text color="app.muted" fontSize="sm">Utilisez l’identifiant transmis par votre enseignant.</Text></Stack>
                 <Field.Root required>
                   <Field.Label>Identifiant</Field.Label>

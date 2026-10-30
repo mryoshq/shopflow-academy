@@ -2,6 +2,7 @@ import { Suspense, useCallback, useEffect, useState, type ReactNode } from "reac
 import { Badge, Box, Button, Flex, Heading, IconButton, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { Logo } from "../Logo"
+import { MODULE, SchoolName } from "../BrandName"
 import { AccountMenu } from "../preferences/AccountMenu"
 import { TeacherStudio } from "../TeacherStudio"
 import { LeaderboardPage } from "../leaderboard/LeaderboardPage"
@@ -142,12 +143,14 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     <Flex align="center" gap="2.5" h="16" flexShrink={0} px="2" justify={{ base: "center", md: wide ? "space-between" : "center" }}>
       <Flex align="center" gap="2.5" minW="0">
         <Logo size={28} />
-        {wide && <Text display={{ base: "none", md: "block" }} fontWeight="semibold" letterSpacing="0.01em" lineHeight="1.1" whiteSpace="nowrap">ShopFlow <Text as="span" color="brand.fg">Academy</Text></Text>}
+        {wide && <Box display={{ base: "none", md: "block" }} minW="0"><SchoolName /></Box>}
       </Flex>
       {wide && <IconButton display={{ base: "none", md: "inline-flex" }} variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={true}
         aria-label="Replier la navigation" title="Replier la navigation"><NavIcon name="collapse" size={18} /></IconButton>}
     </Flex>
-    {!wide && <Flex display={{ base: "none", md: "flex" }} justify="center" mb="1">
+    {/* ADR-0037: the module under the school name, on its own line (the sidebar is too narrow for both). */}
+    {wide && <Text display={{ base: "none", md: "block" }} px="2.5" mt="-2" mb="2" fontSize="xs" color="app.muted" lineHeight="1.35">{MODULE}</Text>}
+        {!wide && <Flex display={{ base: "none", md: "flex" }} justify="center" mb="1">
       <IconButton variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={false} aria-label="Déplier la navigation" title="Déplier la navigation">
         <NavIcon name="expand" size={18} /></IconButton></Flex>}
     {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
@@ -166,16 +169,16 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     </Box>
   </chakra.nav>
 
-  const topbar = <Flex as="header" align="center" gap={{ base: "2", md: "3" }} px={{ base: "3", md: "8" }} minH="16" wrap="wrap"
+  const topbar = <Flex as="header" align="center" gap={{ base: "2", md: "3" }} px={{ base: "3", md: "8" }} minH="16" wrap="nowrap"
     borderBottomWidth="1px" borderColor="app.border" bg="color-mix(in srgb, var(--chakra-colors-app-canvas) 88%, transparent)"
     backdropFilter="saturate(1.4) blur(8px)" position="sticky" top="0" zIndex="sticky">
     {route.view === "aujourdhui"
-      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Text>
-      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="fit-content">{info.title}</Heading>}
+      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="0" truncate>{info.title}</Text>
+      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="0" truncate title={info.title}>{info.title}</Heading>}
     {online && <Link href="#/classe/etudiants" display="inline-flex" alignItems="center" gap="2" minH="11" px="2" rounded="md" fontSize="sm" color="app.ink"
       textDecoration="none" aria-label={`${online.online} étudiant${online.online > 1 ? "s" : ""} en ligne sur ${online.total}`}>
       <Box w="2.5" h="2.5" rounded="full" bg={online.online ? "green.solid" : "app.border"} aria-hidden="true" />
-      <Text as="span" aria-hidden="true" css={{ fontVariantNumeric: "tabular-nums" }}>{online.online} en ligne</Text>
+      <Text as="span" aria-hidden="true" css={{ fontVariantNumeric: "tabular-nums" }}>{online.online}<Box as="span" display={{ base: "none", sm: "inline" }}> en ligne</Box></Text>
     </Link>}
     <Button variant="outline" size="sm" onClick={() => setPalette(true)} aria-label="Recherche rapide (Ctrl+K)" gap="2" color="app.muted">
       <NavIcon name="search" size={16} /><Box as="span" display={{ base: "none", lg: "inline" }}>Rechercher</Box>
@@ -224,7 +227,7 @@ function ViewContent({ route, main, username, go, navigate, reload }: {
 }) {
   const assignmentId = main.assignment_id
   const context = <Flex gap="3" align="center" wrap="wrap" mb="4">
-    <Badge colorPalette="brand" variant="subtle" rounded="full" whiteSpace="normal" maxW="full" lineHeight="1.4" py="0.5">{main.cohort!.label} · {main.cohort!.student_count} étudiants</Badge>
+    <Badge colorPalette="brand" variant="subtle" rounded="md" whiteSpace="normal" maxW="full" lineHeight="1.4" py="0.5">{main.cohort!.label} · {main.cohort!.student_count} étudiants</Badge>
     <Text fontSize="sm" color="app.muted">{main.course!.title}{main.assigned_version ? ` · version ${main.assigned_version} pour la classe` : " · pas encore publié"}</Text>
   </Flex>
 

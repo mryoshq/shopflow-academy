@@ -2,7 +2,9 @@
 // variant docs/design/shopflow-logo-vert.png, rules in docs/design/README.md). The fox drawing is never
 // changed: only resized, cropped, made transparent around it (light logo) or, for 16/32 px, traced head
 // (public/icons/favicon.svg). The green variant serves the dark theme and the full-bleed icons.
-//   SHOPFLOW_CHROME_PATH=/path/to/chrome node scripts/make-icons.mjs
+// Favicons follow the theme chosen in the application (ADR-0036): favicon-light.png (the owner's green logo,
+// full drawing) and favicon-dark.png (its clay variant); favicon.svg stays as the fallback without JavaScript.
+//   SHOPFLOW_CHROME_PATH=/path/to/chrome node scripts/make-icons.mjs [file.png …]   (no argument: every file)
 import { readFileSync } from "node:fs"
 import { chromium } from "@playwright/test"
 
@@ -11,6 +13,8 @@ const source = "data:image/png;base64," + readFileSync(new URL("../../docs/desig
 const faviconSvg = readFileSync(new URL("favicon.svg", dir), "utf8")
 // ADR-0035: the dark theme and the full-bleed icons use the clay variant (scripts/recolor-logo.py, same drawing).
 const green = "data:image/png;base64," + readFileSync(new URL("../../docs/design/shopflow-logo-terre-cuite.png", import.meta.url)).toString("base64")
+// The owner's green logo (light favicon).
+const vert = "data:image/png;base64," + readFileSync(new URL("../../docs/design/shopflow-logo-vert.png", import.meta.url)).toString("base64")
 const favicon = "data:image/svg+xml;base64," + Buffer.from(faviconSvg).toString("base64")
 // 16 px: even thicker strokes, and the inner ear line (the finest detail) left out.
 const favicon16 = "data:image/svg+xml;base64," + Buffer.from(faviconSvg.replace("stroke-width: 84", "stroke-width: 98")
@@ -23,8 +27,8 @@ await page.setContent("<body style='margin:0;background:transparent'></body>")
 
 /** Draws the source, the green variant or the favicon into a size×size canvas; returns a PNG data URL. */
 async function render(options) {
-  return page.evaluate(async ({ source, green, favicon, favicon16, SAND, GREEN, SAFFRON, o }) => {
-    const img = new Image(); img.src = o.favicon ? (o.size <= 16 ? favicon16 : favicon) : o.green ? green : source; await img.decode()
+  return page.evaluate(async ({ source, green, vert, favicon, favicon16, SAND, GREEN, SAFFRON, o }) => {
+    const img = new Image(); img.src = o.favicon ? (o.size <= 16 ? favicon16 : favicon) : o.vert ? vert : o.green ? green : source; await img.decode()
     // Downscale in halves for a clean result.
     // The traced favicon is drawn straight at its size (crisp vector rasterisation).
     let canvas = document.createElement("canvas"), width = o.favicon ? o.size : img.width
@@ -67,16 +71,23 @@ async function render(options) {
       og.putImageData(data, 0, 0)
     }
     return out.toDataURL("image/png")
-  }, { source, green, favicon, favicon16, SAND, GREEN, SAFFRON, o: options })
+  }, { source, green, vert, favicon, favicon16, SAND, GREEN, SAFFRON, o: options })
 }
 
+const only = process.argv.slice(2)
+const wanted = (name) => only.length === 0 || only.includes(name)
+
 async function save(name, dataUrl) {
+  if (!wanted(name)) return
   const { writeFileSync } = await import("node:fs")
   writeFileSync(new URL(name, dir), Buffer.from(dataUrl.split(",")[1], "base64"))
   console.log(name)
 }
 
 const sand = "#F6F1EB"
+// Rounded square of the full logo (64 px, sharp at 16 and 32 px in the tab, and on high-density screens).
+await save("favicon-light.png", await render({ size: 64, vert: true, circle: true, scale: 1 / 0.9 }))
+await save("favicon-dark.png", await render({ size: 64, green: true, circle: true, scale: 1 / 0.9 }))
 await save("favicon-16.png", await render({ favicon: true, size: 16 }))
 await save("icon-32.png", await render({ favicon: true, size: 32 }))
 // Full-bleed icons (PWA, Apple, maskable): the green variant as drawn by the owner. Its rings and dots
@@ -90,14 +101,17 @@ await save("icon-maskable-512.png", await render({ size: 512, green: true }))
 await save("logo-light.png", await render({ size: 256, recolor: "light" }))
 await save("logo-dark.png", await render({ size: 256, green: true, scale: 1 / 0.82, circle: true }))
 
-// Share image 1200×630: full logo and the name in text.
+// Share image 1200×630: full logo, the school, the module and its case studies in text (ADR-0037).
+if (wanted("share-1200x630.png")) {
 const logo = await render({ size: 512, recolor: "light" })
 await page.setViewportSize({ width: 1200, height: 630 })
 await page.setContent(`<html><body style="margin:0;width:1200px;height:630px;background:#FAF9F5;display:flex;align-items:center;gap:56px;padding:0 80px;box-sizing:border-box;font-family:'Segoe UI',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;color:#141413">
   <img src="${logo}" width="420" height="420" alt="">
-  <div><div style="font-size:72px;font-weight:700;letter-spacing:-0.01em;line-height:1.05">ShopFlow<br><span style="color:#9C4426">Academy</span></div>
-  <div style="margin-top:24px;font-size:30px;color:#5E5D59">Python Data Engineering &amp; SQL avancé</div>
+  <div><div style="font-size:72px;font-weight:700;letter-spacing:-0.01em;line-height:1.05">Rapidfox<br><span style="color:#9C4426">Academy</span></div>
+  <div style="margin-top:24px;font-size:30px;color:#5E5D59">Python Data Engineering &amp; SQL Avancé</div>
+  <div style="margin-top:8px;font-size:24px;color:#5E5D59">Cas d’étude : ShopFlow · CampusEquip</div>
   <div style="margin-top:28px;height:10px;width:160px;border-radius:5px;background:#B5532F"></div></div></body></html>`)
 await page.screenshot({ path: new URL("share-1200x630.png", dir).pathname })
 console.log("share-1200x630.png")
+}
 await browser.close()

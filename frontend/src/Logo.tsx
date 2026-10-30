@@ -1,7 +1,7 @@
 import { Image } from "@chakra-ui/react"
 
 /** Owner's logo (docs/design/README.md): full logo in the light theme, green variant in the dark theme.
- *  Decorative: the name « ShopFlow Academy » is always written next to it. */
+ *  Decorative: the name « Rapidfox Academy » is always written next to it (ADR-0037). */
 export function Logo({ size = 36 }: { size?: number }) {
   // Pixel strings: a bare number would be read as a Chakra size token (32 = 8rem).
   const px = `${size}px`

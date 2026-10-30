@@ -54,7 +54,7 @@ export function ObserverHome() {
       <Flex gap="2" align="center" wrap="wrap"><Text fontWeight="semibold">{current.cohort}</Text><Text color="app.muted">· {current.course_title} · version {current.version} · {current.student_count} étudiants</Text>
         {current.paused && <Badge colorPalette="saffron" variant="subtle">En pause</Badge>}</Flex>
       <Tabs.Root value={tab} onValueChange={(event) => setTab(event.value)} variant="line" colorPalette="brand" lazyMount>
-        <Tabs.List aria-label="Espace observateur">
+        <Tabs.List aria-label="Espace observateur" overflowX="auto">
           <Tabs.Trigger value="cours">Aperçu du cours</Tabs.Trigger>
           <Tabs.Trigger value="progression">Progression</Tabs.Trigger>
           <Tabs.Trigger value="resultats">Résultats</Tabs.Trigger>

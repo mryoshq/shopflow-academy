@@ -16,7 +16,7 @@ for (const scheme of ["light", "dark"]) {
    ${cell("SVG 16 x8", `<img src="${u("favicon.svg")}" width=16 height=16 style="transform:scale(8);transform-origin:bottom center;image-rendering:pixelated;margin:0 56px">`)}
    ${cell("PNG 16 x8", `<img src="${u("favicon-16.png")}" width=128 height=128 style="image-rendering:pixelated">`)}
    ${cell("PNG 32 x4", `<img src="${u("icon-32.png")}" width=128 height=128 style="image-rendering:pixelated">`)}
-   ${cell("onglet", `<div style="display:flex;gap:6px;align-items:center;background:${header};padding:6px 10px;border-radius:8px 8px 0 0"><img src="${u("favicon.svg")}" width=16 height=16><span>ShopFlow Academy</span></div>`)}
+   ${cell("onglet", `<div style="display:flex;gap:6px;align-items:center;background:${header};padding:6px 10px;border-radius:8px 8px 0 0"><img src="${u("favicon.svg")}" width=16 height=16><span>Rapidfox Academy</span></div>`)}
   </div>
   <div style="display:flex;gap:28px;align-items:end;margin-bottom:20px">
    ${cell("icon-192", `<img src="${u("icon-192.png")}" width=120>`)}${cell("icon-512", `<img src="${u("icon-512.png")}" width=120>`)}

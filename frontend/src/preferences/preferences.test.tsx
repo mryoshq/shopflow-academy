@@ -78,3 +78,14 @@ it("Ctrl + comma opens the settings", async () => {
   fireEvent.keyDown(window, { key: ",", ctrlKey: true })
   expect(await screen.findByRole("dialog", { name: "Paramètres" })).toBeInTheDocument()
 })
+
+it("the tab icon follows the theme chosen in the application, not the system (ADR-0036)", async () => {
+  document.head.innerHTML = '<link rel="icon" href="/icons/favicon.svg" type="image/svg+xml"><link rel="icon" href="/icons/icon-32.png">'
+  const { applyTheme } = await import("../useColorMode")
+  applyTheme("light")
+  expect(document.querySelectorAll("link[rel~='icon']")).toHaveLength(1)
+  expect(document.getElementById("theme-icon")).toHaveAttribute("href", "/icons/favicon-light.png")
+  applyTheme("dark")
+  expect(document.getElementById("theme-icon")).toHaveAttribute("href", "/icons/favicon-dark.png")
+  expect(document.querySelectorAll("link[rel~='icon']")).toHaveLength(1)
+})

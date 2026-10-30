@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-30 — Style inspiré de Claude, Rapidfox Academy, préférences d'affichage (`feat/theme-claude-style`, PR #62)
+
+- Nom affiché : **Rapidfox Academy** (l'école), avec le module « Python Data Engineering & SQL Avancé » et ses cas d'étude ShopFlow · CampusEquip ; sous-domaine inchangé. ADR-0037.
+- Style visuel calme et éditorial (ADR-0035) ; menu de compte, paramètres, taille du texte, réduction des animations (ADR-0036).
+- Favicon selon le thème choisi dans l'application : logo vert en clair, terre cuite en sombre.
+- Boutons à contour à bordure neutre ; onglets sur une ligne qui défilent sur téléphone ; barre haute enseignante sur une ligne à 390 px ; corrections d'alignement relevées sur captures.
+
 ## 2026-10-29 — Sprint 3, partie Q2 : « Le voyage d'une donnée » intégré (`claude/lucid-brahmagupta-htwgun-q2`)
 
 - L'application du propriétaire (7 scènes, lecture, scénarios de panne, glossaire, architecture) est dans l'Academy : `#/voyage/<scène>`, entrée de menu étudiant et enseignant, lien depuis les leçons.

@@ -1,4 +1,4 @@
-/* ShopFlow Academy service worker.
+/* Rapidfox Academy service worker.
  * ADR-0024 (PWA): static files only. Never /api/ (answers, scores, notifications), never /media/,
  * never another origin. Pages: network first, offline page when the network is down.
  * Hashed build files (/assets/) and icons: cache first. A new version waits until the page asks
@@ -62,7 +62,7 @@ self.addEventListener("push", (event) => {
       }
     } catch (error) { /* offline: generic text */ }
     if (pages.some((page) => page.visibilityState === "visible")) return
-    await self.registration.showNotification("ShopFlow Academy", { body: text, tag: "academy", icon: "/icons/icon-192.png", badge: "/icons/favicon-16.png" })
+    await self.registration.showNotification("Rapidfox Academy", { body: text, tag: "academy", icon: "/icons/icon-192.png", badge: "/icons/favicon-16.png" })
   })())
 })
 

@@ -247,7 +247,7 @@ export function AutoPlanPanel({ assignmentId }: { assignmentId: number }) {
       {!plan?.enabled && <Stack gap="3">
         <Flex gap="2" align="end" wrap="wrap">
           <Box><Text as="label" fontSize="sm" fontWeight="medium" display="block" mb="1">Heure de fin
-            <Input mt="1" type="time" size="sm" value={end} onChange={(event) => { setEnd(event.target.value); setPreview(null) }} w="8rem" />
+            <Input display="block" mt="1" type="time" size="sm" value={end} onChange={(event) => { setEnd(event.target.value); setPreview(null) }} w="8rem" />
           </Text></Box>
           <Button size="sm" variant="outline" colorPalette="brand" loading={busy} onClick={() => void act("/preview", { end_at: todayAt(end) })}>Voir le planning</Button>
         </Flex>

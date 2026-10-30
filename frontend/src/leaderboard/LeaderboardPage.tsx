@@ -116,7 +116,7 @@ export function LeaderboardPage({ role, assignmentId }: { role: Role; assignment
       </Box>}
       {!board.hidden && <Text display={{ base: "block", md: "none" }} fontSize="sm" color="app.muted">Faites défiler le tableau pour voir toutes les colonnes.</Text>}
       {board.hidden ? <Text role="status">{board.settings.enabled ? "Le leaderboard est masqué pendant un bloc ouvert. Profitez de ce temps pour explorer et essayer." : "Le leaderboard est désactivé. Vous pouvez l’activer quand la classe est prête."}</Text> : <Tabs.Root defaultValue="ranking" colorPalette="brand">
-        <Tabs.List><Tabs.Trigger value="ranking">Leaderboard général</Tabs.Trigger><Tabs.Trigger value="daily">Progression du jour</Tabs.Trigger></Tabs.List>
+        <Tabs.List overflowX="auto"><Tabs.Trigger value="ranking">Leaderboard général</Tabs.Trigger><Tabs.Trigger value="daily">Progression du jour</Tabs.Trigger></Tabs.List>
         <Tabs.Content value="ranking"><RankingTable rows={board.rows} /></Tabs.Content>
         <Tabs.Content value="daily"><Stack gap="3"><Text color="app.muted">Journée du {new Intl.DateTimeFormat("fr-MA", { dateStyle: "long", timeZone: board.timezone }).format(new Date(`${board.day}T12:00:00Z`))} · heure du Maroc. Un bloc compte quand toutes ses activités principales sont terminées, leçons comprises.</Text><RankingTable rows={board.daily_rows} daily /></Stack></Tabs.Content>
       </Tabs.Root>}

@@ -1,7 +1,7 @@
 import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react"
 
 /**
- * ShopFlow Academy visual direction (see docs/DESIGN.md, ADR-0035).
+ * Rapidfox Academy visual direction (see docs/DESIGN.md, ADR-0035).
  * Calm, editorial interface: warm ivory canvas and warm greys, a clay accent used sparingly,
  * serif headings, soft corners and light shadows. Warm charcoal in dark mode. All text pairs meet WCAG AA.
  */
@@ -178,6 +178,8 @@ const config = defineConfig({
     },
     slotRecipes: {
       nativeSelect: { slots: ["root", "field", "indicator"], variants: { variant: { outline: { field: { borderColor: "app.field" } } } } },
+      // Tabs keep their label on one line; a list wider than the screen scrolls inside its own frame (390 px).
+      tabs: { slots: ["root", "list", "trigger", "content", "contentGroup", "indicator"], base: { trigger: { whiteSpace: "nowrap", flexShrink: 0 } } },
     },
   },
 })

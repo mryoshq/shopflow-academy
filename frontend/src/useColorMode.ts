@@ -16,6 +16,22 @@ export function readChoice(): ThemeChoice {
   } catch { return "system" }
 }
 
+/** ADR-0036: the tab icon follows the theme chosen in the application (same rule as public/theme-init.js). */
+export function setFavicon(dark: boolean) {
+  let icon = document.getElementById("theme-icon") as HTMLLinkElement | null
+  if (!icon) {
+    document.querySelectorAll("link[rel~='icon']").forEach((link) => link.remove())
+    icon = document.createElement("link")
+    icon.id = "theme-icon"
+    icon.rel = "icon"
+    icon.type = "image/png"
+    icon.setAttribute("sizes", "64x64")
+    document.head.appendChild(icon)
+  }
+  const href = dark ? "/icons/favicon-dark.png" : "/icons/favicon-light.png"
+  if (icon.getAttribute("href") !== href) icon.setAttribute("href", href)
+}
+
 /** Same logic as public/theme-init.js (which runs before the first paint). */
 export function applyTheme(choice: ThemeChoice) {
   const dark = choice === "dark" || (choice === "system" && systemDark())
@@ -23,6 +39,7 @@ export function applyTheme(choice: ThemeChoice) {
   root.classList.toggle("dark", dark)
   root.classList.toggle("light", !dark)
   root.style.colorScheme = dark ? "dark" : "light"
+  setFavicon(dark)
 }
 
 export function useColorMode() {

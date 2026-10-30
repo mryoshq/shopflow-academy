@@ -49,11 +49,14 @@ test("icons and theme colours are served", async ({ page }) => {
     expect(response.headers()["content-type"]).toContain(type)
   }
   await page.goto("/")
-  await expect(page.locator('link[rel="icon"][type="image/svg+xml"]')).toHaveAttribute("href", "/icons/favicon.svg")
+  // favicon.svg stays in the HTML for browsers without JavaScript; theme-init.js puts the themed icon (ADR-0036).
+  expect(await (await page.request.get("/")).text()).toContain('href="/icons/favicon.svg"')
+  await expect(page.locator("link[rel~='icon']")).toHaveCount(1)
+  await expect(page.locator("link#theme-icon")).toHaveAttribute("href", /\/icons\/favicon-(light|dark)\.png$/)
   await expect(page.locator('meta[name="theme-color"]')).toHaveCount(2)
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute("content", /\/icons\/share-1200x630\.png$/)
   // The login card shows the full logo next to the name written in text.
-  await expect(page.getByText("ShopFlow Academy").first()).toBeVisible()
+  await expect(page.getByText("Rapidfox Academy").first()).toBeVisible()
 })
 
 for (const theme of ["light", "dark"] as const) {

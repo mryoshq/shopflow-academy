@@ -1,6 +1,17 @@
-# HANDOFF — reprise ShopFlow Academy
+# HANDOFF — reprise Rapidfox Academy
 
 
+
+
+## PR #62 — style, Rapidfox Academy, préférences (30/10/2026)
+
+Branche `feat/theme-claude-style` (base `main`). ADR-0035 (style), ADR-0036 (préférences d'affichage et menu de compte), ADR-0037 (nom affiché). Composant du nom : `frontend/src/BrandName.tsx`. Favicons `favicon-light.png` et `favicon-dark.png` produits par `node scripts/make-icons.mjs favicon-light.png favicon-dark.png` (le script accepte maintenant une liste de fichiers). Relecture : `docs/captures/pr62/`.
+
+### PR #62 — À faire en local après fusion
+1. Pas de migration. Redéployer le frontend à une pause ; recharger la page (le service worker prend la nouvelle version).
+2. Vérifier l'onglet du navigateur : renard vert en clair, terre cuite en sombre.
+
+Prochaine action unique : revue et fusion de la PR #62, puis PR B (résilience) depuis `main`.
 
 ## Q2 — « Le voyage d'une donnée » intégré (29/10/2026)
 
