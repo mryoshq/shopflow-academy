@@ -224,6 +224,29 @@ Dans `body`, `scenario`, `instructions`, `explanation`, `hook`, `example`, `prac
 | lignes commençant par `1. `, `2. `… | liste numérotée (commence au premier numéro) |
 | `### Sous-titre` | sous-titre (**`body` seulement**) |
 | ligne vide | nouveau paragraphe |
+| lignes commençant par `\|` | tableau (voir ci-dessous, **prévu pour `body`**) |
+
+**Tableaux dans `body`.** Un tableau Markdown simple, entouré de lignes vides :
+
+1. une ligne d'en-tête ;
+2. une ligne de séparation, une cellule `---` par colonne ;
+3. les lignes de données, avec **autant de cellules que l'en-tête**.
+
+Chaque ligne commence par `|`. L'alignement est facultatif, dans la ligne de séparation : `:---` à gauche, `---:` à droite, `:---:` centré. Les cellules acceptent `**gras**` et `` `code` `` ; `\|` écrit une barre dans une cellule. Au plus 12 colonnes et 100 lignes de données, comme un média `data.kind: table`.
+
+```yaml
+body: |
+  Les contrats du mois :
+
+  | contract_id | client | montant |
+  | :--- | :---: | ---: |
+  | 2001 | **Atlas** SARL | `1 200 DH` |
+  | 2002 | Rif Nord | 950 DH |
+
+  Le contrat 2001 est le plus élevé.
+```
+
+L'étudiant voit un vrai tableau : en-tête distinct, lignes alternées, qui défile horizontalement dans son cadre sur téléphone. Un tableau **mal formé** (pas de ligne de séparation, nombre de cellules différent de l'en-tête, limites dépassées) est affiché tel quel, en texte brut, sans erreur ; le compilateur donne alors un avertissement avec le fichier et la ligne. Pour des données à trier ou à décrire pour les lecteurs d'écran, préférez un média `data.kind: table` (§ 6).
 
 Rien d'autre n'est interprété : le HTML est refusé par le compilateur, et le texte est toujours affiché comme du texte (jamais comme du HTML).
 
@@ -354,12 +377,13 @@ Erreurs avec **fichier et numéro de ligne** si : champ obligatoire manquant ; l
 
 Résumé produit : modules, blocs, leçons, missions, bonus, points par module et par bloc (principal et bonus), durée estimée (missions principales et leçons), objectifs couverts.
 
-Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `explanation`, paragraphe de plus de 80 mots (`body`, `hook`, `example`, `practice`, `explanation`), `objective` de plus d'une phrase, bloc dont les missions principales ne font pas 10 à 20 minutes.
+Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `explanation`, paragraphe de plus de 80 mots (`body`, `hook`, `example`, `practice`, `explanation`), `objective` de plus d'une phrase, tableau mal formé dans `body` (ligne exacte du tableau), bloc dont les missions principales ne font pas 10 à 20 minutes.
 
 ## 10. Journal des changements de syntaxe
 
 | Date | Changement |
 |---|---|
+| 30/10/2026 | Tableaux Markdown simples dans `body` (en-tête, séparation `\| --- \|`, alignement facultatif, 12 colonnes, 100 lignes) ; avertissement pour un tableau mal formé. ADR-0022. |
 | 28/10/2026 (sprint 2, M) | `data.kind: flashcards` (leçons et révisions, 2 à 30 cartes `{front, back}`, `title` facultatif) et nouvel élément non noté `### Révision :` (`kind: review`), compté comme une leçon. ADR-0028. |
 | 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
 | 29/10/2026 (sprint 3, Q) | `data.kind: experience` (`experience: voyage`, `scene`, `data_file: experiences/voyage.json`). ADR-0033. |
