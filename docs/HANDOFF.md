@@ -7,14 +7,24 @@
 
 ## Expérience CampusEquip (31/10/2026)
 
-Branche `claude/lucid-brahmagupta-htwgun-campusequip` depuis `main` (après #73 ; la PR « Vue étudiant » #74 est indépendante, les deux touchent `routes.ts`, `TeacherApp.tsx` et `useHashRoute.ts` : je résous le conflit après la première fusion). Source : `mryoshq/shopflow-courses@0fb639e`, `assets/CampusEquip-experience.zip`. Fichiers clés : `frontend/src/campusequip/`, `frontend/scripts/campusequip-css.mjs`, `frontend/public/experiences/campusequip/`, `backend/app/curriculum_schema.py`, `backend/tests/test_campusequip_files.py`, `e2e/campusequip.spec.ts`. ADR-0044. Captures : `docs/captures/campusequip/`.
+Branche `claude/lucid-brahmagupta-htwgun-campusequip` depuis `main` (après #73), puis `main` fusionnée après #74 (Vue étudiant : CampusEquip s'ouvre aussi dans la vue étudiant, en pleine largeur). Source : `mryoshq/shopflow-courses@0fb639e`, `assets/CampusEquip-experience.zip`. Fichiers clés : `frontend/src/campusequip/`, `frontend/scripts/campusequip-css.mjs`, `frontend/public/experiences/campusequip/`, `backend/app/curriculum_schema.py`, `backend/tests/test_campusequip_files.py`, `e2e/campusequip.spec.ts`. ADR-0044. Captures : `docs/captures/campusequip/`.
 
 ### CampusEquip — À faire en local après fusion
 1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
 2. Vérifier : tableau de bord étudiant > « Le voyage d'une location » ; barre latérale enseignant > « Expérience CampusEquip » ; le PDF du sujet s'ouvre depuis « Sources et sujet ».
 3. Facultatif : dans une leçon, `data: {kind: experience, experience: campusequip, scene: 3}`, puis recompiler le cours.
 
-Prochaine action unique : revue et fusion des PR « Vue étudiant » (#74) et « Expérience CampusEquip », puis PR « Espace observateur professionnel ».
+Prochaine action unique : revue et fusion de la PR « Expérience CampusEquip » (#75), puis de la PR « Espace observateur professionnel » (#76).
+
+## Vue étudiant, en ligne au survol, clics rapides (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-vue-etudiant` depuis `main` (#73 fusionnée). Fichiers clés : `backend/app/student_view.py`, `backend/app/student.py` (`course_payload`), `backend/app/project.py` (`project_page`), `backend/app/live.py` (`online_since`), `frontend/src/studentview/` (`adapter.ts`, `StudentView.tsx`), `frontend/src/useHashRoute.ts` (`StudentRouterContext`), `frontend/src/teacher/OnlineStatus.tsx`, `ClassTimeline.tsx`, `routes.ts`, `e2e/student-view.spec.ts`. ADR-0043. Captures : `docs/captures/vue-etudiant/`.
+
+### Vue étudiant — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier : barre latérale > « Vue étudiant », puis « Revenir à mon interface » ; survoler « n en ligne ».
+
+PR #74 fusionnée le 31/10/2026.
 
 ## Binôme surprise (31/10/2026)
 
@@ -26,7 +36,7 @@ Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée).
 3. Prévenir la classe que le travail seul n'est plus possible : les étudiants sans binôme le forment ou s'inscrivent au binôme surprise.
 4. Le moment venu : Projet > Binômes > « Lancer le tirage », vérifier l'aperçu, cocher au besoin les équipes d'une seule personne, puis « Valider ce tirage ».
 
-Prochaine action unique : revue et fusion de la PR « Binôme surprise ».
+PR #73 fusionnée le 31/10/2026.
 
 ## Interface en anglais — PR 3/3 (31/10/2026)
 

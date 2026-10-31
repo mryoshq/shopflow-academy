@@ -10,11 +10,12 @@ import { msg } from "../i18n"
  *   #/projet                (ADR-0034)
  *   #/voyage[/<scène>]      (ADR-0033, in the menu once the application is integrated)
  *   #/campusequip[/<étape>] (ADR-0044)
+ *   #/etudiant[/mission/<id> | /projet | /voyage/<scène> | /campusequip/<étape>]   (ADR-0043: « Vue étudiant », the student's own routes inside)
  *   #/classement            #/classement/<assignment id>
  *   #/reglages/notifications | observateurs | classes | objectif
  */
 
-export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "projet" | "classement" | "voyage" | "campusequip" | "reglages"
+export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "projet" | "classement" | "voyage" | "campusequip" | "etudiant" | "reglages"
 export type TeacherRoute = { view: ViewKey; sub: string; params: Record<string, string> }
 export type SubView = { key: string; label: string }
 export type ViewInfo = { key: ViewKey; label: string; title: string; icon: string; subs: SubView[] }
@@ -32,6 +33,7 @@ export const VIEWS: ViewInfo[] = [
   { key: "classement", label: "Leaderboard", title: "Leaderboard", icon: "trophy", subs: [] },
   { key: "voyage", label: msg("Le voyage d’une donnée"), title: msg("Le voyage d’une donnée"), icon: "route", subs: [] },
   { key: "campusequip", label: msg("Expérience CampusEquip"), title: msg("Expérience CampusEquip"), icon: "layers", subs: [] },
+  { key: "etudiant", label: msg("Vue étudiant"), title: msg("Vue étudiant"), icon: "eye", subs: [] },
   { key: "reglages", label: msg("Réglages"), title: msg("Réglages"), icon: "settings", subs: [
     { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }, { key: "objectif", label: msg("Objectif de classe") }] },
 ]
@@ -45,6 +47,9 @@ export function viewInfo(view: ViewKey): ViewInfo {
 
 /** Parses a hash such as "#/cours/apercu" or "#/classe/etudiants?eleve=12"; null when it is not a teacher route. */
 export function parseRoute(hash: string): TeacherRoute | null {
+  // ADR-0043: inside « Vue étudiant », the rest of the address is the student's own route.
+  const student = /^#\/etudiant(?:\/(mission\/\d{1,9}|projet|voyage(?:\/[1-7])?|campusequip(?:\/[1-7])?))?$/.exec(hash)
+  if (student) return { view: "etudiant", sub: student[1] ?? "", params: {} }
   const match = /^#\/([a-z]+)(?:\/([a-z0-9]+))?(?:\?(.*))?$/.exec(hash)
   if (!match) return null
   const info = VIEWS.find((item) => item.key === match[1])
@@ -65,6 +70,7 @@ export function formatRoute(route: TeacherRoute): string {
 }
 
 export function rememberRoute(route: TeacherRoute): void {
+  if (route.view === "etudiant") return  // a resumed session never reopens « Vue étudiant »
   try { window.localStorage.setItem(LAST_ROUTE_KEY, formatRoute({ ...route, params: {} })) } catch { /* not remembered */ }
 }
 

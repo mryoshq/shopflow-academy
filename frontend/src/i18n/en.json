@@ -282,7 +282,6 @@
   "Classe observée": "Observed class",
   "Classe passée à la nouvelle version": "Class moved to the new version",
   "Classe suivie": "Followed class",
-  "Clics rapides": "Quick clicks",
   "Clics rapides :": "Quick clicks:",
   "Cliquez sur la carte, ou appuyez sur Espace ou Entrée, pour la retourner ; flèches gauche et droite pour changer de carte.": "Click the card, or press Space or Enter, to flip it; left and right arrows to change card.",
   "Code": "Code",
@@ -1348,5 +1347,18 @@
   ", à partir de l’étape {{scene}}": ", from step {{scene}}",
   "Expérience CampusEquip": "CampusEquip experience",
   "Sept étapes : un lot CampusEquip, des guichets jusqu’aux indicateurs.": "Seven steps: a CampusEquip batch, from the rental desks to the indicators.",
-  "Ouvrir l’expérience CampusEquip": "Open the CampusEquip experience"
+  "Ouvrir l’expérience CampusEquip": "Open the CampusEquip experience",
+  "Vue étudiant": "Student view",
+  "Vue étudiant, rien n’est enregistré": "Student view, nothing is saved",
+  "Afficher aussi les blocs fermés": "Also show closed blocks",
+  "Revenir à mon interface": "Back to my interface",
+  "Vue étudiant : rien n’est enregistré.": "Student view: nothing is saved.",
+  "depuis moins d’une minute": "for less than a minute",
+  "depuis {{hours}} h {{minutes}}": "for {{hours}} h {{minutes}}",
+  "Personne n’est en ligne pour le moment.": "Nobody is online right now.",
+  "Voir toute la classe": "See the whole class",
+  "{{count}} clic rapide_one": "{{count}} quick click",
+  "{{count}} clic rapide_other": "{{count}} quick clicks",
+  "depuis {{count}} min_one": "for {{count}} min",
+  "depuis {{count}} min_other": "for {{count}} min"
 }

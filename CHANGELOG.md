@@ -8,6 +8,12 @@
 - Les deux expériences prennent toute la largeur de la page.
 - CSV, référentiels et PDF du sujet servis comme ressources statiques, empreintes vérifiées avec `provenance.json`, sans corrigé ; tests du modèle livrés conservés. ADR-0044.
 
+## 2026-10-31 — Interface enseignant : vue étudiant, étudiants en ligne au survol, clics rapides (`claude/lucid-brahmagupta-htwgun-vue-etudiant`)
+
+- « Vue étudiant » (barre latérale et Ctrl+K) : l'application exactement comme un étudiant de la classe la voit, sur la version publiée (tableau de bord, missions, projet, récompenses). Lecture seule garantie par le serveur : réponses testées avec 0 point, aucune tentative, aucun indice, aucune présence, aucune notification enregistrés, jamais de corrigé. Bandeau « Vue étudiant, rien n'est enregistré » et « Revenir à mon interface ».
+- « n en ligne » : au survol, au focus ou au toucher, la liste des étudiants en ligne avec leur mission et depuis quand ; le clic ouvre toujours Ma classe.
+- « Clics rapides » quitte le tableau des missions : indicateur discret dans le détail d'une mission et dans la fiche de l'élève, règles inchangées (ADR-0027). ADR-0043.
+
 ## 2026-10-31 — Binôme surprise : plus de travail individuel dans l'espace projet (`claude/lucid-brahmagupta-htwgun-binome`)
 
 - Sans équipe, l'étudiant choisit « Former mon binôme » ou « Je tente le binôme surprise » ; l'option « travailler seul » disparaît et une équipe d'une seule personne ne peut plus déposer.

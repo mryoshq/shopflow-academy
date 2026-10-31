@@ -170,7 +170,7 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
         <Text fontSize="sm" color="app.muted">{t("« Bloqués » : plusieurs essais sans réussite.")}</Text></Box>
       <Box overflowX="auto" tabIndex={0} role="region" aria-label={t("Tableau des missions (défilement horizontal)")}>
         <Table.Root size="sm" variant="line" aria-label={t("Statistiques par mission")}>
-          <Table.Header><Table.Row bg="app.sunken">{[t("Mission"), t("Bloc"), t("Réussites"), t("Essais"), t("Indices"), t("Bloqués"), t("Clics rapides")].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+          <Table.Header><Table.Row bg="app.sunken">{[t("Mission"), t("Bloc"), t("Réussites"), t("Essais"), t("Indices"), t("Bloqués")].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>
             <Table.Cell fontWeight="medium"><Button variant="plain" size="sm" p="0" h="auto" minH="0" color="brand.fg" textDecoration="underline" whiteSpace="normal" textAlign="start"
               onClick={() => setMissionOpen(item)} aria-label={t("Détail de la mission {{title}}", { title: item.title })}>{item.title}</Button>{item.bonus ? " (bonus)" : ""}</Table.Cell>
@@ -179,7 +179,6 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.attempts}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.hints}</Table.Cell>
             <Table.Cell>{item.stuck.length ? item.stuck.join(", ") : "—"}</Table.Cell>
-            <Table.Cell>{item.fast?.length ? <Text fontSize="sm"><Badge colorPalette="saffron" variant="outline" rounded="full" mr="1">{item.fast_attempts}</Badge>{item.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ")}</Text> : "—"}</Table.Cell>
           </Table.Row>)}</Table.Body>
         </Table.Root>
       </Box>
@@ -204,7 +203,11 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
         <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>{t("Réussites :")}</strong> {missionOpen.completed} / {data.student_count}</Text>
         <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>{t("Essais :")}</strong> {missionOpen.attempts} · <strong>{t("Indices :")}</strong> {missionOpen.hints}</Text>
         <Text><strong>{t("Bloqués :")}</strong> {missionOpen.stuck.length ? missionOpen.stuck.join(", ") : "personne"}</Text>
-        <Text><strong>{t("Clics rapides :")}</strong> {missionOpen.fast?.length ? missionOpen.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ") : "aucun"}</Text>
+        {/* ADR-0027: information only, never a sanction; shown discreetly and only when there are some. */}
+        {missionOpen.fast?.length ? <Flex gap="2" align="baseline" wrap="wrap" fontSize="xs" color="app.muted" data-testid="fast-indicator">
+          <Badge colorPalette="saffron" variant="outline" rounded="full" size="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{tn("{{count}} clic rapide", missionOpen.fast_attempts ?? 0)}</Badge>
+          <Text as="span">{missionOpen.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ")}</Text>
+        </Flex> : null}
       </Stack>}
     </SidePanel>
   </Stack>
