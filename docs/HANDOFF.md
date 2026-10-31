@@ -14,6 +14,16 @@ Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` (PR « Radio sim
 2. Un navigateur réglé en anglais affiche l'interface en anglais ; « Français » se choisit dans le menu de compte ou Paramètres > Général.
 
 Prochaine action unique : revue et fusion des PR « Radio simplifiée » et « Plus de plaisir », puis fusion de `main` dans la PR « Interface en anglais » pour traduire leurs textes.
+## Radio simplifiée — PR 1/3 (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). Fichiers clés : `frontend/src/comfort/Comfort.tsx` (`Radio`, `loadVolume`), `backend/app/comfort.py` (`RADIO_HOSTS`, `stream_url`), `gateway/nginx.conf` (`media-src`), `.env.example`, `docs/RUNBOOK.md` (« Radio d'ambiance »), ADR-0024 (révision du 30/10). Captures : `docs/captures/radio/`.
+
+### Radio — À faire en local après fusion
+1. Dans `.env`, remplacer `RADIO_STREAMS` par la ligne de `.env.example` (les anciens liens YouTube sont désormais ignorés).
+2. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la passerelle doit être reconstruite pour la nouvelle CSP.
+3. `python3 scripts/smoke_public.py http://127.0.0.1:3080` : le contrôle « CSP media-src : radios seulement » doit passer.
+
+PR #67 fusionnée le 31/10/2026.
 
 ## Tableaux Markdown dans les leçons (30/10/2026)
 

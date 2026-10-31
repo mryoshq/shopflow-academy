@@ -6,6 +6,11 @@
 - Choix « Français / English » dans le menu de compte et dans Paramètres > Général, mémorisé dans le navigateur, langue du navigateur par défaut ; `<html lang>` suit le choix.
 - Dates et nombres formatés selon la langue ; le contenu des cours reste dans sa langue d'origine.
 - Une clé de traduction manquante fait échouer la CI. Structure prête pour l'arabe (direction de droite à gauche), non livré. ADR-0040.
+## 2026-10-30 — Radio simplifiée (`claude/lucid-brahmagupta-htwgun-radio`)
+
+- Radio d'ambiance : lecteur audio de la plateforme (lecture/pause, volume mémorisé dans le navigateur) au lieu du lecteur YouTube ; deux stations, « Nightride FM — Chillsynth » et « Nightwave Plaza ». Rien ne démarre seul ; le navigateur lit le flux directement.
+- Flux définis sur le serveur (`RADIO_STREAMS`), limités aux hôtes de la CSP `media-src` ; « Radio indisponible pour le moment » en cas d'erreur réseau.
+- Panneau Confort : sur téléphone, il ne sort plus de l'écran.
 
 ## 2026-10-30 — Tableaux Markdown dans les leçons (`claude/lucid-brahmagupta-htwgun-tableaux`)
 

@@ -52,6 +52,14 @@ Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauv
    - Seul un 401 (session expirée ou révoquée) ramène à la connexion. Une erreur 502, 503 ou 504, ou une coupure du réseau, ne déconnecte jamais.
    - **Limite** : un étudiant qui ouvre le site **pour la première fois** pendant une panne voit encore la page d'erreur de Cloudflare, car le service worker n'est pas encore installé sur son appareil. Il suffit de recharger après le rétablissement.
 
+## Radio d'ambiance (facultative, ADR-0024)
+- Dans `.env` (une ligne) ; ce sont les adresses officielles vérifiées le 30/10/2026 :
+  `RADIO_STREAMS='[{"label":"Nightride FM — Chillsynth","url":"https://stream.nightride.fm/chillsynth.mp3"},{"label":"Nightwave Plaza","url":"https://radio.plaza.one/mp3"}]'`
+- Puis `docker compose up -d --wait backend`. Vide = pas de radio.
+- Seuls les hôtes `stream.nightride.fm` et `radio.plaza.one` sont acceptés : ce sont ceux de `media-src` dans `gateway/nginx.conf`. Ajouter une autre station = ajouter son hôte aux deux endroits (`RADIO_HOSTS` dans `backend/app/comfort.py` et la CSP), avec une PR.
+- Vérifier un flux : `curl -sI https://radio.plaza.one/mp3 | head -3` doit répondre `audio/mpeg`.
+- Si une station tombe, l'étudiant voit « Radio indisponible pour le moment » ; rien d'autre n'est touché.
+
 ## Sauvegardes et restauration
 
 - **Automatique** : le service `backup` fait un `pg_dump` vérifié (`pg_restore --list`) au démarrage puis toutes les 6 h, avec somme SHA-256 et `last-backup.json` ; il garde les 28 dernières (`*-auto.dump`, 7 jours) et ne supprime jamais les sauvegardes manuelles. Réglages : `BACKUP_DIR`, `BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP` dans `.env`.
