@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <!-- Rafi, mascotte Rapidfox Academy (dessin original). Les groupes #pupil-left / #pupil-right bougent pour suivre le curseur. -->
+  <defs>
+    <radialGradient id="cheek" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#F28C6B" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#F28C6B" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <!-- tail -->
+  <path d="M150 150 C190 140 192 100 172 92 C176 118 160 132 140 136 Z" fill="#B5532F"/>
+  <path d="M172 92 C182 100 184 112 178 120 C176 108 172 100 166 96 Z" fill="#FAF4EC"/>
+  <!-- body -->
+  <ellipse cx="100" cy="158" rx="42" ry="30" fill="#C96442"/>
+  <ellipse cx="100" cy="164" rx="24" ry="20" fill="#FAF4EC"/>
+  <!-- ears -->
+  <path d="M46 70 L40 18 L84 48 Z" fill="#B5532F"/>
+  <path d="M154 70 L160 18 L116 48 Z" fill="#B5532F"/>
+  <path d="M52 60 L49 30 L74 48 Z" fill="#2B2B29"/>
+  <path d="M148 60 L151 30 L126 48 Z" fill="#2B2B29"/>
+  <!-- head -->
+  <path d="M30 86 C30 52 62 38 100 38 C138 38 170 52 170 86 C170 118 140 138 100 138 C60 138 30 118 30 86 Z" fill="#C96442"/>
+  <!-- face mask -->
+  <path d="M100 74 C82 74 60 84 52 104 C62 124 80 134 100 134 C120 134 138 124 148 104 C140 84 118 74 100 74 Z" fill="#FAF4EC"/>
+  <!-- eyes -->
+  <g id="eye-left">
+    <ellipse cx="74" cy="90" rx="19" ry="21" fill="#FFFFFF" stroke="#2B2B29" stroke-width="3"/>
+    <g id="pupil-left">
+      <circle cx="74" cy="92" r="11" fill="#1F1E1D"/>
+      <circle cx="78" cy="87" r="4" fill="#FFFFFF"/>
+      <circle cx="70" cy="97" r="1.8" fill="#FFFFFF"/>
+    </g>
+  </g>
+  <g id="eye-right">
+    <ellipse cx="126" cy="90" rx="19" ry="21" fill="#FFFFFF" stroke="#2B2B29" stroke-width="3"/>
+    <g id="pupil-right">
+      <circle cx="126" cy="92" r="11" fill="#1F1E1D"/>
+      <circle cx="130" cy="87" r="4" fill="#FFFFFF"/>
+      <circle cx="122" cy="97" r="1.8" fill="#FFFFFF"/>
+    </g>
+  </g>
+  <!-- cheeks -->
+  <ellipse cx="58" cy="114" rx="12" ry="7" fill="url(#cheek)"/>
+  <ellipse cx="142" cy="114" rx="12" ry="7" fill="url(#cheek)"/>
+  <!-- nose and mouth -->
+  <path d="M93 112 Q100 107 107 112 Q100 120 93 112 Z" fill="#2B2B29"/>
+  <path d="M92 122 Q100 128 108 122" fill="none" stroke="#2B2B29" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- paws -->
+  <ellipse cx="80" cy="182" rx="11" ry="7" fill="#B5532F"/>
+  <ellipse cx="120" cy="182" rx="11" ry="7" fill="#B5532F"/>
+</svg>
