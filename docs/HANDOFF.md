@@ -5,6 +5,17 @@
 
 
 
+## Expérience CampusEquip (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-campusequip` depuis `main` (après #73 ; la PR « Vue étudiant » #74 est indépendante, les deux touchent `routes.ts`, `TeacherApp.tsx` et `useHashRoute.ts` : je résous le conflit après la première fusion). Source : `mryoshq/shopflow-courses@0fb639e`, `assets/CampusEquip-experience.zip`. Fichiers clés : `frontend/src/campusequip/`, `frontend/scripts/campusequip-css.mjs`, `frontend/public/experiences/campusequip/`, `backend/app/curriculum_schema.py`, `backend/tests/test_campusequip_files.py`, `e2e/campusequip.spec.ts`. ADR-0044. Captures : `docs/captures/campusequip/`.
+
+### CampusEquip — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier : tableau de bord étudiant > « Le voyage d'une location » ; barre latérale enseignant > « Expérience CampusEquip » ; le PDF du sujet s'ouvre depuis « Sources et sujet ».
+3. Facultatif : dans une leçon, `data: {kind: experience, experience: campusequip, scene: 3}`, puis recompiler le cours.
+
+Prochaine action unique : revue et fusion des PR « Vue étudiant » (#74) et « Expérience CampusEquip », puis PR « Espace observateur professionnel ».
+
 ## Binôme surprise (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée). Fichiers clés : `backend/app/project_draw.py` (tirage, inscriptions, révélation), `backend/app/project.py` (pas de dépôt seul, état du tirage dans la page étudiant), `backend/app/models.py`, migration `0016_project_draw`, `frontend/src/project/SurpriseDraw.tsx` (panneau enseignant, révélation), `StudentProject.tsx`, `TeacherProject.tsx`, `e2e/project-draw.spec.ts`. ADR-0041. Captures : `docs/captures/binome/`.

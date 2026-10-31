@@ -128,6 +128,7 @@ FRENCH = {
     "Invalid video file": "fichier vidéo invalide",
     "Invalid image file": "fichier image invalide",
     "Experience data too large": "données de l'expérience trop volumineuses (200 Ko et 8 niveaux au plus)",
+    "Experience data only for voyage": "`data_file` n'est accepté que pour `experience: voyage` (CampusEquip a ses propres données)",
     "Invalid download file": "fichier à télécharger invalide",
     "An image needs an alt text": "une image demande un texte alternatif `alt`",
     "Invalid captions file": "fichier de sous-titres invalide",

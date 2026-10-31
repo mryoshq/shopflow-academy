@@ -1343,5 +1343,10 @@
   "Un seul étudiant sans équipe : ajoutez-le à la main à un binôme, ou proposez une équipe d’une seule personne au tirage.": "Only one student without a team: add them to a team by hand, or include a one-person team in the draw.",
   "Masquer les anciens tirages": "Hide older draws",
   "Afficher {{count}} tirage plus ancien_one": "Show {{count}} older draw",
-  "Afficher {{count}} tirage plus ancien_other": "Show {{count}} older draws"
+  "Afficher {{count}} tirage plus ancien_other": "Show {{count}} older draws",
+  "Le voyage d’une location": "The journey of a rental",
+  ", à partir de l’étape {{scene}}": ", from step {{scene}}",
+  "Expérience CampusEquip": "CampusEquip experience",
+  "Sept étapes : un lot CampusEquip, des guichets jusqu’aux indicateurs.": "Seven steps: a CampusEquip batch, from the rental desks to the indicators.",
+  "Ouvrir l’expérience CampusEquip": "Open the CampusEquip experience"
 }

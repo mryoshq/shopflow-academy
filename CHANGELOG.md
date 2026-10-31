@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-31 — Expérience CampusEquip, « Le voyage d'une location » (`claude/lucid-brahmagupta-htwgun-campusequip`)
+
+- L'application livrée par le propriétaire (shopflow-courses@0fb639e) est intégrée dans `frontend/src/campusequip/`, selon le cadre du voyage. Thème unique avec l'Academy (vert en clair, terre cuite en sombre), mode sombre AA, téléphone, chargement différé, « Réduire les animations ».
+- Adresse `#/campusequip[/<étape>]`, carte sur le tableau de bord étudiant (à côté du voyage) et entrée dans la barre latérale de l'enseignant.
+- `data.kind: experience` accepte `experience: campusequip` pour l'ouvrir depuis une leçon (schéma, compilateur, COURSE-AUTHORING.md).
+- Les deux expériences prennent toute la largeur de la page.
+- CSV, référentiels et PDF du sujet servis comme ressources statiques, empreintes vérifiées avec `provenance.json`, sans corrigé ; tests du modèle livrés conservés. ADR-0044.
+
 ## 2026-10-31 — Binôme surprise : plus de travail individuel dans l'espace projet (`claude/lucid-brahmagupta-htwgun-binome`)
 
 - Sans équipe, l'étudiant choisit « Former mon binôme » ou « Je tente le binôme surprise » ; l'option « travailler seul » disparaît et une équipe d'une seule personne ne peut plus déposer.

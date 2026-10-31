@@ -549,13 +549,14 @@ def display_too_large(display: object) -> bool:
 
 
 class ExperienceDisplay(Described):
-    """An interactive experience of the Academy opened from a lesson (ADR-0033): « voyage » = « Le voyage d'une donnée ».
+    """An interactive experience of the Academy opened from a lesson: « voyage » = « Le voyage d'une donnée »
+    (ADR-0033), « campusequip » = « Le voyage d'une location » (ADR-0044).
 
-    ``scene`` is the optional starting scene (1 to 7); ``data`` holds the exact values given by the course
-    (JSON file of the course folder), merged over the experience's own defaults."""
+    ``scene`` is the optional starting scene or step (1 to 7); ``data`` (voyage only) holds the exact values
+    given by the course (JSON file of the course folder), merged over the experience's own defaults."""
     model_config = ConfigDict(extra="forbid")
     kind: Literal["experience"]
-    experience: Literal["voyage"]
+    experience: Literal["voyage", "campusequip"]
     title: str = Field(default="", max_length=200)
     scene: int | None = Field(default=None, ge=1, le=7)
     data: dict | None = None
@@ -571,6 +572,8 @@ class ExperienceDisplay(Described):
 
         if self.data is not None and (len(json.dumps(self.data, ensure_ascii=False)) > MAX_EXPERIENCE_DATA or json_depth(self.data) > 8):
             raise ValueError("Experience data too large")
+        if self.data is not None and self.experience != "voyage":
+            raise ValueError("Experience data only for voyage")
         return self
 
 
