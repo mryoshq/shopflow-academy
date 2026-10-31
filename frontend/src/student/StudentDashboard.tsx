@@ -6,6 +6,7 @@ import type { Dashboard, DashboardBlock, DashboardCourse, DashboardMission } fro
 import { useNotificationFeed } from "../live/notifications"
 import { VOYAGE_READY } from "../voyage"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
+import { ClassGoalPanel, ProgressPanel } from "../rewards/Rewards"
 
 type Props = { navigate: (path: string) => void }
 
@@ -16,6 +17,12 @@ export function continueTarget(dashboard: Dashboard, remembered: number | null):
   const todo = open.find((mission) => !mission.bonus && mission.status !== "completed")
     ?? open.find((mission) => mission.status !== "completed")
   return todo ?? open.find((mission) => mission.mission_version_id === remembered) ?? open[0] ?? null
+}
+
+/** ADR-0039: the progression shown is the main course's (the demonstration only when it is alone). */
+export function rewardsCourse(dashboard: Dashboard): DashboardCourse | null {
+  const withRewards = dashboard.courses.filter((course) => course.rewards)
+  return withRewards.find((course) => !course.is_demo) ?? withRewards[0] ?? null
 }
 
 export function StudentDashboard({ navigate }: Props) {
@@ -101,6 +108,10 @@ export function StudentDashboard({ navigate }: Props) {
             {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">Bonus :</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} pts, comptés à part.</Text>}
           </Stack>
         </Panel>)}
+        {rewardsCourse(data) && <Stack gap="4">
+          <ProgressPanel rewards={rewardsCourse(data)!.rewards!} />
+          {rewardsCourse(data)!.rewards!.class_goal && <ClassGoalPanel goal={rewardsCourse(data)!.rewards!.class_goal!} />}
+        </Stack>}
         <TeacherMessages />
         <Panel>
           <Stack gap="2">

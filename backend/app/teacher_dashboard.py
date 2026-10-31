@@ -144,8 +144,12 @@ def student_detail(assignment_id: int, user_id: int, response: Response, auth: A
     from app.progress import attempt_points, definitions
 
     defs = definitions(db, ids)
+    from app.rewards import student_rewards
+
     return {
         "id": student.id, "display_name": display_name(student.username),
+        # ADR-0039: level, streaks and badges, shown apart from the grade.
+        "rewards": student_rewards(db, release, student.id),
         "missions": [{
             "mission_version_id": vid, "title": titles[vid], "status": state[vid]["status"], "locked_by": state[vid]["locked_by"],
             "unlocked_by_teacher": state[vid]["unlocked_by_teacher"],

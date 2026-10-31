@@ -5,11 +5,22 @@
 
 
 
+## Plus de plaisir — PR 2/3 (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main`, puis `main` fusionnée après #67. Fichiers clés : `backend/app/rewards.py` (séries, XP, niveaux, badges, objectif de classe, `recompute`), `backend/app/rewards_models.py`, migration `0015_rewards`, `frontend/src/rewards/` (`Rewards.tsx`, `celebrate.ts`), branchements dans `student.py`, `teacher_dashboard.py`, `StudentDashboard.tsx`, `MissionPlayer.tsx`, `TeacherApp.tsx`, `SettingsDialog.tsx`. ADR-0039. Captures : `docs/captures/plaisir/`.
+
+### Plaisir — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md` (Sauvegardes et restauration), avec `avant-0015-rewards` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0015_rewards` s'applique seule.
+3. Attribuer les badges déjà mérités, sans notification : `docker compose exec backend python -m app.rewards recompute`.
+4. Facultatif : Réglages > Objectif de classe pour choisir la mesure et la cible.
+
+Prochaine action unique : revue et fusion de la PR « Plus de plaisir » (#69), puis de la PR « Interface en anglais » (#70).
 ## Test de charge : limite de la connexion (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-charge` depuis `main` (#67 fusionnée). `scripts/load_test.py` : `LOGIN_P95_LIMIT_MS = 3000` pour la connexion, `P95_LIMIT_MS = 1500` pour toutes les autres requêtes. Rien à faire en local.
 
-Prochaine action unique : revue et fusion de cette PR, puis fusion de `main` dans #69 et #70 pour qu'elles en profitent.
+PR #71 fusionnée le 31/10/2026.
 
 ## Radio simplifiée — PR 1/3 (30/10/2026)
 
@@ -20,7 +31,7 @@ Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). 
 2. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la passerelle doit être reconstruite pour la nouvelle CSP.
 3. `python3 scripts/smoke_public.py http://127.0.0.1:3080` : le contrôle « CSP media-src : radios seulement » doit passer.
 
-Prochaine action unique : revue et fusion de la PR « Radio simplifiée », puis PR 2 « Plus de plaisir ».
+PR #67 fusionnée le 31/10/2026.
 
 ## Tableaux Markdown dans les leçons (30/10/2026)
 

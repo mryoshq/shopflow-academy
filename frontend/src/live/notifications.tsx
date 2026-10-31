@@ -20,7 +20,7 @@ export const KIND_LABELS: Record<string, string> = {
   help: "Demande d’aide", blocked: "Étudiant bloqué", block_done: "Bloc terminé", auto_soon: "Ouverture dans 2 min",
   auto_done: "Ouverture automatique", disconnect: "Déconnexion",
 }
-const REFRESH_KINDS = new Set(["block_open", "block_unlocked"])
+const REFRESH_KINDS = new Set(["block_open", "block_unlocked", "badge", "class_goal"])
 
 type Ctx = { items: Note[]; unread: number; markRead: (ids: number[]) => Promise<void>; markAll: () => Promise<void> }
 const NotificationsContext = createContext<Ctx>({ items: [], unread: 0, markRead: async () => {}, markAll: async () => {} })
