@@ -158,7 +158,7 @@ export function App() {
               <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">{t("Rapidfox Academy")}</Text>
               <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">{t("Apprenez la data en prenant de vraies décisions.")}</Heading>
               <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>{t("Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data")}</Text>
-              <Text fontSize="lg" color="app.muted" lineHeight="1.7">{t("Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.")}</Text>
+              <Text fontSize="lg" color="app.muted" lineHeight="1.7">{t("Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.")}</Text>
             </Stack>
             <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label={t("Connexion")}>
               <form onSubmit={onLogin}>
