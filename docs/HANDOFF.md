@@ -7,7 +7,7 @@
 
 ## Espace observateur professionnel (31/10/2026)
 
-Branche `claude/lucid-brahmagupta-htwgun-observateur` depuis `main`. Les PR « Vue étudiant » (#74) et « Expérience CampusEquip » (#75) sont indépendantes ; les conflits possibles (documents, `App.tsx`, `routes.ts`) seront résolus après chaque fusion.
+Branche `claude/lucid-brahmagupta-htwgun-observateur` depuis `main`, puis `main` fusionnée après #74. Les PR « Vue étudiant » (#74) et « Expérience CampusEquip » (#75) sont indépendantes ; les conflits possibles (documents, `App.tsx`, `routes.ts`) seront résolus après chaque fusion.
 
 Fichiers clés :
 - `backend/app/observer.py` (droits par type, invitations, routes) ;
@@ -23,7 +23,17 @@ ADR-0042. Captures : `docs/captures/observateur/`.
 3. Facultatif, envoi automatique avec Resend : renseigner les variables `SMTP_*` dans `.env` (voir le runbook, « E-mails des invitations d'observateurs »), redémarrer le backend, puis « Envoyer un e-mail de test ».
 4. Réglages > Observateurs : inviter la direction (« Administration ») ou un invité ; sans SMTP, « Copier le lien » ou « Préparer l'e-mail ».
 
-Prochaine action unique : revue et fusion des PR #74, #75 et « Espace observateur professionnel ».
+Prochaine action unique : revue et fusion des PR #75 (CampusEquip) et #76 (Espace observateur professionnel).
+
+## Vue étudiant, en ligne au survol, clics rapides (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-vue-etudiant` depuis `main` (#73 fusionnée). Fichiers clés : `backend/app/student_view.py`, `backend/app/student.py` (`course_payload`), `backend/app/project.py` (`project_page`), `backend/app/live.py` (`online_since`), `frontend/src/studentview/` (`adapter.ts`, `StudentView.tsx`), `frontend/src/useHashRoute.ts` (`StudentRouterContext`), `frontend/src/teacher/OnlineStatus.tsx`, `ClassTimeline.tsx`, `routes.ts`, `e2e/student-view.spec.ts`. ADR-0043. Captures : `docs/captures/vue-etudiant/`.
+
+### Vue étudiant — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier : barre latérale > « Vue étudiant », puis « Revenir à mon interface » ; survoler « n en ligne ».
+
+PR #74 fusionnée le 31/10/2026.
 
 ## Binôme surprise (31/10/2026)
 

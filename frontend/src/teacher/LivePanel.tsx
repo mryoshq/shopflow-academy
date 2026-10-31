@@ -11,7 +11,7 @@ const MAX_MESSAGE = 280
 
 export type LiveCell = { chapter_id: number; state: "closed" | "not_started" | "in_progress" | "done"; done: number; total: number; for_student: boolean
   lessons_read?: number; lesson_count?: number }
-export type LiveStudent = { id: number; name: string; online: boolean; seen_at: string | null; mission: string | null; help: boolean; fast_attempts: number; cells: LiveCell[] }
+export type LiveStudent = { id: number; name: string; online: boolean; seen_at: string | null; online_since?: string | null; mission: string | null; help: boolean; fast_attempts: number; cells: LiveCell[] }
 export type LiveBlock = { chapter_id: number; position: number; title: string; module: string; open: boolean; mission_count: number }
 export type Live = { generated_at: string; assignment_id: number; online_count: number; student_count: number; help_pending?: number; blocks: LiveBlock[]; students: LiveStudent[] }
 type Sent = { message_id: string; text: string; created_at: string; whole_class: boolean; read_count: number; recipients: { student: string; read_at: string | null }[] }

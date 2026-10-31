@@ -54,5 +54,9 @@
   "{{count}} inscrit au tirage_one": "{{count}} inscrit au tirage",
   "{{count}} inscrit au tirage_other": "{{count}} inscrits au tirage",
   "Afficher {{count}} tirage plus ancien_one": "Afficher {{count}} tirage plus ancien",
-  "Afficher {{count}} tirage plus ancien_other": "Afficher {{count}} tirages plus anciens"
+  "Afficher {{count}} tirage plus ancien_other": "Afficher {{count}} tirages plus anciens",
+  "{{count}} clic rapide_one": "{{count}} clic rapide",
+  "{{count}} clic rapide_other": "{{count}} clics rapides",
+  "depuis {{count}} min_one": "depuis {{count}} min",
+  "depuis {{count}} min_other": "depuis {{count}} min"
 }

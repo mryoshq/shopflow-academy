@@ -5,11 +5,14 @@ import { api, ApiError, csrfToken } from "../api"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ProjectText, TABLE_TEMPLATE, fileSize, when } from "./ProjectText"
 import { SurpriseReveal } from "./SurpriseDraw"
+import { useStudentHref } from "../useHashRoute"
+import { READ_ONLY, studentViewActive } from "../studentview/adapter"
 import type { Milestone, ProjectFileRef, StudentProjectData } from "./types"
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.md,.zip"
 
 async function uploadFile(file: File): Promise<ProjectFileRef> {
+  if (studentViewActive()) throw new ApiError(403, t(READ_ONLY))  // ADR-0043: nothing is sent
   const response = await fetch(`/api/v1/student/project/files?name=${encodeURIComponent(file.name)}`, {
     method: "POST", credentials: "same-origin", body: file,
     headers: { "X-CSRF-Token": csrfToken(), "Content-Type": file.type || "application/octet-stream" },
@@ -25,6 +28,7 @@ export function StudentProject() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState("")
   const [invitee, setInvitee] = useState("")
+  const href = useStudentHref()
   const load = useCallback(async () => {
     try { setData(await api<StudentProjectData>("/student/project")); setError(null) }
     catch (reason) { if (!(reason instanceof ApiError && reason.status === 401)) setError(t("Chargement impossible. Réessayez.")) }
@@ -50,7 +54,7 @@ export function StudentProject() {
 
   return <Stack gap="6">
     <Stack gap="1">
-      <Link href="#/" color="brand.fg" fontSize="sm" alignSelf="start">{t("← Tableau de bord")}</Link>
+      <Link href={href("/")} color="brand.fg" fontSize="sm" alignSelf="start">{t("← Tableau de bord")}</Link>
       <Heading as="h1" size={{ base: "2xl", md: "3xl" }}>{t("Projet CampusEquip")}</Heading>
       <Text color="app.muted">{data.cohort} {t("· travail en binôme, dépôts par jalon, soutenance.")}</Text>
     </Stack>

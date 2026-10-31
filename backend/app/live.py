@@ -156,7 +156,10 @@ def presence_of(db: Session, user_ids: list[int], now: datetime) -> dict[int, di
     for uid in user_ids:
         row = rows.get(uid)
         seen = aware(row.seen_at) if row else None
-        out[uid] = {"online": bool(seen and now - seen <= ONLINE_WINDOW), "seen_at": seen.isoformat() if seen else None,
+        here = bool(seen and now - seen <= ONLINE_WINDOW)
+        out[uid] = {"online": here, "seen_at": seen.isoformat() if seen else None,
+                    # Start of the current connection, for « en ligne depuis » (only while online).
+                    "online_since": aware(row.online_since).isoformat() if here and row.online_since else None,
                     "mission_version_id": row.mission_version_id if row and seen and now - seen <= ONLINE_WINDOW else None}
     return out
 
@@ -434,6 +437,7 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
                           "lessons_read": sum(1 for vid in block["lessons"] if (student.id, vid) in solved), "lesson_count": len(block["lessons"])})
         here = presence[student.id]
         rows.append({"id": student.id, "name": display_name(student.username), "online": here["online"], "seen_at": here["seen_at"],
+                     "online_since": here["online_since"],
                      "mission": titles.get(here["mission_version_id"]) if here["mission_version_id"] else None,
                      "help": student.id in help_by, "fast_attempts": fast.get(student.id, 0), "cells": cells})
     return {"generated_at": now.isoformat(), "assignment_id": assignment.id,

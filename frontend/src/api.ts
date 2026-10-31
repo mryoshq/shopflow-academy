@@ -1,5 +1,6 @@
 import { t, msg } from "./i18n"
 import { isGatewayFailure, reportOutage } from "./resilience"
+import { routeStudentView } from "./studentview/adapter"
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public detail?: unknown) {
@@ -41,6 +42,19 @@ export const UNAVAILABLE = msg("La plateforme est momentanément indisponible. V
 const pending = new Map<string, Promise<unknown>>()
 
 export async function api<T>(path: string, method = "GET", body?: unknown): Promise<T> {
+  // ADR-0043: « Vue étudiant » sends the student pages to the teacher's read-only routes.
+  const routed = routeStudentView(path, method, body)
+  if (routed?.kind === "local") return routed.data as T
+  if (routed?.kind === "refused") throw new ApiError(403, routed.message, { code: "student_view" })
+  if (routed?.kind === "fetch") {
+    const data = await request<T>(routed.path, routed.method, routed.body)
+    routed.after?.(data)
+    return data
+  }
+  return request<T>(path, method, body)
+}
+
+async function request<T>(path: string, method = "GET", body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
   if (body !== undefined) headers["Content-Type"] = "application/json"
   if (method !== "GET") headers["X-CSRF-Token"] = csrfToken()
@@ -75,7 +89,7 @@ function outage<T>(path: string, method: string): Promise<T> {
   if (method !== "GET") return Promise.reject(new ApiError(503, t(UNAVAILABLE), { code: "unavailable" }))
   let retry = pending.get(path) as Promise<T> | undefined
   if (!retry) {
-    retry = back.then(() => api<T>(path)).finally(() => pending.delete(path))
+    retry = back.then(() => request<T>(path)).finally(() => pending.delete(path))
     pending.set(path, retry)
   }
   return retry

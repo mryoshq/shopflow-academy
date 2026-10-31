@@ -112,8 +112,26 @@ test("« Ma classe » shows fast clicks", async ({ page }) => {
   }
   await page.screenshot({ path: `${shots}/43-ma-classe-clics-rapides.png`, fullPage: true, animations: "disabled" })
   await page.getByRole("tab", { name: "Difficultés", exact: true }).click()
-  await expect(page.getByRole("table", { name: "Statistiques par mission" })).toContainText(STUDENT)
+  // ADR-0043: no « Clics rapides » column; a discreet indicator in the detail of the mission concerned.
+  const stats = page.getByRole("table", { name: "Statistiques par mission" })
+  await expect(stats).toBeVisible()
+  await expect(stats.getByRole("columnheader", { name: "Clics rapides" })).toHaveCount(0)
+  await expect(stats).not.toContainText(STUDENT)
   await page.screenshot({ path: `${shots}/44-ma-classe-difficultes.png`, fullPage: true, animations: "disabled" })
+  const details = stats.getByRole("button", { name: /^Détail de la mission / })
+  let found = false
+  for (let index = 0; index < await details.count() && !found; index += 1) {
+    await details.nth(index).click()
+    await expect(page.getByRole("dialog", { name: /^Mission : / })).toBeVisible()
+    const indicator = page.getByTestId("fast-indicator")
+    if (await indicator.count()) {
+      await expect(indicator).toContainText(STUDENT)
+      await expect(indicator).toContainText(/\d+ clics? rapides?/)
+      found = true
+    }
+    await page.getByRole("button", { name: "Fermer le panneau" }).click()
+  }
+  expect(found).toBe(true)
 })
 
 // Always switch the rules off again, even after a failure, so the other specs keep the defaults.

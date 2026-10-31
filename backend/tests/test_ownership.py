@@ -105,7 +105,8 @@ def test_second_teacher_cannot_reach_any_owned_course_object(env, monkeypatch, t
     assert uploaded.status_code == 201, uploaded.text
     file_id = uploaded.json()["id"]
     values = {**ids, "assignment_id": klass["id"], "user_id": me["id"], "help_id": help_id, "run_id": "requete",
-              "team_id": team_id, "milestone_id": milestone_id, "slot_id": slot_id, "file_id": file_id}
+              "team_id": team_id, "milestone_id": milestone_id, "slot_id": slot_id, "file_id": file_id,
+              "version_id": extra["version_id"]}  # ADR-0043: « Vue étudiant » of the owner's class
     checked, failures = 0, []
     for path, method in api_routes():
         if not path.startswith("/api/v1/teacher/") or "{" not in path or NOT_COURSE_SCOPED.match(path):
