@@ -5,6 +5,23 @@
 
 
 
+## Rappels automatiques des jalons (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-rappels` depuis `main` (après #76). Fichiers clés :
+- `backend/app/project_reminders.py` (calendrier, ciblage, envoi, plan affiché) ;
+- appel dans `backend/app/autoplan.py` (`tick`) ; `PATCH` et plan dans `backend/app/project.py` ;
+- migration `0018_project_reminders`, `backend/tests/test_project_reminders.py` ;
+- `frontend/src/project/MilestoneReminders.tsx`, `frontend/src/i18n/server.ts`.
+
+ADR-0045, runbook « Rappels automatiques des jalons ».
+
+### Rappels — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0018-rappels` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0018_project_reminders` s'applique seule ; les rappels sont activés sur tous les jalons existants.
+3. Projet > Jalons : vérifier les heures prévues et désactiver les rappels des jalons qui n'en ont pas besoin.
+
+Prochaine action unique : revue et fusion de la PR « Rappels automatiques des jalons ».
+
 ## Espace observateur professionnel (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-observateur` depuis `main`, puis `main` fusionnée après #74 et #75. Les PR « Vue étudiant » (#74) et « Expérience CampusEquip » (#75) sont indépendantes ; les conflits possibles (documents, `App.tsx`, `routes.ts`) seront résolus après chaque fusion.
@@ -23,7 +40,7 @@ ADR-0042. Captures : `docs/captures/observateur/`.
 3. Facultatif, envoi automatique avec Resend : renseigner les variables `SMTP_*` dans `.env` (voir le runbook, « E-mails des invitations d'observateurs »), redémarrer le backend, puis « Envoyer un e-mail de test ».
 4. Réglages > Observateurs : inviter la direction (« Administration ») ou un invité ; sans SMTP, « Copier le lien » ou « Préparer l'e-mail ».
 
-Prochaine action unique : revue et fusion de la PR « Espace observateur professionnel » (#76).
+PR #76 fusionnée le 31/10/2026.
 
 ## Expérience CampusEquip (31/10/2026)
 

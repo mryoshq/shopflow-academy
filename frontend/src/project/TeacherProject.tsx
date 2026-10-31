@@ -5,6 +5,7 @@ import { api, ApiError } from "../api"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { DetailPanel } from "./Drawer"
 import { TeacherDraw } from "./SurpriseDraw"
+import { MilestoneReminders } from "./MilestoneReminders"
 import { ProjectText, fileSize, when } from "./ProjectText"
 import type { Submission, TeacherProjectData, TeamGrade } from "./types"
 
@@ -99,6 +100,9 @@ function Milestones({ data, readOnly, act }: Part) {
         {!readOnly && <Button size="xs" variant="ghost" colorPalette="red" onClick={() => void act("DELETE", `/teacher/project/milestones/${milestone.id}`, undefined, t("Jalon supprimé."))}>{t("Supprimer")}</Button>}</Flex>
       <ProjectText text={milestone.instructions} />
       {milestone.deliverables.length > 0 && <Text fontSize="sm">{t("Livrables :")}{" "}{milestone.deliverables.join(" · ")}</Text>}
+      {milestone.reminders && <MilestoneReminders plan={milestone.reminders} readOnly={readOnly}
+        onToggle={(enabled) => void act("PATCH", `/teacher/project/milestones/${milestone.id}`, { reminders: enabled },
+          enabled ? t("Rappels automatiques activés pour ce jalon.") : t("Rappels automatiques désactivés pour ce jalon."))} />}
     </Stack></Panel>)}
     {!readOnly && <Panel as="form" onSubmit={(event: React.FormEvent) => { event.preventDefault()
       void act("POST", `/teacher/classes/${data.assignment_id}/project/milestones`, { title, instructions, due_at: due ? new Date(due).toISOString() : null,

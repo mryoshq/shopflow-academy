@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-31 — Rappels automatiques des jalons (`claude/lucid-brahmagupta-htwgun-rappels`)
+
+- Pour chaque jalon daté du projet, une notification brève et encourageante 3 jours puis 1 jour avant, à 9 h heure du Maroc : « Rappel : « <jalon> » est attendu le <date> à <heure>. Il vous reste <n> jours. » (en anglais dans l'interface anglaise).
+- Destinataires : les membres des binômes qui n'ont encore rien déposé ; pour « Binôme formé », les étudiants sans binôme et non inscrits au binôme surprise.
+- Envoi par la boucle de fond existante du backend, rien à planifier sur le Mac ; rattrapage le même jour après un arrêt ; une seule fois par jalon, rappel et binôme, journalisé (`project_reminders`, journal `academy.reminders`).
+- Projet > Jalons : rappels prévus avec leur heure et leur état, interrupteur « Rappels automatiques » par jalon. ADR-0045, migration `0018_project_reminders`, dépendance `tzdata`.
+
 ## 2026-10-31 — Espace observateur professionnel (`claude/lucid-brahmagupta-htwgun-observateur`)
 
 - Deux types d'observateur choisis par l'enseignant :

@@ -1429,5 +1429,21 @@
   "{{count}} clic rapide_one": "{{count}} quick click",
   "{{count}} clic rapide_other": "{{count}} quick clicks",
   "depuis {{count}} min_one": "for {{count}} min",
-  "depuis {{count}} min_other": "for {{count}} min"
+  "depuis {{count}} min_other": "for {{count}} min",
+  "Rappel de jalon": "Milestone reminder",
+  "Prévu": "Planned",
+  "Envoyé": "Sent",
+  "Non envoyé (passé)": "Not sent (past)",
+  "Pas de rappel automatique : ce jalon n’a pas de date limite.": "No automatic reminder: this milestone has no deadline.",
+  "Rappels automatiques": "Automatic reminders",
+  "Activés": "On",
+  "Désactivés": "Off",
+  "Envoyés à 9 h (heure du Maroc) aux étudiants sans binôme et non inscrits au binôme surprise.": "Sent at 9:00 (Morocco time) to students without a team who have not joined the surprise team draw.",
+  "Envoyés à 9 h (heure du Maroc) aux membres des binômes qui n’ont encore rien déposé.": "Sent at 9:00 (Morocco time) to the members of teams that have not submitted anything yet.",
+  "Rappels automatiques activés pour ce jalon.": "Automatic reminders turned on for this milestone.",
+  "Rappels automatiques désactivés pour ce jalon.": "Automatic reminders turned off for this milestone.",
+  "{{count}} jour avant_one": "{{count}} day before",
+  "{{count}} jour avant_other": "{{count}} days before",
+  "{{count}} envoi_one": "{{count}} sent",
+  "{{count}} envoi_other": "{{count}} sent"
 }

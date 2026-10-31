@@ -304,6 +304,10 @@ def tick(db: Session, now: datetime | None = None) -> dict:
         db.commit()
     pushes += class_events(db, now)
     db.commit()
+    # ADR-0045: milestone reminders, 3 days and 1 day before, at 9:00 Morocco time.
+    from app.project_reminders import run as project_reminders
+
+    pushes += project_reminders(db, now)
     if pushes:
         push_after_commit(db, pushes)
     return {"opened": opened_count}
