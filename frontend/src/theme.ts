@@ -62,6 +62,12 @@ const config = defineConfig({
           400: { value: "#D97757" }, 500: { value: "#C96442" }, 600: { value: "#B5532F" }, 700: { value: "#9C4426" },
           800: { value: "#7A3620" }, 900: { value: "#5A2918" }, 950: { value: "#331710" },
         },
+        // Light-theme accent: the green of the owner's logo (#146457), the former brand scale.
+        pine: {
+          50: { value: "#EAF5F2" }, 100: { value: "#CFE8E1" }, 200: { value: "#A3D2C6" }, 300: { value: "#6FB6A6" },
+          400: { value: "#3F9585" }, 500: { value: "#1F7A6B" }, 600: { value: "#146457" }, 700: { value: "#0F5047" },
+          800: { value: "#0D3F39" }, 900: { value: "#0B302C" }, 950: { value: "#061C1A" },
+        },
         // Warm greys replace Chakra's cool greys everywhere (buttons, tags, tables, menus).
         gray: {
           50: { value: "#FAF9F5" }, 100: { value: "#F0EEE6" }, 200: { value: "#E6E3D9" }, 300: { value: "#D1CFC5" },
@@ -80,14 +86,15 @@ const config = defineConfig({
       // Every colour has a light value and a `_dark` value (docs/DESIGN.md). Pairs meet WCAG AA in both.
       colors: {
         brand: {
-          // White on brand.600 = 4.95:1 (AA) in both themes; fg = 6.1:1 on the light canvas, 6.4:1 on the dark one.
-          solid: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.600}" } },
+          // Light: the logo green (white on pine.600 = 7.0:1, fg pine.700 = 8.9:1 on the canvas).
+          // Dark: clay (white on brand.600 = 4.95:1, fg brand.300 = 6.4:1 on the dark canvas).
+          solid: { value: { base: "{colors.pine.600}", _dark: "{colors.brand.600}" } },
           contrast: { value: { base: "white", _dark: "white" } },
-          fg: { value: { base: "{colors.brand.700}", _dark: "{colors.brand.300}" } },
-          muted: { value: { base: "{colors.brand.100}", _dark: "#4A2A1E" } },
-          subtle: { value: { base: "{colors.brand.50}", _dark: "#33241E" } },
-          emphasized: { value: { base: "{colors.brand.200}", _dark: "{colors.brand.800}" } },
-          focusRing: { value: { base: "{colors.brand.500}", _dark: "{colors.brand.400}" } },
+          fg: { value: { base: "{colors.pine.700}", _dark: "{colors.brand.300}" } },
+          muted: { value: { base: "{colors.pine.100}", _dark: "#4A2A1E" } },
+          subtle: { value: { base: "{colors.pine.50}", _dark: "#33241E" } },
+          emphasized: { value: { base: "{colors.pine.200}", _dark: "{colors.brand.800}" } },
+          focusRing: { value: { base: "{colors.pine.500}", _dark: "{colors.brand.400}" } },
           // Outline buttons keep a neutral border (calm interface); the label carries the accent.
           border: { value: { base: "#E6E3D9", _dark: "#45453F" } },
         },
@@ -153,7 +160,7 @@ const config = defineConfig({
         chart: {
           grid: { value: { base: "#E6E3D9", _dark: "#3E3E3A" } },
           axis: { value: { base: "#5E5D59", _dark: "#B7B5A9" } },
-          one: { value: { base: "{colors.brand.600}", _dark: "{colors.brand.300}" } },
+          one: { value: { base: "{colors.pine.600}", _dark: "{colors.brand.300}" } },
           two: { value: { base: "{colors.saffron.700}", _dark: "{colors.saffron.300}" } },
         },
       },
