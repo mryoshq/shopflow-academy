@@ -160,8 +160,13 @@ def student_project(response: Response, cohort_id: int | None = Query(default=No
     cohort = next((c for c in cohorts if cohort_id is None or c.id == cohort_id), None)
     if cohort is None:
         return {"cohort_id": None, "cohorts": []}
+    return project_page(db, cohort, cohorts, auth.user.id)
+
+
+def project_page(db: Session, cohort: Cohort, cohorts: list[Cohort], user_id: int) -> dict:
+    """The student's project page. Shared with the teacher's read-only « Vue étudiant » (user 0: no team, no work)."""
     teams = all_teams(db, cohort.id)
-    member = membership(db, cohort.id, auth.user.id)
+    member = membership(db, cohort.id, user_id)
     students = class_students(db, cohort.id)
     who = {student.id: display_name(student.username) for student in students}
     in_team = {uid for members in teams.values() for uid in members}
@@ -183,16 +188,16 @@ def student_project(response: Response, cohort_id: int | None = Query(default=No
             entry["submissions"] = [submission_out(db, version, who) for version in versions]
             entry["comments"] = [{"id": c.id, "text": c.text, "created_at": iso(c.created_at)} for c in comments]
         milestones.append(entry)
-    received = db.scalars(select(ProjectInvitation).where(ProjectInvitation.user_id == auth.user.id, ProjectInvitation.status == "pending")
+    received = db.scalars(select(ProjectInvitation).where(ProjectInvitation.user_id == user_id, ProjectInvitation.status == "pending")
                           .order_by(ProjectInvitation.id)).all()
     received = [item for item in received if db.get(ProjectTeam, item.team_id) and db.get(ProjectTeam, item.team_id).cohort_id == cohort.id]
     team_names = {tid: [who.get(uid, "") for uid in uids] for tid, uids in teams.items()}
     from app.project_draw import student_draw_state  # ADR-0041 (imports this module)
-    draw, surprise = student_draw_state(db, cohort.id, auth.user.id, member)
+    draw, surprise = student_draw_state(db, cohort.id, user_id, member)
     return {"cohort_id": cohort.id, "cohort": cohort.label, "draw": draw, "surprise": surprise, "cohorts": [{"id": c.id, "label": c.label} for c in cohorts], "team": team,
             "invitations": [{"id": item.id, "team_id": item.team_id, "from": who.get(item.invited_by, ""),
                              "members": team_names.get(item.team_id, [])} for item in received],
-            "classmates": [{"id": s.id, "name": who[s.id], "available": s.id not in in_team} for s in students if s.id != auth.user.id],
+            "classmates": [{"id": s.id, "name": who[s.id], "available": s.id not in in_team} for s in students if s.id != user_id],
             "milestones": milestones, "slots": slots_out(db, cohort.id, team_names, member.team_id if member else None)}
 
 

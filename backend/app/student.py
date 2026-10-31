@@ -252,6 +252,60 @@ def mission_kind(item: dict) -> str | None:
     return (item.get("definition") or {}).get("kind")
 
 
+def course_payload(db: Session, user_id: int, release: CourseRelease, missions: list[dict], visible: list[dict], *,
+                   class_open: set[int], opened: set[int], paused: bool, rewards: dict | None) -> dict:
+    """One course of the student dashboard. Shared with the teacher's read-only « Vue étudiant » (user 0: no work)."""
+    visible_ids = {item["mission_version_id"] for item in visible}
+    state = statuses(db, user_id, missions, visible_ids)
+    scores = mission_scores(db, user_id, [item["mission_version_id"] for item in missions])
+    resources: list[str] = []
+    for item in visible:
+        for url in (item.get("definition") or {}).get("resources", []):
+            if url not in resources:
+                resources.append(url)
+    modules: list[dict] = []
+    for block in blocks_of(release.student_snapshot):
+        if not modules or modules[-1]["title"] != block["module"]:
+            modules.append({"title": block["module"], "description": block["module_description"], "blocks": []})
+        ids = [m["mission_version_id"] for m in block["missions"]]
+        # Graded missions only: lessons are counted apart, bonuses never count for « terminé ».
+        core = [vid for vid in ids if not scores[vid].bonus and not scores[vid].lesson] if ids else []
+        lessons = [vid for vid in ids if scores[vid].lesson]
+        is_open = block["chapter_id"] in opened
+        shown = [vid for vid in ids if vid in visible_ids]
+        modules[-1]["blocks"].append({
+            "id": block["chapter_id"], "title": block["title"], "open": is_open,
+            # ADR-0023: opened by the teacher for this student only (« ouvert pour vous »).
+            "for_you": is_open and block["chapter_id"] not in class_open,
+            "mission_count": len(core), "bonus_count": sum(1 for vid in ids if scores[vid].bonus),
+            "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
+            "lesson_count": len(lessons), "lessons_read": sum(1 for vid in lessons if scores[vid].completed) if is_open else 0,
+            "done": is_open and block_done(scores, ids),
+            "mission_ids": shown,
+            # Closed blocks expose their title only.
+            "objective": block_objective(release.student_snapshot, block["missions"]) if is_open else "",
+        })
+    return {
+        "release_id": release.id, "title": release.student_snapshot.get("title", ""),
+        "description": release.student_snapshot.get("description", ""), "version": release.version,
+        "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
+        "paused": paused, "modules": modules,
+        # ADR-0027: banner announcing the rules against random clicking, once the teacher turned them on.
+        "rules_notice": notice(rules_for_release(db, release)),
+        # ADR-0039: streak, level, badges and class goal (never part of the score).
+        "rewards": rewards,
+        "missions": [{
+            "mission_version_id": item["mission_version_id"], "title": item["title"],
+            "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),
+            "kind": mission_kind(item),
+            "estimated_duration_minutes": (item.get("definition") or {}).get("estimated_duration_minutes"),
+            "best_points": scores[item["mission_version_id"]].best, "possible": scores[item["mission_version_id"]].possible,
+            "bonus": scores[item["mission_version_id"]].bonus,
+            **state[item["mission_version_id"]],
+        } for item in visible],
+    }
+
+
 @router.get("/dashboard")
 def dashboard(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
@@ -259,57 +313,11 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
     for release in assigned_releases(db, auth.user.id):
         missions = flatten(release.student_snapshot)
         visible = visible_missions(db, auth.user.id, release, missions)
-        visible_ids = {item["mission_version_id"] for item in visible}
-        state = statuses(db, auth.user.id, missions, visible_ids)
-        scores = mission_scores(db, auth.user.id, [item["mission_version_id"] for item in missions])
-        class_open = open_blocks(db, student_cohorts(db, auth.user.id, release.id))
-        opened = all_open_blocks(db, auth.user.id, release.id)
-        resources: list[str] = []
-        for item in visible:
-            for url in (item.get("definition") or {}).get("resources", []):
-                if url not in resources:
-                    resources.append(url)
-        modules: list[dict] = []
-        for block in blocks_of(release.student_snapshot):
-            if not modules or modules[-1]["title"] != block["module"]:
-                modules.append({"title": block["module"], "description": block["module_description"], "blocks": []})
-            ids = [m["mission_version_id"] for m in block["missions"]]
-            # Graded missions only: lessons are counted apart, bonuses never count for « terminé ».
-            core = [vid for vid in ids if not scores[vid].bonus and not scores[vid].lesson] if ids else []
-            lessons = [vid for vid in ids if scores[vid].lesson]
-            is_open = block["chapter_id"] in opened
-            shown = [vid for vid in ids if vid in visible_ids]
-            modules[-1]["blocks"].append({
-                "id": block["chapter_id"], "title": block["title"], "open": is_open,
-                # ADR-0023: opened by the teacher for this student only (« ouvert pour vous »).
-                "for_you": is_open and block["chapter_id"] not in class_open,
-                "mission_count": len(core), "bonus_count": sum(1 for vid in ids if scores[vid].bonus),
-                "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
-                "lesson_count": len(lessons), "lessons_read": sum(1 for vid in lessons if scores[vid].completed) if is_open else 0,
-                "done": is_open and block_done(scores, ids),
-                "mission_ids": shown,
-                # Closed blocks expose their title only.
-                "objective": block_objective(release.student_snapshot, block["missions"]) if is_open else "",
-            })
-        courses.append({
-            "release_id": release.id, "title": release.student_snapshot.get("title", ""),
-            "description": release.student_snapshot.get("description", ""), "version": release.version,
-            "is_demo": is_demo(release), "resources": resources, "score": course_score(scores),
-            "paused": is_paused(db, auth.user.id, release.id), "modules": modules,
-            # ADR-0027: banner announcing the rules against random clicking, once the teacher turned them on.
-            "rules_notice": notice(rules_for_release(db, release)),
-            # ADR-0039: streak, level, badges and class goal (never part of the score).
-            "rewards": dashboard_rewards(db, release, auth.user.id),
-            "missions": [{
-                "mission_version_id": item["mission_version_id"], "title": item["title"],
-                "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),
-                "kind": mission_kind(item),
-                "estimated_duration_minutes": (item.get("definition") or {}).get("estimated_duration_minutes"),
-                "best_points": scores[item["mission_version_id"]].best, "possible": scores[item["mission_version_id"]].possible,
-                "bonus": scores[item["mission_version_id"]].bonus,
-                **state[item["mission_version_id"]],
-            } for item in visible],
-        })
+        courses.append(course_payload(db, auth.user.id, release, missions, visible,
+                                      class_open=open_blocks(db, student_cohorts(db, auth.user.id, release.id)),
+                                      opened=all_open_blocks(db, auth.user.id, release.id),
+                                      paused=is_paused(db, auth.user.id, release.id),
+                                      rewards=dashboard_rewards(db, release, auth.user.id)))
     return {"display_name": display_name(auth.user.username), "ai_enabled": ai_enabled(), "courses": courses}
 
 

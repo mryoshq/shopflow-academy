@@ -23,6 +23,7 @@ from app.downloads import router as downloads_router
 from app.experiences import router as experiences_router
 from app.project import router as project_router
 from app.project_draw import router as project_draw_router
+from app.student_view import router as student_view_router
 from app.rewards import router as rewards_router
 
 
@@ -73,6 +74,7 @@ app.include_router(downloads_router)
 app.include_router(experiences_router)
 app.include_router(project_router)
 app.include_router(project_draw_router)
+app.include_router(student_view_router)
 app.include_router(rewards_router)
 
 

@@ -5,6 +5,16 @@
 
 
 
+## Vue étudiant, en ligne au survol, clics rapides (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-vue-etudiant` depuis `main` (#73 fusionnée). Fichiers clés : `backend/app/student_view.py`, `backend/app/student.py` (`course_payload`), `backend/app/project.py` (`project_page`), `backend/app/live.py` (`online_since`), `frontend/src/studentview/` (`adapter.ts`, `StudentView.tsx`), `frontend/src/useHashRoute.ts` (`StudentRouterContext`), `frontend/src/teacher/OnlineStatus.tsx`, `ClassTimeline.tsx`, `routes.ts`, `e2e/student-view.spec.ts`. ADR-0043. Captures : `docs/captures/vue-etudiant/`.
+
+### Vue étudiant — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier : barre latérale > « Vue étudiant », puis « Revenir à mon interface » ; survoler « n en ligne ».
+
+Prochaine action unique : revue et fusion de la PR « Vue étudiant », puis PR « Expérience CampusEquip ».
+
 ## Binôme surprise (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée). Fichiers clés : `backend/app/project_draw.py` (tirage, inscriptions, révélation), `backend/app/project.py` (pas de dépôt seul, état du tirage dans la page étudiant), `backend/app/models.py`, migration `0016_project_draw`, `frontend/src/project/SurpriseDraw.tsx` (panneau enseignant, révélation), `StudentProject.tsx`, `TeacherProject.tsx`, `e2e/project-draw.spec.ts`. ADR-0041. Captures : `docs/captures/binome/`.
@@ -15,7 +25,7 @@ Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée).
 3. Prévenir la classe que le travail seul n'est plus possible : les étudiants sans binôme le forment ou s'inscrivent au binôme surprise.
 4. Le moment venu : Projet > Binômes > « Lancer le tirage », vérifier l'aperçu, cocher au besoin les équipes d'une seule personne, puis « Valider ce tirage ».
 
-Prochaine action unique : revue et fusion de la PR « Binôme surprise ».
+PR #73 fusionnée le 31/10/2026.
 
 ## Interface en anglais — PR 3/3 (31/10/2026)
 

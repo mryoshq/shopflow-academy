@@ -1,5 +1,5 @@
 import { t, tn } from "../i18n"
-import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Heading, IconButton, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { Logo } from "../Logo"
@@ -20,6 +20,8 @@ import { TeacherDashboard } from "./TeacherDashboard"
 import { Today } from "./Today"
 import { TeacherProject } from "../project/TeacherProject"
 import { VOYAGE_READY, VoyagePage } from "../voyage"
+import { StudentView } from "../studentview/StudentView"
+import { OnlineStatus } from "./OnlineStatus"
 import { VIEWS, formatRoute, initialRoute, rememberRoute, viewInfo, parseRoute, type TeacherRoute, type ViewKey } from "./routes"
 
 export type MainState = {
@@ -45,6 +47,7 @@ const ICONS: Record<string, ReactNode> = {
   expand: <path d="M9 6l6 6-6 6" />,
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" />,
   folder: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M8 13h8" /></>,
+  eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
   route: <><circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7" /></>,
 }
 
@@ -87,11 +90,13 @@ function readCollapsed(): boolean {
  */
 export function TeacherApp({ username, onLogout, busy, resumed }: { username: string; onLogout: () => void; busy: boolean; resumed: boolean }) {
   const { route, navigate } = useTeacherRoute(resumed)
+  const lastTeacherRoute = useRef<TeacherRoute | null>(null)
+  useEffect(() => { if (route.view !== "etudiant") lastTeacherRoute.current = route }, [route])
   const [main, setMain] = useState<MainState | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [collapsed, setCollapsed] = useState(readCollapsed)
   const [palette, setPalette] = useState(false)
-  const [online, setOnline] = useState<{ online: number; total: number } | null>(null)
+  const [online, setOnline] = useState<{ online: number; total: number; students: Live["students"] } | null>(null)
   const [helpPending, setHelpPending] = useState(0)
   // A new help request arrives as a notification: refresh the badge then, without polling more often.
   const { items: notes } = useNotificationFeed()
@@ -120,7 +125,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     const load = () => api<Live>(`/teacher/classes/${assignmentId}/live`)
       .then((data) => {
         if (!active) return
-        setOnline({ online: data.online_count, total: data.student_count })
+        setOnline({ online: data.online_count, total: data.student_count, students: data.students })
         setHelpPending(data.help_pending ?? 0)
       }).catch(() => undefined)
     void load()
@@ -145,6 +150,10 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   }
 
   const info = viewInfo(route.view)
+  function leaveStudentView() {
+    const previous = lastTeacherRoute.current
+    navigate(previous && previous.view !== "etudiant" ? previous : { view: "aujourdhui", sub: "", params: {} })
+  }
   const go = (view: ViewKey, sub = "", params: Record<string, string> = {}) => navigate({ view, sub, params })
 
   const wide = !collapsed
@@ -194,16 +203,20 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     {route.view === "aujourdhui"
       ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="0" truncate>{t(info.title)}</Text>
       : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="0" truncate title={t(info.title)}>{t(info.title)}</Heading>}
-    {online && <Link href="#/classe/etudiants" display="inline-flex" alignItems="center" gap="2" minH="11" px="2" rounded="md" fontSize="sm" color="app.ink"
-      textDecoration="none" aria-label={tn("{{count}} étudiant en ligne sur {{total}}", online.online, { total: online.total })}>
-      <Box w="2.5" h="2.5" rounded="full" bg={online.online ? "green.solid" : "app.border"} aria-hidden="true" />
-      <Text as="span" aria-hidden="true" css={{ fontVariantNumeric: "tabular-nums" }}>{online.online}<Box as="span" display={{ base: "none", sm: "inline" }}> {t("en ligne")}</Box></Text>
-    </Link>}
+    {online && <OnlineStatus online={online.online} total={online.total} students={online.students} />}
     <Button variant="outline" size="sm" onClick={() => setPalette(true)} aria-label={t("Recherche rapide (Ctrl+K)")} gap="2" color="app.muted">
       <NavIcon name="search" size={16} /><Box as="span" display={{ base: "none", lg: "inline" }}>{t("Rechercher")}</Box>
       <Box as="span" display={{ base: "none", lg: "inline" }} fontSize="xs" borderWidth="1px" borderColor="app.border" rounded="sm" px="1">{t("Ctrl K")}</Box></Button>
     <NotificationBell />
   </Flex>
+
+  // ADR-0043: « Vue étudiant » replaces the whole teacher shell until « Revenir à mon interface ».
+  if (route.view === "etudiant") {
+    if (!main) return <Box p="8"><LoadingState label={t("Préparation de votre classe…")} /></Box>
+    if (!assignmentId || !main.cohort) return <Box p="8" maxW="3xl" mx="auto"><NoClass /></Box>
+    return <StudentView assignmentId={assignmentId} sub={route.sub} label={`${main.cohort.label} · ${main.course?.title ?? ""}${main.assigned_version ? t(" · version {{assigned_version}} pour la classe", { assigned_version: main.assigned_version }) : ""}`}
+      onNavigate={(sub) => navigate({ view: "etudiant", sub, params: {} })} onLeave={() => leaveStudentView()} />
+  }
 
   let content: ReactNode
   if (error) content = <ErrorState message={error} onRetry={() => void setup()} />
