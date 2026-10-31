@@ -156,10 +156,12 @@ def test_grid_on_20_csv_slots_teacher_composition_and_observer(project):
     slots = b.get("/api/v1/student/project").json()["slots"]
     assert [(s["id"], s["mine"], s["label"]) for s in slots] == [(slot, True, "Salle B3"), (other, False, "")]
     # Observer: nothing of the project without permission; anonymised overview with it.
-    created = create_observer(teacher, "inspection.projet")
-    observer = sign_in("inspection.projet", created["password"])
+    # ADR-0042: a guest sees nothing of the project; « Administration » sees it, with the real names.
+    created = create_observer(teacher, "inspection.projet", kind="guest")
+    observer = sign_in(created["username"], created["password"])
     assert observer.get(f"/api/v1/observer/classes/{assignment}/project").status_code == 403
-    teacher.patch(f"/api/v1/teacher/observers/{created['id']}", json={"project_access": True}, headers={"X-CSRF-Token": teacher.cookies["academy_csrf"]})
+    teacher.patch(f"/api/v1/teacher/observers/{created['id']}", json={"kind": "admin"}, headers={"X-CSRF-Token": teacher.cookies["academy_csrf"]})
+    observer = sign_in(created["username"], created["password"])
     seen = observer.get(f"/api/v1/observer/classes/{assignment}/project").json()
-    assert [m["name"] for m in seen["teams"][0]["members"]] == ["Étudiant 1", "Étudiant 2"] and "demo" not in str(seen)
+    assert [m["name"] for m in seen["teams"][0]["members"]] == ["demo.etudiant01", "demo.etudiant02"]
     assert TestClient(app).get(f"/api/v1/teacher/classes/{assignment}/project").status_code == 401

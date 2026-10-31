@@ -5,6 +5,26 @@
 
 
 
+## Espace observateur professionnel (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-observateur` depuis `main`. Les PR « Vue étudiant » (#74) et « Expérience CampusEquip » (#75) sont indépendantes ; les conflits possibles (documents, `App.tsx`, `routes.ts`) seront résolus après chaque fusion.
+
+Fichiers clés :
+- `backend/app/observer.py` (droits par type, invitations, routes) ;
+- `observer_stats.py`, `pdf_report.py`, `mailer.py` ;
+- migration `0017_observer_pro` ;
+- `frontend/src/observer/` (`ObserverHome.tsx`, `InvitationPage.tsx`), `frontend/src/teacher/ObserversPanel.tsx`, `e2e/observer.spec.ts`.
+
+ADR-0042. Captures : `docs/captures/observateur/`.
+
+### Observateurs — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0017-observateurs` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0017_observer_pro` s'applique seule. Les observateurs existants gardent leur accès : nominatif → « Administration », sinon « Invité ».
+3. Facultatif, envoi automatique avec Resend : renseigner les variables `SMTP_*` dans `.env` (voir le runbook, « E-mails des invitations d'observateurs »), redémarrer le backend, puis « Envoyer un e-mail de test ».
+4. Réglages > Observateurs : inviter la direction (« Administration ») ou un invité ; sans SMTP, « Copier le lien » ou « Préparer l'e-mail ».
+
+Prochaine action unique : revue et fusion des PR #74, #75 et « Espace observateur professionnel ».
+
 ## Binôme surprise (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée). Fichiers clés : `backend/app/project_draw.py` (tirage, inscriptions, révélation), `backend/app/project.py` (pas de dépôt seul, état du tirage dans la page étudiant), `backend/app/models.py`, migration `0016_project_draw`, `frontend/src/project/SurpriseDraw.tsx` (panneau enseignant, révélation), `StudentProject.tsx`, `TeacherProject.tsx`, `e2e/project-draw.spec.ts`. ADR-0041. Captures : `docs/captures/binome/`.
@@ -15,7 +35,7 @@ Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée).
 3. Prévenir la classe que le travail seul n'est plus possible : les étudiants sans binôme le forment ou s'inscrivent au binôme surprise.
 4. Le moment venu : Projet > Binômes > « Lancer le tirage », vérifier l'aperçu, cocher au besoin les équipes d'une seule personne, puis « Valider ce tirage ».
 
-Prochaine action unique : revue et fusion de la PR « Binôme surprise ».
+PR #73 fusionnée le 31/10/2026.
 
 ## Interface en anglais — PR 3/3 (31/10/2026)
 

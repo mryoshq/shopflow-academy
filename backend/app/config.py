@@ -37,6 +37,13 @@ class Settings(BaseSettings):
     radio_streams: str = ""
     # Automatic block opening and teacher events (ADR-0023): background check every N seconds (0 = off).
     live_tick_seconds: int = 15
+    # Observer invitations by e-mail (ADR-0042). Empty SMTP_HOST = no sending: the teacher copies the link or prepares the e-mail.
+    smtp_host: str = ""
+    smtp_port: int = 0
+    smtp_user: str = ""
+    smtp_password: str = ""
+    smtp_from: str = ""
+    smtp_security: str = "starttls"  # « ssl » (port 465) or « starttls » (port 587)
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

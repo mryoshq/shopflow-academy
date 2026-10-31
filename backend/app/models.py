@@ -350,7 +350,38 @@ class Observer(Base):
     named: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
     # ADR-0034: the project space stays hidden from the observer unless the teacher allows it.
     project_access: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, server_default=false())
+    # ADR-0042: « admin » (Administration: real names, grades, exports, project) or « guest » (Invité: anonymised aggregates).
+    kind: Mapped[str] = mapped_column(String(16), nullable=False, default="guest", server_default="guest")
+    full_name: Mapped[str] = mapped_column(String(120), nullable=False, default="", server_default="")
+    email: Mapped[str | None] = mapped_column(String(254), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ObserverInvitation(Base):
+    """ADR-0042: single-use invitation link (7 days); only the SHA-256 of the token is stored."""
+    __tablename__ = "observer_invitations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    observer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    used_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    delivery: Mapped[str] = mapped_column(String(16), nullable=False, default="manual")
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ObserverAlias(Base):
+    """ADR-0042: « Étudiant N » for a guest observer, assigned once per (observer, student) and never renumbered."""
+    __tablename__ = "observer_aliases"
+    __table_args__ = (UniqueConstraint("observer_id", "student_id", name="uq_observer_alias"),
+                      UniqueConstraint("observer_id", "number", name="uq_observer_alias_number"))
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    observer_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    student_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    number: Mapped[int] = mapped_column(Integer, nullable=False)
 
 
 # Project space (ADR-0034): teams of one or two students, milestones, versioned submissions, grades, defence slots.

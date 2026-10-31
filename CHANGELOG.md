@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-31 — Espace observateur professionnel (`claude/lucid-brahmagupta-htwgun-observateur`)
+
+- Deux types d'observateur choisis par l'enseignant :
+  - « Administration » : noms réels, notes du cours et du projet, fiche d'un étudiant, export CSV et rapport PDF, corrigés sur option ;
+  - « Invité » : anonymisé de façon stable, tableau de bord, graphiques d'ensemble et cours publié.
+
+  Les droits sont vérifiés à chaque route.
+- Invitation par lien à usage unique valable 7 jours (jeton stocké sous forme de hachage), mot de passe choisi par l'observateur. Envoi par SMTP (Resend, `ssl` ou `starttls`) si configuré, sinon « Copier le lien » et « Préparer l'e-mail ». Renvoyer, révoquer, désactiver, changer le type ; e-mail de test.
+- Espace observateur : indicateurs, graphiques (progression, réussite par module et par objectif, répartition des notes, activité par séance), notes triables et filtrables, cours publié. Jamais le texte des demandes d'aide, la présence, les notifications ni les connexions.
+- Journal des consultations (qui, quoi, quand) dans Réglages > Observateurs. ADR-0042, migration `0017_observer_pro`.
+
 ## 2026-10-31 — Binôme surprise : plus de travail individuel dans l'espace projet (`claude/lucid-brahmagupta-htwgun-binome`)
 
 - Sans équipe, l'étudiant choisit « Former mon binôme » ou « Je tente le binôme surprise » ; l'option « travailler seul » disparaît et une équipe d'une seule personne ne peut plus déposer.
