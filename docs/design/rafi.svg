@@ -1,60 +1,85 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Rafi, mascotte Rapidfox Academy (dessin original) : renard rapide, anguleux, souriant et sûr de lui.
-       Les groupes #pupil-left / #pupil-right bougent pour suivre le curseur ; #lids-* servent au clignement. -->
-  <!-- speed streaks behind the head -->
-  <g stroke="#C96442" stroke-width="4" stroke-linecap="round" opacity="0.55">
-    <line x1="6" y1="70" x2="34" y2="70"/>
-    <line x1="2" y1="88" x2="40" y2="88"/>
-    <line x1="10" y1="106" x2="32" y2="106"/>
+  <!-- Rafi, mascotte Rapidfox Academy : tête de renard de face, en facettes, souriante (référence : docs/design/rafi-reference.jpg).
+       #pupil-left / #pupil-right bougent dans leur clipPath pour suivre le curseur ; #lids-* servent au clignement ;
+       #brow-left / #brow-right et #ear-left / #ear-right servent aux réactions. -->
+  <!-- poitrail -->
+  <path d="M58 136 L100 198 L142 136 Z" fill="#B4521F"/>
+  <path d="M58 136 L100 198 L78 150 Z" fill="#8E3B1C"/>
+  <path d="M82 152 L100 196 L118 152 L100 166 Z" fill="#F3E4CF"/>
+  <path d="M100 166 L118 152 L100 196 Z" fill="#E6D2B8"/>
+  <!-- oreilles -->
+  <g id="ear-left">
+    <path d="M38 10 L32 82 L88 50 Z" fill="#C9621F"/>
+    <path d="M38 10 L32 82 L50 60 Z" fill="#8E3B1C"/>
+    <path d="M44 26 L40 72 L76 52 Z" fill="#5A2A17"/>
+    <path d="M44 34 L52 62 L46 52 L58 60 L50 46 L62 56 Z" fill="#F3E4CF"/>
   </g>
-  <!-- ears, swept back -->
-  <path d="M58 70 L30 14 L92 46 Z" fill="#9C4426"/>
-  <path d="M60 62 L44 30 L80 48 Z" fill="#1F1E1D"/>
-  <path d="M120 44 L132 0 L156 52 Z" fill="#9C4426"/>
-  <path d="M126 44 L133 18 L148 50 Z" fill="#1F1E1D"/>
-  <!-- neck and chest, sharp fur -->
-  <path d="M58 132 L100 196 L150 150 L136 128 Z" fill="#B5532F"/>
-  <path d="M86 150 L100 196 L116 158 L108 172 L102 150 L96 170 Z" fill="#FAF4EC"/>
-  <!-- head: angular planes -->
-  <path d="M40 92 L66 48 L124 40 L168 62 L196 98 L170 116 L128 138 L84 140 L52 122 Z" fill="#C96442"/>
-  <path d="M124 40 L168 62 L196 98 L150 84 L118 66 Z" fill="#B5532F"/>
-  <path d="M40 92 L66 48 L84 70 L60 96 Z" fill="#B5532F"/>
-  <!-- cheek tufts, strong jaw -->
-  <path d="M52 122 L28 128 L46 112 L34 110 L52 100 L72 120 Z" fill="#FAF4EC"/>
-  <path d="M84 140 L128 138 L170 116 L150 132 L120 146 L92 148 Z" fill="#9C4426"/>
-  <!-- muzzle, long and pointed -->
-  <path d="M96 96 L150 84 L196 98 L170 116 L128 126 L100 118 Z" fill="#FAF4EC"/>
-  <path d="M188 92 L198 98 L190 104 L182 99 Z" fill="#1F1E1D"/>
-  <!-- confident smile -->
-  <path d="M122 109 Q148 134 178 102 Q164 128 140 128 Q126 124 122 109 Z" fill="#1F1E1D"/>
-  <path d="M130 115 Q148 125 168 112 L166 117 Q148 127 132 120 Z" fill="#FFFFFF"/>
-  <path d="M178 102 L183 97" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
-  <!-- eyes: narrow, hooded, focused -->
+  <g id="ear-right">
+    <path d="M162 10 L168 82 L112 50 Z" fill="#C9621F"/>
+    <path d="M162 10 L168 82 L150 60 Z" fill="#8E3B1C"/>
+    <path d="M156 26 L160 72 L124 52 Z" fill="#5A2A17"/>
+    <path d="M156 34 L148 62 L154 52 L142 60 L150 46 L138 56 Z" fill="#F3E4CF"/>
+  </g>
+  <!-- tête : facettes -->
+  <path d="M100 44 L140 50 L166 78 L178 108 L150 130 L100 156 L50 130 L22 108 L34 78 L60 50 Z" fill="#D9742A"/>
+  <path d="M100 44 L60 50 L74 74 Z" fill="#E68A3A"/>
+  <path d="M100 44 L140 50 L126 74 Z" fill="#CC6524"/>
+  <path d="M100 44 L74 74 L100 92 Z" fill="#EE9A4A"/>
+  <path d="M100 44 L126 74 L100 92 Z" fill="#DE7C30"/>
+  <path d="M60 50 L34 78 L56 84 L74 74 Z" fill="#C9621F"/>
+  <path d="M140 50 L166 78 L144 84 L126 74 Z" fill="#B9561D"/>
+  <path d="M34 78 L22 108 L52 100 L56 84 Z" fill="#B4521F"/>
+  <path d="M166 78 L178 108 L148 100 L144 84 Z" fill="#A8481F"/>
+  <path d="M100 92 L90 132 L110 132 Z" fill="#F0A055"/>
+  <path d="M100 92 L74 74 L84 112 L90 132 Z" fill="#E07F33"/>
+  <path d="M100 92 L126 74 L116 112 L110 132 Z" fill="#CF6A27"/>
+  <!-- masque sombre autour des yeux -->
+  <path d="M52 92 L92 96 L84 112 L58 104 Z" fill="#8E3B1C"/>
+  <path d="M148 92 L108 96 L116 112 L142 104 Z" fill="#7C3318"/>
+  <!-- joues et touffes crème -->
+  <path d="M22 108 L4 118 L30 120 L18 128 L46 128 L60 120 L84 112 L52 100 Z" fill="#F3E4CF"/>
+  <path d="M178 108 L196 118 L170 120 L182 128 L154 128 L140 120 L116 112 L148 100 Z" fill="#E6D2B8"/>
+  <!-- museau crème, mâchoire -->
+  <path d="M84 112 L60 120 L46 128 L76 150 L100 158 L92 136 Z" fill="#FAF4EC"/>
+  <path d="M116 112 L140 120 L154 128 L124 150 L100 158 L108 136 Z" fill="#EFE2CF"/>
+  <path d="M46 128 L76 150 L100 158 L100 172 L62 150 Z" fill="#E6D2B8"/>
+  <path d="M154 128 L124 150 L100 158 L100 172 L138 150 Z" fill="#D8C2A6"/>
+  <!-- sourire -->
+  <path d="M100 146 L100 152" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M66 136 Q82 162 100 152 Q118 162 134 136" fill="none" stroke="#1F1E1D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M66 136 L62 131" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
+  <path d="M134 136 L138 131" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
+  <!-- truffe -->
+  <path d="M89 130 Q100 126 111 130 L104 145 Q100 148 96 145 Z" fill="#1F1E1D"/>
+  <path d="M95 131 Q100 129.5 104 131 L101 134 Z" fill="#5C5650"/>
+  <!-- yeux en amande, coin externe relevé -->
   <g id="eye-left">
-    <path d="M67 85 Q84 64 103 79 Q87 92 67 85 Z" fill="#FFFFFF" stroke="#1F1E1D" stroke-width="2.5"/>
-    <clipPath id="clip-left"><path d="M67 85 Q84 64 103 79 Q87 92 67 85 Z"/></clipPath>
+    <path d="M93 102 Q78 80 56 90 Q70 109 93 102 Z" fill="#F2B866"/>
+    <clipPath id="clip-left"><path d="M93 102 Q78 80 56 90 Q70 109 93 102 Z"/></clipPath>
     <g clip-path="url(#clip-left)">
       <g id="pupil-left">
-        <circle cx="86" cy="80" r="8" fill="#E39A33"/>
-        <circle cx="86" cy="80" r="4.4" fill="#1F1E1D"/>
-        <circle cx="88.5" cy="77.5" r="1.8" fill="#FFFFFF"/>
+        <circle cx="76" cy="96" r="8.5" fill="#B5651F"/>
+        <circle cx="76" cy="96" r="4.2" fill="#1F1E1D"/>
+        <circle cx="78.4" cy="93.6" r="1.7" fill="#FFFFFF"/>
       </g>
     </g>
-    <path id="lids-left" d="M65 83 Q84 63 105 77" fill="none" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
+    <path d="M93 102 Q78 80 56 90 Q70 109 93 102 Z" fill="none" stroke="#1F1E1D" stroke-width="2.5" stroke-linejoin="round"/>
+    <path id="lids-left" d="M95 102 Q78 78 54 89" fill="none" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
   </g>
   <g id="eye-right">
-    <path d="M111 77 Q130 56 149 71 Q132 84 111 77 Z" fill="#FFFFFF" stroke="#1F1E1D" stroke-width="2.5"/>
-    <clipPath id="clip-right"><path d="M111 77 Q130 56 149 71 Q132 84 111 77 Z"/></clipPath>
+    <path d="M107 102 Q122 80 144 90 Q130 109 107 102 Z" fill="#F2B866"/>
+    <clipPath id="clip-right"><path d="M107 102 Q122 80 144 90 Q130 109 107 102 Z"/></clipPath>
     <g clip-path="url(#clip-right)">
       <g id="pupil-right">
-        <circle cx="131" cy="71" r="8" fill="#E39A33"/>
-        <circle cx="131" cy="71" r="4.4" fill="#1F1E1D"/>
-        <circle cx="133.5" cy="68.5" r="1.8" fill="#FFFFFF"/>
+        <circle cx="124" cy="96" r="8.5" fill="#B5651F"/>
+        <circle cx="124" cy="96" r="4.2" fill="#1F1E1D"/>
+        <circle cx="126.4" cy="93.6" r="1.7" fill="#FFFFFF"/>
       </g>
     </g>
-    <path id="lids-right" d="M109 75 Q130 55 151 69" fill="none" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
+    <path d="M107 102 Q122 80 144 90 Q130 109 107 102 Z" fill="none" stroke="#1F1E1D" stroke-width="2.5" stroke-linejoin="round"/>
+    <path id="lids-right" d="M105 102 Q122 78 146 89" fill="none" stroke="#1F1E1D" stroke-width="3" stroke-linecap="round"/>
   </g>
-  <!-- relaxed brows -->
-  <path d="M64 68 L84 60 L103 66" fill="none" stroke="#1F1E1D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M111 61 L132 50 L152 55" fill="none" stroke="#1F1E1D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- sourcils : facettes sombres -->
+  <path id="brow-left" d="M56 84 L90 88 L94 94 L74 84 Z" fill="#5A2A17"/>
+  <path id="brow-right" d="M144 84 L110 88 L106 94 L126 84 Z" fill="#5A2A17"/>
 </svg>
