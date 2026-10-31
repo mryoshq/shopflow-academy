@@ -14,6 +14,12 @@ Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` (PR « Radio sim
 2. Un navigateur réglé en anglais affiche l'interface en anglais ; « Français » se choisit dans le menu de compte ou Paramètres > Général.
 
 Prochaine action unique : revue et fusion des PR « Radio simplifiée » et « Plus de plaisir », puis fusion de `main` dans la PR « Interface en anglais » pour traduire leurs textes.
+## Test de charge : limite de la connexion (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-charge` depuis `main` (#67 fusionnée). `scripts/load_test.py` : `LOGIN_P95_LIMIT_MS = 3000` pour la connexion, `P95_LIMIT_MS = 1500` pour toutes les autres requêtes. Rien à faire en local.
+
+PR #71 fusionnée le 31/10/2026.
+
 ## Radio simplifiée — PR 1/3 (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). Fichiers clés : `frontend/src/comfort/Comfort.tsx` (`Radio`, `loadVolume`), `backend/app/comfort.py` (`RADIO_HOSTS`, `stream_url`), `gateway/nginx.conf` (`media-src`), `.env.example`, `docs/RUNBOOK.md` (« Radio d'ambiance »), ADR-0024 (révision du 30/10). Captures : `docs/captures/radio/`.

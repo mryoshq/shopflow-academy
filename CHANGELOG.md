@@ -6,6 +6,10 @@
 - Choix « Français / English » dans le menu de compte et dans Paramètres > Général, mémorisé dans le navigateur, langue du navigateur par défaut ; `<html lang>` suit le choix.
 - Dates et nombres formatés selon la langue ; le contenu des cours reste dans sa langue d'origine.
 - Une clé de traduction manquante fait échouer la CI. Structure prête pour l'arabe (direction de droite à gauche), non livré. ADR-0040.
+## 2026-10-31 — Test de charge : limite propre à la connexion (`claude/lucid-brahmagupta-htwgun-charge`)
+
+- `scripts/load_test.py` : la connexion (hachage Argon2 volontairement coûteux, 11 connexions simultanées, une fois par session de 30 jours) a sa propre limite de p95, 3 s ; toutes les autres requêtes gardent 1,5 s. Le contrôle CI ne dépend plus de la vitesse de la machine.
+
 ## 2026-10-30 — Radio simplifiée (`claude/lucid-brahmagupta-htwgun-radio`)
 
 - Radio d'ambiance : lecteur audio de la plateforme (lecture/pause, volume mémorisé dans le navigateur) au lieu du lecteur YouTube ; deux stations, « Nightride FM — Chillsynth » et « Nightwave Plaza ». Rien ne démarre seul ; le navigateur lit le flux directement.
