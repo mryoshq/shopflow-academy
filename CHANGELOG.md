@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-31 — Plus de plaisir : séries, badges, niveaux, objectif de classe (`claude/lucid-brahmagupta-htwgun-plaisir`)
+
+- Séries de missions réussies du premier coup (effet discret à 3, 5 et 10 ; un essai raté remet à zéro sans message).
+- Badges personnels attribués par le serveur (première mission, premier bloc, séries de 5 et 10, un par objectif atteint, tous les bonus d'un module), avec notification et collection ; recalcul `python -m app.rewards recompute`.
+- Niveaux de « Stagiaire Data » à « Lead Data Engineer » avec des points d'expérience distincts de la note, jamais exportés.
+- Objectif de classe anonyme, réglable par l'enseignant, avec une notification à 25, 50, 75 et 100 %.
+- Confettis à la fin d'un bloc et son court facultatif (coupé par défaut), coupés avec « Réduire les animations ». ADR-0039, migration `0015_rewards`.
+
 ## 2026-10-30 — Tableaux Markdown dans les leçons (`claude/lucid-brahmagupta-htwgun-tableaux`)
 
 - Texte des leçons : les tableaux Markdown simples (en-tête, séparation `| --- |`, alignement facultatif) s'affichent en vrai tableau, avec gras et code dans les cellules ; cadre qui défile seul sur téléphone, en clair et en sombre. Un tableau mal formé reste du texte. 12 colonnes et 100 lignes au plus.

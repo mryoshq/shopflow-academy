@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { SidePanel } from "./SidePanel"
+import { StudentRewardsSummary } from "../rewards/Rewards"
+import type { Rewards } from "../rewards/types"
 import { ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPoints } from "../student/ui"
 import type { MissionStatus } from "../student/types"
 
@@ -20,6 +22,7 @@ export type Overview = {
 }
 type StudentDetail = {
   id: number; display_name: string
+  rewards?: Rewards
   missions: { mission_version_id: number; title: string; status: MissionStatus; locked_by: string[]; unlocked_by_teacher: boolean; best_points: number; possible: number; bonus: boolean; attempts: number; hints: number; fast_attempts?: number }[]
   attempts: { id: number; mission: string; created_at: string; correct: boolean; points: number; fast?: boolean; percent?: number | null }[]
 }
@@ -228,6 +231,7 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
       <SidePanel open={detail !== null} title={detail ? `Détail : ${detail.display_name}` : "Détail"} onClose={closeStudent}>
         {detail && <Stack gap="4">
           <Flex gap="2" wrap="wrap"><Button size="sm" variant="outline" colorPalette="saffron" loading={busy} onClick={() => void resetPassword(detail.id, detail.display_name)}>Réinitialiser le mot de passe</Button></Flex>
+          {detail.rewards && <StudentRewardsSummary rewards={detail.rewards} />}
           {reset && reset.student === detail.display_name && <Box role="status" p="4" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
             <Text fontWeight="semibold">Nouveau mot de passe de {reset.student}</Text>
             <Flex gap="3" align="center" wrap="wrap" mt="2">

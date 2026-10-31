@@ -52,6 +52,10 @@ Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauv
    - Seul un 401 (session expirée ou révoquée) ramène à la connexion. Une erreur 502, 503 ou 504, ou une coupure du réseau, ne déconnecte jamais.
    - **Limite** : un étudiant qui ouvre le site **pour la première fois** pendant une panne voit encore la page d'erreur de Cloudflare, car le service worker n'est pas encore installé sur son appareil. Il suffit de recharger après le rétablissement.
 
+## Badges et objectif de classe (ADR-0039)
+- Recalculer tous les badges à partir des tentatives (sans notification, idempotent) : `docker compose exec backend python -m app.rewards recompute`. Le tableau de bord le fait aussi sans bruit pour chaque étudiant qui l'ouvre.
+- L'objectif de classe se règle dans Réglages > Objectif de classe ; rien à faire côté serveur.
+
 ## Sauvegardes et restauration
 
 - **Automatique** : le service `backup` fait un `pg_dump` vérifié (`pg_restore --list`) au démarrage puis toutes les 6 h, avec somme SHA-256 et `last-backup.json` ; il garde les 28 dernières (`*-auto.dump`, 7 jours) et ne supprime jamais les sauvegardes manuelles. Réglages : `BACKUP_DIR`, `BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP` dans `.env`.

@@ -26,6 +26,7 @@ from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.grading import AnswerInput, InvalidAnswer, evaluate, feedback_for, reveal_explanation, score
 from app.progress import block_done, attempt_points, course_score, decayed, mission_scores
+from app.rewards import after_attempt, dashboard_rewards
 from app.models import (
     Assignment, BlockState, Course, CourseRelease, Enrollment, HelpRequest, HintReveal, MissionAttempt, MissionUnlock, MissionVersion,
 )
@@ -297,6 +298,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
             "paused": is_paused(db, auth.user.id, release.id), "modules": modules,
             # ADR-0027: banner announcing the rules against random clicking, once the teacher turned them on.
             "rules_notice": notice(rules_for_release(db, release)),
+            # ADR-0039: streak, level, badges and class goal (never part of the score).
+            "rewards": dashboard_rewards(db, release, auth.user.id),
             "missions": [{
                 "mission_version_id": item["mission_version_id"], "title": item["title"],
                 "module": item["module"], "chapter": item["chapter"], "block_id": item.get("chapter_id"),
@@ -422,7 +425,8 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
         return attempt_response(db, existing, definition, replayed=True)
     if not attempt.is_correct and definition.kind not in UNGRADED_KINDS:
         blocked_signal(db, auth, release, version_id)
-    return attempt_response(db, attempt, definition, replayed=False)
+    rewards = after_attempt(db, release, auth.user.id, version_id, attempt.id, attempt.is_correct)
+    return {**attempt_response(db, attempt, definition, replayed=False), "rewards": rewards}
 
 
 def mission_title(release: CourseRelease, version_id: int) -> str:
