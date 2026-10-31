@@ -282,7 +282,6 @@
   "Classe observée": "Observed class",
   "Classe passée à la nouvelle version": "Class moved to the new version",
   "Classe suivie": "Followed class",
-  "Clics rapides": "Quick clicks",
   "Clics rapides :": "Quick clicks:",
   "Cliquez sur la carte, ou appuyez sur Espace ou Entrée, pour la retourner ; flèches gauche et droite pour changer de carte.": "Click the card, or press Space or Enter, to flip it; left and right arrows to change card.",
   "Code": "Code",
@@ -1343,5 +1342,18 @@
   "Un seul étudiant sans équipe : ajoutez-le à la main à un binôme, ou proposez une équipe d’une seule personne au tirage.": "Only one student without a team: add them to a team by hand, or include a one-person team in the draw.",
   "Masquer les anciens tirages": "Hide older draws",
   "Afficher {{count}} tirage plus ancien_one": "Show {{count}} older draw",
-  "Afficher {{count}} tirage plus ancien_other": "Show {{count}} older draws"
+  "Afficher {{count}} tirage plus ancien_other": "Show {{count}} older draws",
+  "Vue étudiant": "Student view",
+  "Vue étudiant, rien n’est enregistré": "Student view, nothing is saved",
+  "Afficher aussi les blocs fermés": "Also show closed blocks",
+  "Revenir à mon interface": "Back to my interface",
+  "Vue étudiant : rien n’est enregistré.": "Student view: nothing is saved.",
+  "depuis moins d’une minute": "for less than a minute",
+  "depuis {{hours}} h {{minutes}}": "for {{hours}} h {{minutes}}",
+  "Personne n’est en ligne pour le moment.": "Nobody is online right now.",
+  "Voir toute la classe": "See the whole class",
+  "{{count}} clic rapide_one": "{{count}} quick click",
+  "{{count}} clic rapide_other": "{{count}} quick clicks",
+  "depuis {{count}} min_one": "for {{count}} min",
+  "depuis {{count}} min_other": "for {{count}} min"
 }
