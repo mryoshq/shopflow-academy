@@ -11,7 +11,8 @@ grid, and sends one message to the class that every student must receive.
 
     python3 scripts/load_test.py [--base http://127.0.0.1:3180] [--rounds 2]
 
-Exit code 1 when an unexpected HTTP status, a duplicated attempt or a slow p95 occurs.
+Exit code 1 when an unexpected HTTP status, a duplicated attempt or a slow p95 occurs (1.5 s per request;
+the login, which hashes a password on purpose, has its own 3 s limit).
 """
 
 from __future__ import annotations
@@ -34,6 +35,9 @@ from test_stack import BASE, CREDENTIALS, refuse_production  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 COURSE = "Démonstration — Données ShopFlow"
 P95_LIMIT_MS = 1500
+# The login hashes a password on purpose (Argon2, ADR-0038: once per 30-day session); 11 logins start at
+# the same moment, so it gets its own limit. Every request of a lesson keeps the 1.5 s one.
+LOGIN_P95_LIMIT_MS = 3000
 MESSAGE = f"Test de charge {uuid.uuid4().hex[:6]} : message à toute la classe."
 message = threading.Event()
 
@@ -160,16 +164,21 @@ def main() -> int:
     print(f"10 étudiants + 1 enseignant, {args.rounds} tour(s), {duration:.1f} s, {sum(len(v) for v in timings.values())} requêtes, {polls} actualisations enseignant")
     print(f"{'requête':24} {'n':>4} {'p50 ms':>8} {'p95 ms':>8} {'max ms':>8}")
     worst = 0.0
+    login_p95 = 0.0
     for label, values in sorted(timings.items()):
         p95 = percentile(values, 0.95)
-        worst = max(worst, p95)
+        if label == "login":
+            login_p95 = p95
+        else:
+            worst = max(worst, p95)
         print(f"{label:24} {len(values):>4} {statistics.median(values):>8.0f} {p95:>8.0f} {max(values):>8.0f}")
     received = sum(1 for r in results if r.get("message_ok"))
-    ok = not problems and duplicates == 0 and all(r["duplicates_ok"] for r in results) and worst <= P95_LIMIT_MS and received == len(results)
+    ok = not problems and duplicates == 0 and all(r["duplicates_ok"] for r in results) and worst <= P95_LIMIT_MS and login_p95 <= LOGIN_P95_LIMIT_MS and received == len(results)
     print(f"Message de l'enseignant reçu : {received} / {len(results)}")
     print(f"Erreurs inattendues : {len(problems)}{' — ' + '; '.join(sorted(set(problems))[:5]) if problems else ''}")
     print(f"Doublons de tentative : {duplicates} ; double envoi même clé → 1 tentative : {'PASS' if all(r['duplicates_ok'] for r in results) else 'FAIL'}")
-    print(f"p95 le plus lent : {worst:.0f} ms (limite {P95_LIMIT_MS} ms)")
+    print(f"p95 le plus lent hors connexion : {worst:.0f} ms (limite {P95_LIMIT_MS} ms)")
+    print(f"p95 connexion : {login_p95:.0f} ms (limite {LOGIN_P95_LIMIT_MS} ms, 11 connexions simultanées)")
     print("PASS" if ok else "FAIL")
     return 0 if ok else 1
 

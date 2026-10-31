@@ -5,6 +5,12 @@
 
 
 
+## Test de charge : limite de la connexion (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-charge` depuis `main` (#67 fusionnée). `scripts/load_test.py` : `LOGIN_P95_LIMIT_MS = 3000` pour la connexion, `P95_LIMIT_MS = 1500` pour toutes les autres requêtes. Rien à faire en local.
+
+Prochaine action unique : revue et fusion de cette PR, puis fusion de `main` dans #69 et #70 pour qu'elles en profitent.
+
 ## Radio simplifiée — PR 1/3 (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). Fichiers clés : `frontend/src/comfort/Comfort.tsx` (`Radio`, `loadVolume`), `backend/app/comfort.py` (`RADIO_HOSTS`, `stream_url`), `gateway/nginx.conf` (`media-src`), `.env.example`, `docs/RUNBOOK.md` (« Radio d'ambiance »), ADR-0024 (révision du 30/10). Captures : `docs/captures/radio/`.
