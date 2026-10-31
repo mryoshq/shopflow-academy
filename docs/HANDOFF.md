@@ -16,6 +16,11 @@ Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main`, puis `main` fus
 4. Facultatif : Réglages > Objectif de classe pour choisir la mesure et la cible.
 
 Prochaine action unique : revue et fusion de la PR « Plus de plaisir » (#69), puis de la PR « Interface en anglais » (#70).
+## Test de charge : limite de la connexion (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-charge` depuis `main` (#67 fusionnée). `scripts/load_test.py` : `LOGIN_P95_LIMIT_MS = 3000` pour la connexion, `P95_LIMIT_MS = 1500` pour toutes les autres requêtes. Rien à faire en local.
+
+PR #71 fusionnée le 31/10/2026.
 
 ## Radio simplifiée — PR 1/3 (30/10/2026)
 

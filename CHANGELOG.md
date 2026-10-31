@@ -7,6 +7,9 @@
 - Niveaux de « Stagiaire Data » à « Lead Data Engineer » avec des points d'expérience distincts de la note, jamais exportés.
 - Objectif de classe anonyme, réglable par l'enseignant, avec une notification à 25, 50, 75 et 100 %.
 - Confettis à la fin d'un bloc et son court facultatif (coupé par défaut), coupés avec « Réduire les animations ». ADR-0039, migration `0015_rewards`.
+## 2026-10-31 — Test de charge : limite propre à la connexion (`claude/lucid-brahmagupta-htwgun-charge`)
+
+- `scripts/load_test.py` : la connexion (hachage Argon2 volontairement coûteux, 11 connexions simultanées, une fois par session de 30 jours) a sa propre limite de p95, 3 s ; toutes les autres requêtes gardent 1,5 s. Le contrôle CI ne dépend plus de la vitesse de la machine.
 
 ## 2026-10-30 — Radio simplifiée (`claude/lucid-brahmagupta-htwgun-radio`)
 
