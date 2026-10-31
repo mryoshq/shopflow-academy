@@ -120,6 +120,12 @@ def milestone_out(item: ProjectMilestone) -> dict:
             "deliverables": list(item.deliverables or []), "sort_order": item.sort_order}
 
 
+def reminder_plan(db: Session, milestone: ProjectMilestone) -> dict:
+    from app.project_reminders import plan_out  # ADR-0045 (imports this module's models only)
+
+    return plan_out(db, milestone)
+
+
 def milestones_of(db: Session, cohort_id: int) -> list[ProjectMilestone]:
     return list(db.scalars(select(ProjectMilestone).where(ProjectMilestone.cohort_id == cohort_id)
                            .order_by(ProjectMilestone.sort_order, ProjectMilestone.id)).all())
@@ -419,7 +425,7 @@ def teacher_view(db: Session, cohort_id: int) -> dict:
         "teams": [{"id": tid, "members": [{"id": uid, "name": who.get(uid, "")} for uid in uids],
                    "grade": grade_out(grades.get(tid), uids, who)} for tid, uids in sorted(teams.items())],
         "alone": [{"id": s.id, "name": who[s.id]} for s in students if s.id not in in_team],
-        "milestones": [{**milestone_out(m), "submissions": [{"team_id": tid, "version": latest[(tid, m.id)].version,
+        "milestones": [{**milestone_out(m), "reminders": reminder_plan(db, m), "submissions": [{"team_id": tid, "version": latest[(tid, m.id)].version,
                        "versions": counts[(tid, m.id)], "late": latest[(tid, m.id)].late, "created_at": iso(latest[(tid, m.id)].created_at)}
                        for tid in sorted(teams) if (tid, m.id) in latest]} for m in milestones],
         "slots": slots_out(db, cohort_id, team_names),
@@ -512,6 +518,7 @@ class MilestonePatch(BaseModel):
     clear_due: bool = False
     deliverables: list[str] | None = Field(default=None, max_length=20)
     sort_order: int | None = Field(default=None, ge=0, le=1000)
+    reminders: bool | None = None  # ADR-0045: automatic reminders for this milestone
 
 
 def clean_deliverables(items: list[str]) -> list[str]:
@@ -551,7 +558,9 @@ def update_milestone(milestone_id: int, payload: MilestonePatch, auth: AuthConte
         row.deliverables = clean_deliverables(payload.deliverables)
     if payload.sort_order is not None:
         row.sort_order = payload.sort_order
-    audit(db, auth, "project.milestone_update", row.cohort_id, {"milestone": row.id})
+    if payload.reminders is not None:
+        row.reminders = payload.reminders
+    audit(db, auth, "project.milestone_update", row.cohort_id, {"milestone": row.id, **({"reminders": payload.reminders} if payload.reminders is not None else {})})
     db.commit()
     return milestone_out(row)
 

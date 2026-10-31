@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, false, func
+from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, String, Text, UniqueConstraint, false, func, true
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -456,7 +456,22 @@ class ProjectMilestone(Base):
     due_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     deliverables: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
     sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    # ADR-0045: automatic reminders 3 days and 1 day before the deadline (the teacher can turn them off).
+    reminders: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, server_default=true())
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectReminder(Base):
+    """ADR-0045: one reminder sent for a milestone to one target (a team, or a student without a team); the log."""
+    __tablename__ = "project_reminders"
+    __table_args__ = (UniqueConstraint("milestone_id", "reminder", "target", name="uq_project_reminder"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    milestone_id: Mapped[int] = mapped_column(ForeignKey("project_milestones.id", ondelete="CASCADE"), nullable=False, index=True)
+    reminder: Mapped[str] = mapped_column(String(8), nullable=False)  # « j3 » or « j1 »
+    target: Mapped[str] = mapped_column(String(32), nullable=False)  # « team:<id> » or « user:<id> »
+    recipients: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    sent_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class ProjectFile(Base):

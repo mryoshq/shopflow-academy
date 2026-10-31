@@ -9,3 +9,4 @@ email-validator>=2,<3
 pyyaml>=6.0,<7
 sqlglot>=26,<27
 cryptography>=44,<47
+tzdata>=2025.1  # ADR-0045: Africa/Casablanca in the slim container

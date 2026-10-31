@@ -18,6 +18,8 @@ const EN: Rule[] = [
     `“${title}” finished by ${done} student${done === "1" ? "" : "s"} out of ${total} (${percent} %).`],
   [/^Binôme surprise : vous travaillerez avec (.+) et (.+)\.$/, (first, second) => `Surprise team: you will work with ${first} and ${second}.`],
   [/^Binôme surprise : vous travaillerez avec (.+)\.$/, (name) => `Surprise team: you will work with ${name}.`],
+  [/^Rappel : « (.+) » est attendu le (\d{2})\/(\d{2})\/(\d{4}) à (\d{2}:\d{2})\. Il vous reste (\d+) jours?\.$/, (title, d, m, y, time, n) =>
+    `Reminder: “${title}” is due on ${d}/${m}/${y} at ${time}. You have ${n} day${n === "1" ? "" : "s"} left.`],
   [/^Nouveau badge : (.+)$/, (label) => `New badge: ${rewardText(label)}`],
   [/^Objectif de classe atteint : (.+)\. Bravo à toutes et à tous !$/, (text) => `Class goal reached: ${lowerFirst(rewardText(capitalFirst(text)))}. Well done, everyone!`],
   [/^Objectif de classe : (\d+) % ! (.+)\. Continuez ensemble\.$/, (percent, text) => `Class goal: ${percent} %! ${rewardText(text)}. Keep going together.`],

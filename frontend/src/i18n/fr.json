@@ -58,5 +58,9 @@
   "{{count}} clic rapide_one": "{{count}} clic rapide",
   "{{count}} clic rapide_other": "{{count}} clics rapides",
   "depuis {{count}} min_one": "depuis {{count}} min",
-  "depuis {{count}} min_other": "depuis {{count}} min"
+  "depuis {{count}} min_other": "depuis {{count}} min",
+  "{{count}} jour avant_one": "{{count}} jour avant",
+  "{{count}} jour avant_other": "{{count}} jours avant",
+  "{{count}} envoi_one": "{{count}} envoi",
+  "{{count}} envoi_other": "{{count}} envois"
 }

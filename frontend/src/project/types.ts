@@ -2,6 +2,9 @@ export type ProjectFileRef = { id: number; name: string; size: number }
 export type Submission = { id: number; milestone_id: number; version: number; text: string; link: string | null; files: ProjectFileRef[]; late: boolean; submitted_by: string; created_at: string | null }
 export type Milestone = { id: number; title: string; instructions: string; due_at: string | null; deliverables: string[]; sort_order: number
   submissions?: Submission[]; comments?: { id: number; text: string; created_at: string | null }[] }
+/** ADR-0045: automatic reminders of a milestone (3 days then 1 day before, 9:00 Morocco time). */
+export type ReminderPlan = { enabled: boolean; pairing?: boolean
+  items: { key: "j3" | "j1"; days: number; send_at: string; local: string; status: "planned" | "sent" | "passed" | "off"; sent: number }[] }
 export type Slot = { id: number; starts_at: string | null; ends_at: string | null; label: string; team_id: number | null; team: string[]; mine: boolean }
 export type StudentProjectData = {
   cohort_id: number | null; cohort?: string; cohorts: { id: number; label: string }[]
@@ -29,6 +32,6 @@ export type TeacherProjectData = {
   assignment_id: number; cohort: string; cohort_id: number
   teams: { id: number; members: { id: number; name: string }[]; grade: TeamGrade }[]
   alone: { id: number; name: string }[]
-  milestones: (Omit<Milestone, "submissions" | "comments"> & { submissions: { team_id: number; version: number; versions: number; late: boolean; created_at: string | null }[] })[]
+  milestones: (Omit<Milestone, "submissions" | "comments"> & { reminders?: ReminderPlan; submissions: { team_id: number; version: number; versions: number; late: boolean; created_at: string | null }[] })[]
   slots: Slot[]; grid: Record<"sql" | "python" | "nosql" | "airflow" | "reproducibility", number>; individual_max: number
 }

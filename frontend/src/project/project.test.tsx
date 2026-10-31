@@ -6,6 +6,7 @@ import { ProjectText, splitBlocks } from "./ProjectText"
 import { StudentProject } from "./StudentProject"
 import { TeacherProject } from "./TeacherProject"
 import { setLanguage } from "../i18n"
+import { serverText } from "../i18n/server"
 import type { StudentProjectData, TeacherProjectData } from "./types"
 
 const json = (body: unknown, status = 200) => ({ status, ok: status < 400, json: async () => body })
@@ -189,4 +190,49 @@ it("teacher: preview the draw (one-person teams only with agreement), confirm, a
   const sent = JSON.parse(String(fetchMock.mock.calls.find(([url, init]) => String(url).endsWith("/project/draw") && (init as RequestInit | undefined)?.method === "POST")![1].body))
   expect(sent).toEqual({ seed: "00c0ffee", fingerprint: "abcdabcdabcdabcd", include_team_ids: [], confirm_again: true })
   expect(await screen.findByText("Tirage enregistré : les étudiants tirés au sort sont prévenus.")).toBeInTheDocument()
+})
+
+it("teacher: Projet > Jalons shows the planned reminders in Morocco time and turns them off for one milestone", async () => {
+  let enabled = true
+  const data = (): TeacherProjectData => ({ ...teacherData, milestones: [
+    { ...teacherData.milestones[0], due_at: "2026-11-21T22:59:00Z", reminders: { enabled, pairing: false, items: [
+      // 18/11 and 20/11 at 9:00 in Morocco (UTC+0 from 20 September 2026).
+      { key: "j3", days: 3, send_at: "2026-11-18T09:00:00+00:00", local: "2026-11-18T09:00", status: enabled ? "sent" : "off", sent: enabled ? 2 : 0 },
+      { key: "j1", days: 1, send_at: "2026-11-20T09:00:00+00:00", local: "2026-11-20T09:00", status: enabled ? "planned" : "off", sent: 0 }] } },
+    { id: 2, title: "Sans date", instructions: "", due_at: null, deliverables: [], sort_order: 1, submissions: [], reminders: { enabled: true, items: [] } }] })
+  const fetchMock = vi.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+    if (url.endsWith("/teacher/project/milestones/1") && init?.method === "PATCH") { enabled = JSON.parse(String(init.body)).reminders; return json({ ok: true }) }
+    if (url.endsWith("/project/draw")) return json(EMPTY_DRAW)
+    return json(data())
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap(<TeacherProject assignmentId={7} />)
+  await screen.findByText("demo.etudiant01 + demo.etudiant02")
+  fireEvent.click(screen.getByRole("tab", { name: "Jalons" }))
+  const plan = await screen.findByTestId("milestone-reminders")
+  expect(within(plan).getByText("3 jours avant")).toBeInTheDocument()
+  expect(within(plan).getByText("1 jour avant")).toBeInTheDocument()
+  expect(within(plan).getByText(/18 nov\..*09:00/)).toBeInTheDocument()
+  expect(within(plan).getByText("Envoyé · 2 envois")).toBeInTheDocument()
+  expect(within(plan).getByText("Prévu")).toBeInTheDocument()
+  expect(screen.getByText("Pas de rappel automatique : ce jalon n’a pas de date limite.")).toBeInTheDocument()
+  fireEvent.click(within(plan).getByRole("checkbox", { name: "Activés" }))
+  await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/teacher/project/milestones/1", expect.objectContaining({ method: "PATCH", body: JSON.stringify({ reminders: false }) })))
+  expect(await screen.findByText("Rappels automatiques désactivés pour ce jalon.")).toBeInTheDocument()
+  expect(within(screen.getByTestId("milestone-reminders")).getAllByText("Désactivé")).toHaveLength(2)
+})
+
+it("observer: sees the reminders without the switch; the reminder reads in English", async () => {
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async () => json({ ...teacherData, milestones: [{ ...teacherData.milestones[0], due_at: "2026-11-21T22:59:00Z",
+    reminders: { enabled: true, items: [{ key: "j1", days: 1, send_at: "2026-11-20T09:00:00+00:00", local: "2026-11-20T09:00", status: "planned", sent: 0 }] } }] })))
+  wrap(<TeacherProject assignmentId={7} readOnly />)
+  await screen.findByText("demo.etudiant01 + demo.etudiant02")
+  fireEvent.click(screen.getByRole("tab", { name: "Jalons" }))
+  const plan = await screen.findByTestId("milestone-reminders")
+  expect(within(plan).queryByRole("checkbox")).toBeNull()
+  setLanguage("en")
+  try {
+    expect(serverText("Rappel : « Rendu final » est attendu le 21/11/2026 à 23:59. Il vous reste 3 jours.")).toBe("Reminder: “Rendu final” is due on 21/11/2026 at 23:59. You have 3 days left.")
+    expect(serverText("Rappel : « Binôme formé » est attendu le 21/11/2026 à 23:59. Il vous reste 1 jour.")).toBe("Reminder: “Binôme formé” is due on 21/11/2026 at 23:59. You have 1 day left.")
+  } finally { setLanguage("fr") }
 })
