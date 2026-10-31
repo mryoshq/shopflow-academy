@@ -4,13 +4,13 @@ import { readFileSync } from "node:fs"
 import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { system } from "../theme"
 import { PwaBanner } from "../pwa"
-import { ComfortButton, DEFAULT_POMODORO, clampMinutes, clock, tick } from "./Comfort"
+import { ComfortButton, DEFAULT_POMODORO, clampMinutes, clock, loadVolume, tick } from "./Comfort"
 
 const wrap = (node: React.ReactNode) => render(<ChakraProvider value={system}>{node}</ChakraProvider>)
 const json = (body: unknown, status = 200) => ({ status, ok: status < 400, json: async () => body })
 
 beforeEach(() => { localStorage.clear() })
-afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals() })
+afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks() })
 
 it("pomodoro: counts down, switches work → break → work, minutes are bounded", () => {
   const start = 1_000_000
@@ -23,20 +23,104 @@ it("pomodoro: counts down, switches work → break → work, minutes are bounded
   expect([clock(25 * 60), clock(65), clampMinutes(90, 15, 50), clampMinutes(Number("x"), 3, 15)]).toEqual(["25:00", "01:05", 50, 3])
 })
 
-it("radio: nothing loads before « Écouter », then the stream starts muted; none configured → a short note", async () => {
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({ streams: [{ id: "abcDEF12345", label: "Lofi calme", url: "https://www.youtube-nocookie.com/embed/abcDEF12345" }] })))
-  const { container } = wrap(<ComfortButton />)
+const STREAMS = { streams: [
+  { id: "radio-1", label: "Nightride FM — Chillsynth", url: "https://stream.nightride.fm/chillsynth.mp3" },
+  { id: "radio-2", label: "Nightwave Plaza", url: "https://radio.plaza.one/mp3" },
+] }
+
+/** jsdom has no media playback: record what the page asks the <audio> element to do. */
+function mediaStub(play: () => Promise<void> = async () => undefined) {
+  const calls = { play: vi.fn(play), pause: vi.fn(), load: vi.fn() }
+  vi.spyOn(HTMLMediaElement.prototype, "play").mockImplementation(calls.play)
+  vi.spyOn(HTMLMediaElement.prototype, "pause").mockImplementation(calls.pause)
+  vi.spyOn(HTMLMediaElement.prototype, "load").mockImplementation(calls.load)
+  return calls
+}
+
+async function openRadio(body: unknown = STREAMS) {
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(body)))
+  localStorage.removeItem("shopflow:pomodoro")
+  const view = wrap(<ComfortButton />)
   fireEvent.click(screen.getByRole("button", { name: "Confort : minuteur et radio" }))
-  fireEvent.click(await screen.findByRole("button", { name: "Écouter" }))
-  const frame = container.querySelector("iframe")!
-  expect(frame.getAttribute("src")).toBe("https://www.youtube-nocookie.com/embed/abcDEF12345?autoplay=1&mute=1&playsinline=1&rel=0")
-  fireEvent.click(screen.getByRole("button", { name: "Arrêter" }))
+  return view
+}
+
+it("radio: a platform <audio> player, nothing loads before « Lecture », pause drops the stream, two stations", async () => {
+  const media = mediaStub()
+  const { container } = await openRadio()
+  expect(await screen.findByRole("combobox", { name: "Station" })).toHaveValue("radio-1")
+  const audio = container.querySelector("audio")!
   expect(container.querySelector("iframe")).toBeNull()
+  expect(screen.getAllByRole("option").map((option) => option.textContent)).toEqual(["Nightride FM — Chillsynth", "Nightwave Plaza"])
+  // Nothing starts on its own: no source, preload none, play never called.
+  expect(audio.getAttribute("src")).toBeNull()
+  expect(audio.getAttribute("preload")).toBe("none")
+  expect(audio.hasAttribute("autoplay")).toBe(false)
+  expect(media.play).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole("button", { name: "Lecture" }))
+  expect(audio.getAttribute("src")).toBe("https://stream.nightride.fm/chillsynth.mp3")
+  expect(media.play).toHaveBeenCalledTimes(1)
+  expect(screen.getByText("Lecture : Nightride FM — Chillsynth")).toBeInTheDocument()
+  // Another station while playing: it switches at once.
+  fireEvent.change(screen.getByRole("combobox", { name: "Station" }), { target: { value: "radio-2" } })
+  expect(audio.getAttribute("src")).toBe("https://radio.plaza.one/mp3")
+  fireEvent.click(screen.getByRole("button", { name: "Pause" }))
+  expect(media.pause).toHaveBeenCalled()
+  expect(audio.getAttribute("src")).toBeNull()
+  expect(screen.getByRole("button", { name: "Lecture" })).toBeInTheDocument()
+})
+
+it("radio: the volume is remembered in this browser, and storage errors are harmless", async () => {
+  mediaStub()
+  localStorage.setItem("shopflow:radio-volume", "30")
+  const { container } = await openRadio()
+  const slider = await screen.findByRole("slider", { name: /Volume/ })
+  expect(slider).toHaveValue("30")
+  expect(slider).toHaveAttribute("aria-valuetext", "30 %")
+  fireEvent.change(slider, { target: { value: "70" } })
+  expect(localStorage.getItem("shopflow:radio-volume")).toBe("70")
+  fireEvent.click(screen.getByRole("button", { name: "Lecture" }))
+  expect(container.querySelector("audio")!.volume).toBeCloseTo(0.7)
   cleanup()
-  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json({ streams: [] })))
-  const second = wrap(<ComfortButton />)
+  localStorage.setItem("shopflow:radio-volume", "abc")
+  expect(loadVolume()).toBe(50)
+  vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked") })
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked") })
+  expect(loadVolume()).toBe(50)
+  await openRadio()
+  fireEvent.change(await screen.findByRole("slider", { name: /Volume/ }), { target: { value: "80" } })
+  expect(screen.getByText("80 %")).toBeInTheDocument()
+})
+
+it("radio: a network error shows « Radio indisponible pour le moment » without blocking the page", async () => {
+  mediaStub()
+  const { container } = await openRadio()
+  fireEvent.click(await screen.findByRole("button", { name: "Lecture" }))
+  fireEvent.error(container.querySelector("audio")!)
+  expect(screen.getByText("Radio indisponible pour le moment. Réessayez plus tard.")).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Lecture" })).toBeEnabled()
+  expect(container.querySelector("audio")!.getAttribute("src")).toBeNull()
+  // The rest of the panel still works.
+  fireEvent.click(screen.getByRole("button", { name: "Démarrer" }))
+  expect(screen.getByRole("button", { name: "Pause" })).toBeInTheDocument()
+  cleanup()
+  // A refused start (stream down) gives the same message; an aborted start (quick pause) does not.
+  mediaStub(async () => { throw new DOMException("down", "NotSupportedError") })
+  await openRadio()
+  fireEvent.click(await screen.findByRole("button", { name: "Lecture" }))
+  expect(await screen.findByText(/Radio indisponible pour le moment/)).toBeInTheDocument()
+  cleanup()
+  mediaStub(async () => { throw new DOMException("aborted", "AbortError") })
+  await openRadio()
+  fireEvent.click(await screen.findByRole("button", { name: "Lecture" }))
+  await act(async () => { await Promise.resolve() })
+  expect(screen.queryByText(/Radio indisponible/)).toBeNull()
+})
+
+it("radio: none configured → a short note and no player", async () => {
+  const { container } = await openRadio({ streams: [] })
   expect(await screen.findByText("Aucune radio proposée par votre enseignant.")).toBeInTheDocument()
-  expect(second.container.querySelector("iframe")).toBeNull()
+  expect(container.querySelector("audio, iframe")).toBeNull()
 })
 
 it("pomodoro in the header: the button shows the time left while it runs", async () => {
@@ -69,6 +153,7 @@ it("service worker: never answers for the API, media, other origins or writes; p
   expect(answers("https://shopflow.example/api/v1/notifications", "navigate")).toBe(false)
   expect(answers("https://shopflow.example/media/0123456789abcdef.mp4")).toBe(false)
   expect(answers("https://www.youtube-nocookie.com/embed/x")).toBe(false)
+  expect(answers("https://stream.nightride.fm/chillsynth.mp3")).toBe(false)
   expect(answers("https://shopflow.example/", "navigate", "POST")).toBe(false)
   expect(answers("https://shopflow.example/", "navigate")).toBe(true)
   expect(answers("https://shopflow.example/assets/index-abc123.js")).toBe(true)

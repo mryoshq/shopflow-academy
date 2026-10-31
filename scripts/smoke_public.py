@@ -82,6 +82,8 @@ def main() -> int:
     check("Page d'accueil", status == 200, f"HTTP {status}")
     check("Pas de redirection Cloudflare Access", "cloudflareaccess" not in (headers.get("Location") or ""), headers.get("Location") or "aucune")
     check("En-tête CSP", bool(headers.get("Content-Security-Policy")))
+    media = next((part.split()[1:] for part in (headers.get("Content-Security-Policy") or "").split(";") if part.split()[:1] == ["media-src"]), [])
+    check("CSP media-src : radios seulement", media == ["'self'", "https://stream.nightride.fm", "https://radio.plaza.one"], " ".join(media) or "absent")
     status, _, body = call("GET", f"{base}/health/ready")
     check("/health/ready", status == 200 and b'"ok"' in body, f"HTTP {status}")
     production = urlparse(base).netloc in PRODUCTION_HOSTS

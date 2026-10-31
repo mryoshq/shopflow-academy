@@ -24,6 +24,18 @@
 
 Activation (propriétaire) : dans `.env`, `RADIO_STREAMS='[{"label":"Lofi hip hop","url":"https://www.youtube-nocookie.com/embed/jfKfPfyJRdk"}]'`, puis `docker compose up -d --wait backend`.
 
+### Radio : révision du 30/10/2026 (remplace les trois points ci-dessus sur la radio)
+- **Lecteur audio de la plateforme** (`<audio>`) au lieu du lecteur YouTube : lecture/pause et volume seulement, choix de la station dans un petit menu. Rien ne démarre seul (`preload="none"`, pas de source avant « Lecture ») ; « Pause » retire la source, ce qui coupe la connexion au flux.
+- **Volume** mémorisé dans ce navigateur (`shopflow:radio-volume`, 0 à 100, 50 par défaut ; stockage bloqué = 50, sans erreur).
+- **Flux** : `RADIO_STREAMS`, liste JSON `{label, url}` d'adresses HTTPS directes. Le serveur n'accepte que les hôtes de `RADIO_HOSTS` (`backend/app/comfort.py`), identiques à `media-src` de la CSP (vérifié par `tests/test_comfort.py`) ; sans requête, port, identifiants ni fragment. Aucune adresse n'est codée dans le frontend.
+- **Le navigateur lit le flux directement** : la passerelle ne le retransmet jamais (aucun `proxy_pass` vers ces hôtes), `connect-src` reste `'self'`. Conséquence assumée : la station voit l'adresse IP de l'étudiant pendant l'écoute, seulement après un clic sur « Lecture ».
+- **CSP** : `media-src 'self' https://stream.nightride.fm https://radio.plaza.one`. `frame-src` garde `www.youtube-nocookie.com` et `player.vimeo.com`, encore permis pour les vidéos de cours (`data.kind: video`).
+- **Erreur réseau** : « Radio indisponible pour le moment. Réessayez plus tard. » dans le panneau, sans bloquer la page ; le reste du panneau reste utilisable.
+- **Stations** (adresses lues dans le lecteur officiel de chaque site le 30/10/2026, toutes deux en `audio/mpeg`) :
+  1. « Nightride FM — Chillsynth » — `https://stream.nightride.fm/chillsynth.mp3` (lecteur de nightride.fm : `https://stream.nightride.fm/<station>.mp3`) ;
+  2. « Nightwave Plaza » — `https://radio.plaza.one/mp3` (lecteur de plaza.one).
+- **Conditions d'écoute** : aucune page de conditions n'interdit l'écoute dans un lecteur tiers. Nightride FM publie une politique de confidentialité (journaux techniques, adresse IP) et autorise les lecteurs d'autres origines (`Access-Control-Allow-Origin: *`) ; Nightwave Plaza publie une politique de confidentialité et une API publique. Les deux sont gratuites et vivent de dons (Patreon) : le panneau garde le nom de chaque station. À revoir si une station publie des conditions contraires.
+
 ### Couleurs (contraste WCAG, ratios mesurés)
 
 | Paire | Clair | Sombre | Niveau |

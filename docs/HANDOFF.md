@@ -7,7 +7,7 @@
 
 ## Plus de plaisir — PR 2/3 (31/10/2026)
 
-Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main` (sans la PR 1, indépendante). Fichiers clés : `backend/app/rewards.py` (séries, XP, niveaux, badges, objectif de classe, `recompute`), `backend/app/rewards_models.py`, migration `0015_rewards`, `frontend/src/rewards/` (`Rewards.tsx`, `celebrate.ts`), branchements dans `student.py`, `teacher_dashboard.py`, `StudentDashboard.tsx`, `MissionPlayer.tsx`, `TeacherApp.tsx`, `SettingsDialog.tsx`. ADR-0039. Captures : `docs/captures/plaisir/`.
+Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main`, puis `main` fusionnée après #67. Fichiers clés : `backend/app/rewards.py` (séries, XP, niveaux, badges, objectif de classe, `recompute`), `backend/app/rewards_models.py`, migration `0015_rewards`, `frontend/src/rewards/` (`Rewards.tsx`, `celebrate.ts`), branchements dans `student.py`, `teacher_dashboard.py`, `StudentDashboard.tsx`, `MissionPlayer.tsx`, `TeacherApp.tsx`, `SettingsDialog.tsx`. ADR-0039. Captures : `docs/captures/plaisir/`.
 
 ### Plaisir — À faire en local après fusion
 1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md` (Sauvegardes et restauration), avec `avant-0015-rewards` à la place de `OPERATION`.
@@ -15,7 +15,18 @@ Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main` (sans la PR 1, i
 3. Attribuer les badges déjà mérités, sans notification : `docker compose exec backend python -m app.rewards recompute`.
 4. Facultatif : Réglages > Objectif de classe pour choisir la mesure et la cible.
 
-Prochaine action unique : revue et fusion des PR « Radio simplifiée » puis « Plus de plaisir », puis PR 3 « Interface en anglais ».
+Prochaine action unique : revue et fusion de la PR « Plus de plaisir » (#69), puis de la PR « Interface en anglais » (#70).
+
+## Radio simplifiée — PR 1/3 (30/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-radio` depuis `main` (#66 fusionnée). Fichiers clés : `frontend/src/comfort/Comfort.tsx` (`Radio`, `loadVolume`), `backend/app/comfort.py` (`RADIO_HOSTS`, `stream_url`), `gateway/nginx.conf` (`media-src`), `.env.example`, `docs/RUNBOOK.md` (« Radio d'ambiance »), ADR-0024 (révision du 30/10). Captures : `docs/captures/radio/`.
+
+### Radio — À faire en local après fusion
+1. Dans `.env`, remplacer `RADIO_STREAMS` par la ligne de `.env.example` (les anciens liens YouTube sont désormais ignorés).
+2. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la passerelle doit être reconstruite pour la nouvelle CSP.
+3. `python3 scripts/smoke_public.py http://127.0.0.1:3080` : le contrôle « CSP media-src : radios seulement » doit passer.
+
+PR #67 fusionnée le 31/10/2026.
 
 ## Tableaux Markdown dans les leçons (30/10/2026)
 
@@ -25,7 +36,7 @@ Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée
 1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`).
 2. Recompiler le module CampusEquip (`python3 scripts/course_md.py compile "<dossier du cours>/cours"`) : chaque tableau mal formé est signalé avec sa ligne. Les versions déjà publiées s'affichent avec les tableaux dès le redéploiement (rendu côté navigateur), sans republier.
 
-Prochaine action unique : revue et fusion de la PR « Tableaux Markdown dans les leçons ».
+PR #66 fusionnée le 30/10/2026.
 
 ## PR 1 « Accueil et suivi » (30/10/2026)
 
