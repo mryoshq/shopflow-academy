@@ -65,6 +65,20 @@ Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauv
 - Vérifier un flux : `curl -sI https://radio.plaza.one/mp3 | head -3` doit répondre `audio/mpeg`.
 - Si une station tombe, l'étudiant voit « Radio indisponible pour le moment » ; rien d'autre n'est touché.
 
+## E-mails des invitations d'observateurs (facultatif, ADR-0042)
+
+Sans réglage SMTP, rien n'est envoyé : dans Réglages > Observateurs, l'enseignant copie le lien d'invitation ou prépare l'e-mail dans sa propre messagerie (bouton « Préparer l'e-mail »).
+
+Pour l'envoi automatique avec Resend (domaine expéditeur vérifié chez Resend) :
+1. Ajouter dans `.env`, ligne par ligne, sans jamais afficher le fichier ni la clé :
+   - `SMTP_HOST=smtp.resend.com` ;
+   - `SMTP_USER=resend` ;
+   - `SMTP_PASSWORD=` suivi de la clé API ;
+   - `SMTP_FROM=` suivi de l'adresse d'envoi vérifiée ;
+   - `SMTP_SECURITY=ssl` avec `SMTP_PORT=465`, ou `SMTP_SECURITY=starttls` avec `SMTP_PORT=587`.
+2. Redémarrer le backend : `docker compose up -d backend`.
+3. Réglages > Observateurs > « Envoyer un e-mail de test ». En cas d'échec, le message dit seulement si l'identification a été refusée ou si le serveur est injoignable ; la configuration n'est jamais affichée.
+
 ## Sauvegardes et restauration
 
 - **Automatique** : le service `backup` fait un `pg_dump` vérifié (`pg_restore --list`) au démarrage puis toutes les 6 h, avec somme SHA-256 et `last-backup.json` ; il garde les 28 dernières (`*-auto.dump`, 7 jours) et ne supprime jamais les sauvegardes manuelles. Réglages : `BACKUP_DIR`, `BACKUP_INTERVAL_HOURS`, `BACKUP_KEEP` dans `.env`.

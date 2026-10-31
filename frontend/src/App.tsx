@@ -5,6 +5,7 @@ import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"
 import { useExperienceRoute } from "./useHashRoute"
 import { ObserverHome } from "./observer/ObserverHome"
+import { InvitationPage, invitationToken } from "./observer/InvitationPage"
 import { useColorMode } from "./useColorMode"
 import { LoginIntro } from "./LoginIntro"
 import { AccountMenu } from "./preferences/AccountMenu"
@@ -36,6 +37,13 @@ export function App() {
   const cardLogo = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<User | null>(null)
   const [username, setUsername] = useState("")
+  const [invitation, setInvitation] = useState(() => invitationToken(window.location.hash))
+  const [notice, setNotice] = useState("")
+  useEffect(() => {
+    const changed = () => setInvitation(invitationToken(window.location.hash))
+    window.addEventListener("hashchange", changed)
+    return () => window.removeEventListener("hashchange", changed)
+  }, [])
   const [password, setPassword] = useState("")
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState("")
@@ -155,7 +163,12 @@ export function App() {
       {/* ADR-0044: an interactive experience takes the whole width (it has its own header and margins). */}
       <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW={wide ? "none" : "7xl"} px={wide ? "0" : undefined} py={wide ? "0" : { base: "8", md: "12" }}>
         {state === "loading" && <Text role="status" color="app.muted">{t("Chargement de votre espace…")}</Text>}
-        {state === "anonymous" && (
+        {/* ADR-0042: an invited observer chooses a password before signing in. */}
+        {state === "anonymous" && invitation && <InvitationPage token={invitation} onDone={(name) => {
+          setUsername(name); setInvitation(null); setNotice(t("Compte activé : connectez-vous avec votre mot de passe."))
+          window.history.replaceState(null, "", "#/")
+        }} />}
+        {state === "anonymous" && !invitation && (
           <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
               <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">{t("Rapidfox Academy")}</Text>
@@ -178,6 +191,7 @@ export function App() {
                   <Field.Label>{t("Mot de passe")}</Field.Label>
                   <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
+                {notice && <Text role="status" color="brand.fg" fontSize="sm" fontWeight="medium">{notice}</Text>}
                 {message && <Text role="alert" color="red.fg" fontSize="sm">{message}</Text>}
                 <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText={t("Connexion…")}>{t("Se connecter")}</Button>
                 {/* ADR-0038: every session lasts 30 days, kept by the server cookie only (never a token in localStorage). */}

@@ -14,7 +14,9 @@ from fastapi.testclient import TestClient
 from app.main import app
 from test_student import env, missions_of, post  # noqa: F401  (fixture reuse)
 
-PUBLIC = {("/api/v1/auth/login", "POST"), ("/api/v1/status", "GET")}
+PUBLIC = {("/api/v1/auth/login", "POST"), ("/api/v1/status", "GET"),
+          # ADR-0042: an observer's invitation link (single-use token, no account yet).
+          ("/api/v1/invitations/{token}", "GET"), ("/api/v1/invitations/{token}/accept", "POST")}
 # Any signed-in user, own data only (ADR-0023: presence, own notifications, own push subscriptions).
 SELF_SERVICE = {"/api/v1/auth/me", "/api/v1/auth/logout", "/api/v1/presence", "/api/v1/notifications", "/api/v1/notifications/read-all",
                 "/api/v1/notifications/{notification_id}/read", "/api/v1/push/key", "/api/v1/push/subscribe", "/api/v1/push/unsubscribe",
@@ -27,11 +29,14 @@ OBSERVER_ALLOWED = {("/api/v1/auth/me", "GET"), ("/api/v1/auth/logout", "POST")}
 
 def observer_client(clients: dict, **options) -> TestClient:
     """A new observer created by the demo teacher (password shown once), signed in."""
-    created = clients["teacher"].post("/api/v1/teacher/observers", json={"username": "observateur.matrice", **options},
+    created = clients["teacher"].post("/api/v1/teacher/observers",
+                                      json={"full_name": "Observateur matrice", "email": "observateur.matrice@example.org", "kind": "admin", **options},
                                       headers={"X-CSRF-Token": clients["teacher"].cookies["academy_csrf"]})
     assert created.status_code == 201, created.text
+    token = created.json()["invitation"]["link"].rsplit("/", 1)[-1]
     client = TestClient(app)
-    assert client.post("/api/v1/auth/login", json={"username": "observateur.matrice", "password": created.json()["password"]}).status_code == 200
+    assert client.post(f"/api/v1/invitations/{token}/accept", json={"password": "Matrice-observateur-1"}).status_code == 200
+    assert client.post("/api/v1/auth/login", json={"username": "observateur.matrice@example.org", "password": "Matrice-observateur-1"}).status_code == 200
     return client
 
 

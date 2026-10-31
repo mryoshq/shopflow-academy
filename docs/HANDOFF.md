@@ -5,6 +5,26 @@
 
 
 
+## Espace observateur professionnel (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-observateur` depuis `main`, puis `main` fusionnée après #74 et #75. Les PR « Vue étudiant » (#74) et « Expérience CampusEquip » (#75) sont indépendantes ; les conflits possibles (documents, `App.tsx`, `routes.ts`) seront résolus après chaque fusion.
+
+Fichiers clés :
+- `backend/app/observer.py` (droits par type, invitations, routes) ;
+- `observer_stats.py`, `pdf_report.py`, `mailer.py` ;
+- migration `0017_observer_pro` ;
+- `frontend/src/observer/` (`ObserverHome.tsx`, `InvitationPage.tsx`), `frontend/src/teacher/ObserversPanel.tsx`, `e2e/observer.spec.ts`.
+
+ADR-0042. Captures : `docs/captures/observateur/`.
+
+### Observateurs — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0017-observateurs` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0017_observer_pro` s'applique seule. Les observateurs existants gardent leur accès : nominatif → « Administration », sinon « Invité ».
+3. Facultatif, envoi automatique avec Resend : renseigner les variables `SMTP_*` dans `.env` (voir le runbook, « E-mails des invitations d'observateurs »), redémarrer le backend, puis « Envoyer un e-mail de test ».
+4. Réglages > Observateurs : inviter la direction (« Administration ») ou un invité ; sans SMTP, « Copier le lien » ou « Préparer l'e-mail ».
+
+Prochaine action unique : revue et fusion de la PR « Espace observateur professionnel » (#76).
+
 ## Expérience CampusEquip (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-campusequip` depuis `main` (après #73), puis `main` fusionnée après #74 (Vue étudiant : CampusEquip s'ouvre aussi dans la vue étudiant, en pleine largeur). Source : `mryoshq/shopflow-courses@0fb639e`, `assets/CampusEquip-experience.zip`. Fichiers clés : `frontend/src/campusequip/`, `frontend/scripts/campusequip-css.mjs`, `frontend/public/experiences/campusequip/`, `backend/app/curriculum_schema.py`, `backend/tests/test_campusequip_files.py`, `e2e/campusequip.spec.ts`. ADR-0044. Captures : `docs/captures/campusequip/`.
@@ -14,7 +34,7 @@ Branche `claude/lucid-brahmagupta-htwgun-campusequip` depuis `main` (après #73)
 2. Vérifier : tableau de bord étudiant > « Le voyage d'une location » ; barre latérale enseignant > « Expérience CampusEquip » ; le PDF du sujet s'ouvre depuis « Sources et sujet ».
 3. Facultatif : dans une leçon, `data: {kind: experience, experience: campusequip, scene: 3}`, puis recompiler le cours.
 
-Prochaine action unique : revue et fusion de la PR « Expérience CampusEquip » (#75), puis de la PR « Espace observateur professionnel » (#76).
+PR #75 fusionnée le 31/10/2026.
 
 ## Vue étudiant, en ligne au survol, clics rapides (31/10/2026)
 

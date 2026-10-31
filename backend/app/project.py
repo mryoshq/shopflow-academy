@@ -746,15 +746,14 @@ def delete_slot(slot_id: int, auth: AuthContext = Depends(require_teacher_csrf),
 
 @router.get("/observer/classes/{assignment_id}/project")
 def observer_project(assignment_id: int, response: Response, auth: AuthContext = Depends(require_observer), db: Session = Depends(get_db)) -> dict:
-    from app.observer import consulted, observer_scope
+    from app.observer import consulted, observer_scope, require_admin
 
     response.headers["Cache-Control"] = "no-store"
     row, owner = observer_scope(db, auth)
-    if not db.get(Observer, auth.user.id).project_access:
-        raise HTTPException(status_code=403, detail="forbidden")
+    require_admin(row)  # ADR-0042: the project is for « Administration » accounts only
     _, _, cohort = owned_class(db, owner, assignment_id)
     view = teacher_view(db, cohort.id)
-    if not row.named:
+    if row.kind != "admin":
         positions: dict[str, str] = {}
         for team in view["teams"]:
             for member in team["members"]:
