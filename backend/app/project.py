@@ -1,4 +1,4 @@
-"""Project space CampusEquip (ADR-0034): teams of one or two students, milestones, versioned
+"""Project space CampusEquip (ADR-0034): teams of two students (three after a surprise draw, ADR-0041), milestones, versioned
 submissions (text with tables, HTTPS link, files stored on disk), teacher comments, a project
 grade on 20 apart from the course grade, defence slots.
 
@@ -26,7 +26,7 @@ from app.auth import (AuthContext, aware, display_name, require_observer, requir
                       require_teacher_csrf, utcnow)
 from app.config import get_settings
 from app.database import get_db
-from app.models import (Assignment, AuditEvent, Cohort, Course, CourseRelease, Enrollment, Observer, ProjectComment, ProjectFile,
+from app.models import (Assignment, AuditEvent, Cohort, Course, CourseRelease, Enrollment, Observer, ProjectComment, ProjectDrawEntry, ProjectFile,
                         ProjectGrade, ProjectInvitation, ProjectMember, ProjectMilestone, ProjectSlot, ProjectSubmission, ProjectTeam, User)
 from app.teacher_dashboard import class_students, csv_cell, csv_number, owned_class
 
@@ -60,6 +60,11 @@ def student_cohorts(db: Session, user_id: int) -> list[Cohort]:
     return list(db.scalars(select(Cohort).join(Enrollment, Enrollment.cohort_id == Cohort.id)
                            .join(Assignment, Assignment.cohort_id == Cohort.id)
                            .where(Enrollment.user_id == user_id).distinct().order_by(Cohort.id)).all())
+
+
+def drop_draw_entry(db: Session, cohort_id: int, user_id: int) -> None:
+    """ADR-0041: joining a team takes the student out of the surprise draw."""
+    db.execute(delete(ProjectDrawEntry).where(ProjectDrawEntry.cohort_id == cohort_id, ProjectDrawEntry.user_id == user_id))
 
 
 def membership(db: Session, cohort_id: int, user_id: int) -> ProjectMember | None:
@@ -182,7 +187,9 @@ def student_project(response: Response, cohort_id: int | None = Query(default=No
                           .order_by(ProjectInvitation.id)).all()
     received = [item for item in received if db.get(ProjectTeam, item.team_id) and db.get(ProjectTeam, item.team_id).cohort_id == cohort.id]
     team_names = {tid: [who.get(uid, "") for uid in uids] for tid, uids in teams.items()}
-    return {"cohort_id": cohort.id, "cohort": cohort.label, "cohorts": [{"id": c.id, "label": c.label} for c in cohorts], "team": team,
+    from app.project_draw import student_draw_state  # ADR-0041 (imports this module)
+    draw, surprise = student_draw_state(db, cohort.id, auth.user.id, member)
+    return {"cohort_id": cohort.id, "cohort": cohort.label, "draw": draw, "surprise": surprise, "cohorts": [{"id": c.id, "label": c.label} for c in cohorts], "team": team,
             "invitations": [{"id": item.id, "team_id": item.team_id, "from": who.get(item.invited_by, ""),
                              "members": team_names.get(item.team_id, [])} for item in received],
             "classmates": [{"id": s.id, "name": who[s.id], "available": s.id not in in_team} for s in students if s.id != auth.user.id],
@@ -204,6 +211,7 @@ def create_team(payload: CohortInput, auth: AuthContext = Depends(require_studen
     db.add(team)
     db.flush()
     db.add(ProjectMember(cohort_id=payload.cohort_id, team_id=team.id, user_id=auth.user.id))
+    drop_draw_entry(db, payload.cohort_id, auth.user.id)
     audit(db, auth, "project.team_create", payload.cohort_id, {"team": team.id})
     db.commit()
     return {"team_id": team.id}
@@ -252,6 +260,7 @@ def accept(invitation_id: int, auth: AuthContext = Depends(require_student_csrf)
         raise HTTPException(status_code=409, detail="le binôme est déjà complet")
     db.add(ProjectMember(cohort_id=team.cohort_id, team_id=team.id, user_id=auth.user.id))
     invitation.status = "accepted"
+    drop_draw_entry(db, team.cohort_id, auth.user.id)
     for other in db.scalars(select(ProjectInvitation).where(ProjectInvitation.user_id == auth.user.id, ProjectInvitation.status == "pending")):
         other.status = "expired"
     audit(db, auth, "project.accept", team.cohort_id, {"team": team.id})
@@ -342,6 +351,8 @@ def submit(milestone_id: int, payload: SubmissionInput, auth: AuthContext = Depe
     if milestone is None:
         raise HTTPException(status_code=404, detail="milestone not found")
     team, cohort_id = my_team(db, auth, milestone.cohort_id)
+    if len(team_members(db, team.id)) < TEAM_SIZE:  # ADR-0041: no individual work
+        raise HTTPException(status_code=409, detail="le travail individuel n'est plus permis : formez un binôme ou tentez le binôme surprise")
     link = (payload.link or "").strip() or None
     if link:
         parsed = urlparse(link)

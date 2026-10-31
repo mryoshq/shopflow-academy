@@ -372,6 +372,36 @@ class ProjectMember(Base):
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False)
     team_id: Mapped[int] = mapped_column(ForeignKey("project_teams.id", ondelete="CASCADE"), nullable=False, index=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    # ADR-0041: set when the person was placed by a surprise draw; the reveal is shown once, then dated.
+    draw_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    revealed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class ProjectDrawEntry(Base):
+    """ADR-0041: a student without a team who signed up for the surprise draw (can leave before the draw)."""
+    __tablename__ = "project_draw_entries"
+    __table_args__ = (UniqueConstraint("cohort_id", "user_id", name="uq_project_draw_entry"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectDraw(Base):
+    """ADR-0041: one surprise draw, recorded for audit: seed, pool, included one-person teams, resulting groups."""
+    __tablename__ = "project_draws"
+    __table_args__ = (UniqueConstraint("cohort_id", "seed", name="uq_project_draw_seed"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    seed: Mapped[str] = mapped_column(String(64), nullable=False)
+    pool: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    included_teams: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    groups: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    left_out: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    created_by: Mapped[int | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class ProjectInvitation(Base):

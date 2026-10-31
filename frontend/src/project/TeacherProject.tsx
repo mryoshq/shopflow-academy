@@ -4,6 +4,7 @@ import { Badge, Box, Button, Field, Flex, Heading, Input, Link, NativeSelect, St
 import { api, ApiError } from "../api"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { DetailPanel } from "./Drawer"
+import { TeacherDraw } from "./SurpriseDraw"
 import { ProjectText, fileSize, when } from "./ProjectText"
 import type { Submission, TeacherProjectData, TeamGrade } from "./types"
 
@@ -46,7 +47,7 @@ export function TeacherProject({ assignmentId, readOnly = false }: { assignmentI
         <Tabs.Trigger value="binomes">{t("Binômes")}</Tabs.Trigger><Tabs.Trigger value="jalons">{t("Jalons")}</Tabs.Trigger>
         <Tabs.Trigger value="depots">{t("Dépôts")}</Tabs.Trigger><Tabs.Trigger value="notes">{t("Notes")}</Tabs.Trigger><Tabs.Trigger value="soutenances">{t("Soutenances")}</Tabs.Trigger>
       </Tabs.List>
-      <Tabs.Content value="binomes" pt="5"><Teams data={data} readOnly={readOnly} act={act} /></Tabs.Content>
+      <Tabs.Content value="binomes" pt="5"><Teams data={data} readOnly={readOnly} act={act} onDrawn={load} /></Tabs.Content>
       <Tabs.Content value="jalons" pt="5"><Milestones data={data} readOnly={readOnly} act={act} /></Tabs.Content>
       <Tabs.Content value="depots" pt="5"><Submissions data={data} readOnly={readOnly} act={act} /></Tabs.Content>
       <Tabs.Content value="notes" pt="5"><Grades data={data} readOnly={readOnly} act={act} /></Tabs.Content>
@@ -59,7 +60,7 @@ type Act = (method: string, path: string, body: unknown, success: string) => Pro
 type Part = { data: TeacherProjectData; readOnly: boolean; act: Act }
 const teamName = (data: TeacherProjectData, id: number | null) => data.teams.find((team) => team.id === id)?.members.map((m) => m.name).join(" + ") ?? "—"
 
-function Teams({ data, readOnly, act }: Part) {
+function Teams({ data, readOnly, act, onDrawn }: Part & { onDrawn: () => Promise<void> }) {
   const [first, setFirst] = useState("")
   const [second, setSecond] = useState("")
   const ids = [first, second].filter(Boolean).map(Number)
@@ -67,18 +68,20 @@ function Teams({ data, readOnly, act }: Part) {
     {data.teams.length === 0 && <Text color="app.muted">{t("Aucun binôme pour le moment.")}</Text>}
     <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">{data.teams.map((team) => <Flex as="li" key={team.id} gap="3" align="center" wrap="wrap" p="3" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
       <Text fontWeight="semibold" flex="1">{team.members.map((member) => member.name).join(" + ") || "(vide)"}</Text>
-      {team.members.length === 1 && <Badge variant="subtle">{t("Seul")}</Badge>}
-      {!readOnly && team.members.length === 2 && <Button size="xs" variant="outline" onClick={() => void act("PUT", `/teacher/project/teams/${team.id}`, { user_ids: [team.members[0].id] }, t("Composition corrigée."))}>
-        {t("Retirer")}{" "}{team.members[1].name}</Button>}
+      {team.members.length === 1 && <Badge variant="subtle" colorPalette="saffron">{t("Une seule personne")}</Badge>}
+      {team.members.length === 3 && <Badge variant="subtle">{t("Trinôme")}</Badge>}
+      {!readOnly && team.members.length >= 2 && <Button size="xs" variant="outline" onClick={() => void act("PUT", `/teacher/project/teams/${team.id}`, { user_ids: team.members.slice(0, -1).map((member) => member.id) }, t("Composition corrigée."))}>
+        {t("Retirer")}{" "}{team.members[team.members.length - 1].name}</Button>}
     </Flex>)}</Stack>
-    <Box><Text fontWeight="semibold">{t("Sans binôme (")}{data.alone.length})</Text><Text fontSize="sm" color="app.muted">{data.alone.map((item) => item.name).join(", ") || t("Tout le monde a un binôme.")}</Text></Box>
-    {!readOnly && data.alone.length > 0 && <Panel><Stack gap="2">
-      <Text fontWeight="semibold">{t("Former un binôme (ou un étudiant seul)")}</Text>
+    {readOnly && <Box><Text fontWeight="semibold">{t("Sans binôme (")}{data.alone.length})</Text><Text fontSize="sm" color="app.muted">{data.alone.map((item) => item.name).join(", ") || t("Tout le monde a un binôme.")}</Text></Box>}
+    {!readOnly && <TeacherDraw assignmentId={data.assignment_id} onDrawn={onDrawn} />}
+    {!readOnly && data.alone.length > 1 && <Panel><Stack gap="2">
+      <Text fontWeight="semibold">{t("Former un binôme à la main")}</Text>
       <Flex gap="2" wrap="wrap">{[[first, setFirst], [second, setSecond]].map(([value, set], index) => <NativeSelect.Root key={index} maxW="xs">
-        <NativeSelect.Field aria-label={index ? t("Second étudiant (facultatif)") : t("Premier étudiant")} value={value as string} onChange={(event) => (set as (v: string) => void)(event.target.value)}>
-          <option value="">{index ? "Second (facultatif)" : t("Premier étudiant")}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        <NativeSelect.Field aria-label={index ? t("Second étudiant") : t("Premier étudiant")} value={value as string} onChange={(event) => (set as (v: string) => void)(event.target.value)}>
+          <option value="">{index ? t("Second étudiant") : t("Premier étudiant")}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>)}</Flex>
-      <Button alignSelf="start" colorPalette="brand" disabled={!first || first === second}
+      <Button alignSelf="start" colorPalette="brand" disabled={!first || !second || first === second}
         onClick={() => void act("POST", `/teacher/classes/${data.assignment_id}/project/teams`, { user_ids: ids }, t("Binôme créé.")).then((ok) => { if (ok) { setFirst(""); setSecond("") } })}>{t("Créer")}</Button>
     </Stack></Panel>}
   </Stack>

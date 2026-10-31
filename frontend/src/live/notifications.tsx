@@ -8,7 +8,7 @@ import { Icon } from "../student/ui"
 /** Sprint 2, part H (ADR-0023): notifications for students and the teacher, heartbeat, Web Push. */
 
 export type NotificationKind = "message" | "block_open" | "block_unlocked" | "help_handled"
-  | "help" | "blocked" | "block_done" | "auto_soon" | "auto_done" | "disconnect"
+  | "help" | "blocked" | "block_done" | "auto_soon" | "auto_done" | "disconnect" | "project_draw"
 export type Note = { id: number; kind: NotificationKind | string; text: string; data: Record<string, unknown>; sender: string | null; created_at: string; read_at: string | null }
 type Feed = { unread: number; items: Note[] }
 
@@ -20,9 +20,9 @@ const GROUP_WINDOW_MS = 5 * 60 * 1000
 export const KIND_LABELS: Record<string, string> = {
   message: msg("Message"), block_open: msg("Bloc ouvert"), block_unlocked: msg("Ouvert pour vous"), help_handled: msg("Aide"),
   help: msg("Demande d’aide"), blocked: msg("Étudiant bloqué"), block_done: msg("Bloc terminé"), auto_soon: msg("Ouverture dans 2 min"),
-  auto_done: msg("Ouverture automatique"), disconnect: msg("Déconnexion"),
+  auto_done: msg("Ouverture automatique"), disconnect: msg("Déconnexion"), project_draw: msg("Binôme surprise"),
 }
-const REFRESH_KINDS = new Set(["block_open", "block_unlocked", "badge", "class_goal"])
+const REFRESH_KINDS = new Set(["block_open", "block_unlocked", "badge", "class_goal", "project_draw"])
 
 type Ctx = { items: Note[]; unread: number; markRead: (ids: number[]) => Promise<void>; markAll: () => Promise<void> }
 const NotificationsContext = createContext<Ctx>({ items: [], unread: 0, markRead: async () => {}, markAll: async () => {} })

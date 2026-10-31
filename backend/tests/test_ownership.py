@@ -44,6 +44,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"title": "Intrusion", "slug": "intrusion"}
     if path.endswith("/project/teams"):
         return {"user_ids": [extra["student_id"]]}
+    if path.endswith("/project/draw"):
+        return {"seed": "00c0ffee", "fingerprint": "0" * 16, "confirm_again": True}  # ADR-0041: another teacher's draw
     if path.endswith("/project/milestones"):
         return {"title": "Intrusion"}
     if path.endswith("/project/slots"):

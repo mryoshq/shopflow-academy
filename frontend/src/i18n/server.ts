@@ -16,6 +16,8 @@ const EN: Rule[] = [
   [/^Dans 2 min : ouverture automatique de « (.+) »\.$/, (title) => `In 2 min: automatic opening of “${title}”.`],
   [/^« (.+) » terminé par (\d+) étudiants? sur (\d+) \((\d+) %\)\.$/, (title, done, total, percent) =>
     `“${title}” finished by ${done} student${done === "1" ? "" : "s"} out of ${total} (${percent} %).`],
+  [/^Binôme surprise : vous travaillerez avec (.+) et (.+)\.$/, (first, second) => `Surprise team: you will work with ${first} and ${second}.`],
+  [/^Binôme surprise : vous travaillerez avec (.+)\.$/, (name) => `Surprise team: you will work with ${name}.`],
   [/^Nouveau badge : (.+)$/, (label) => `New badge: ${rewardText(label)}`],
   [/^Objectif de classe atteint : (.+)\. Bravo à toutes et à tous !$/, (text) => `Class goal reached: ${lowerFirst(rewardText(capitalFirst(text)))}. Well done, everyone!`],
   [/^Objectif de classe : (\d+) % ! (.+)\. Continuez ensemble\.$/, (percent, text) => `Class goal: ${percent} %! ${rewardText(text)}. Keep going together.`],

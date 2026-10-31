@@ -46,5 +46,13 @@
   "{{n}} rejetée_one": "{{n}} rejetée",
   "{{n}} rejetée_other": "{{n}} rejetées",
   "mission réussie du premier coup_one": "mission réussie du premier coup",
-  "mission réussie du premier coup_other": "missions réussies du premier coup"
+  "mission réussie du premier coup_other": "missions réussies du premier coup",
+  "{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage._one": "{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage.",
+  "{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage._other": "{{count}} étudiants inscrits pour l’instant. Vous serez prévenu après le tirage.",
+  "{{count}} étudiant sans équipe_one": "{{count}} étudiant sans équipe",
+  "{{count}} étudiant sans équipe_other": "{{count}} étudiants sans équipe",
+  "{{count}} inscrit au tirage_one": "{{count}} inscrit au tirage",
+  "{{count}} inscrit au tirage_other": "{{count}} inscrits au tirage",
+  "Afficher {{count}} tirage plus ancien_one": "Afficher {{count}} tirage plus ancien",
+  "Afficher {{count}} tirage plus ancien_other": "Afficher {{count}} tirages plus anciens"
 }
