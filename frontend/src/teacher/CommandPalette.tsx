@@ -1,22 +1,25 @@
+import { msg, t } from "../i18n"
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { Box, Dialog, Input, Kbd, Portal, Stack, Text, chakra } from "@chakra-ui/react"
 import { api } from "../api"
 import { VIEWS, type TeacherRoute } from "./routes"
 import { VOYAGE_READY } from "../voyage"
 
+/** Group names, translated where they are shown. */
+export const PALETTE_GROUPS = [msg("Vues"), msg("Étudiants"), msg("Blocs")]
 export type PaletteItem = { id: string; label: string; group: "Vues" | "Étudiants" | "Blocs"; route: TeacherRoute; keywords?: string }
 
 /** Accent- and case-insensitive match on every word of the query. */
 export function matches(item: PaletteItem, query: string): boolean {
   const plain = (value: string) => value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase()
-  const haystack = plain(`${item.label} ${item.group} ${item.keywords ?? ""}`)
+  const haystack = plain(`${item.label} ${item.group} ${t(item.group)} ${item.keywords ?? ""}`)
   return plain(query).split(/\s+/).filter(Boolean).every((word) => haystack.includes(word))
 }
 
 export function viewItems(): PaletteItem[] {
   return VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).flatMap((view) => view.subs.length
-    ? view.subs.map((sub) => ({ id: `v-${view.key}-${sub.key}`, label: `${view.label} · ${sub.label}`, group: "Vues" as const, route: { view: view.key, sub: sub.key, params: {} } }))
-    : [{ id: `v-${view.key}`, label: view.label, group: "Vues" as const, route: { view: view.key, sub: "", params: {} } }])
+    ? view.subs.map((sub) => ({ id: `v-${view.key}-${sub.key}`, label: `${t(view.label)} · ${t(sub.label)}`, group: "Vues" as const, route: { view: view.key, sub: sub.key, params: {} } }))
+    : [{ id: `v-${view.key}`, label: t(view.label), group: "Vues" as const, route: { view: view.key, sub: "", params: {} } }])
 }
 
 /** Cmd+K / Ctrl+K: go to a view, a student or a block (ADR-0031). */
@@ -69,22 +72,22 @@ export function CommandPalette({ open, onClose, onGo, assignmentId }: {
     <Portal>
       <Dialog.Backdrop />
       <Dialog.Positioner>
-        <Dialog.Content bg="app.surface" color="app.ink" mt={{ base: "4", md: "20" }} mx="4" aria-label="Recherche rapide">
-          <Dialog.Header pb="2"><Dialog.Title fontSize="md">Aller à…</Dialog.Title></Dialog.Header>
+        <Dialog.Content bg="app.surface" color="app.ink" mt={{ base: "4", md: "20" }} mx="4" aria-label={t("Recherche rapide")}>
+          <Dialog.Header pb="2"><Dialog.Title fontSize="md">{t("Aller à…")}</Dialog.Title></Dialog.Header>
           <Dialog.Body pb="5">
             <Input ref={input} value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={onKey} size="lg"
-              placeholder="Une vue, un étudiant, un bloc…" role="combobox" aria-expanded="true" aria-controls="palette-list"
-              aria-activedescendant={items[active] ? `palette-${items[active].id}` : undefined} aria-label="Rechercher une vue, un étudiant ou un bloc" />
-            <Stack as="ul" id="palette-list" role="listbox" aria-label="Résultats" listStyleType="none" p="0" m="0" mt="3" gap="0.5" maxH="60vh" overflowY="auto">
-              {items.length === 0 && <Text as="li" color="app.muted" p="3">Aucun résultat.</Text>}
+              placeholder={t("Une vue, un étudiant, un bloc…")} role="combobox" aria-expanded="true" aria-controls="palette-list"
+              aria-activedescendant={items[active] ? `palette-${items[active].id}` : undefined} aria-label={t("Rechercher une vue, un étudiant ou un bloc")} />
+            <Stack as="ul" id="palette-list" role="listbox" aria-label={t("Résultats")} listStyleType="none" p="0" m="0" mt="3" gap="0.5" maxH="60vh" overflowY="auto">
+              {items.length === 0 && <Text as="li" color="app.muted" p="3">{t("Aucun résultat.")}</Text>}
               {items.map((item, index) => <chakra.li key={item.id} id={`palette-${item.id}`} role="option" aria-selected={index === active}
                 /* Real pointer movement only: a list opening under a still pointer keeps the first result. */ onMouseMove={() => { if (active !== index) setActive(index) }} onClick={() => go(item)} cursor="pointer" px="3" py="2.5" rounded="md" display="flex" gap="3" alignItems="center"
                 bg={index === active ? "brand.subtle" : "transparent"} color={index === active ? "brand.fg" : undefined}>
                 <Box flex="1" minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap">{item.label}</Box>
-                <Text fontSize="xs" color="app.muted">{item.group}</Text>
+                <Text fontSize="xs" color="app.muted">{t(item.group)}</Text>
               </chakra.li>)}
             </Stack>
-            <Text fontSize="xs" color="app.muted" mt="3">↑ ↓ pour choisir, <Kbd>Entrée</Kbd> pour ouvrir, <Kbd>Échap</Kbd> pour fermer.</Text>
+            <Text fontSize="xs" color="app.muted" mt="3">{t("↑ ↓ pour choisir,")}{" "}<Kbd>{t("Entrée")}</Kbd> {t("pour ouvrir,")}{" "}<Kbd>{t("Échap")}</Kbd> {t("pour fermer.")}</Text>
           </Dialog.Body>
         </Dialog.Content>
       </Dialog.Positioner>

@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { useEffect, useState } from "react"
 import { Box, Button, Flex, Stack, Text, Textarea } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -40,7 +41,7 @@ export function HelpRequest({ missionId, initial }: Props) {
       setMessage("")
     } catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return
-      setError(reason instanceof ApiError && reason.status === 422 ? "Écrivez un message court, sans mise en forme." : "Envoi impossible. Réessayez.")
+      setError(reason instanceof ApiError && reason.status === 422 ? t("Écrivez un message court, sans mise en forme.") : t("Envoi impossible. Réessayez."))
     } finally {
       setBusy(false)
     }
@@ -49,25 +50,25 @@ export function HelpRequest({ missionId, initial }: Props) {
   const pending = request?.status === "pending"
   return <Panel as="section" aria-labelledby={`help-${missionId}`}>
     <Stack gap="3">
-      <Flex gap="2" align="center" fontWeight="semibold" id={`help-${missionId}`}><Icon name="alert" />Besoin d’aide ?</Flex>
+      <Flex gap="2" align="center" fontWeight="semibold" id={`help-${missionId}`}><Icon name="alert" />{t("Besoin d’aide ?")}</Flex>
       {pending && <Box role="status" p="3" bg="saffron.subtle" rounded="md">
-        <Text fontWeight="semibold" color="saffron.fg">Demande reçue</Text>
-        <Text fontSize="sm">Votre enseignant a été prévenu et passera vous voir. Vous pouvez continuer en attendant.</Text>
+        <Text fontWeight="semibold" color="saffron.fg">{t("Demande reçue")}</Text>
+        <Text fontSize="sm">{t("Votre enseignant a été prévenu et passera vous voir. Vous pouvez continuer en attendant.")}</Text>
       </Box>}
       {request?.status === "handled" && !writing && <Box role="status" p="3" bg="brand.subtle" rounded="md">
-        <Text fontWeight="semibold" color="brand.fg">Demande traitée</Text>
-        <Text fontSize="sm">Encore une question ? Vous pouvez redemander de l’aide.</Text>
+        <Text fontWeight="semibold" color="brand.fg">{t("Demande traitée")}</Text>
+        <Text fontSize="sm">{t("Encore une question ? Vous pouvez redemander de l’aide.")}</Text>
       </Box>}
-      {!pending && !writing && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => setWriting(true)}>J’ai besoin d’une explication</Button>}
+      {!pending && !writing && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => setWriting(true)}>{t("J’ai besoin d’une explication")}</Button>}
       {writing && <Stack gap="2">
-        <label htmlFor={`help-message-${missionId}`}><Text as="span" fontSize="sm">Ce qui vous bloque (facultatif)</Text></label>
+        <label htmlFor={`help-message-${missionId}`}><Text as="span" fontSize="sm">{t("Ce qui vous bloque (facultatif)")}</Text></label>
         <Textarea id={`help-message-${missionId}`} value={message} maxLength={MAX} rows={3} onChange={(event) => setMessage(event.target.value)}
-          placeholder="Par exemple : je ne vois pas pourquoi le total change." />
-        <Text fontSize="xs" color="app.muted">{message.length} / {MAX} caractères</Text>
+          placeholder={t("Par exemple : je ne vois pas pourquoi le total change.")} />
+        <Text fontSize="xs" color="app.muted">{message.length} / {MAX} {t("caractères")}</Text>
         {error && <Text role="alert" fontSize="sm" color="red.fg">{error}</Text>}
         <Flex gap="2" wrap="wrap">
-          <Button size="sm" colorPalette="brand" loading={busy} onClick={() => void send()}>Envoyer la demande</Button>
-          <Button size="sm" variant="ghost" onClick={() => { setWriting(false); setError("") }}>Annuler</Button>
+          <Button size="sm" colorPalette="brand" loading={busy} onClick={() => void send()}>{t("Envoyer la demande")}</Button>
+          <Button size="sm" variant="ghost" onClick={() => { setWriting(false); setError("") }}>{t("Annuler")}</Button>
         </Flex>
       </Stack>}
     </Stack>

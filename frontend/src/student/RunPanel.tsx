@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { useState } from "react"
 import { Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -11,27 +12,27 @@ type State = { status: "idle" | "loading" | "done" | "error" | "timeout"; result
 
 export function ResultView({ result, label }: { result: RunResult; label: string }) {
   if (result.kind === "python") return <Box as="pre" m="0" p="3" bg="code.bg" color="code.fg" borderWidth="1px" borderColor="code.border" rounded="lg"
-    overflowX="auto" fontSize="sm" tabIndex={0} aria-label={`Sortie de ${label}`} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>{result.output || "(aucune sortie)"}</Box>
+    overflowX="auto" fontSize="sm" tabIndex={0} aria-label={t("Sortie de {{label}}", { label })} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>{result.output || "(aucune sortie)"}</Box>
   // ADR-0032: an EXPLAIN plan keeps its indentation (one text column « QUERY PLAN »).
   if (result.columns.length === 1 && result.columns[0].toUpperCase() === "QUERY PLAN") return <Stack gap="1">
     <Box as="pre" m="0" p="3" bg="code.bg" color="code.fg" borderWidth="1px" borderColor="code.border" rounded="lg" overflowX="auto" fontSize="sm"
-      tabIndex={0} aria-label={`Plan d’exécution de ${label}`} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>
+      tabIndex={0} aria-label={t("Plan d’exécution de {{label}}", { label })} css={{ fontFamily: "ui-monospace, 'Cascadia Mono', Consolas, 'SF Mono', Menlo, monospace" }}>
       {result.rows.map((row) => String(row[0] ?? "")).join("\n")}</Box>
-    <Text fontSize="xs" color="app.muted">Plan exécuté en {result.elapsed_ms} ms sur la base de laboratoire (lecture seule).</Text>
+    <Text fontSize="xs" color="app.muted">{t("Plan exécuté en")}{" "}{result.elapsed_ms} {t("ms sur la base de laboratoire (lecture seule).")}</Text>
   </Stack>
   return <Stack gap="1">
-    {result.columns.length === 0 ? <Text fontSize="sm">La requête n’a renvoyé aucune ligne.</Text>
-      : <DataTable caption={`Résultat : ${result.rows.length} ligne${result.rows.length > 1 ? "s" : ""}${result.truncated ? " (200 premières seulement)" : ""}`} columns={result.columns} rows={result.rows} />}
-    <Text fontSize="xs" color="app.muted">Exécutée en {result.elapsed_ms} ms sur la base de laboratoire (données fictives, lecture seule).</Text>
+    {result.columns.length === 0 ? <Text fontSize="sm">{t("La requête n’a renvoyé aucune ligne.")}</Text>
+      : <DataTable caption={tn("Résultat : {{count}} ligne", result.rows.length) + (result.truncated ? t(" (200 premières seulement)") : "")} columns={result.columns} rows={result.rows} />}
+    <Text fontSize="xs" color="app.muted">{t("Exécutée en")}{" "}{result.elapsed_ms} {t("ms sur la base de laboratoire (données fictives, lecture seule).")}</Text>
   </Stack>
 }
 
 export function failure(reason: unknown): State {
-  if (reason instanceof ApiError && reason.status === 504) return { status: "timeout", message: "La requête a dépassé le délai de 3 secondes." }
-  if (reason instanceof ApiError && reason.status === 429) return { status: "error", message: "Beaucoup d’exécutions en peu de temps : patientez une minute." }
-  if (reason instanceof ApiError && reason.status === 503) return { status: "error", message: "La base de laboratoire est indisponible pour le moment. Prévenez votre enseignant." }
+  if (reason instanceof ApiError && reason.status === 504) return { status: "timeout", message: t("La requête a dépassé le délai de 3 secondes.") }
+  if (reason instanceof ApiError && reason.status === 429) return { status: "error", message: t("Beaucoup d’exécutions en peu de temps : patientez une minute.") }
+  if (reason instanceof ApiError && reason.status === 503) return { status: "error", message: t("La base de laboratoire est indisponible pour le moment. Prévenez votre enseignant.") }
   if (reason instanceof ApiError && [400, 409, 422].includes(reason.status)) return { status: "error", message: reason.message }
-  return { status: "error", message: "Connexion interrompue. Réessayez." }
+  return { status: "error", message: t("Connexion interrompue. Réessayez.") }
 }
 
 /** Preconfigured executions: the server runs the code stored in the mission, never text from the browser. */
@@ -49,16 +50,16 @@ export function RunPanel({ runs, missionId, endpoint = "student" }: { runs: RunV
       setStates((current) => ({ ...current, [item.id]: failure(reason) }))
     }
   }
-  return <Stack gap="4" as="section" aria-label="Code à exécuter">
+  return <Stack gap="4" as="section" aria-label={t("Code à exécuter")}>
     {runs.map((item) => {
       const state = states[item.id] ?? { status: "idle" }
       return <Stack key={item.id} gap="2">
         <CodeBlock code={item.code} language={item.language} title={item.label} />
         <Flex gap="3" align="center" wrap="wrap">
           <Button size="sm" colorPalette="brand" variant={state.status === "done" ? "outline" : "solid"} loading={state.status === "loading"}
-            loadingText="Exécution…" disabled={!missionId} onClick={() => void run(item)} aria-label={`Exécuter : ${item.label}`}>
-            <Icon name="arrow-right" size={14} />{state.status === "done" ? "Exécuter à nouveau" : "Exécuter"}</Button>
-          {item.language === "python" && state.status === "idle" && <Text fontSize="sm" color="app.muted">Résultat obtenu à la préparation du cours, dans un environnement isolé.</Text>}
+            loadingText={t("Exécution…")} disabled={!missionId} onClick={() => void run(item)} aria-label={t("Exécuter : {{label}}", { label: item.label })}>
+            <Icon name="arrow-right" size={14} />{state.status === "done" ? t("Exécuter à nouveau") : t("Exécuter")}</Button>
+          {item.language === "python" && state.status === "idle" && <Text fontSize="sm" color="app.muted">{t("Résultat obtenu à la préparation du cours, dans un environnement isolé.")}</Text>}
         </Flex>
         <Box aria-live="polite">
           {state.status === "done" && state.result && <ResultView result={state.result} label={item.label} />}

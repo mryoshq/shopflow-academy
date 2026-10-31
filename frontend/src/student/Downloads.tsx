@@ -1,18 +1,19 @@
+import { locale, msg, t } from "../i18n"
 import { Box, Flex, Link, Stack, Text } from "@chakra-ui/react"
 import type { DownloadDisplay } from "../studioTypes"
 
-const TYPES: Record<string, string> = { pdf: "PDF", docx: "Word", zip: "Archive ZIP", csv: "CSV", sql: "SQL", py: "Python", md: "Markdown" }
+const TYPES: Record<string, string> = { pdf: "PDF", docx: "Word", zip: msg("Archive ZIP"), csv: "CSV", sql: "SQL", py: "Python", md: "Markdown" }
 
 /** « 1,2 Mo », « 340 Ko » (French decimal comma). */
 export function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
   const [value, unit] = bytes < 1024 * 1024 ? [bytes / 1024, "Ko"] : [bytes / (1024 * 1024), "Mo"]
-  return `${value.toLocaleString("fr-FR", { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`
+  return `${value.toLocaleString(locale(), { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`
 }
 
 /** ADR-0032: course files, served by the API to signed-in users of the class only. */
 export function Downloads({ data }: { data: DownloadDisplay }) {
-  return <Stack as="section" gap="2" aria-label={data.title || "Fichiers à télécharger"}>
+  return <Stack as="section" gap="2" aria-label={data.title || t("Fichiers à télécharger")}>
     {data.title && <Text fontWeight="semibold">{data.title}</Text>}
     <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">
       {data.files.map((file) => {
@@ -24,11 +25,11 @@ export function Downloads({ data }: { data: DownloadDisplay }) {
           </Box>
           <Stack gap="0" flex="1" minW="40">
             <Text fontWeight="semibold" overflowWrap="anywhere">{file.title}</Text>
-            <Text fontSize="sm" color="app.muted">{TYPES[ext] ?? ext.toUpperCase()} · {fileSize(file.size)} · {file.name}</Text>
+            <Text fontSize="sm" color="app.muted">{t(TYPES[ext] ?? ext.toUpperCase())} · {fileSize(file.size)} · {file.name}</Text>
           </Stack>
           <Link href={`/api/v1/downloads/${encodeURIComponent(file.id)}`} download={file.name} minH="11" px="4" display="inline-flex" alignItems="center"
             rounded="md" bg="brand.solid" color="brand.contrast" fontWeight="semibold" _hover={{ textDecoration: "none", opacity: 0.92 }}
-            aria-label={`Télécharger ${file.title} (${TYPES[ext] ?? ext}, ${fileSize(file.size)})`}>Télécharger</Link>
+            aria-label={t("Télécharger {{title}} ({{p1}}, {{p2}})", { title: file.title, p1: t(TYPES[ext] ?? ext), p2: fileSize(file.size) })}>{t("Télécharger")}</Link>
         </Flex>
       })}
     </Stack>

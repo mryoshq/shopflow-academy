@@ -1,3 +1,4 @@
+import { t } from "./i18n"
 import { useEffect, useState } from "react"
 import { Box, Button, CloseButton, Flex, Text } from "@chakra-ui/react"
 
@@ -58,15 +59,15 @@ export function PwaBanner({ register = registerServiceWorker }: { register?: typ
   const showInstall = Boolean(install) && !dismissed
   if (!update && !showInstall) return null
   return <Box position="fixed" bottom={{ base: "3", md: "6" }} left={{ base: "3", md: "6" }} right={{ base: "3", md: "auto" }} zIndex="banner" maxW={{ md: "sm" }}
-    role="region" aria-label="Application">
+    role="region" aria-label={t("Application")}>
     {update && <Flex role="status" gap="3" align="center" wrap="wrap" p="3" mb="2" bg="app.surface" borderWidth="1px" borderColor="brand.solid" rounded="lg" boxShadow="lg">
-      <Text flex="1" minW="40" fontSize="sm" fontWeight="medium">Nouvelle version disponible.</Text>
-      <Button size="sm" colorPalette="brand" onClick={reload}>Recharger</Button>
+      <Text flex="1" minW="40" fontSize="sm" fontWeight="medium">{t("Nouvelle version disponible.")}</Text>
+      <Button size="sm" colorPalette="brand" onClick={reload}>{t("Recharger")}</Button>
     </Flex>}
     {showInstall && <Flex gap="2" align="center" wrap="wrap" p="3" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg">
-      <Text flex="1" minW="40" fontSize="sm">Installer Rapidfox Academy sur cet appareil ?</Text>
-      <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void installApp()}>Installer l’application</Button>
-      <CloseButton size="sm" aria-label="Ne plus proposer l’installation" onClick={hideInstall} />
+      <Text flex="1" minW="40" fontSize="sm">{t("Installer Rapidfox Academy sur cet appareil ?")}</Text>
+      <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void installApp()}>{t("Installer l’application")}</Button>
+      <CloseButton size="sm" aria-label={t("Ne plus proposer l’installation")} onClick={hideInstall} />
     </Flex>}
   </Box>
 }

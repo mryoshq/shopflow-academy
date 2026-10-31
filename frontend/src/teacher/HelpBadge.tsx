@@ -1,10 +1,11 @@
+import { t, tn } from "../i18n"
 import { Badge, Box } from "@chakra-ui/react"
 
 /** Sent when the teacher handles a help request, so the badge does not wait for the next refresh. */
 export const HELP_CHANGED = "academy:help-changed"
 
 export function helpLabel(count: number): string {
-  return `${count} demande${count > 1 ? "s" : ""} d’aide en attente`
+  return tn("{{count}} demande d’aide en attente", count)
 }
 
 /** The hidden text the badge stands for, referenced with aria-describedby. */

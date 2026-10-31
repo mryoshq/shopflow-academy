@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { Suspense, useCallback, useEffect, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Heading, IconButton, Link, Stack, Tabs, Text, chakra } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -102,8 +103,8 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     catch (reason) {
       if (reason instanceof ApiError && reason.status === 401) return
       setError(reason instanceof ApiError && reason.status === 409
-        ? "Le cours principal appartient à un autre compte enseignant."
-        : "Impossible de préparer votre classe et votre cours.")
+        ? t("Le cours principal appartient à un autre compte enseignant.")
+        : t("Impossible de préparer votre classe et votre cours."))
     }
   }, [])
   const reload = useCallback(async () => {
@@ -147,7 +148,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   const go = (view: ViewKey, sub = "", params: Record<string, string> = {}) => navigate({ view, sub, params })
 
   const wide = !collapsed
-  const sidebar = <chakra.nav aria-label="Navigation enseignant" position="sticky" top="0" h="100dvh" flexShrink={0}
+  const sidebar = <chakra.nav aria-label={t("Navigation enseignant")} position="sticky" top="0" h="100dvh" flexShrink={0}
     w={{ base: "16", md: wide ? "17rem" : "16" }} bg="app.canvas" borderRightWidth="1px" borderColor="app.border"
     display="flex" flexDirection="column" pb="2" px="2" gap="0.5"
     css={{ transition: "width 180ms cubic-bezier(0.2, 0, 0, 1)" }}>
@@ -158,23 +159,23 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
         {wide && <Box display={{ base: "none", md: "block" }} minW="0"><SchoolName /></Box>}
       </Flex>
       {wide && <IconButton display={{ base: "none", md: "inline-flex" }} variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={true}
-        aria-label="Replier la navigation" title="Replier la navigation"><NavIcon name="collapse" size={18} /></IconButton>}
+        aria-label={t("Replier la navigation")} title={t("Replier la navigation")}><NavIcon name="collapse" size={18} /></IconButton>}
     </Flex>
     {/* ADR-0037: the module under the school name, on its own line (the sidebar is too narrow for both). */}
-    {wide && <Text display={{ base: "none", md: "block" }} px="2.5" mt="-2" mb="2" fontSize="xs" color="app.muted" lineHeight="1.35">{MODULE}</Text>}
+    {wide && <Text display={{ base: "none", md: "block" }} px="2.5" mt="-2" mb="2" fontSize="xs" color="app.muted" lineHeight="1.35">{t(MODULE)}</Text>}
         {!wide && <Flex display={{ base: "none", md: "flex" }} justify="center" mb="1">
-      <IconButton variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={false} aria-label="Déplier la navigation" title="Déplier la navigation">
+      <IconButton variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={false} aria-label={t("Déplier la navigation")} title={t("Déplier la navigation")}>
         <NavIcon name="expand" size={18} /></IconButton></Flex>}
     {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
       const current = route.view === view.key
       const help = view.key === "classe" ? helpPending : 0
       return <Link key={view.key} aria-describedby={help ? "help-badge-nav" : undefined} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
-        aria-label={view.label} title={view.label} display="flex" alignItems="center" gap="3" minH="10" px="2.5" rounded="lg" fontSize="sm"
+        aria-label={t(view.label)} title={t(view.label)} display="flex" alignItems="center" gap="3" minH="10" px="2.5" rounded="lg" fontSize="sm"
         fontWeight={current ? "semibold" : "medium"} color={current ? "app.ink" : "app.muted"} bg={current ? "app.sunken" : "transparent"} textDecoration="none"
         position="relative" className="nav-item"
         _hover={{ bg: "app.sunken", color: "app.ink", textDecoration: "none" }} justifyContent={{ base: "center", md: wide ? "flex-start" : "center" }}>
         <Box as="span" color={current ? "brand.fg" : "inherit"} display="inline-flex"><NavIcon name={view.icon} size={18} /></Box>
-        <Box as="span" display={{ base: "none", md: wide ? "block" : "none" }} minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" aria-hidden="true">{view.label}</Box>
+        <Box as="span" display={{ base: "none", md: wide ? "block" : "none" }} minW="0" overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap" aria-hidden="true">{t(view.label)}</Box>
         {help > 0 && <>
           {/* Wide sidebar: badge at the end of the row; icons only (collapsed, phone): a small pill on the icon. */}
           <Box as="span" ms="auto" display={{ base: "none", md: wide ? "inline-flex" : "none" }}><HelpBadge count={help} id="help-badge-nav" /></Box>
@@ -191,27 +192,27 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     borderBottomWidth="1px" borderColor="app.border" bg="color-mix(in srgb, var(--chakra-colors-app-canvas) 88%, transparent)"
     backdropFilter="saturate(1.4) blur(8px)" position="sticky" top="0" zIndex="sticky">
     {route.view === "aujourdhui"
-      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="0" truncate>{info.title}</Text>
-      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="0" truncate title={info.title}>{info.title}</Heading>}
+      ? <Text fontWeight="bold" fontSize={{ base: "md", md: "lg" }} flex="1" minW="0" truncate>{t(info.title)}</Text>
+      : <Heading as="h1" size={{ base: "md", md: "lg" }} flex="1" minW="0" truncate title={t(info.title)}>{t(info.title)}</Heading>}
     {online && <Link href="#/classe/etudiants" display="inline-flex" alignItems="center" gap="2" minH="11" px="2" rounded="md" fontSize="sm" color="app.ink"
-      textDecoration="none" aria-label={`${online.online} étudiant${online.online > 1 ? "s" : ""} en ligne sur ${online.total}`}>
+      textDecoration="none" aria-label={tn("{{count}} étudiant en ligne sur {{total}}", online.online, { total: online.total })}>
       <Box w="2.5" h="2.5" rounded="full" bg={online.online ? "green.solid" : "app.border"} aria-hidden="true" />
-      <Text as="span" aria-hidden="true" css={{ fontVariantNumeric: "tabular-nums" }}>{online.online}<Box as="span" display={{ base: "none", sm: "inline" }}> en ligne</Box></Text>
+      <Text as="span" aria-hidden="true" css={{ fontVariantNumeric: "tabular-nums" }}>{online.online}<Box as="span" display={{ base: "none", sm: "inline" }}> {t("en ligne")}</Box></Text>
     </Link>}
-    <Button variant="outline" size="sm" onClick={() => setPalette(true)} aria-label="Recherche rapide (Ctrl+K)" gap="2" color="app.muted">
-      <NavIcon name="search" size={16} /><Box as="span" display={{ base: "none", lg: "inline" }}>Rechercher</Box>
-      <Box as="span" display={{ base: "none", lg: "inline" }} fontSize="xs" borderWidth="1px" borderColor="app.border" rounded="sm" px="1">Ctrl K</Box></Button>
+    <Button variant="outline" size="sm" onClick={() => setPalette(true)} aria-label={t("Recherche rapide (Ctrl+K)")} gap="2" color="app.muted">
+      <NavIcon name="search" size={16} /><Box as="span" display={{ base: "none", lg: "inline" }}>{t("Rechercher")}</Box>
+      <Box as="span" display={{ base: "none", lg: "inline" }} fontSize="xs" borderWidth="1px" borderColor="app.border" rounded="sm" px="1">{t("Ctrl K")}</Box></Button>
     <NotificationBell />
   </Flex>
 
   let content: ReactNode
   if (error) content = <ErrorState message={error} onRetry={() => void setup()} />
-  else if (!main?.course || !main.cohort) content = <LoadingState label="Préparation de votre classe…" />
+  else if (!main?.course || !main.cohort) content = <LoadingState label={t("Préparation de votre classe…")} />
   else content = <ViewContent route={route} main={main} username={username} go={go} navigate={navigate} reload={reload} helpPending={helpPending} />
 
   return <Flex minH="100dvh" bg="app.canvas" color="app.ink">
     <Link href="#contenu" position="absolute" left="2" top="-16" minH="11" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
-      fontWeight="semibold" _focus={{ top: "2" }} onClick={(event) => { event.preventDefault(); document.getElementById("contenu")?.focus() }}>Aller au contenu</Link>
+      fontWeight="semibold" _focus={{ top: "2" }} onClick={(event) => { event.preventDefault(); document.getElementById("contenu")?.focus() }}>{t("Aller au contenu")}</Link>
     {sidebar}
     <Flex direction="column" flex="1" minW="0">
       {topbar}
@@ -230,16 +231,16 @@ function SubTabs({ route, go, children, label, counts = {} }: { route: TeacherRo
     {info.subs.map((sub) => <HelpText key={sub.key} count={counts[sub.key] ?? 0} id={`help-badge-tab-${sub.key}`} />)}
     <Tabs.List aria-label={label} overflowX="auto" mb="6">{info.subs.map((sub) => <Tabs.Trigger key={sub.key} value={sub.key} gap="2"
       aria-describedby={counts[sub.key] ? `help-badge-tab-${sub.key}` : undefined}>
-      {sub.label}{counts[sub.key] ? <HelpBadge count={counts[sub.key]} /> : null}</Tabs.Trigger>)}</Tabs.List>
+      {t(sub.label)}{counts[sub.key] ? <HelpBadge count={counts[sub.key]} /> : null}</Tabs.Trigger>)}</Tabs.List>
     {children}
   </Tabs.Root>
 }
 
 function NoClass() {
   return <Panel><Stack gap="2">
-    <Text fontWeight="semibold">Votre cours n’est pas encore publié</Text>
-    <Text color="app.muted">Dans « Mon cours », onglet Publication, cliquez sur « Publier pour la classe ». Les blocs arrivent fermés : vous les ouvrirez ici, un par un.</Text>
-    <Link href="#/cours/publication" color="brand.fg" fontWeight="semibold">Aller à la publication →</Link>
+    <Text fontWeight="semibold">{t("Votre cours n’est pas encore publié")}</Text>
+    <Text color="app.muted">{t("Dans « Mon cours », onglet Publication, cliquez sur « Publier pour la classe ». Les blocs arrivent fermés : vous les ouvrirez ici, un par un.")}</Text>
+    <Link href="#/cours/publication" color="brand.fg" fontWeight="semibold">{t("Aller à la publication →")}</Link>
   </Stack></Panel>
 }
 
@@ -249,15 +250,15 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
 }) {
   const assignmentId = main.assignment_id
   const context = <Flex gap="3" align="center" wrap="wrap" mb="4">
-    <Badge colorPalette="brand" variant="subtle" rounded="md" whiteSpace="normal" maxW="full" lineHeight="1.4" py="0.5">{main.cohort!.label} · {main.cohort!.student_count} étudiants</Badge>
-    <Text fontSize="sm" color="app.muted">{main.course!.title}{main.assigned_version ? ` · version ${main.assigned_version} pour la classe` : " · pas encore publié"}</Text>
+    <Badge colorPalette="brand" variant="subtle" rounded="md" whiteSpace="normal" maxW="full" lineHeight="1.4" py="0.5">{main.cohort!.label} · {main.cohort!.student_count} {t("étudiants")}</Badge>
+    <Text fontSize="sm" color="app.muted">{main.course!.title}{main.assigned_version ? t(" · version {{assigned_version}} pour la classe", { assigned_version: main.assigned_version }) : t(" · pas encore publié")}</Text>
   </Flex>
 
   switch (route.view) {
     case "aujourdhui":
       return <Today username={username} assignmentId={assignmentId} />
     case "classe":
-      return <Stack gap="0">{context}{assignmentId && <TeacherGoalBar assignmentId={assignmentId} />}<SubTabs route={route} go={go} label="Ma classe" counts={{ aide: helpPending }}>
+      return <Stack gap="0">{context}{assignmentId && <TeacherGoalBar assignmentId={assignmentId} />}<SubTabs route={route} go={go} label={t("Ma classe")} counts={{ aide: helpPending }}>
         {!assignmentId ? <NoClass /> : <>
           <Tabs.Content value="frise"><Stack gap="8"><ClassTimeline assignmentId={assignmentId} section="frise" /><AutoPlanPanel assignmentId={assignmentId} /></Stack></Tabs.Content>
           <Tabs.Content value="etudiants"><Stack gap="8">
@@ -276,14 +277,14 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
     case "projet":
       return assignmentId ? <Stack gap="0">{context}<TeacherProject assignmentId={assignmentId} /></Stack> : <NoClass />
     case "voyage":
-      return <Suspense fallback={<LoadingState label="Chargement de l’expérience…" />}>
+      return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
         <VoyagePage scene={route.sub ? Number(route.sub) : 1} onScene={(scene) => navigate({ view: "voyage", sub: String(scene), params: {} })} /></Suspense>
     case "classement": {
       const selected = route.sub ? Number(route.sub) : assignmentId
       return selected ? <LeaderboardPage key={selected} role="teacher" assignmentId={selected} /> : <NoClass />
     }
     case "reglages":
-      return <SubTabs route={route} go={go} label="Réglages">
+      return <SubTabs route={route} go={go} label={t("Réglages")}>
         <Tabs.Content value="notifications"><Panel><NotificationSettingsPanel /></Panel></Tabs.Content>
         <Tabs.Content value="observateurs"><ObserversPanel /></Tabs.Content>
         <Tabs.Content value="classes"><TeacherDashboard /></Tabs.Content>

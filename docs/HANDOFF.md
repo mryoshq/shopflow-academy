@@ -5,6 +5,16 @@
 
 
 
+## Interface en anglais — PR 3/3 (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` ; `main` fusionnée après #67 et #69, dont les textes (radio, séries, badges, niveaux, objectif de classe, son de réussite) sont traduits. Fichiers clés : `frontend/src/i18n/` (`index.ts`, `en.json`, `fr.json`, `server.ts`, `keys.test.ts`), `main.tsx`, `public/theme-init.js`, `public/offline.js`, `playwright.config.ts`, ADR-0040. Captures : `docs/captures/anglais/`.
+
+### Anglais — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`), puis recharger la page.
+2. Un navigateur réglé en anglais affiche l'interface en anglais ; « Français » se choisit dans le menu de compte ou Paramètres > Général.
+
+Prochaine action unique : revue et fusion de la PR « Interface en anglais » (#70).
+
 ## Plus de plaisir — PR 2/3 (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main`, puis `main` fusionnée après #67. Fichiers clés : `backend/app/rewards.py` (séries, XP, niveaux, badges, objectif de classe, `recompute`), `backend/app/rewards_models.py`, migration `0015_rewards`, `frontend/src/rewards/` (`Rewards.tsx`, `celebrate.ts`), branchements dans `student.py`, `teacher_dashboard.py`, `StudentDashboard.tsx`, `MissionPlayer.tsx`, `TeacherApp.tsx`, `SettingsDialog.tsx`. ADR-0039. Captures : `docs/captures/plaisir/`.
@@ -15,7 +25,8 @@ Branche `claude/lucid-brahmagupta-htwgun-plaisir` depuis `main`, puis `main` fus
 3. Attribuer les badges déjà mérités, sans notification : `docker compose exec backend python -m app.rewards recompute`.
 4. Facultatif : Réglages > Objectif de classe pour choisir la mesure et la cible.
 
-Prochaine action unique : revue et fusion de la PR « Plus de plaisir » (#69), puis de la PR « Interface en anglais » (#70).
+PR #69 fusionnée le 31/10/2026.
+
 ## Test de charge : limite de la connexion (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-charge` depuis `main` (#67 fusionnée). `scripts/load_test.py` : `LOGIN_P95_LIMIT_MS = 3000` pour la connexion, `P95_LIMIT_MS = 1500` pour toutes les autres requêtes. Rien à faire en local.

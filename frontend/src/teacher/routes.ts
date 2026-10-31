@@ -1,3 +1,4 @@
+import { msg } from "../i18n"
 /**
  * Teacher single-page routes (ADR-0031): one address per view and sub-view, in the hash so that
  * the browser back button and direct links work without any server change.
@@ -18,19 +19,19 @@ export type SubView = { key: string; label: string }
 export type ViewInfo = { key: ViewKey; label: string; title: string; icon: string; subs: SubView[] }
 
 export const VIEWS: ViewInfo[] = [
-  { key: "aujourdhui", label: "Aujourd’hui", title: "Aujourd’hui", icon: "sun", subs: [] },
-  { key: "classe", label: "Ma classe", title: "Ma classe", icon: "users", subs: [
-    { key: "frise", label: "Frise" }, { key: "etudiants", label: "Étudiants" },
-    { key: "aide", label: "Demandes d’aide" }, { key: "difficultes", label: "Difficultés" }] },
-  { key: "cours", label: "Mon cours", title: "Mon cours", icon: "book", subs: [
-    { key: "plan", label: "Plan" }, { key: "missions", label: "Missions" }, { key: "apercu", label: "Aperçu" },
-    { key: "import", label: "Import" }, { key: "regles", label: "Règles" }, { key: "publication", label: "Publication" }] },
-  { key: "resultats", label: "Résultats", title: "Résultats", icon: "chart", subs: [] },
-  { key: "projet", label: "Projet", title: "Projet CampusEquip", icon: "folder", subs: [] },
+  { key: "aujourdhui", label: msg("Aujourd’hui"), title: msg("Aujourd’hui"), icon: "sun", subs: [] },
+  { key: "classe", label: msg("Ma classe"), title: msg("Ma classe"), icon: "users", subs: [
+    { key: "frise", label: msg("Frise") }, { key: "etudiants", label: msg("Étudiants") },
+    { key: "aide", label: msg("Demandes d’aide") }, { key: "difficultes", label: msg("Difficultés") }] },
+  { key: "cours", label: msg("Mon cours"), title: msg("Mon cours"), icon: "book", subs: [
+    { key: "plan", label: "Plan" }, { key: "missions", label: "Missions" }, { key: "apercu", label: msg("Aperçu") },
+    { key: "import", label: "Import" }, { key: "regles", label: msg("Règles") }, { key: "publication", label: "Publication" }] },
+  { key: "resultats", label: msg("Résultats"), title: msg("Résultats"), icon: "chart", subs: [] },
+  { key: "projet", label: msg("Projet"), title: msg("Projet CampusEquip"), icon: "folder", subs: [] },
   { key: "classement", label: "Leaderboard", title: "Leaderboard", icon: "trophy", subs: [] },
-  { key: "voyage", label: "Le voyage d’une donnée", title: "Le voyage d’une donnée", icon: "route", subs: [] },
-  { key: "reglages", label: "Réglages", title: "Réglages", icon: "settings", subs: [
-    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: "Observateurs" }, { key: "classes", label: "Autres classes" }, { key: "objectif", label: "Objectif de classe" }] },
+  { key: "voyage", label: msg("Le voyage d’une donnée"), title: msg("Le voyage d’une donnée"), icon: "route", subs: [] },
+  { key: "reglages", label: msg("Réglages"), title: msg("Réglages"), icon: "settings", subs: [
+    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }, { key: "objectif", label: msg("Objectif de classe") }] },
 ]
 
 export const DEFAULT_ROUTE: TeacherRoute = { view: "aujourdhui", sub: "", params: {} }

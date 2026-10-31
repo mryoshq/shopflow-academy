@@ -34,7 +34,7 @@ test("login page: new text, no theme switch, opening once per session, form usab
 })
 
 test("the opening is skipped with reduced motion", async ({ browser }) => {
-  const context = await browser.newContext({ reducedMotion: "reduce" })
+  const context = await browser.newContext({ locale: "fr-FR", reducedMotion: "reduce" })
   const page = await context.newPage()
   await page.goto("/")
   await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible()
@@ -43,7 +43,7 @@ test("the opening is skipped with reduced motion", async ({ browser }) => {
 })
 
 test("« Demandes d’aide » badge on « Ma classe » and on its tab, gone once handled", async ({ page, browser }) => {
-  const studentContext = await browser.newContext()
+  const studentContext = await browser.newContext({ locale: "fr-FR" })
   const student = await studentContext.newPage()
   await student.goto("/")
   await login(student, "demo.etudiant08")

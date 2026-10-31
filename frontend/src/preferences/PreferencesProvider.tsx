@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Box } from "@chakra-ui/react"
 import { nextZoom, percent, readZoom, setZoom } from "./display"
@@ -62,6 +63,6 @@ export function PreferencesProvider({ account, children }: { account: Account | 
     {/* Rendered only with a message: an empty, always-present status region would compete with the page's own. */}
     {toast && <Box key={toast.key} role="status" className="zoom-toast" position="fixed" bottom="6" left="50%" transform="translateX(-50%)" zIndex="toast"
       pointerEvents="none" px="4" py="2" rounded="full" bg="app.ink" color="app.canvas" fontSize="sm" fontWeight="medium" boxShadow="lg"
-      css={{ fontVariantNumeric: "tabular-nums" }}>Taille du texte : {percent(toast.zoom)}</Box>}
+      css={{ fontVariantNumeric: "tabular-nums" }}>{t("Taille du texte :")}{" "}{percent(toast.zoom)}</Box>}
   </Context.Provider>
 }

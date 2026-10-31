@@ -1,3 +1,5 @@
+import { serverText } from "../i18n/server"
+import { locale, msg, t, tn } from "../i18n"
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import { Badge, Box, Button, CloseButton, Flex, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -16,9 +18,9 @@ export const TOAST_MS = 10000
 const GROUP_WINDOW_MS = 5 * 60 * 1000
 
 export const KIND_LABELS: Record<string, string> = {
-  message: "Message", block_open: "Bloc ouvert", block_unlocked: "Ouvert pour vous", help_handled: "Aide",
-  help: "Demande d’aide", blocked: "Étudiant bloqué", block_done: "Bloc terminé", auto_soon: "Ouverture dans 2 min",
-  auto_done: "Ouverture automatique", disconnect: "Déconnexion",
+  message: msg("Message"), block_open: msg("Bloc ouvert"), block_unlocked: msg("Ouvert pour vous"), help_handled: msg("Aide"),
+  help: msg("Demande d’aide"), blocked: msg("Étudiant bloqué"), block_done: msg("Bloc terminé"), auto_soon: msg("Ouverture dans 2 min"),
+  auto_done: msg("Ouverture automatique"), disconnect: msg("Déconnexion"),
 }
 const REFRESH_KINDS = new Set(["block_open", "block_unlocked", "badge", "class_goal"])
 
@@ -40,14 +42,14 @@ export function groupNotes(items: Note[]): { kind: string; items: Note[] }[] {
 }
 
 function timeOf(iso: string): string {
-  return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })
+  return new Date(iso).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })
 }
 
 /** System notification when the tab is hidden and the user allowed it (no Web Push needed). */
 function systemNotify(note: Note) {
   try {
     if (typeof Notification === "undefined" || Notification.permission !== "granted" || !document.hidden) return
-    new Notification("Rapidfox Academy", { body: note.text, tag: `academy-${note.id}`, icon: "/icons/icon-192.png" })
+    new Notification(t("Rapidfox Academy"), { body: serverText(note.text, note.kind), tag: `academy-${note.id}`, icon: "/icons/icon-192.png" })
   } catch { /* not supported */ }
 }
 
@@ -128,7 +130,7 @@ export function NotificationProvider({ children, heartbeat = false }: { children
 /** Bottom-right toasts, 10 s at most; « J’ai lu » marks the item read (read receipt for the teacher). */
 function Toasts({ toasts, onClose }: { toasts: Note[]; onClose: (note: Note, read: boolean) => void }) {
   return <Stack position="fixed" bottom={{ base: "3", md: "6" }} right={{ base: "3", md: "6" }} left={{ base: "3", md: "auto" }} gap="2" zIndex="toast"
-    maxW={{ md: "sm" }} role="region" aria-label="Notifications récentes">
+    maxW={{ md: "sm" }} role="region" aria-label={t("Notifications récentes")}>
     {toasts.map((note) => <Toast key={note.id} note={note} onClose={onClose} />)}
   </Stack>
 }
@@ -148,12 +150,12 @@ function Toast({ note, onClose }: { note: Note; onClose: (note: Note, read: bool
       <Box color="brand.fg" mt="0.5"><Icon name="bell" size={16} /></Box>
       <Stack gap="1" flex="1" minW="0">
         <Text fontSize="xs" fontWeight="bold" color="app.muted" textTransform="uppercase" letterSpacing="0.06em">
-          {KIND_LABELS[note.kind] ?? "Notification"}{note.sender ? ` · ${note.sender}` : ""}
+          {t(KIND_LABELS[note.kind] ?? "Notification")}{note.sender ? ` · ${note.sender}` : ""}
         </Text>
-        <Text>{note.text}</Text>
-        <Button size="xs" variant="outline" colorPalette="brand" alignSelf="start" onClick={() => onClose(note, true)}>J’ai lu</Button>
+        <Text>{serverText(note.text, note.kind)}</Text>
+        <Button size="xs" variant="outline" colorPalette="brand" alignSelf="start" onClick={() => onClose(note, true)}>{t("J’ai lu")}</Button>
       </Stack>
-      <CloseButton size="xs" aria-label="Fermer la notification" onClick={() => onClose(note, false)} />
+      <CloseButton size="xs" aria-label={t("Fermer la notification")} onClick={() => onClose(note, false)} />
     </Flex>
   </Box>
 }
@@ -173,25 +175,25 @@ export function NotificationBell() {
   const groups = groupNotes(items)
   return <Box position="relative">
     <Button size="sm" variant="outline" aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}
-      aria-label={unread ? `Notifications : ${unread} non lue${unread > 1 ? "s" : ""}` : "Notifications"}>
+      aria-label={unread ? tn("Notifications : {{count}} non lue", unread) : t("Notifications")}>
       <Icon name="bell" size={16} />{unread > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full" minW="5" justifyContent="center">{unread > 99 ? "99+" : unread}</Badge>}
     </Button>
-    {open && <Box ref={panel} tabIndex={-1} role="dialog" aria-label="Historique des notifications" position="absolute" right="0" top="calc(100% + 8px)" zIndex="popover"
+    {open && <Box ref={panel} tabIndex={-1} role="dialog" aria-label={t("Historique des notifications")} position="absolute" right="0" top="calc(100% + 8px)" zIndex="popover"
       w={{ base: "min(92vw, 22rem)", md: "24rem" }} maxH="70vh" overflowY="auto" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg" boxShadow="lg" p="3">
       <Flex justify="space-between" align="center" mb="2" gap="2">
-        <Text fontWeight="semibold">Notifications</Text>
+        <Text fontWeight="semibold">{t("Notifications")}</Text>
         <Flex gap="1">
-          <Button size="xs" variant="ghost" disabled={!unread} onClick={() => void markAll()}>Tout marquer comme lu</Button>
-          <CloseButton size={{ base: "md", md: "xs" }} minW={{ base: "11", md: "auto" }} aria-label="Fermer l’historique" onClick={() => setOpen(false)} />
+          <Button size="xs" variant="ghost" disabled={!unread} onClick={() => void markAll()}>{t("Tout marquer comme lu")}</Button>
+          <CloseButton size={{ base: "md", md: "xs" }} minW={{ base: "11", md: "auto" }} aria-label={t("Fermer l’historique")} onClick={() => setOpen(false)} />
         </Flex>
       </Flex>
       <SystemNotificationsSwitch />
-      {groups.length === 0 ? <Text fontSize="sm" color="app.muted" py="2">Aucune notification pour le moment.</Text>
+      {groups.length === 0 ? <Text fontSize="sm" color="app.muted" py="2">{t("Aucune notification pour le moment.")}</Text>
         : <Stack as="ul" listStyleType="none" p="0" m="0" gap="1.5">{groups.map((group) => <Box as="li" key={group.items[0].id} p="2" rounded="md"
           bg={group.items.some((item) => !item.read_at) ? "brand.subtle" : "transparent"}>
-          <Text fontSize="xs" fontWeight="bold" color="app.muted">{KIND_LABELS[group.kind] ?? "Notification"}{group.items.length > 1 ? ` (${group.items.length})` : ""} · {timeOf(group.items[0].created_at)}</Text>
-          {group.items.slice(0, 3).map((item) => <Text key={item.id} fontSize="sm">{item.sender ? `${item.sender} : ` : ""}{item.text}</Text>)}
-          {group.items.length > 3 && <Text fontSize="xs" color="app.muted">et {group.items.length - 3} autre{group.items.length > 4 ? "s" : ""}</Text>}
+          <Text fontSize="xs" fontWeight="bold" color="app.muted">{t(KIND_LABELS[group.kind] ?? "Notification")}{group.items.length > 1 ? ` (${group.items.length})` : ""} · {timeOf(group.items[0].created_at)}</Text>
+          {group.items.slice(0, 3).map((item) => <Text key={item.id} fontSize="sm">{item.sender ? `${item.sender} : ` : ""}{serverText(item.text, item.kind)}</Text>)}
+          {group.items.length > 3 && <Text fontSize="xs" color="app.muted">{tn("et {{count}} autre", group.items.length - 3)}</Text>}
         </Box>)}</Stack>}
     </Box>}
   </Box>
@@ -231,23 +233,23 @@ function SystemNotificationsSwitch() {
     setStatus("")
     const result = await Notification.requestPermission()
     setPermission(result)
-    if (result !== "granted") return setStatus("Notifications refusées par le navigateur.")
+    if (result !== "granted") return setStatus(t("Notifications refusées par le navigateur."))
     try {
       const key = await api<{ enabled: boolean; public_key: string | null }>("/push/key")
       if (!key.enabled || !key.public_key || !("serviceWorker" in navigator) || !("PushManager" in window)) {
-        return setStatus("Notifications système activées (onglet ouvert).")
+        return setStatus(t("Notifications système activées (onglet ouvert)."))
       }
       const registration = await navigator.serviceWorker.register("/sw.js")
       const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: urlBase64ToBytes(key.public_key) })
       await api("/push/subscribe", "POST", { endpoint: subscription.endpoint })
-      setStatus("Notifications système activées, même onglet fermé.")
+      setStatus(t("Notifications système activées, même onglet fermé."))
     } catch {
-      setStatus("Notifications système activées (onglet ouvert) ; l’envoi hors de l’onglet n’a pas pu être activé.")
+      setStatus(t("Notifications système activées (onglet ouvert) ; l’envoi hors de l’onglet n’a pas pu être activé."))
     }
   }
   return <Box mb="2">
     {(permission !== "granted" || pushMissing) && <Button size="xs" variant="outline" colorPalette="brand" onClick={() => void enable().then(() => setPushMissing(false))}>
-      {permission === "granted" ? "Activer les notifications hors de l’onglet" : "Activer les notifications système"}</Button>}
+      {permission === "granted" ? t("Activer les notifications hors de l’onglet") : t("Activer les notifications système")}</Button>}
     {status && <Text fontSize="xs" color="app.muted" role="status" mt="1">{status}</Text>}
   </Box>
 }

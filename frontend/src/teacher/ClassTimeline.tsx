@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -27,7 +28,7 @@ export function minutesSince(iso: string | null, now: number): number {
 
 function waited(iso: string, now: number): string {
   const minutes = minutesSince(iso, now)
-  return minutes < 1 ? "à l’instant" : `depuis ${minutes} min`
+  return minutes < 1 ? t("à l’instant") : t("depuis {{minutes}} min", { minutes })
 }
 
 /**
@@ -76,13 +77,13 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
       setNow(Date.now())
       await refresh()
     } catch (reason) {
-      setNotice(reason instanceof ApiError ? (reason.status === 409 ? "Tous les blocs sont déjà ouverts." : `Action impossible : ${reason.message}`) : "Connexion interrompue. Réessayez.")
+      setNotice(reason instanceof ApiError ? (reason.status === 409 ? t("Tous les blocs sont déjà ouverts.") : `Action impossible : ${reason.message}`) : t("Connexion interrompue. Réessayez."))
     } finally {
       setBusy(false)
     }
   }
 
-  if (!data) return <Panel><Text role="status" color="app.muted">{stale ? "Connexion perdue. Nouvel essai dans quelques secondes…" : "Chargement de la journée…"}</Text></Panel>
+  if (!data) return <Panel><Text role="status" color="app.muted">{stale ? t("Connexion perdue. Nouvel essai dans quelques secondes…") : t("Chargement de la journée…")}</Text></Panel>
 
   const openBlocks = data.blocks.filter((block) => block.open && block.opened_at)
   const current = openBlocks.reduce<TimelineBlock | null>((latest, block) => !latest || (block.opened_at! > latest.opened_at!) ? block : latest, null)
@@ -95,27 +96,27 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
       <Stack gap="4">
         <Flex gap="3" justify="space-between" align={{ base: "start", md: "center" }} direction={{ base: "column", md: "row" }}>
           <Stack gap="1">
-            <Heading as="h3" size="md" id="timeline-title">Déroulé de la journée</Heading>
-            <Text fontSize="sm" color="app.muted">{openBlocks.length} bloc{openBlocks.length > 1 ? "s" : ""} ouvert{openBlocks.length > 1 ? "s" : ""} sur {data.blocks.length}. Les blocs ouverts restent accessibles.</Text>
+            <Heading as="h3" size="md" id="timeline-title">{t("Déroulé de la journée")}</Heading>
+            <Text fontSize="sm" color="app.muted">{tn("{{count}} bloc ouvert sur {{total}}", openBlocks.length, { total: data.blocks.length })}{t(". Les blocs ouverts restent accessibles.")}</Text>
           </Stack>
           <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" loading={busy} disabled={!next}
-            onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/open-next`, (result) => `Bloc « ${result.title} » ouvert pour toute la classe.`)}>
-            {next ? `Ouvrir le bloc suivant : ${next.title}` : "Tous les blocs sont ouverts"}
+            onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/open-next`, (result) => t("Bloc « {{title}} » ouvert pour toute la classe.", { title: result.title }))}>
+            {next ? t("Ouvrir le bloc suivant : {{title}}", { title: next.title }) : t("Tous les blocs sont ouverts")}
           </Button>
         </Flex>
-        {current && <Box p="3" rounded="lg" bg={over ? "saffron.subtle" : "brand.subtle"} aria-label="Repère horaire (visible par vous seul)">
+        {current && <Box p="3" rounded="lg" bg={over ? "saffron.subtle" : "brand.subtle"} aria-label={t("Repère horaire (visible par vous seul)")}>
           <Flex gap="2" align="center" wrap="wrap" mb="2">
             <Icon name="clock" size={16} />
-            <Text fontWeight="semibold">« {current.title} » ouvert depuis {elapsed} min</Text>
-            <Text fontSize="sm" color="app.muted">Repère : {data.block_minutes} min{over ? " — dépassé, rien ne se ferme automatiquement" : ""}. Visible par vous seul.</Text>
+            <Text fontWeight="semibold">« {current.title} {t("» ouvert depuis")}{" "}{elapsed} {t("min")}</Text>
+            <Text fontSize="sm" color="app.muted">{t("Repère :")}{" "}{data.block_minutes} {t("min")}{over ? t(" — dépassé, rien ne se ferme automatiquement") : ""}{t(". Visible par vous seul.")}</Text>
           </Flex>
-          <Box h="2" bg="app.surface" rounded="full" overflow="hidden" role="img" aria-label={`${elapsed} minutes sur un repère de ${data.block_minutes}`}>
+          <Box h="2" bg="app.surface" rounded="full" overflow="hidden" role="img" aria-label={t("{{elapsed}} minutes sur un repère de {{block_minutes}}", { elapsed, block_minutes: data.block_minutes })}>
             <Box h="full" bg={over ? "saffron.solid" : "brand.solid"} w={`${Math.min(100, (elapsed / data.block_minutes) * 100)}%`} />
           </Box>
         </Box>}
         {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
-        {stale && <Text fontSize="sm" color="red.fg">Connexion perdue : données possiblement anciennes.</Text>}
-        <Stack as="ol" gap="2" listStyleType="none" p="0" m="0" aria-label="Blocs de la journée">
+        {stale && <Text fontSize="sm" color="red.fg">{t("Connexion perdue : données possiblement anciennes.")}</Text>}
+        <Stack as="ol" gap="2" listStyleType="none" p="0" m="0" aria-label={t("Blocs de la journée")}>
           {data.blocks.map((block, index) => {
             const newModule = index === 0 || data.blocks[index - 1].module !== block.module
             return <Box as="li" key={block.chapter_id}>
@@ -125,29 +126,29 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
                 <Text fontWeight="bold" color="app.muted" minW="6" css={{ fontVariantNumeric: "tabular-nums" }}>{block.position}</Text>
                 <Stack gap="0" flex="1" minW="48">
                   <Text fontWeight="semibold">{block.title}</Text>
-                  <Text fontSize="sm" color="app.muted">{block.mission_count} mission{block.mission_count > 1 ? "s" : ""}{block.bonus_count ? ` + ${block.bonus_count} bonus` : ""} · environ {block.duration_minutes} min</Text>
+                  <Text fontSize="sm" color="app.muted">{tn("{{count}} mission", block.mission_count)}{block.bonus_count ? ` + ${block.bonus_count} bonus` : ""} {t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
                 </Stack>
-                <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? "Ouvert" : "Fermé"}</Badge>
-                <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_students} / {data.student_count} terminé</Text>
-                {(block.lesson_count ?? 0) > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>leçons lues {block.lessons_read_students ?? 0}/{data.student_count}</Text>}
-                {block.help_pending > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full">{block.help_pending} demande{block.help_pending > 1 ? "s" : ""} d’aide</Badge>}
+                <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? t("Ouvert") : t("Fermé")}</Badge>
+                <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_students} / {data.student_count} {t("terminé")}</Text>
+                {(block.lesson_count ?? 0) > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("leçons lues")}{" "}{block.lessons_read_students ?? 0}/{data.student_count}</Text>}
+                {block.help_pending > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full">{tn("{{count}} demande d’aide", block.help_pending)}</Badge>}
                 {block.open
-                  ? <Button size="xs" variant="outline" loading={busy} aria-label={`Fermer le bloc ${block.title}`}
-                    onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/${block.chapter_id}/close`, () => `Bloc « ${block.title} » fermé.`)}>Fermer</Button>
-                  : <Button size="xs" colorPalette="brand" variant="outline" loading={busy} aria-label={`Ouvrir le bloc ${block.title}`}
-                    onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/${block.chapter_id}/open`, () => `Bloc « ${block.title} » ouvert pour toute la classe.`)}>Ouvrir</Button>}
+                  ? <Button size="xs" variant="outline" loading={busy} aria-label={t("Fermer le bloc {{title}}", { title: block.title })}
+                    onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/${block.chapter_id}/close`, () => t("Bloc « {{title}} » fermé.", { title: block.title }))}>{t("Fermer")}</Button>
+                  : <Button size="xs" colorPalette="brand" variant="outline" loading={busy} aria-label={t("Ouvrir le bloc {{title}}", { title: block.title })}
+                    onClick={() => void act(`/teacher/classes/${assignmentId}/blocks/${block.chapter_id}/open`, () => t("Bloc « {{title}} » ouvert pour toute la classe.", { title: block.title }))}>{t("Ouvrir")}</Button>}
               </Flex>
             </Box>
           })}
         </Stack>
-        {data.blocks.length === 0 && <Text color="app.muted">Ce cours n’a pas encore de bloc.</Text>}
+        {data.blocks.length === 0 && <Text color="app.muted">{t("Ce cours n’a pas encore de bloc.")}</Text>}
       </Stack>
     </Panel>}
 
     {shows("aide") && <Panel as="section" aria-labelledby="help-title" borderColor={data.help.length ? "saffron.400" : "app.border"}>
       <Stack gap="3">
-        <Heading as="h3" size="md" id="help-title">Demandes d’aide en attente ({data.help.length})</Heading>
-        {data.help.length === 0 ? <Text color="app.muted" fontSize="sm">Aucune demande pour le moment.</Text>
+        <Heading as="h3" size="md" id="help-title">{t("Demandes d’aide en attente (")}{data.help.length})</Heading>
+        {data.help.length === 0 ? <Text color="app.muted" fontSize="sm">{t("Aucune demande pour le moment.")}</Text>
           : <Stack as="ul" gap="2" listStyleType="none" p="0" m="0">{data.help.map((item) => <Flex as="li" key={item.id} gap="3" align="center" wrap="wrap" p="3" bg="saffron.subtle" rounded="lg">
             <Stack gap="0" flex="1" minW="56">
               <Text fontWeight="semibold">{item.student} · {item.mission}</Text>
@@ -155,9 +156,9 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
               {item.message && <Text fontSize="sm" mt="1">« {item.message} »</Text>}
             </Stack>
             <Flex gap="2" wrap="wrap">
-              <Button size="sm" variant="ghost" onClick={() => setHelpOpen(item)} aria-label={`Voir la demande de ${item.student}`}>Voir</Button>
+              <Button size="sm" variant="ghost" onClick={() => setHelpOpen(item)} aria-label={t("Voir la demande de {{student}}", { student: item.student })}>{t("Voir")}</Button>
               <Button size="sm" colorPalette="brand" loading={busy}
-                onClick={() => void act(`/teacher/help/${item.id}/handle`, () => `Demande de ${item.student} marquée comme traitée.`)}>Marquer comme traitée</Button>
+                onClick={() => void act(`/teacher/help/${item.id}/handle`, () => t("Demande de {{student}} marquée comme traitée.", { student: item.student }))}>{t("Marquer comme traitée")}</Button>
             </Flex>
           </Flex>)}</Stack>}
         {section === "aide" && notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
@@ -165,14 +166,14 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
     </Panel>}
 
     {shows("difficultes") && <Panel as="section" aria-labelledby="stats-title" p="0" overflow="hidden">
-      <Box p={{ base: "5", md: "6" }} pb="3"><Heading as="h3" size="md" id="stats-title">Missions : réussites et difficultés</Heading>
-        <Text fontSize="sm" color="app.muted">« Bloqués » : plusieurs essais sans réussite.</Text></Box>
-      <Box overflowX="auto" tabIndex={0} role="region" aria-label="Tableau des missions (défilement horizontal)">
-        <Table.Root size="sm" variant="line" aria-label="Statistiques par mission">
-          <Table.Header><Table.Row bg="app.sunken">{["Mission", "Bloc", "Réussites", "Essais", "Indices", "Bloqués", "Clics rapides"].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+      <Box p={{ base: "5", md: "6" }} pb="3"><Heading as="h3" size="md" id="stats-title">{t("Missions : réussites et difficultés")}</Heading>
+        <Text fontSize="sm" color="app.muted">{t("« Bloqués » : plusieurs essais sans réussite.")}</Text></Box>
+      <Box overflowX="auto" tabIndex={0} role="region" aria-label={t("Tableau des missions (défilement horizontal)")}>
+        <Table.Root size="sm" variant="line" aria-label={t("Statistiques par mission")}>
+          <Table.Header><Table.Row bg="app.sunken">{[t("Mission"), t("Bloc"), t("Réussites"), t("Essais"), t("Indices"), t("Bloqués"), t("Clics rapides")].map((label) => <Table.ColumnHeader key={label} scope="col">{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
           <Table.Body>{data.missions.map((item) => <Table.Row key={item.mission_version_id} bg={item.stuck.length ? "saffron.subtle" : undefined}>
             <Table.Cell fontWeight="medium"><Button variant="plain" size="sm" p="0" h="auto" minH="0" color="brand.fg" textDecoration="underline" whiteSpace="normal" textAlign="start"
-              onClick={() => setMissionOpen(item)} aria-label={`Détail de la mission ${item.title}`}>{item.title}</Button>{item.bonus ? " (bonus)" : ""}</Table.Cell>
+              onClick={() => setMissionOpen(item)} aria-label={t("Détail de la mission {{title}}", { title: item.title })}>{item.title}</Button>{item.bonus ? " (bonus)" : ""}</Table.Cell>
             <Table.Cell color="app.muted">{item.block}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.completed} / {data.student_count}</Table.Cell>
             <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{item.attempts}</Table.Cell>
@@ -184,26 +185,26 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
       </Box>
     </Panel>}
 
-    <SidePanel open={helpOpen !== null} title={helpOpen ? `Demande d’aide : ${helpOpen.student}` : "Demande d’aide"} onClose={() => setHelpOpen(null)}>
+    <SidePanel open={helpOpen !== null} title={helpOpen ? t("Demande d’aide : {{student}}", { student: helpOpen.student }) : t("Demande d’aide")} onClose={() => setHelpOpen(null)}>
       {helpOpen && <Stack gap="3">
-        <Text><strong>Mission :</strong> {helpOpen.mission}</Text>
-        <Text><strong>Bloc :</strong> {helpOpen.block}</Text>
-        <Text color="app.muted">Demandée {waited(helpOpen.created_at, now)}</Text>
-        <Box p="3" rounded="lg" bg="app.sunken">{helpOpen.message ? `« ${helpOpen.message} »` : "Sans message."}</Box>
+        <Text><strong>{t("Mission :")}</strong> {helpOpen.mission}</Text>
+        <Text><strong>{t("Bloc :")}</strong> {helpOpen.block}</Text>
+        <Text color="app.muted">{t("Demandée")}{" "}{waited(helpOpen.created_at, now)}</Text>
+        <Box p="3" rounded="lg" bg="app.sunken">{helpOpen.message ? `« ${helpOpen.message} »` : t("Sans message.")}</Box>
         <Button alignSelf="start" colorPalette="brand" loading={busy} onClick={() => {
           const item = helpOpen
           setHelpOpen(null)
-          void act(`/teacher/help/${item.id}/handle`, () => `Demande de ${item.student} marquée comme traitée.`)
-        }}>Marquer comme traitée</Button>
+          void act(`/teacher/help/${item.id}/handle`, () => t("Demande de {{student}} marquée comme traitée.", { student: item.student }))
+        }}>{t("Marquer comme traitée")}</Button>
       </Stack>}
     </SidePanel>
-    <SidePanel open={missionOpen !== null} title={missionOpen ? `Mission : ${missionOpen.title}` : "Mission"} onClose={() => setMissionOpen(null)}>
+    <SidePanel open={missionOpen !== null} title={missionOpen ? t("Mission : {{title}}", { title: missionOpen.title }) : t("Mission")} onClose={() => setMissionOpen(null)}>
       {missionOpen && <Stack gap="3">
         <Text color="app.muted">{missionOpen.block}{missionOpen.bonus ? " · bonus" : ""}</Text>
-        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>Réussites :</strong> {missionOpen.completed} / {data.student_count}</Text>
-        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>Essais :</strong> {missionOpen.attempts} · <strong>Indices :</strong> {missionOpen.hints}</Text>
-        <Text><strong>Bloqués :</strong> {missionOpen.stuck.length ? missionOpen.stuck.join(", ") : "personne"}</Text>
-        <Text><strong>Clics rapides :</strong> {missionOpen.fast?.length ? missionOpen.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ") : "aucun"}</Text>
+        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>{t("Réussites :")}</strong> {missionOpen.completed} / {data.student_count}</Text>
+        <Text css={{ fontVariantNumeric: "tabular-nums" }}><strong>{t("Essais :")}</strong> {missionOpen.attempts} · <strong>{t("Indices :")}</strong> {missionOpen.hints}</Text>
+        <Text><strong>{t("Bloqués :")}</strong> {missionOpen.stuck.length ? missionOpen.stuck.join(", ") : "personne"}</Text>
+        <Text><strong>{t("Clics rapides :")}</strong> {missionOpen.fast?.length ? missionOpen.fast.map((entry) => `${entry.student} (${entry.count})`).join(", ") : "aucun"}</Text>
       </Stack>}
     </SidePanel>
   </Stack>

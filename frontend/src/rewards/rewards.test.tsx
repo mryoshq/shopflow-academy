@@ -5,6 +5,8 @@ import { system } from "../theme"
 import { AttemptRewardsNote, ClassGoalPanel, GoalSettings, ProgressPanel, StudentRewardsSummary, levelProgress } from "./Rewards"
 import { chime, confetti, motionAllowed, readSound } from "./celebrate"
 import type { AttemptRewards, Rewards } from "./types"
+import { setLanguage } from "../i18n"
+import { rewardText, serverText } from "../i18n/server"
 
 const wrap = (node: React.ReactNode) => render(<ChakraProvider value={system}>{node}</ChakraProvider>)
 const json = (body: unknown, status = 200) => ({ status, ok: status < 400, json: async () => body })
@@ -24,7 +26,7 @@ const ATTEMPT: AttemptRewards = { streak: 5, best_streak: 5, streak_mark: 5, xp_
   new_badges: [{ key: "streak-5", label: "Série de 5" }] }
 
 beforeEach(() => { localStorage.clear(); document.documentElement.classList.remove("reduce-motion") })
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); document.querySelectorAll(".academy-confetti").forEach((node) => node.remove()) })
+afterEach(() => { setLanguage("fr"); cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); document.querySelectorAll(".academy-confetti").forEach((node) => node.remove()) })
 
 it("progress panel: named level with a progress bar, streak, and a kind badge collection; never mixed with the score", () => {
   wrap(<ProgressPanel rewards={REWARDS} />)
@@ -130,4 +132,32 @@ it("teacher panel: level, streaks and earned badges of the student", () => {
   expect(group).toHaveTextContent("Série : 3 (meilleure : 4)")
   expect(group).toHaveTextContent("Première mission réussie")
   expect(group).not.toHaveTextContent("Série de 5")
+})
+
+it("in English: progress, badges and the class goal; a badge named after an objective keeps the course's words", () => {
+  setLanguage("en")
+  wrap(<><ProgressPanel rewards={REWARDS} /><ClassGoalPanel goal={REWARDS.class_goal!} /></>)
+  expect(screen.getByText("Your progress")).toBeTruthy()
+  expect(screen.getByText("Junior Analyst")).toBeTruthy()
+  expect(screen.getByText("Level 2")).toBeTruthy()
+  expect(screen.getByText("Streak: 3")).toBeTruthy()
+  expect(screen.getByText(/missions passed on the first try/)).toBeTruthy()
+  fireEvent.click(screen.getByRole("button", { name: "See my collection" }))
+  expect(screen.getByText("First mission passed")).toBeTruthy()
+  expect(screen.getByText("Objective reached: Lire une jointure")).toBeTruthy()
+  expect(screen.getByText("To discover: Pass 5 missions in a row on the first try.")).toBeTruthy()
+  expect(screen.getByText("The class has passed 120 missions out of 200")).toBeTruthy()
+  expect(screen.queryByText(/Série|Votre progression|La classe/)).toBeNull()
+})
+
+it("in English: the server's badge and class goal notifications", () => {
+  setLanguage("en")
+  expect(serverText("Nouveau badge : Série de 5")).toBe("New badge: Streak of 5")
+  expect(serverText("Objectif de classe : 50 % ! La classe a réussi 100 missions sur 200. Continuez ensemble."))
+    .toBe("Class goal: 50 %! The class has passed 100 missions out of 200. Keep going together.")
+  expect(serverText("Objectif de classe atteint : la classe a terminé 20 blocs sur 20. Bravo à toutes et à tous !"))
+    .toBe("Class goal reached: the class has finished 20 blocks out of 20. Well done, everyone!")
+  expect(rewardText("Tous les bonus : Python")).toBe("All bonuses: Python")
+  setLanguage("fr")
+  expect(rewardText("Série de 5")).toBe("Série de 5")
 })

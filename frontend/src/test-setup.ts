@@ -23,3 +23,14 @@ if (!("PointerEvent" in globalThis)) {
 import { afterEach } from "vitest"
 import { resetOutage } from "./resilience"
 afterEach(() => resetOutage())
+
+// ADR-0040: tests run in French (the reference language) unless a test switches language itself;
+// jsdom announces an English browser (navigator.language = "en-US").
+import { beforeEach } from "vitest"
+import i18next from "i18next"
+import "./i18n"
+
+beforeEach(async () => {
+  await i18next.changeLanguage("fr")
+  document.documentElement.lang = "fr"
+})

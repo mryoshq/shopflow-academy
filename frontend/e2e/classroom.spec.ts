@@ -40,7 +40,7 @@ test("the teacher closes and reopens a block; a closed block exposes nothing", a
   const blocks = page.getByRole("list", { name: "Blocs de la journée" })
   await expect(blocks.getByText(BLOCK)).toBeVisible()
   const main = await (await page.request.get("/api/v1/teacher/main")).json() as { assignment_id: number }
-  const learnerContext = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const learnerContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learner = await learnerContext.newPage()
   await login(learner, "demo.etudiant04")
   const before = await (await learner.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number }[] }[] }
@@ -77,7 +77,7 @@ test("the teacher closes and reopens a block; a closed block exposes nothing", a
 })
 
 test("a help request goes from 'reçue' to 'traitée' and stays private", async ({ page, browser }) => {
-  const learnerContext = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const learnerContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learner = await learnerContext.newPage()
   await login(learner, "demo.etudiant05")
   const dashboard = await (await learner.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string }[] }[] }
@@ -97,7 +97,7 @@ test("a help request goes from 'reçue' to 'traitée' and stays private", async 
   await learner.screenshot({ path: `${shots}/04-etudiant-aide-recue.png`, fullPage: true, animations: "disabled" })
 
   // Another student never sees it.
-  const otherContext = await browser.newContext()
+  const otherContext = await browser.newContext({ locale: "fr-FR" })
   const other = await otherContext.newPage()
   await login(other, "demo.etudiant09")
   expect(await (await other.request.get("/api/v1/student/help")).text()).not.toContain("Pourquoi 100 DH")

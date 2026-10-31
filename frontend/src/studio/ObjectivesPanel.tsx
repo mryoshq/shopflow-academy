@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { useId, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, Input, Stack, Text } from "@chakra-ui/react"
 import type { CourseModule, Mission, Objective } from "../studioTypes"
@@ -20,9 +21,9 @@ export function ObjectivesPanel({ objectives, modules, onFilter, form }: {
   const names = [...groups.keys()].sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, "fr"))
   const uncovered = objectives.filter((objective) => coverage(objective.id) === 0).length
   return <Stack gap="3">
-    <Flex align="center" gap="2" wrap="wrap"><Heading as="h4" size="md" flex="1">Objectifs pédagogiques</Heading>
-      {uncovered > 0 && <Badge colorPalette="saffron" variant="subtle"><Icon name="alert" size={12} />{uncovered} sans mission</Badge>}</Flex>
-    {objectives.length === 0 && <Text color="app.muted">Aucun objectif pour le moment.</Text>}
+    <Flex align="center" gap="2" wrap="wrap"><Heading as="h4" size="md" flex="1">{t("Objectifs pédagogiques")}</Heading>
+      {uncovered > 0 && <Badge colorPalette="saffron" variant="subtle"><Icon name="alert" size={12} />{uncovered} {t("sans mission")}</Badge>}</Flex>
+    {objectives.length === 0 && <Text color="app.muted">{t("Aucun objectif pour le moment.")}</Text>}
     {names.map((name) => <Group key={name} name={name} items={groups.get(name)!} coverage={coverage} onFilter={onFilter} />)}
     {form}
   </Stack>
@@ -42,8 +43,8 @@ function Group({ name, items, coverage, onFilter }: { name: string; items: Objec
     <Button variant="ghost" w="full" justifyContent="start" rounded="0" bg="app.sunken" h="auto" minH="10" py="2" px="3" whiteSpace="normal" textAlign="start"
       aria-expanded={open} aria-controls={id} onClick={() => setOpen(!open)}>
       <Box transform={open ? "rotate(90deg)" : undefined} transition="transform 150ms" color="app.muted"><Icon name="chevron" size={14} /></Box>
-      <Text as="span" fontWeight="semibold" flex="1">{name}</Text>
-      <Text as="span" fontSize="xs" color="app.muted" fontWeight="normal">{items.length} objectif{items.length > 1 ? "s" : ""}{missing ? ` · ${missing} sans mission` : ""}</Text>
+      <Text as="span" fontWeight="semibold" flex="1">{t(name)}</Text>
+      <Text as="span" fontSize="xs" color="app.muted" fontWeight="normal">{tn("{{count}} objectif", items.length)}{missing ? t(" · {{missing}} sans mission", { missing }) : ""}</Text>
     </Button>
     <Box as="ul" id={id} hidden={!open} listStyleType="none" m="0" p="0">
       {items.map((objective) => {
@@ -52,9 +53,9 @@ function Group({ name, items, coverage, onFilter }: { name: string; items: Objec
           <Badge variant="outline" colorPalette="brand" fontFamily="mono">{objective.code}</Badge>
           <Text flex="1" minW="48" fontSize="sm">{objective.statement}</Text>
           {count === 0
-            ? <Flex gap="1" align="center" fontSize="xs" color="saffron.fg" fontWeight="semibold"><Icon name="alert" size={14} />Aucune mission ne le couvre</Flex>
+            ? <Flex gap="1" align="center" fontSize="xs" color="saffron.fg" fontWeight="semibold"><Icon name="alert" size={14} />{t("Aucune mission ne le couvre")}</Flex>
             : <Button size="xs" variant="outline" colorPalette="brand" onClick={() => onFilter(objective.id)}
-              aria-label={`Afficher les ${count} élément${count > 1 ? "s" : ""} qui couvrent ${objective.code}`}>{count} élément{count > 1 ? "s" : ""}</Button>}
+              aria-label={tn("Afficher les {{count}} élément qui couvrent {{code}}", count, { code: objective.code })}>{tn("{{count}} élément", count)}</Button>}
         </Flex>
       })}
     </Box>
@@ -64,8 +65,8 @@ function Group({ name, items, coverage, onFilter }: { name: string; items: Objec
 export function NewObjectiveFields(props: { code: string; statement: string; category: string; disabled: boolean; placeholder: string
   onCode: (value: string) => void; onStatement: (value: string) => void; onCategory: (value: string) => void }) {
   return <Flex gap="2" wrap="wrap">
-    <Input aria-label="Code de l’objectif" value={props.code} onChange={(event) => props.onCode(event.target.value)} placeholder={props.placeholder} maxW="40" disabled={props.disabled} />
-    <Input aria-label="Description de l’objectif" value={props.statement} onChange={(event) => props.onStatement(event.target.value)} placeholder="Ce que l’étudiant saura faire" flex="1" minW="44" disabled={props.disabled} />
-    <Input aria-label="Catégorie (facultatif)" value={props.category} onChange={(event) => props.onCategory(event.target.value)} placeholder="Catégorie (facultatif)" maxW="48" disabled={props.disabled} />
+    <Input aria-label={t("Code de l’objectif")} value={props.code} onChange={(event) => props.onCode(event.target.value)} placeholder={props.placeholder} maxW="40" disabled={props.disabled} />
+    <Input aria-label={t("Description de l’objectif")} value={props.statement} onChange={(event) => props.onStatement(event.target.value)} placeholder={t("Ce que l’étudiant saura faire")} flex="1" minW="44" disabled={props.disabled} />
+    <Input aria-label={t("Catégorie (facultatif)")} value={props.category} onChange={(event) => props.onCategory(event.target.value)} placeholder={t("Catégorie (facultatif)")} maxW="48" disabled={props.disabled} />
   </Flex>
 }

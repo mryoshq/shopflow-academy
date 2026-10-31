@@ -1,3 +1,4 @@
+import { t, msg } from "./i18n"
 import { isGatewayFailure, reportOutage } from "./resilience"
 
 export class ApiError extends Error {
@@ -28,13 +29,13 @@ function messageOf(detail: unknown): string {
   if (Array.isArray(detail)) {
     return detail.map((item) => {
       if (typeof item === "object" && item !== null && "msg" in item) return String(item.msg)
-      return "Champ invalide"
+      return t("Champ invalide")
     }).join(" ; ")
   }
-  return "La requête a échoué. Réessayez."
+  return t("La requête a échoué. Réessayez.")
 }
 
-export const UNAVAILABLE = "La plateforme est momentanément indisponible. Votre travail est conservé : réessayez dans un instant."
+export const UNAVAILABLE = msg("La plateforme est momentanément indisponible. Votre travail est conservé : réessayez dans un instant.")
 
 /** Reads that wait for the end of an outage, one per address (a polling view never piles them up). */
 const pending = new Map<string, Promise<unknown>>()
@@ -58,7 +59,7 @@ export async function api<T>(path: string, method = "GET", body?: unknown): Prom
   if (isGatewayFailure(response)) return outage<T>(path, method)
   if (response.status === 401) {
     window.dispatchEvent(new Event("academy:unauthorized"))
-    throw new ApiError(401, "Votre session a expiré. Connectez-vous à nouveau.")
+    throw new ApiError(401, t("Votre session a expiré. Connectez-vous à nouveau."))
   }
   if (!response.ok) {
     let detail: unknown
@@ -71,7 +72,7 @@ export async function api<T>(path: string, method = "GET", body?: unknown): Prom
 /** A read waits for the platform and is sent again; a write fails at once (the page keeps its draft). */
 function outage<T>(path: string, method: string): Promise<T> {
   const back = reportOutage()
-  if (method !== "GET") return Promise.reject(new ApiError(503, UNAVAILABLE, { code: "unavailable" }))
+  if (method !== "GET") return Promise.reject(new ApiError(503, t(UNAVAILABLE), { code: "unavailable" }))
   let retry = pending.get(path) as Promise<T> | undefined
   if (!retry) {
     retry = back.then(() => api<T>(path)).finally(() => pending.delete(path))

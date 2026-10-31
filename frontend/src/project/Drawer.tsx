@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import type { ReactNode } from "react"
 import { CloseButton, Drawer, Portal } from "@chakra-ui/react"
 
@@ -7,7 +8,7 @@ export function DetailPanel({ open, title, onClose, children }: { open: boolean;
     <Portal><Drawer.Backdrop /><Drawer.Positioner><Drawer.Content bg="app.surface" color="app.ink" aria-label={title}>
       <Drawer.Header borderBottomWidth="1px" borderColor="app.border" pr="14"><Drawer.Title fontSize="lg">{title}</Drawer.Title></Drawer.Header>
       <Drawer.Body py="5">{children}</Drawer.Body>
-      <Drawer.CloseTrigger asChild position="absolute" top="3" right="3"><CloseButton size="md" aria-label="Fermer le panneau" /></Drawer.CloseTrigger>
+      <Drawer.CloseTrigger asChild position="absolute" top="3" right="3"><CloseButton size="md" aria-label={t("Fermer le panneau")} /></Drawer.CloseTrigger>
     </Drawer.Content></Drawer.Positioner></Portal>
   </Drawer.Root>
 }

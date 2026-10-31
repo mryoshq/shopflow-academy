@@ -1,10 +1,11 @@
+import { t, msg } from "./i18n"
 import { useEffect, useState } from "react"
 import { Box, Button, Flex, Heading, Stack, Text } from "@chakra-ui/react"
 import { Logo } from "./Logo"
 import { BrandName } from "./BrandName"
 import { OUTAGE_EVENT, RECOVERED_EVENT, RETRY_EVENT, inOutage, nextAttemptAt, retryNow } from "./resilience"
 
-export const UNAVAILABLE_TEXT = "La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique…"
+export const UNAVAILABLE_TEXT = msg("La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique…")
 
 /** Seconds until the next automatic attempt, counted down every second (null before the first one). */
 function useCountdown(): number | null {
@@ -24,10 +25,10 @@ function Retry({ size = "md" }: { size?: "sm" | "md" }) {
   const left = useCountdown()
   const [busy, setBusy] = useState(false)
   return <Flex align="center" gap="3" wrap="wrap">
-    <Button size={size} variant="outline" colorPalette="brand" loading={busy} loadingText="Nouvelle tentative…"
-      onClick={async () => { setBusy(true); try { await retryNow() } finally { setBusy(false) } }}>Réessayer maintenant</Button>
+    <Button size={size} variant="outline" colorPalette="brand" loading={busy} loadingText={t("Nouvelle tentative…")}
+      onClick={async () => { setBusy(true); try { await retryNow() } finally { setBusy(false) } }}>{t("Réessayer maintenant")}</Button>
     {left !== null && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>
-      Prochaine tentative dans {left} s</Text>}
+      {t("Prochaine tentative dans")}{" "}{left} s</Text>}
   </Flex>
 }
 
@@ -41,8 +42,8 @@ export function UnavailablePage() {
       <Stack gap="5">
         <Flex align="center" gap="3"><Logo size={48} /><BrandName /></Flex>
         <Stack gap="2" role="status" aria-live="polite">
-          <Heading as="h1" size="xl">Momentanément indisponible</Heading>
-          <Text color="app.muted">{UNAVAILABLE_TEXT}</Text>
+          <Heading as="h1" size="xl">{t("Momentanément indisponible")}</Heading>
+          <Text color="app.muted">{t(UNAVAILABLE_TEXT)}</Text>
         </Stack>
         <Retry />
       </Stack>
@@ -65,7 +66,7 @@ export function OutageBanner() {
   return <Box role="status" aria-live="polite" position="fixed" bottom="4" left="50%" transform="translateX(-50%)" zIndex="toast" w="calc(100% - 1.5rem)" maxW="xl"
     bg="app.surface" borderWidth="1px" borderColor="saffron.solid" borderLeftWidth="4px" rounded="lg" boxShadow="lg" px="4" py="3">
     <Stack gap="2">
-      <Text fontSize="sm" fontWeight="medium">{UNAVAILABLE_TEXT}</Text>
+      <Text fontSize="sm" fontWeight="medium">{t(UNAVAILABLE_TEXT)}</Text>
       <Retry size="sm" />
     </Stack>
   </Box>

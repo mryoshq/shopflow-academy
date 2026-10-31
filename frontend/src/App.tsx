@@ -1,3 +1,4 @@
+import { t } from "./i18n"
 import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherApp } from "./teacher/TeacherApp"
@@ -93,15 +94,15 @@ export function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       })
-      if (response.status === 429) return setMessage("Trop de tentatives. Réessayez dans une minute.")
-      if (isGatewayFailure(response)) return setMessage("La plateforme est momentanément indisponible. Réessayez dans un instant.")
-      if (!response.ok) return setMessage("Identifiant ou mot de passe incorrect.")
+      if (response.status === 429) return setMessage(t("Trop de tentatives. Réessayez dans une minute."))
+      if (isGatewayFailure(response)) return setMessage(t("La plateforme est momentanément indisponible. Réessayez dans un instant."))
+      if (!response.ok) return setMessage(t("Identifiant ou mot de passe incorrect."))
       setUser(await response.json() as User)
       setResumed(false)
       setPassword("")
       setState("authenticated")
     } catch {
-      setMessage("Connexion réseau indisponible. Réessayez.")
+      setMessage(t("Connexion réseau indisponible. Réessayez."))
     } finally {
       setBusy(false)
     }
@@ -120,7 +121,7 @@ export function App() {
       setUser(null)
       setState("anonymous")
     } catch {
-      setMessage("Déconnexion impossible. Réessayez.")
+      setMessage(t("Déconnexion impossible. Réessayez."))
     } finally {
       setBusy(false)
     }
@@ -130,7 +131,7 @@ export function App() {
     <Box minH="100vh" bg="app.canvas" color="app.ink">
       {/* ADR-0024: keyboard users skip the header. */}
       <Link href="#contenu" position="absolute" left="2" top="-16" minH="11" zIndex="skipLink" px="3" py="2" rounded="md" bg="brand.solid" color="brand.contrast"
-        fontWeight="semibold" _focus={{ top: "2" }}>Aller au contenu</Link>
+        fontWeight="semibold" _focus={{ top: "2" }}>{t("Aller au contenu")}</Link>
       <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
         <Container maxW="7xl" py="3.5">
           <Flex align="center" justify="space-between" gap="3" wrap="wrap">
@@ -142,7 +143,7 @@ export function App() {
             {state === "authenticated" && user ? <Flex align="center" gap={{ base: "1.5", md: "2" }} wrap="wrap" justify="end">
               {user.role === "student" && <ComfortButton />}
               {user.role !== "observer" && <NotificationBell />}
-              {user.role === "observer" && <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette="gray" variant="subtle" rounded="full" px="2.5">Observateur (lecture seule)</Badge>}
+              {user.role === "observer" && <Badge display={{ base: "none", sm: "inline-flex" }} colorPalette="gray" variant="subtle" rounded="full" px="2.5">{t("Observateur (lecture seule)")}</Badge>}
               <AccountMenu account={{ username: user.username, role: user.role }} onLogout={() => void onLogout()} busy={busy} variant="header" />
             </Flex> : null}
             </Flex>
@@ -150,34 +151,34 @@ export function App() {
         </Container>
       </Box>
       <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW="7xl" py={{ base: "8", md: "12" }}>
-        {state === "loading" && <Text role="status" color="app.muted">Chargement de votre espace…</Text>}
+        {state === "loading" && <Text role="status" color="app.muted">{t("Chargement de votre espace…")}</Text>}
         {state === "anonymous" && (
           <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
-              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">Rapidfox Academy</Text>
-              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">Apprenez la data en prenant de vraies décisions.</Heading>
-              <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data</Text>
-              <Text fontSize="lg" color="app.muted" lineHeight="1.7">Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.</Text>
+              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">{t("Rapidfox Academy")}</Text>
+              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">{t("Apprenez la data en prenant de vraies décisions.")}</Heading>
+              <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>{t("Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data")}</Text>
+              <Text fontSize="lg" color="app.muted" lineHeight="1.7">{t("Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.")}</Text>
             </Stack>
-            <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label="Connexion">
+            <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label={t("Connexion")}>
               <form onSubmit={onLogin}>
               <Stack gap="5">
                 {/* The opening animation (LoginIntro) lands on this logo, once per browser session. */}
                 <Flex align="center" gap="3"><Box ref={cardLogo} w="56px" h="56px" flexShrink={0}><Logo size={56} /></Box>
                   <BrandName size="lg" /></Flex>
-                <Stack gap="1"><Heading as="h2" size="xl">Connexion</Heading><Text color="app.muted" fontSize="sm">Utilisez l’identifiant transmis par votre enseignant.</Text></Stack>
+                <Stack gap="1"><Heading as="h2" size="xl">{t("Connexion")}</Heading><Text color="app.muted" fontSize="sm">{t("Utilisez l’identifiant transmis par votre enseignant.")}</Text></Stack>
                 <Field.Root required>
-                  <Field.Label>Identifiant</Field.Label>
+                  <Field.Label>{t("Identifiant")}</Field.Label>
                   <Input autoComplete="username" value={username} onChange={(event) => setUsername(event.target.value)} required size="lg" />
                 </Field.Root>
                 <Field.Root required>
-                  <Field.Label>Mot de passe</Field.Label>
+                  <Field.Label>{t("Mot de passe")}</Field.Label>
                   <Input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} required size="lg" />
                 </Field.Root>
                 {message && <Text role="alert" color="red.fg" fontSize="sm">{message}</Text>}
-                <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText="Connexion…">Se connecter</Button>
+                <Button type="submit" colorPalette="brand" size="lg" loading={busy} loadingText={t("Connexion…")}>{t("Se connecter")}</Button>
                 {/* ADR-0038: every session lasts 30 days, kept by the server cookie only (never a token in localStorage). */}
-                <Text fontSize="xs" color="app.muted" textAlign="center">Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte.</Text>
+                <Text fontSize="xs" color="app.muted" textAlign="center">{t("Vous restez connecté 30 jours sur cet appareil. Sur un ordinateur partagé, déconnectez-vous depuis le menu de votre compte.")}</Text>
               </Stack>
               </form>
             </Box>

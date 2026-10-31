@@ -19,7 +19,10 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     viewport: { width: 1366, height: 768 },
     baseURL,
-    launchOptions: process.env.SHOPFLOW_CHROME_PATH ? { executablePath: process.env.SHOPFLOW_CHROME_PATH } : undefined,
+    // ADR-0040: the interface follows the browser language; the suites are written in French (the reference).
+    // `locale` covers the default context, `--lang` the contexts a test opens itself. english.spec.ts picks English.
+    locale: "fr-FR",
+    launchOptions: { args: ["--lang=fr-FR"], ...(process.env.SHOPFLOW_CHROME_PATH ? { executablePath: process.env.SHOPFLOW_CHROME_PATH } : {}) },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
   },

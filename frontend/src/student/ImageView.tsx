@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { useRef } from "react"
 import { Box, Button, Flex, chakra } from "@chakra-ui/react"
 import type { ImageDisplay } from "../studioTypes"
@@ -23,7 +24,7 @@ export function ImageView({ data }: { data: ImageDisplay }) {
     else element.removeAttribute("open")
   }
   return <Box as="figure" m="0">
-    <chakra.button type="button" onClick={open} aria-label={`Agrandir l’image : ${data.alt}`} display="block" w="full" p="2" bg="white"
+    <chakra.button type="button" onClick={open} aria-label={t("Agrandir l’image : {{alt}}", { alt: data.alt })} display="block" w="full" p="2" bg="white"
       borderWidth="1px" borderColor="app.border" rounded="lg" cursor="zoom-in" _hover={{ borderColor: "brand.solid" }}>
       <chakra.img src={data.src} alt={data.alt} loading="lazy" decoding="async" display="block" mx="auto" maxW="full" maxH={{ base: "60vh", md: "28rem" }} objectFit="contain" />
     </chakra.button>
@@ -36,7 +37,7 @@ export function ImageView({ data }: { data: ImageDisplay }) {
           <chakra.img src={data.src} alt={data.alt} display="block" maxW="min(96vw, 1400px)" maxH="calc(100dvh - 8rem)" objectFit="contain" />
         </Box>
         {data.caption && <Box color="white" fontSize="sm" textAlign="center"><RichText text={data.caption} /></Box>}
-        <Button onClick={close} colorPalette="brand" minH="11" autoFocus>Fermer</Button>
+        <Button onClick={close} colorPalette="brand" minH="11" autoFocus>{t("Fermer")}</Button>
       </Flex>
     </chakra.dialog>
   </Box>

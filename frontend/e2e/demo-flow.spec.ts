@@ -42,7 +42,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   const token = (await page.context().cookies()).find((item) => item.name.endsWith("academy_csrf"))?.value ?? ""
   expect((await page.request.post(`/api/v1/teacher/classes/${classId}/blocks/open-next`, { headers: { "X-CSRF-Token": token } })).status()).toBe(200)
 
-  const studentContext = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const studentContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const student = await studentContext.newPage()
   await login(student, "demo.etudiant07")
   const course = student.getByRole("region", { name: title })
@@ -74,7 +74,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await student.goto("/")
   await expect(course.getByText("Réussie")).toHaveCount(3)
   await studentContext.close()
-  const again = await browser.newContext()
+  const again = await browser.newContext({ locale: "fr-FR" })
   const reloaded = await again.newPage()
   await login(reloaded, "demo.etudiant07")
   await expect(reloaded.getByRole("img", { name: "30 points sur 30" }).first()).toBeVisible()
@@ -83,7 +83,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await again.close()
 
   // Cross-account: a student outside the cohort sees neither the course nor its missions.
-  const outsiderContext = await browser.newContext()
+  const outsiderContext = await browser.newContext({ locale: "fr-FR" })
   const outsider = await outsiderContext.newPage()
   await login(outsider, "demo.etudiant08")
   await expect(outsider.getByRole("region", { name: title })).toHaveCount(0)

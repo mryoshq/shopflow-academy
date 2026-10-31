@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { useRef, useState } from "react"
 import { Alert, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import { CodeEditor } from "./CodeEditor"
@@ -38,24 +39,24 @@ export function SqlChallenge({ missionId, starter, disabled, onResult }: Props) 
   }
 
   return <Stack gap="3">
-    <label htmlFor={`sql-${missionId}`}><Text as="span" fontWeight="semibold">Votre requête</Text></label>
+    <label htmlFor={`sql-${missionId}`}><Text as="span" fontWeight="semibold">{t("Votre requête")}</Text></label>
     <CodeEditor id={`sql-${missionId}`} value={sql} language="sql" onChange={(value) => { setSql(value); setOutcome(null) }} rows={Math.min(14, Math.max(6, sql.split("\n").length + 1))}
       maxLength={4000} disabled={disabled}
       onKeyDown={(event) => { if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) { event.preventDefault(); void submit() } }} />
-    <Text fontSize="xs" color="app.muted">Une seule requête SELECT (WITH et EXPLAIN permis), sur les tables du laboratoire. Ctrl + Entrée pour exécuter.</Text>
+    <Text fontSize="xs" color="app.muted">{t("Une seule requête SELECT (WITH et EXPLAIN permis), sur les tables du laboratoire. Ctrl + Entrée pour exécuter.")}</Text>
     <Flex gap="3" wrap="wrap">
-      <Button colorPalette="brand" size="lg" loading={busy} loadingText="Exécution…" disabled={disabled || !sql.trim()} onClick={() => void submit()}>Exécuter et vérifier</Button>
-      <Button variant="ghost" onClick={() => { setSql(starter); setOutcome(null); setError(null) }} disabled={busy}>Revenir à la requête de départ</Button>
+      <Button colorPalette="brand" size="lg" loading={busy} loadingText={t("Exécution…")} disabled={disabled || !sql.trim()} onClick={() => void submit()}>{t("Exécuter et vérifier")}</Button>
+      <Button variant="ghost" onClick={() => { setSql(starter); setOutcome(null); setError(null) }} disabled={busy}>{t("Revenir à la requête de départ")}</Button>
     </Flex>
     <Box aria-live="polite">
       {error && <Alert.Root status="warning" variant="subtle" rounded="lg" role="alert"><Alert.Indicator /><Alert.Content>
-        <Alert.Title>Requête non exécutée</Alert.Title><Alert.Description>{error}</Alert.Description></Alert.Content></Alert.Root>}
+        <Alert.Title>{t("Requête non exécutée")}</Alert.Title><Alert.Description>{error}</Alert.Description></Alert.Content></Alert.Root>}
       {outcome && <Stack gap="3">
         <Flex gap="2" align="center" fontWeight="bold" color={outcome.attempt.correct ? "green.fg" : "saffron.fg"}>
           <Icon name={outcome.attempt.correct ? "check" : "retry"} />
-          {outcome.attempt.correct ? `Bravo, c’est le résultat attendu (+${formatPoints(outcome.attempt.points)} pts bonus)` : "Presque ! Le résultat diffère encore : réessayez."}
+          {outcome.attempt.correct ? t("Bravo, c’est le résultat attendu (+{{p0}} pts bonus)", { p0: formatPoints(outcome.attempt.points) }) : t("Presque ! Le résultat diffère encore : réessayez.")}
         </Flex>
-        {outcome.result && <ResultView result={outcome.result} label="votre requête" />}
+        {outcome.result && <ResultView result={outcome.result} label={t("votre requête")} />}
       </Stack>}
     </Box>
   </Stack>

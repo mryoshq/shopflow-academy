@@ -46,7 +46,7 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
   const klass = (await (await page.request.get("/api/v1/teacher/classes")).json() as { id: number; cohort: string }[]).find((item) => item.cohort === label)!
   for (let index = 0; index < 2; index += 1) await page.request.post(`/api/v1/teacher/classes/${klass.id}/blocks/open-next`, { headers })
 
-  const context = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const student = await context.newPage()
   await login(student, "demo.etudiant10")
   const course = student.getByRole("region", { name: TITLE })
@@ -154,7 +154,7 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
 })
 
 test("every mission of the Markdown course passes axe in the dark theme", async ({ browser }) => {
-  const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, colorScheme: "dark", reducedMotion: "reduce" })
+  const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 }, colorScheme: "dark", reducedMotion: "reduce" })
   await context.addInitScript(() => window.localStorage.setItem("shopflow:theme", "dark"))
   const student = await context.newPage()
   await login(student, "demo.etudiant10")
@@ -173,7 +173,7 @@ test("every mission of the Markdown course passes axe in the dark theme", async 
 
 for (const theme of ["light", "dark"] as const) {
   test(`structured lesson (ADR-0022) in the ${theme} theme: reading order, media description on request, axe`, async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const student = await context.newPage()
     await login(student, "demo.etudiant10")
@@ -225,7 +225,7 @@ test("minimum reading time (ADR-0027): « J'ai compris » waits, then validates"
   const students = await (await page.request.get("/api/v1/teacher/students")).json() as { id: number; username: string }[]
   await page.request.post(`/api/v1/teacher/cohorts/${cohort.id}/enrollments`, { headers, data: { user_id: students.find((s) => s.username === "demo.etudiant09")!.id } })
   try {
-    const context = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
     const student = await context.newPage()
     await login(student, "demo.etudiant09")
     const dashboard = await (await student.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string; status: string }[] }[] }

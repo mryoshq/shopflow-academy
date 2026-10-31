@@ -65,7 +65,7 @@ test("the teacher turns the rules on in « Mon cours » → Règles", async ({ p
 
 for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768], ["light", 390, 844], ["dark", 390, 844]] as const) {
   test(`student in the ${theme} theme at ${width}px: announcement, attempt percentage, pause after an error`, async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width, height }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const page = await context.newPage()
     const size = `${suffix(theme)}-${width}`
