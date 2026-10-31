@@ -308,7 +308,7 @@ data:
   caption: Un pipeline sépare les lignes valides des rejets.
 ```
 
-- `experience` (ADR-0033, leçons) : ouvre une expérience interactive de l'Academy. Aujourd'hui : `experience: voyage` (« Le voyage d'une donnée », 7 scènes), `scene` de départ facultative (1 à 7), `title` facultatif, `data_file: experiences/voyage.json` facultatif : valeurs exactes du cours (JSON objet, 200 Ko au plus), fusionnées avec les valeurs par défaut de l'expérience. Clés reconnues : `base` (état avant le lot : `orders`, `lines`, `revenue`…), `batch` (`source`, `accepted`, `rejected`, `duplicates`, `events`, `queue`, `cache`, `ttl`…), `files` (par nom : `count`, `description`, `content` des cartes sources). Une clé inconnue ou d'un autre type est ignorée. Les phrases du récit gardent les valeurs du cahier des charges (ADR-0033).
+- `experience` (ADR-0033, ADR-0044, leçons) : ouvre une expérience interactive de l'Academy. Deux expériences : `experience: voyage` (« Le voyage d'une donnée », 7 scènes) et `experience: campusequip` (« Le voyage d'une location », 7 étapes, sujet CampusEquip axes 1 et 2). `scene` de départ facultative (1 à 7 : scène du voyage ou étape de CampusEquip), `title` facultatif, `data_file: experiences/voyage.json` facultatif : valeurs exactes du cours (JSON objet, 200 Ko au plus), fusionnées avec les valeurs par défaut de l'expérience. Clés reconnues : `base` (état avant le lot : `orders`, `lines`, `revenue`…), `batch` (`source`, `accepted`, `rejected`, `duplicates`, `events`, `queue`, `cache`, `ttl`…), `files` (par nom : `count`, `description`, `content` des cartes sources). Une clé inconnue ou d'un autre type est ignorée. Les phrases du récit gardent les valeurs du cahier des charges (ADR-0033). `data_file` est réservé au voyage : CampusEquip a ses propres données (lots, référentiels, sujet PDF), et le compilateur refuse un `data_file` sur `experience: campusequip`.
 
 ```yaml
 data:
@@ -316,6 +316,15 @@ data:
   experience: voyage
   scene: 3
   data_file: experiences/voyage.json
+```
+
+```yaml
+data:
+  kind: experience
+  experience: campusequip
+  scene: 3            # étape « La qualité »
+```
+
 - `download` (ADR-0032, leçons et missions) : fichiers du dossier `cours/downloads/` à télécharger (fiches, jeux de données, code de départ). `title` facultatif, `files` : 1 à 10 entrées `{file: downloads/<nom>, title}` ; formats **pdf, docx, zip, csv, sql, py, md**, **20 Mo au plus** par fichier (contenu vérifié : un `.pdf` doit être un PDF, `.csv/.sql/.py/.md` en UTF-8). Copiés à l'import, servis **seulement** aux étudiants inscrits dans une classe qui a le cours et à l'enseignant propriétaire, toujours en pièce jointe ; l'étudiant voit le titre, le type et la taille. Jamais de corrigé dans ces fichiers.
 
 ```yaml
@@ -388,6 +397,7 @@ Avertissements (non bloquants) : scénario hors de 40 à 90 mots, mission sans `
 | 28/10/2026 (sprint 2, N) | `data.kind: image` (`file: media/<nom>.png|jpg|webp|svg`, ≤ 2 Mo, `alt` obligatoire, `caption` facultative), copiée à l'import. Coloration Catppuccin des blocs `code`, des `run` et de l'éditeur du `sql_challenge` (aucun changement de syntaxe). ADR-0029. |
 | 29/10/2026 (sprint 3, Q) | `data.kind: experience` (`experience: voyage`, `scene`, `data_file: experiences/voyage.json`). ADR-0033. |
 | 29/10/2026 (sprint 3, Q2) | Application du voyage intégrée ; clés de `voyage.json` : `base`, `batch`, `files`. ADR-0033. |
+| 31/10/2026 | `experience: campusequip` (« Le voyage d'une location », étapes 1 à 7, sans `data_file`). ADR-0044. |
 | 29/10/2026 (sprint 3, S) | En-tête `lab_schemas: [...]` et plusieurs `datasets/*.sql` (ordre des noms) ; `EXPLAIN (ANALYZE, BUFFERS, …)` ; nouveau `data.kind: download` (`cours/downloads/`, 20 Mo). ADR-0032. |
 | 28/10/2026 (sprint 2, G2) | `category` facultatif pour chaque objectif de l'en-tête (sinon déduite du préfixe `SQL-`, `PY-`, `BLOC-`). L'étudiant voit l'objectif de chaque bloc ouvert en une phrase, jamais un code. ADR-0022b. |
 | 28/10/2026 (sprint 2, G) | Leçon structurée : `objective`, `hook`, `key_terms`, `example`, `practice` (facultatifs, leçons seulement ; `body` seul reste valable). `data.description` pour tous les médias. Mise en forme légère (`**gras**`, `` `code` ``, listes `- ` et `1. `, `### ` dans `body`). ADR-0022. |

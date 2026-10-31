@@ -56,7 +56,8 @@ export function StudentView({ assignmentId, sub, onNavigate, onLeave, label }: {
     <Box as="header" borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
       <Container maxW="7xl" py="3.5"><Flex align="center" gap="2.5"><Logo size={32} /><BrandName /></Flex></Container>
     </Box>
-    <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW="7xl" py={{ base: "8", md: "12" }}>
+    {/* ADR-0044: an experience takes the whole width here too. */}
+    <Container as="main" id="contenu" tabIndex={-1} outline="none" {...(/^(voyage|campusequip)/.test(sub) ? { maxW: "none", px: "0", py: "0" } : { maxW: "7xl", py: { base: "8", md: "12" } })}>
       <StudentRouterContext.Provider value={router}>
         <StudentHome key={String(all)} />
       </StudentRouterContext.Provider>

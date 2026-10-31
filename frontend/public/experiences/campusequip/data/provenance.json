@@ -1,0 +1,22 @@
+{
+  "subject": "Sujet CampusEquip axes 1 et 2",
+  "subjectDate": "29 octobre 2026",
+  "checked": "31 octobre 2026",
+  "subjectSha256": "bdd684e651f291fbb49f051c3648394c5c5f8e8f109ae28c623a1370e682e159",
+  "generatorSha256": "02ab6b29f8dc90ce7f2b38af8fca19d0511c3807b43baa9dc98f9c27c62e5e82",
+  "referencesSha256": "ca418e9ede101b63bf07eaefa1ce7ec7ffd6e995c3cb54a5bbd1044f0bb4baea",
+  "rulesVersion": "campusequip-v2.0",
+  "note": "Simulation dans le navigateur. Aucun accès PostgreSQL. Les deux scénarios modifiés sont signalés. Aucun fichier enseignant.",
+  "pages": {
+    "territoire": 3,
+    "colonnes": 4,
+    "montant": 5,
+    "qualite": 6,
+    "sql": 7,
+    "transaction": 8,
+    "continu": 9,
+    "preuves": 10,
+    "bonus": 11,
+    "remise": 12
+  }
+}

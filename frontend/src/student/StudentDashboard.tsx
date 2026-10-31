@@ -6,6 +6,7 @@ import { lastMission } from "./storage"
 import type { Dashboard, DashboardBlock, DashboardCourse, DashboardMission } from "./types"
 import { useNotificationFeed } from "../live/notifications"
 import { VOYAGE_READY } from "../voyage"
+import { CAMPUSEQUIP_READY } from "../campusequip"
 import { DemoBadge, ErrorState, Icon, LoadingState, Panel, ScoreBar, StatusBadge, formatPoints } from "./ui"
 import { ClassGoalPanel, ProgressPanel } from "../rewards/Rewards"
 
@@ -71,6 +72,12 @@ export function StudentDashboard({ navigate }: Props) {
       <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Le voyage d’une donnée")}</Text>
         <Text fontSize="sm" color="app.muted">{t("Sept scènes : une commande traverse le pipeline ShopFlow.")}</Text></Stack>
       <Button variant="outline" colorPalette="brand" onClick={() => navigate("/voyage/1")}>{t("Ouvrir l’expérience")}<Icon name="arrow-right" /></Button>
+    </Flex>}
+    {/* ADR-0044: next to the voyage. */}
+    {data.courses.length > 0 && CAMPUSEQUIP_READY && <Flex as="nav" aria-label={t("Expérience CampusEquip")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Le voyage d’une location")}</Text>
+        <Text fontSize="sm" color="app.muted">{t("Sept étapes : un lot CampusEquip, des guichets jusqu’aux indicateurs.")}</Text></Stack>
+      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/campusequip/1")} aria-label={t("Ouvrir l’expérience CampusEquip")}>{t("Ouvrir l’expérience")}<Icon name="arrow-right" /></Button>
     </Flex>}
 
     {data.courses.length === 0 ? <Panel>
