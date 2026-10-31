@@ -106,7 +106,7 @@ for (const theme of ["light", "dark"] as const) test(`preview in the ${theme} th
 
 for (const theme of ["light", "dark"] as const) {
   test(`390x844 in the ${theme} theme: block objective without code, lesson, studio outline`, async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: "reduce" })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 390, height: 844 }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const page = await context.newPage()
     const suffix = theme === "light" ? "clair" : "sombre"

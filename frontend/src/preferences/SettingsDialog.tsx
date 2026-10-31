@@ -1,5 +1,6 @@
+import { LANGUAGES, msg, setLanguage, t, useLanguage, type Lang } from "../i18n"
 import type { ReactNode } from "react"
-import { Box, Button, CloseButton, Dialog, Flex, HStack, Kbd, Portal, RadioCard, Stack, Switch, Tabs, Text } from "@chakra-ui/react"
+import { Box, Button, CloseButton, Dialog, Flex, HStack, Kbd, NativeSelect, Portal, RadioCard, Stack, Switch, Tabs, Text } from "@chakra-ui/react"
 import { useColorMode, type ThemeChoice } from "../useColorMode"
 import { displayName, roleLabel } from "./account"
 import { ZOOM_STEPS, modKey, nextZoom, percent, useReducedMotion, useZoom } from "./display"
@@ -8,9 +9,9 @@ import type { Account } from "./PreferencesProvider"
 export type SettingsTab = "general" | "appearance" | "shortcuts"
 
 const TABS: { value: SettingsTab; label: string }[] = [
-  { value: "general", label: "Général" },
-  { value: "appearance", label: "Apparence" },
-  { value: "shortcuts", label: "Raccourcis" },
+  { value: "general", label: msg("Général") },
+  { value: "appearance", label: msg("Apparence") },
+  { value: "shortcuts", label: msg("Raccourcis") },
 ]
 
 /** Settings dialog (ADR-0036): general information, appearance (theme, text size, motion), keyboard shortcuts. */
@@ -23,18 +24,18 @@ export function SettingsDialog({ open, onClose, tab, onTab, account }: {
       <Dialog.Positioner>
         <Dialog.Content bg="app.surface" color="app.ink" rounded={{ base: "none", md: "2xl" }} overflow="hidden" minH={{ md: "28rem" }}>
           <Dialog.Header px="6" pt="5" pb="3" borderBottomWidth="1px" borderColor="app.border">
-            <Dialog.Title fontFamily="heading" fontSize="2xl" fontWeight="semibold">Paramètres</Dialog.Title>
+            <Dialog.Title fontFamily="heading" fontSize="2xl" fontWeight="semibold">{t("Paramètres")}</Dialog.Title>
           </Dialog.Header>
-          <Dialog.CloseTrigger asChild top="4" insetEnd="4"><CloseButton size="sm" aria-label="Fermer les paramètres" /></Dialog.CloseTrigger>
+          <Dialog.CloseTrigger asChild top="4" insetEnd="4"><CloseButton size="sm" aria-label={t("Fermer les paramètres")} /></Dialog.CloseTrigger>
           <Dialog.Body p="0">
             <Tabs.Root value={tab} onValueChange={(event) => onTab(event.value as SettingsTab)} orientation="vertical" lazyMount unmountOnExit
               variant="subtle" colorPalette="gray" display="flex" flexDirection={{ base: "column", md: "row" }} h="full">
               {/* A column of sections on a computer, a row on a phone (CSS only: no media query in JavaScript). */}
-              <Tabs.List aria-label="Rubriques des paramètres" w={{ base: "full", md: "44" }} flexShrink={0} p="3" gap="1"
+              <Tabs.List aria-label={t("Rubriques des paramètres")} w={{ base: "full", md: "44" }} flexShrink={0} p="3" gap="1"
                 flexDirection={{ base: "row", md: "column" }} overflowX="auto"
                 borderRightWidth={{ base: "0", md: "1px" }} borderBottomWidth={{ base: "1px", md: "0" }} borderColor="app.border" bg="app.canvas">
                 {TABS.map((item) => <Tabs.Trigger key={item.value} value={item.value} justifyContent="flex-start" rounded="lg" px="3" h="9" fontWeight="medium"
-                  color="app.muted" _selected={{ bg: "app.sunken", color: "app.ink" }}>{item.label}</Tabs.Trigger>)}
+                  color="app.muted" _selected={{ bg: "app.sunken", color: "app.ink" }}>{t(item.label)}</Tabs.Trigger>)}
               </Tabs.List>
               <Box flex="1" minW="0" px={{ base: "5", md: "8" }} py="6" overflowY="auto" maxH={{ md: "70vh" }}>
                 <Tabs.Content value="general" p="0"><Box className="view-enter"><General account={account} /></Box></Tabs.Content>
@@ -67,25 +68,33 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
 }
 
 function General({ account }: { account: Account | null }) {
+  const lang = useLanguage()
   return <Stack gap="0">
-    {account && <Section title="Profil" description="Ces informations viennent de votre compte ; votre enseignant les gère.">
+    {account && <Section title={t("Profil")} description={t("Ces informations viennent de votre compte ; votre enseignant les gère.")}>
       <Stack gap="1">
-        <Row label="Nom affiché">{displayName(account.username)}</Row>
-        <Row label="Identifiant"><Text as="span" css={{ overflowWrap: "anywhere" }}>{account.username}</Text></Row>
-        <Row label="Rôle">{roleLabel(account.role)}</Row>
+        <Row label={t("Nom affiché")}>{displayName(account.username)}</Row>
+        <Row label={t("Identifiant")}><Text as="span" css={{ overflowWrap: "anywhere" }}>{account.username}</Text></Row>
+        <Row label={t("Rôle")}>{roleLabel(account.role)}</Row>
       </Stack>
     </Section>}
-    <Section title="Langue" description="Langue de l’interface.">
-      <Row label="Langue de l’interface">Français</Row>
-      <Text fontSize="xs" color="app.muted">Le français est la seule langue disponible pour le moment.</Text>
+    <Section title={t("Langue")} description={t("Langue de l’interface. Le contenu des cours reste dans sa langue d’origine.")}>
+      <Row label={t("Langue de l’interface")}>
+        <NativeSelect.Root size="sm" w="40">
+          <NativeSelect.Field aria-label={t("Langue de l’interface")} value={lang} onChange={(event) => setLanguage(event.target.value as Lang)}>
+            {LANGUAGES.map((item) => <option key={item.code} value={item.code} lang={item.code}>{item.label}</option>)}
+          </NativeSelect.Field>
+          <NativeSelect.Indicator />
+        </NativeSelect.Root>
+      </Row>
+      <Text fontSize="xs" color="app.muted">{t("Mémorisé dans ce navigateur.")}</Text>
     </Section>
   </Stack>
 }
 
 const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
-  { value: "light", label: "Clair", hint: "Fond ivoire" },
-  { value: "dark", label: "Sombre", hint: "Fond anthracite" },
-  { value: "system", label: "Système", hint: "Suit votre appareil" },
+  { value: "light", label: msg("Clair"), hint: msg("Fond ivoire") },
+  { value: "dark", label: msg("Sombre"), hint: msg("Fond anthracite") },
+  { value: "system", label: msg("Système"), hint: msg("Suit votre appareil") },
 ]
 
 /** Small drawing of the interface in each theme (decorative). */
@@ -109,9 +118,9 @@ function Appearance() {
   const { reduce, choose: chooseMotion } = useReducedMotion()
   const mod = modKey()
   return <Stack gap="0">
-    <Section title="Thème" description="Mémorisé dans ce navigateur.">
+    <Section title={t("Thème")} description={t("Mémorisé dans ce navigateur.")}>
       <RadioCard.Root value={choice} onValueChange={(event) => choose(event.value as ThemeChoice)} colorPalette="brand" variant="outline" size="sm">
-        <RadioCard.Label srOnly>Thème</RadioCard.Label>
+        <RadioCard.Label srOnly>{t("Thème")}</RadioCard.Label>
         <HStack gap="3" align="stretch">
           {THEMES.map((item) => <RadioCard.Item key={item.value} value={item.value} flex="1" rounded="xl" cursor="pointer"
             css={{ transition: "border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease", "&:hover": { transform: "translateY(-1px)" } }}>
@@ -119,26 +128,26 @@ function Appearance() {
             <RadioCard.ItemControl flexDirection="column" alignItems="stretch" gap="2" p="2.5">
               <ThemePreview value={item.value} />
               <Stack gap="0">
-                <RadioCard.ItemText fontSize="sm" fontWeight="semibold">{item.label}</RadioCard.ItemText>
-                <RadioCard.ItemDescription fontSize="xs" color="app.muted">{item.hint}</RadioCard.ItemDescription>
+                <RadioCard.ItemText fontSize="sm" fontWeight="semibold">{t(item.label)}</RadioCard.ItemText>
+                <RadioCard.ItemDescription fontSize="xs" color="app.muted">{t(item.hint)}</RadioCard.ItemDescription>
               </Stack>
             </RadioCard.ItemControl>
           </RadioCard.Item>)}
         </HStack>
       </RadioCard.Root>
     </Section>
-    <Section title="Taille du texte" description={`Agrandit ou réduit toute l’interface. Raccourcis : ${mod} + plus, ${mod} + moins, ${mod} + 0.`}>
-      <HStack gap="2" role="group" aria-label="Taille du texte">
-        <Button variant="outline" size="sm" onClick={() => setZoom(nextZoom(zoom, -1))} disabled={zoom === ZOOM_STEPS[0]} aria-label="Réduire la taille du texte">−</Button>
+    <Section title={t("Taille du texte")} description={t("Agrandit ou réduit toute l’interface. Raccourcis : {{mod}} + plus, {{mod1}} + moins, {{mod2}} + 0.", { mod, mod1: mod, mod2: mod })}>
+      <HStack gap="2" role="group" aria-label={t("Taille du texte")}>
+        <Button variant="outline" size="sm" onClick={() => setZoom(nextZoom(zoom, -1))} disabled={zoom === ZOOM_STEPS[0]} aria-label={t("Réduire la taille du texte")}>−</Button>
         <Text minW="16" textAlign="center" fontWeight="semibold" aria-live="polite" css={{ fontVariantNumeric: "tabular-nums" }}>{percent(zoom)}</Text>
-        <Button variant="outline" size="sm" onClick={() => setZoom(nextZoom(zoom, 1))} disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]} aria-label="Agrandir la taille du texte">+</Button>
-        <Button variant="ghost" size="sm" onClick={() => setZoom(1)} disabled={zoom === 1} color="app.muted">Réinitialiser</Button>
+        <Button variant="outline" size="sm" onClick={() => setZoom(nextZoom(zoom, 1))} disabled={zoom === ZOOM_STEPS[ZOOM_STEPS.length - 1]} aria-label={t("Agrandir la taille du texte")}>+</Button>
+        <Button variant="ghost" size="sm" onClick={() => setZoom(1)} disabled={zoom === 1} color="app.muted">{t("Réinitialiser")}</Button>
       </HStack>
     </Section>
-    <Section title="Animations" description="Les transitions restent courtes ; vous pouvez les couper.">
+    <Section title={t("Animations")} description={t("Les transitions restent courtes ; vous pouvez les couper.")}>
       <Switch.Root checked={reduce} onCheckedChange={(event) => chooseMotion(event.checked)} colorPalette="brand" display="flex" justifyContent="space-between" w="full">
         <Switch.HiddenInput />
-        <Switch.Label fontSize="sm" fontWeight="normal">Réduire les animations</Switch.Label>
+        <Switch.Label fontSize="sm" fontWeight="normal">{t("Réduire les animations")}</Switch.Label>
         <Switch.Control><Switch.Thumb /></Switch.Control>
       </Switch.Root>
     </Section>
@@ -148,14 +157,14 @@ function Appearance() {
 function Shortcuts({ teacher }: { teacher: boolean }) {
   const mod = modKey()
   const rows: [string, string[]][] = [
-    ...(teacher ? [["Recherche rapide", [mod, "K"]] as [string, string[]]] : []),
-    ["Ouvrir les paramètres", [mod, ","]],
-    ["Agrandir le texte", [mod, "+"]],
-    ["Réduire le texte", [mod, "−"]],
-    ["Taille normale", [mod, "0"]],
-    ["Fermer un menu ou une fenêtre", ["Échap"]],
+    ...(teacher ? [[t("Recherche rapide"), [mod, "K"]] as [string, string[]]] : []),
+    [t("Ouvrir les paramètres"), [mod, ","]],
+    [t("Agrandir le texte"), [mod, "+"]],
+    [t("Réduire le texte"), [mod, "−"]],
+    [t("Taille normale"), [mod, "0"]],
+    [t("Fermer un menu ou une fenêtre"), [t("Échap")]],
   ]
-  return <Section title="Raccourcis clavier">
+  return <Section title={t("Raccourcis clavier")}>
     <Stack gap="0" as="dl">
       {rows.map(([label, keys]) => <Flex key={label} justify="space-between" align="center" minH="11" borderBottomWidth="1px" borderColor="app.border" _last={{ borderBottomWidth: "0" }}>
         <Text as="dt" fontSize="sm">{label}</Text>

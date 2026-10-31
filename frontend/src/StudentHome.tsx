@@ -1,3 +1,4 @@
+import { t } from "./i18n"
 import { Suspense } from "react"
 import { LoadingState } from "./student/ui"
 import { VoyagePage } from "./voyage"
@@ -8,7 +9,7 @@ import { useHashRoute } from "./useHashRoute"
 
 export function StudentHome() {
   const { route, navigate } = useHashRoute()
-  if (route.name === "voyage") return <Suspense fallback={<LoadingState label="Chargement de l’expérience…" />}>
+  if (route.name === "voyage") return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
     <VoyagePage scene={route.scene} onScene={(scene) => navigate(`/voyage/${scene}`)} /></Suspense>
   if (route.name === "projet") return <StudentProject />
   return route.name === "mission"

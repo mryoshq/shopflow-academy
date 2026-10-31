@@ -132,7 +132,7 @@ test("390x844: one column, no horizontal scroll, shortcuts 1-9 and Enter", async
 test("the teacher resets a password: shown once, sessions closed, old password refused", async ({ page, browser }) => {
   const name = "demo.etudiant02"
   const old = account(name).password
-  const learnerContext = await browser.newContext()
+  const learnerContext = await browser.newContext({ locale: "fr-FR" })
   const learner = await learnerContext.newPage()
   await login(learner, name, old)
 
@@ -155,7 +155,7 @@ test("the teacher resets a password: shown once, sessions closed, old password r
   // The student's open session is closed.
   expect((await learner.request.get("/api/v1/student/dashboard")).status()).toBe(401)
   await learnerContext.close()
-  const retry = await browser.newContext()
+  const retry = await browser.newContext({ locale: "fr-FR" })
   const second = await retry.newPage()
   await second.goto("/")
   await second.getByRole("textbox", { name: "Identifiant" }).fill(name)

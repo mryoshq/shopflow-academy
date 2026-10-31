@@ -26,4 +26,16 @@
     if ([0.8, 0.9, 1.1, 1.25, 1.4, 1.5].indexOf(zoom) !== -1) root.style.fontSize = (zoom * 100) + "%"
     if (window.localStorage.getItem("shopflow:motion") === "reduce") root.classList.add("reduce-motion")
   } catch (error) { /* storage unavailable: light theme */ }
+  // ADR-0040: interface language before the first paint, same rule as src/i18n (choice, else browser, else French).
+  try {
+    var lang = null
+    try { lang = window.localStorage.getItem("shopflow:lang") } catch (error) { /* storage blocked */ }
+    if (lang !== "fr" && lang !== "en") {
+      var wanted = (navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || "fr"])
+      lang = "fr"
+      for (var j = 0; j < wanted.length; j++) { var code = String(wanted[j]).toLowerCase().slice(0, 2); if (code === "fr" || code === "en") { lang = code; break } }
+    }
+    document.documentElement.lang = lang
+    document.documentElement.dir = "ltr"
+  } catch (error) { /* French */ }
 })()

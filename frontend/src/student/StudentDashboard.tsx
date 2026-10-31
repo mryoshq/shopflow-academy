@@ -1,3 +1,4 @@
+import { locale, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -27,7 +28,7 @@ export function StudentDashboard({ navigate }: Props) {
     setData(null)
     try { setData(await api<Dashboard>("/student/dashboard")) }
     catch (reason) {
-      if (!(reason instanceof ApiError && reason.status === 401)) setError("Impossible de charger votre tableau de bord.")
+      if (!(reason instanceof ApiError && reason.status === 401)) setError(t("Impossible de charger votre tableau de bord."))
     }
   }, [])
   useEffect(() => { void load() }, [load])
@@ -39,78 +40,78 @@ export function StudentDashboard({ navigate }: Props) {
   }, [])
 
   if (error) return <ErrorState message={error} onRetry={() => void load()} />
-  if (!data) return <LoadingState label="Chargement de votre espace…" />
+  if (!data) return <LoadingState label={t("Chargement de votre espace…")} />
 
   const target = continueTarget(data, lastMission())
 
   return <Stack gap="8">
     <Flex gap="6" justify="space-between" align={{ base: "start", md: "end" }} direction={{ base: "column", md: "row" }}>
       <Stack gap="2">
-        <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">Bonjour, {data.display_name}</Heading>
-        <Text fontSize="lg" color="app.muted">{data.courses.length === 0 ? "Votre enseignant ne vous a pas encore attribué de cours." : "Reprenez là où vous vous êtes arrêté."}</Text>
+        <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">{t("Bonjour,")}{" "}{data.display_name}</Heading>
+        <Text fontSize="lg" color="app.muted">{data.courses.length === 0 ? t("Votre enseignant ne vous a pas encore attribué de cours.") : t("Reprenez là où vous vous êtes arrêté.")}</Text>
       </Stack>
       {target && <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" onClick={() => navigate(`/mission/${target.mission_version_id}`)}>
-        Continuer : {target.title}<Icon name="arrow-right" />
+        {t("Continuer :")}{" "}{target.title}<Icon name="arrow-right" />
       </Button>}
     </Flex>
-    {data.courses.length > 0 && <Flex as="nav" aria-label="Projet" gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
-      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">Projet CampusEquip</Text>
-        <Text fontSize="sm" color="app.muted">Binôme, jalons, dépôts et soutenance.</Text></Stack>
-      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/projet")}>Ouvrir l’espace projet<Icon name="arrow-right" /></Button>
+    {data.courses.length > 0 && <Flex as="nav" aria-label={t("Projet")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Projet CampusEquip")}</Text>
+        <Text fontSize="sm" color="app.muted">{t("Binôme, jalons, dépôts et soutenance.")}</Text></Stack>
+      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/projet")}>{t("Ouvrir l’espace projet")}<Icon name="arrow-right" /></Button>
     </Flex>}
     {/* ADR-0033: the experience is in the menu once integrated. */}
-    {data.courses.length > 0 && VOYAGE_READY && <Flex as="nav" aria-label="Expérience interactive" gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
-      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">Le voyage d’une donnée</Text>
-        <Text fontSize="sm" color="app.muted">Sept scènes : une commande traverse le pipeline ShopFlow.</Text></Stack>
-      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/voyage/1")}>Ouvrir l’expérience<Icon name="arrow-right" /></Button>
+    {data.courses.length > 0 && VOYAGE_READY && <Flex as="nav" aria-label={t("Expérience interactive")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+      <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Le voyage d’une donnée")}</Text>
+        <Text fontSize="sm" color="app.muted">{t("Sept scènes : une commande traverse le pipeline ShopFlow.")}</Text></Stack>
+      <Button variant="outline" colorPalette="brand" onClick={() => navigate("/voyage/1")}>{t("Ouvrir l’expérience")}<Icon name="arrow-right" /></Button>
     </Flex>}
 
     {data.courses.length === 0 ? <Panel>
-      <Stack gap="2"><Text fontWeight="semibold">Aucun cours pour le moment</Text>
-        <Text color="app.muted">Dès qu’un cours vous sera attribué, il apparaîtra ici. Vous pouvez rafraîchir la page pendant la séance.</Text>
-        <Button alignSelf="start" variant="outline" colorPalette="brand" onClick={() => void load()}><Icon name="retry" />Actualiser</Button>
+      <Stack gap="2"><Text fontWeight="semibold">{t("Aucun cours pour le moment")}</Text>
+        <Text color="app.muted">{t("Dès qu’un cours vous sera attribué, il apparaîtra ici. Vous pouvez rafraîchir la page pendant la séance.")}</Text>
+        <Button alignSelf="start" variant="outline" colorPalette="brand" onClick={() => void load()}><Icon name="retry" />{t("Actualiser")}</Button>
       </Stack>
     </Panel> : <Grid templateColumns={{ base: "1fr", lg: "minmax(0, 1fr) 18rem" }} gap="6" alignItems="start">
       <Stack gap="6">
         {data.courses.map((course) => <Panel as="section" key={course.release_id} aria-labelledby={`course-${course.release_id}`}>
           <Stack gap="5">
             <Stack gap="2">
-              <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}{course.paused && <Badge colorPalette="saffron" variant="solid" rounded="full">En pause</Badge>}<Text fontSize="sm" color="app.muted">Version {course.version}</Text></Flex>
-              {course.paused && <Text fontSize="sm" color="saffron.fg">Votre enseignant a mis cette séquence en pause : vous pouvez relire les missions, les réponses reprendront à son signal.</Text>}
+              <Flex gap="2" align="center" wrap="wrap">{course.is_demo && <DemoBadge />}{course.paused && <Badge colorPalette="saffron" variant="solid" rounded="full">{t("En pause")}</Badge>}<Text fontSize="sm" color="app.muted">{t("Version")}{" "}{course.version}</Text></Flex>
+              {course.paused && <Text fontSize="sm" color="saffron.fg">{t("Votre enseignant a mis cette séquence en pause : vous pouvez relire les missions, les réponses reprendront à son signal.")}</Text>}
               {course.rules_notice && <RulesNotice releaseId={course.release_id} notice={course.rules_notice} />}
               <Heading as="h2" size="xl" id={`course-${course.release_id}`}>{course.title}</Heading>
               {course.description && <Text color="app.muted">{course.description}</Text>}
             </Stack>
             {course.modules && course.modules.length > 0
               ? <CourseBlocks course={course} navigate={navigate} />
-              : <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
+              : <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label={t("Missions")}>
                 {course.missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={index} navigate={navigate} />)}
               </Stack>}
           </Stack>
         </Panel>)}
       </Stack>
-      <Stack gap="4" as="aside" aria-label="Suivi">
-        {data.courses.map((course) => <Panel key={course.release_id} aria-label={`Score : ${course.title}`}>
+      <Stack gap="4" as="aside" aria-label={t("Suivi")}>
+        {data.courses.map((course) => <Panel key={course.release_id} aria-label={t("Score : {{title}}", { title: course.title })}>
           <Stack gap="3">
-            <Text fontWeight="semibold">{data.courses.length > 1 ? course.title : "Votre score"}</Text>
+            <Text fontWeight="semibold">{data.courses.length > 1 ? course.title : t("Votre score")}</Text>
             <Text fontSize="3xl" fontWeight="bold" lineHeight="1" css={{ fontVariantNumeric: "tabular-nums" }}>
-              {formatPoints(course.score.core_points)}<Text as="span" fontSize="lg" color="app.muted"> / {course.score.core_possible} pts</Text>
+              {formatPoints(course.score.core_points)}<Text as="span" fontSize="lg" color="app.muted"> / {course.score.core_possible} {t("pts")}</Text>
             </Text>
-            <ScoreBar value={course.score.core_points} max={course.score.core_possible} label={`${formatPoints(course.score.core_points)} points sur ${course.score.core_possible}`} />
-            <Text fontSize="sm" color="app.muted">{course.score.completed} mission{course.score.completed > 1 ? "s" : ""} réussie{course.score.completed > 1 ? "s" : ""} sur {course.score.total}. Votre meilleur essai compte.</Text>
-            {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">Bonus :</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} pts, comptés à part.</Text>}
+            <ScoreBar value={course.score.core_points} max={course.score.core_possible} label={t("{{p0}} points sur {{core_possible}}", { p0: formatPoints(course.score.core_points), core_possible: course.score.core_possible })} />
+            <Text fontSize="sm" color="app.muted">{tn("{{count}} mission réussie sur {{total}}", course.score.completed, { total: course.score.total })}{t(". Votre meilleur essai compte.")}</Text>
+            {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">{t("Bonus :")}</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} {t("pts, comptés à part.")}</Text>}
           </Stack>
         </Panel>)}
         <TeacherMessages />
         <Panel>
           <Stack gap="2">
-            <Text fontWeight="semibold">Ressources</Text>
+            <Text fontWeight="semibold">{t("Ressources")}</Text>
             {data.courses.flatMap((course) => course.resources).length === 0
-              ? <Text fontSize="sm" color="app.muted">Les ressources de vos cours apparaîtront ici.</Text>
+              ? <Text fontSize="sm" color="app.muted">{t("Les ressources de vos cours apparaîtront ici.")}</Text>
               : data.courses.flatMap((course) => course.resources).map((url) => <Link key={url} href={url} target="_blank" rel="noreferrer" color="brand.fg" textDecoration="underline" wordBreak="break-all" fontSize="sm">{url}</Link>)}
           </Stack>
         </Panel>
-        {!data.ai_enabled && <Text fontSize="xs" color="app.muted" px="1">L’assistant IA est désactivé. Les indices de chaque mission restent disponibles.</Text>}
+        {!data.ai_enabled && <Text fontSize="xs" color="app.muted" px="1">{t("L’assistant IA est désactivé. Les indices de chaque mission restent disponibles.")}</Text>}
       </Stack>
     </Grid>}
   </Stack>
@@ -125,13 +126,13 @@ function MissionRow({ mission, index, navigate }: { mission: DashboardMission; i
       <Flex align="center" justify="center" w="9" h="9" rounded="full" bg={locked ? "app.border" : "brand.subtle"} color="brand.fg"
         fontWeight="bold" flexShrink={0} aria-hidden="true">{locked ? <Icon name="lock" size={16} /> : index + 1}</Flex>
       <Stack gap="0.5" flex="1" minW="0">
-        <Flex gap="2" align="center" wrap="wrap"><Text fontWeight="semibold">{mission.title}</Text>{mission.bonus && <Badge colorPalette="saffron" variant="outline" rounded="full">Bonus</Badge>}</Flex>
-        <Text fontSize="sm" color="app.muted">{locked ? `Se débloque après : ${mission.locked_by.join(", ")}` : `${mission.chapter} · environ ${mission.estimated_duration_minutes ?? "?"} min · ${formatPoints(mission.best_points)} / ${mission.possible} pts${mission.bonus ? " (bonus)" : ""}`}</Text>
+        <Flex gap="2" align="center" wrap="wrap"><Text fontWeight="semibold">{mission.title}</Text>{mission.bonus && <Badge colorPalette="saffron" variant="outline" rounded="full">{t("Bonus")}</Badge>}</Flex>
+        <Text fontSize="sm" color="app.muted">{locked ? t("Se débloque après : {{p0}}", { p0: mission.locked_by.join(", ") }) : t("{{chapter}} · environ {{minutes}} min · {{best}} / {{possible}} pts", { chapter: mission.chapter, minutes: mission.estimated_duration_minutes ?? "?", best: formatPoints(mission.best_points), possible: mission.possible }) + (mission.bonus ? t(" (bonus)") : "")}</Text>
       </Stack>
       <StatusBadge status={mission.status} />
       <Button size="sm" variant={mission.status === "completed" ? "outline" : "solid"} colorPalette="brand" disabled={locked}
-        onClick={() => navigate(`/mission/${mission.mission_version_id}`)} aria-label={`${locked ? "Verrouillée" : "Ouvrir"} : ${mission.title}`}>
-        {locked ? "Verrouillée" : mission.status === "completed" ? "Revoir" : mission.status === "in_progress" ? "Reprendre" : "Commencer"}
+        onClick={() => navigate(`/mission/${mission.mission_version_id}`)} aria-label={locked ? t("Verrouillée : {{title}}", { title: mission.title }) : t("Ouvrir : {{title}}", { title: mission.title })}>
+        {locked ? t("Verrouillée") : mission.status === "completed" ? t("Revoir") : mission.status === "in_progress" ? t("Reprendre") : t("Commencer")}
       </Button>
     </Flex>
   </Box>
@@ -142,7 +143,7 @@ function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate:
   const byId = new Map(course.missions.map((mission) => [mission.mission_version_id, mission]))
   let number = 0
   return <Stack gap="5">
-    {course.modules!.map((module, moduleIndex) => <Stack key={moduleIndex} gap="3" as="section" aria-label={`Module : ${module.title}`}>
+    {course.modules!.map((module, moduleIndex) => <Stack key={moduleIndex} gap="3" as="section" aria-label={t("Module : {{title}}", { title: module.title })}>
       {course.modules!.length > 1 || module.title ? <Text fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{module.title}</Text> : null}
       {module.description && module.blocks.some((block) => block.open) && <Text color="app.muted">{module.description}</Text>}
       {module.blocks.map((block) => {
@@ -156,19 +157,19 @@ function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate:
 }
 
 function BlockCard({ block, missions, offset, navigate }: { block: DashboardBlock; missions: DashboardMission[]; offset: number; navigate: (path: string) => void }) {
-  const state = block.done ? { label: "Terminé", palette: "green", variant: "solid" as const }
-    : block.open && block.for_you ? { label: "Ouvert pour vous", palette: "brand", variant: "solid" as const }
-    : block.open ? { label: "Ouvert", palette: "brand", variant: "subtle" as const }
-      : { label: "Bientôt disponible", palette: "gray", variant: "subtle" as const }
-  return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={`Bloc : ${block.title}`} role="group">
+  const state = block.done ? { label: t("Terminé"), palette: "green", variant: "solid" as const }
+    : block.open && block.for_you ? { label: t("Ouvert pour vous"), palette: "brand", variant: "solid" as const }
+    : block.open ? { label: t("Ouvert"), palette: "brand", variant: "subtle" as const }
+      : { label: t("Bientôt disponible"), palette: "gray", variant: "subtle" as const }
+  return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={t("Bloc : {{title}}", { title: block.title })} role="group">
     <Flex gap="3" align="center" wrap="wrap" mb={missions.length ? "3" : "0"}>
       <Text fontWeight="semibold" flex="1">{block.title}</Text>
-      {block.open && (block.mission_count > 0 || (block.lesson_count ?? 0) > 0) && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_count} / {block.mission_count} mission{block.mission_count > 1 ? "s" : ""}{block.bonus_count ? ` · ${block.bonus_count} bonus` : ""}{block.lesson_count ? ` · leçons lues ${block.lessons_read ?? 0}/${block.lesson_count}` : ""}</Text>}
+      {block.open && (block.mission_count > 0 || (block.lesson_count ?? 0) > 0) && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_count} / {tn("{{count}} mission", block.mission_count)}{block.bonus_count ? ` · ${block.bonus_count} bonus` : ""}{block.lesson_count ? t(" · leçons lues {{p0}}/{{lesson_count}}", { p0: block.lessons_read ?? 0, lesson_count: block.lesson_count }) : ""}</Text>}
       <Badge colorPalette={state.palette} variant={state.variant} rounded="full" gap="1">{block.done && <Icon name="check" size={12} />}{!block.open && <Icon name="clock" size={12} />}{state.label}</Badge>
     </Flex>
-    {block.open && block.objective && <Flex gap="2" align="start" mt="-1" mb="3" fontSize="sm" color="brand.fg"><Box mt="0.5" flexShrink={0}><Icon name="target" size={14} /></Box><Text><Text as="span" fontWeight="semibold">Objectif : </Text>{block.objective}</Text></Flex>}
-    {!block.open && missions.length === 0 && <Text fontSize="sm" color="app.muted">Votre enseignant ouvrira ce bloc pendant la séance.</Text>}
-    {missions.length > 0 && <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label="Missions">
+    {block.open && block.objective && <Flex gap="2" align="start" mt="-1" mb="3" fontSize="sm" color="brand.fg"><Box mt="0.5" flexShrink={0}><Icon name="target" size={14} /></Box><Text><Text as="span" fontWeight="semibold">{t("Objectif :")}{" "}</Text>{block.objective}</Text></Flex>}
+    {!block.open && missions.length === 0 && <Text fontSize="sm" color="app.muted">{t("Votre enseignant ouvrira ce bloc pendant la séance.")}</Text>}
+    {missions.length > 0 && <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0" aria-label={t("Missions")}>
       {missions.map((mission, index) => <MissionRow key={mission.mission_version_id} mission={mission} index={offset + index} navigate={navigate} />)}
     </Stack>}
   </Box>
@@ -182,7 +183,7 @@ function RulesNotice({ releaseId, notice }: { releaseId: number; notice: { text:
   return <Flex role="status" gap="3" align="center" wrap="wrap" p="3" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
     <Box color="saffron.fg"><Icon name="alert" /></Box>
     <Text flex="1" minW="48" fontWeight="medium">{notice.text}</Text>
-    <Button size="sm" variant="outline" colorPalette="saffron" onClick={() => { try { window.localStorage.setItem(key, "1") } catch { /* not remembered */ } setSeen(true) }}>J’ai compris</Button>
+    <Button size="sm" variant="outline" colorPalette="saffron" onClick={() => { try { window.localStorage.setItem(key, "1") } catch { /* not remembered */ } setSeen(true) }}>{t("J’ai compris")}</Button>
   </Flex>
 }
 
@@ -194,12 +195,12 @@ function TeacherMessages() {
   const unread = messages.filter((item) => !item.read_at).map((item) => item.id)
   return <Panel as="section" aria-labelledby="teacher-messages" borderColor={unread.length ? "brand.solid" : "app.border"}>
     <Stack gap="2">
-      <Flex gap="2" align="center"><Icon name="bell" size={16} /><Text fontWeight="semibold" id="teacher-messages">Messages de votre enseignant</Text></Flex>
+      <Flex gap="2" align="center"><Icon name="bell" size={16} /><Text fontWeight="semibold" id="teacher-messages">{t("Messages de votre enseignant")}</Text></Flex>
       <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">{messages.map((item) => <Box as="li" key={item.id} fontSize="sm">
         <Text fontWeight={item.read_at ? "normal" : "semibold"}>{item.text}</Text>
-        <Text fontSize="xs" color="app.muted">{new Date(item.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}{item.read_at ? "" : " · non lu"}</Text>
+        <Text fontSize="xs" color="app.muted">{new Date(item.created_at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}{item.read_at ? "" : t(" · non lu")}</Text>
       </Box>)}</Stack>
-      {unread.length > 0 && <Button size="xs" variant="outline" colorPalette="brand" alignSelf="start" onClick={() => void markRead(unread)}>J’ai lu</Button>}
+      {unread.length > 0 && <Button size="xs" variant="outline" colorPalette="brand" alignSelf="start" onClick={() => void markRead(unread)}>{t("J’ai lu")}</Button>}
     </Stack>
   </Panel>
 }

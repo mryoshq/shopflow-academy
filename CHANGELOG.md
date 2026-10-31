@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-10-31 — Interface en anglais (`claude/lucid-brahmagupta-htwgun-anglais`)
+
+- Toute l'interface existe en anglais (étudiant, enseignant, observateur, connexion, page indisponible, messages d'erreur, notifications automatiques) ; le français reste la langue de référence.
+- Choix « Français / English » dans le menu de compte et dans Paramètres > Général, mémorisé dans le navigateur, langue du navigateur par défaut ; `<html lang>` suit le choix.
+- Dates et nombres formatés selon la langue ; le contenu des cours reste dans sa langue d'origine.
+- Une clé de traduction manquante fait échouer la CI. Structure prête pour l'arabe (direction de droite à gauche), non livré. ADR-0040.
+
 ## 2026-10-30 — Tableaux Markdown dans les leçons (`claude/lucid-brahmagupta-htwgun-tableaux`)
 
 - Texte des leçons : les tableaux Markdown simples (en-tête, séparation `| --- |`, alignement facultatif) s'affichent en vrai tableau, avec gras et code dans les cellules ; cadre qui défile seul sur téléphone, en clair et en sombre. Un tableau mal formé reste du texte. 12 colonnes et 100 lignes au plus.

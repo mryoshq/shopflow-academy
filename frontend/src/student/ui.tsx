@@ -1,3 +1,4 @@
+import { formatNumber, msg, t } from "../i18n"
 import type { ReactNode } from "react"
 import { Badge, Box, Button, Flex, Stack, Text } from "@chakra-ui/react"
 import type { MissionStatus } from "./types"
@@ -37,21 +38,21 @@ export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "
 }
 
 const STATUS: Record<MissionStatus, { label: string; palette: string; icon?: "check" | "lock" }> = {
-  completed: { label: "Réussie", palette: "green", icon: "check" },
-  in_progress: { label: "En cours", palette: "saffron" },
-  not_started: { label: "À faire", palette: "gray" },
-  locked: { label: "Verrouillée", palette: "gray", icon: "lock" },
+  completed: { label: msg("Réussie"), palette: "green", icon: "check" },
+  in_progress: { label: msg("En cours"), palette: "saffron" },
+  not_started: { label: msg("À faire"), palette: "gray" },
+  locked: { label: msg("Verrouillée"), palette: "gray", icon: "lock" },
 }
 
 export function StatusBadge({ status }: { status: MissionStatus }) {
   const item = STATUS[status]
   return <Badge colorPalette={item.palette} variant={status === "completed" ? "solid" : "subtle"} gap="1" px="2" py="0.5" rounded="full">
-    {item.icon && <Icon name={item.icon} size={12} />}{item.label}
+    {item.icon && <Icon name={item.icon} size={12} />}{t(item.label)}
   </Badge>
 }
 
 export function DemoBadge() {
-  return <Badge colorPalette="saffron" variant="subtle" rounded="full" px="2">Démonstration</Badge>
+  return <Badge colorPalette="saffron" variant="subtle" rounded="full" px="2">{t("Démonstration")}</Badge>
 }
 
 export function Panel({ children, ...rest }: { children: ReactNode } & Record<string, unknown>) {
@@ -62,8 +63,8 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry: () 
   return <Panel role="alert">
     <Stack gap="3" align="start">
       <Flex gap="2" align="center" color="red.fg"><Icon name="alert" /><Text fontWeight="semibold">{message}</Text></Flex>
-      <Text color="app.muted">Vérifiez votre connexion. Votre sélection en cours est conservée.</Text>
-      <Button onClick={onRetry} colorPalette="brand"><Icon name="retry" />Réessayer</Button>
+      <Text color="app.muted">{t("Vérifiez votre connexion. Votre sélection en cours est conservée.")}</Text>
+      <Button onClick={onRetry} colorPalette="brand"><Icon name="retry" />{t("Réessayer")}</Button>
     </Stack>
   </Panel>
 }
@@ -74,7 +75,7 @@ export function LoadingState({ label }: { label: string }) {
   </Panel>
 }
 
-export const formatPoints = (value: number) => Number.isInteger(value) ? String(value) : value.toFixed(1).replace(".", ",")
+export const formatPoints = (value: number) => Number.isInteger(value) ? String(value) : formatNumber(value, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 export function ScoreBar({ value, max, label }: { value: number; max: number; label: string }) {
   const ratio = max > 0 ? Math.min(1, value / max) : 0

@@ -1,3 +1,4 @@
+import { locale, msg, t, tn } from "../i18n"
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react"
 import { Badge, Box, Button, Flex, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
 import type { AnimationDisplay, FlowDisplay, MindNode, MindmapDisplay, SceneTable, VideoDisplay } from "../studioTypes"
@@ -6,12 +7,12 @@ import type { AnimationDisplay, FlowDisplay, MindNode, MindmapDisplay, SceneTabl
 function Controls({ playing, onPlay, onPrevious, onNext, onRestart, step, total, label }: {
   playing: boolean; onPlay: () => void; onPrevious?: () => void; onNext: () => void; onRestart: () => void; step: number; total: number; label: string
 }) {
-  return <Flex gap="2" wrap="wrap" align="center" role="group" aria-label={`Commandes : ${label}`}>
-    <Button size="sm" colorPalette="brand" onClick={onPlay} aria-pressed={playing}>{playing ? "Pause" : step >= total - 1 ? "Rejouer" : "Lecture"}</Button>
-    {onPrevious && <Button size="sm" variant="outline" onClick={onPrevious} disabled={step === 0}>Étape précédente</Button>}
-    <Button size="sm" variant="outline" onClick={onNext} disabled={step >= total - 1}>Étape suivante</Button>
-    <Button size="sm" variant="ghost" onClick={onRestart}>Recommencer</Button>
-    <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>Étape {step + 1} sur {total}</Text>
+  return <Flex gap="2" wrap="wrap" align="center" role="group" aria-label={t("Commandes : {{label}}", { label })}>
+    <Button size="sm" colorPalette="brand" onClick={onPlay} aria-pressed={playing}>{playing ? t("Pause") : step >= total - 1 ? t("Rejouer") : t("Lecture")}</Button>
+    {onPrevious && <Button size="sm" variant="outline" onClick={onPrevious} disabled={step === 0}>{t("Étape précédente")}</Button>}
+    <Button size="sm" variant="outline" onClick={onNext} disabled={step >= total - 1}>{t("Étape suivante")}</Button>
+    <Button size="sm" variant="ghost" onClick={onRestart}>{t("Recommencer")}</Button>
+    <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("Étape")}{" "}{step + 1} {t("sur")}{" "}{total}</Text>
   </Flex>
 }
 
@@ -34,14 +35,14 @@ function useStepper(total: number, delay: number) {
 }
 
 const cssColor = (token: string) => `var(--chakra-colors-${token.replace(".", "-")})`
-const BADGE = { ok: { palette: "green", label: "Correct" }, erreur: { palette: "red", label: "Erreur" }, attention: { palette: "saffron", label: "Attention" } } as const
+const BADGE = { ok: { palette: "green", label: msg("Correct") }, erreur: { palette: "red", label: msg("Erreur") }, attention: { palette: "saffron", label: msg("Attention") } } as const
 
 function cellText(value: unknown): string {
   return value === null || value === undefined ? "vide" : String(value)
 }
 
 function describeTable(table: SceneTable): string {
-  const rows = table.rows.map((row, index) => `ligne ${index + 1}${table.highlight.rows.includes(index) ? " (mise en évidence)" : ""} : ${row.map((cell, column) => `${table.columns[column]} ${cellText(cell)}`).join(", ")}`)
+  const rows = table.rows.map((row, index) => `ligne ${index + 1}${table.highlight.rows.includes(index) ? t(" (mise en évidence)") : ""} : ${row.map((cell, column) => `${table.columns[column]} ${cellText(cell)}`).join(", ")}`)
   return `${table.title || "Table"} — ${rows.length ? rows.join(" ; ") : "vide"}`
 }
 
@@ -113,7 +114,7 @@ export function AnimationPlayer({ data }: { data: AnimationDisplay }) {
   return <Box as="figure" m="0" p="4" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
     <Stack gap="3">
       <Text as="figcaption" fontWeight="semibold">{data.title}</Text>
-      <Text aria-live="polite" fontSize="lg" minH="7"><VisuallyHidden>Étape {step + 1} sur {data.steps.length} : </VisuallyHidden>{current.caption}</Text>
+      <Text aria-live="polite" fontSize="lg" minH="7"><VisuallyHidden>{t("Étape")}{" "}{step + 1} {t("sur")}{" "}{data.steps.length} : </VisuallyHidden>{current.caption}</Text>
       <Box ref={sceneRef} position="relative" key={step} css={{ animation: "fade-in 250ms ease-out" }}>
         <Flex gap={{ base: "4", md: "12" }} wrap="wrap" align="start">{scene.tables.map((table, index) => <SceneTableView key={index} table={table} index={index} />)}</Flex>
         <ArrowLayer container={sceneRef} arrows={scene.arrows} version={`${step}`} />
@@ -122,17 +123,17 @@ export function AnimationPlayer({ data }: { data: AnimationDisplay }) {
         {scene.counter && <Box px="3" py="2" rounded="md" bg="brand.subtle"><Text fontSize="sm" color="app.muted">{scene.counter.label}</Text>
           <Text fontSize="2xl" fontWeight="bold" lineHeight="1.1" css={{ fontVariantNumeric: "tabular-nums" }}>{String(scene.counter.value)}</Text></Box>}
         {scene.badge && <Badge colorPalette={BADGE[scene.badge.kind].palette} variant="subtle" rounded="full" px="3" py="1" fontSize="sm">
-          <Text as="span" fontWeight="bold">{BADGE[scene.badge.kind].label} :</Text>&nbsp;{scene.badge.text}</Badge>}
+          <Text as="span" fontWeight="bold">{t("{{label}} :", { label: t(BADGE[scene.badge.kind].label) })}</Text>&nbsp;{scene.badge.text}</Badge>}
       </Flex>}
       <Controls playing={playing} onPlay={play} onPrevious={previous} onNext={next} onRestart={restart} step={step} total={data.steps.length} label={data.title} />
       <Button alignSelf="start" size="sm" variant="ghost" colorPalette="brand" aria-expanded={describe} onClick={() => setDescribe(!describe)}>
-        {describe ? "Masquer la description textuelle" : "Description textuelle de toutes les étapes"}</Button>
+        {describe ? t("Masquer la description textuelle") : t("Description textuelle de toutes les étapes")}</Button>
       {describe && <Stack as="ol" gap="2" pl="5" m="0" fontSize="sm">{data.steps.map((item, index) => <li key={index}>
         <Text fontWeight="semibold">{item.caption}</Text>
         {item.scene.tables.map((table, position) => <Text key={position}>{describeTable(table)}</Text>)}
-        {item.scene.arrows.length > 0 && <Text>Flèches : {item.scene.arrows.map((arrow) => `ligne ${arrow.source[1] + 1} de « ${item.scene.tables[arrow.source[0]].title || `table ${arrow.source[0] + 1}`} » vers ligne ${arrow.target[1] + 1} de « ${item.scene.tables[arrow.target[0]].title || `table ${arrow.target[0] + 1}`} »${arrow.label ? ` (${arrow.label})` : ""}`).join(" ; ")}.</Text>}
+        {item.scene.arrows.length > 0 && <Text>{t("Flèches :")}{" "}{item.scene.arrows.map((arrow) => t("ligne {{p0}} de « {{p1}} » vers ligne {{p2}} de « {{p3}} »{{p4}}", { p0: arrow.source[1] + 1, p1: item.scene.tables[arrow.source[0]].title || `table ${arrow.source[0] + 1}`, p2: arrow.target[1] + 1, p3: item.scene.tables[arrow.target[0]].title || `table ${arrow.target[0] + 1}`, p4: arrow.label ? ` (${arrow.label})` : "" })).join(" ; ")}.</Text>}
         {item.scene.counter && <Text>{item.scene.counter.label} : {String(item.scene.counter.value)}.</Text>}
-        {item.scene.badge && <Text>{BADGE[item.scene.badge.kind].label} : {item.scene.badge.text}.</Text>}
+        {item.scene.badge && <Text>{t("{{label}} :", { label: t(BADGE[item.scene.badge.kind].label) })} {item.scene.badge.text}.</Text>}
       </li>)}</Stack>}
     </Stack>
   </Box>
@@ -204,10 +205,10 @@ export function MindMap({ data }: { data: MindmapDisplay }) {
       <Text as="figcaption" fontWeight="semibold" id="mindmap-title">{data.title}</Text>
       {asList ? <Box as="ul" pl="5" m="0" css={{ "& ul": { paddingLeft: "1.25rem" } }}>{listView(data.root)}</Box>
         : <Box as="ul" role="tree" aria-labelledby="mindmap-title" m="0" p="0">{renderNode("0", 0)}</Box>}
-      {!asList && <Text fontSize="xs" color="app.muted">Flèches du clavier pour naviguer, Entrée pour déplier ou replier une branche.</Text>}
+      {!asList && <Text fontSize="xs" color="app.muted">{t("Flèches du clavier pour naviguer, Entrée pour déplier ou replier une branche.")}</Text>}
       <Flex gap="2" wrap="wrap">
-        {!asList && <Button size="sm" variant="outline" onClick={expandAll}>Tout déplier</Button>}
-        <Button size="sm" variant="ghost" colorPalette="brand" aria-expanded={asList} onClick={() => setAsList(!asList)}>{asList ? "Afficher la carte" : "Afficher en liste"}</Button>
+        {!asList && <Button size="sm" variant="outline" onClick={expandAll}>{t("Tout déplier")}</Button>}
+        <Button size="sm" variant="ghost" colorPalette="brand" aria-expanded={asList} onClick={() => setAsList(!asList)}>{asList ? t("Afficher la carte") : t("Afficher en liste")}</Button>
       </Flex>
     </Stack>
   </Box>
@@ -220,7 +221,7 @@ export function FlowDiagram({ data }: { data: FlowDisplay }) {
   const passed = data.steps.slice(0, Math.min(step, data.steps.length))
   const rejected = passed.reduce((sum, item) => sum + item.rejects, 0)
   const position = Math.min(step, data.steps.length - 1)
-  const format = (value: number) => value.toLocaleString("fr-FR")
+  const format = (value: number) => value.toLocaleString(locale())
   const done = step >= data.steps.length
   return <Box as="figure" m="0" p="4" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
     <Stack gap="4">
@@ -228,13 +229,13 @@ export function FlowDiagram({ data }: { data: FlowDisplay }) {
       <Box position="relative" pt="5">
         <Box position="absolute" top="0" h="4" w="4" rounded="full" bg="saffron.solid" boxShadow="0 0 0 4px var(--chakra-colors-saffron-subtle)"
           aria-hidden="true" transition="left 600ms ease-in-out" style={{ left: `calc(${((position + 0.5) / data.steps.length) * 100}% - 8px)` }} />
-        <Flex as="ol" gap="0" m="0" p="0" listStyleType="none" aria-label="Étapes du pipeline" direction={{ base: "column", md: "row" }}>
+        <Flex as="ol" gap="0" m="0" p="0" listStyleType="none" aria-label={t("Étapes du pipeline")} direction={{ base: "column", md: "row" }}>
           {data.steps.map((item, index) => <Flex as="li" key={item.id} flex="1" align="stretch" direction={{ base: "column", md: "row" }} minW="0">
             <Stack gap="1" flex="1" p="2.5" rounded="lg" borderWidth="2px" textAlign="center" minW="0"
               borderColor={index === position && !done ? "saffron.solid" : index < step ? "brand.solid" : "app.border"}
               bg={index < step ? "brand.subtle" : "app.surface"} aria-current={index === position && !done ? "step" : undefined}>
               <Text fontWeight="semibold" fontSize="sm">{item.label}</Text>
-              {item.rejects > 0 && <Text fontSize="xs" color={index < step ? "red.fg" : "app.muted"} fontWeight={index < step ? "bold" : undefined}>− {format(item.rejects)} rejetée{item.rejects > 1 ? "s" : ""}</Text>}
+              {item.rejects > 0 && <Text fontSize="xs" color={index < step ? "red.fg" : "app.muted"} fontWeight={index < step ? "bold" : undefined}>− {tn("{{n}} rejetée", item.rejects, { n: format(item.rejects) })}</Text>}
               {item.note && <Text fontSize="xs" color="app.muted">{item.note}</Text>}
             </Stack>
             {index < data.steps.length - 1 && <Flex align="center" justify="center" px="1" py={{ base: "1", md: "0" }} color="app.muted" aria-hidden="true">
@@ -243,14 +244,14 @@ export function FlowDiagram({ data }: { data: FlowDisplay }) {
         </Flex>
       </Box>
       <Flex gap="3" wrap="wrap" aria-live="polite">
-        <Box px="3" py="2" rounded="md" bg="brand.subtle"><Text fontSize="sm" color="app.muted">Acceptées</Text>
+        <Box px="3" py="2" rounded="md" bg="brand.subtle"><Text fontSize="sm" color="app.muted">{t("Acceptées")}</Text>
           <Text fontSize="xl" fontWeight="bold" css={{ fontVariantNumeric: "tabular-nums" }}>{format(data.input - rejected)} {data.unit}</Text></Box>
-        <Box px="3" py="2" rounded="md" bg="app.sunken"><Text fontSize="sm" color="app.muted">Rejetées</Text>
+        <Box px="3" py="2" rounded="md" bg="app.sunken"><Text fontSize="sm" color="app.muted">{t("Rejetées")}</Text>
           <Text fontSize="xl" fontWeight="bold" css={{ fontVariantNumeric: "tabular-nums" }}>{format(rejected)} {data.unit}</Text></Box>
-        <Text alignSelf="center" fontSize="sm">{done ? "Arrivé à destination." : step === 0 ? `${format(data.input)} ${data.unit} en entrée.` : `Étape en cours : ${data.steps[position].label}.`}</Text>
+        <Text alignSelf="center" fontSize="sm">{done ? t("Arrivé à destination.") : step === 0 ? t("{{p0}} {{unit}} en entrée.", { p0: format(data.input), unit: data.unit }) : t("Étape en cours : {{label}}.", { label: data.steps[position].label })}</Text>
       </Flex>
       <Controls playing={playing} onPlay={play} onNext={next} onRestart={restart} step={step} total={total} label={data.title} />
-      <VisuallyHidden>{`${format(data.input)} ${data.unit} en entrée. ${data.steps.map((item) => `${item.label}${item.rejects ? ` : ${format(item.rejects)} rejetées` : ""}${item.note ? ` (${item.note})` : ""}`).join(", puis ")}. À la fin : ${format(data.input - data.steps.reduce((sum, item) => sum + item.rejects, 0))} ${data.unit} acceptées.`}</VisuallyHidden>
+      <VisuallyHidden>{t("{{p0}} {{unit}} en entrée. {{p2}}. À la fin : {{p3}} {{unit4}} acceptées.", { p0: format(data.input), unit: data.unit, p2: data.steps.map((item) => `${item.label}${item.rejects ? ` : ${format(item.rejects)} rejetées` : ""}${item.note ? ` (${item.note})` : ""}`).join(", puis "), p3: format(data.input - data.steps.reduce((sum, item) => sum + item.rejects, 0)), unit4: data.unit })}</VisuallyHidden>
     </Stack>
   </Box>
 }
@@ -260,17 +261,17 @@ export function VideoView({ data }: { data: VideoDisplay }) {
   return <Box as="figure" m="0" p="4" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
     <Stack gap="2">
       <Flex gap="2" align="center" wrap="wrap"><Text as="figcaption" fontWeight="semibold">{data.title}</Text>
-        <Badge variant="outline" rounded="full">Facultatif</Badge></Flex>
+        <Badge variant="outline" rounded="full">{t("Facultatif")}</Badge></Flex>
       <Box position="relative" w="full" css={{ aspectRatio: "16 / 9" }} bg="app.sunken" rounded="md" overflow="hidden">
         {data.url
           ? <iframe src={data.url} title={data.title} loading="lazy" referrerPolicy="strict-origin-when-cross-origin"
             sandbox="allow-scripts allow-same-origin allow-presentation" allow="fullscreen; picture-in-picture; encrypted-media"
             style={{ border: 0, width: "100%", height: "100%" }} />
           : <video controls preload="metadata" src={data.src ?? undefined} style={{ width: "100%", height: "100%" }} aria-label={data.title}>
-            {data.captions_src && <track kind="captions" srcLang="fr" label="Français" src={data.captions_src} default />}
+            {data.captions_src && <track kind="captions" srcLang="fr" label={t("Français")} src={data.captions_src} default />}
           </video>}
       </Box>
-      <Text fontSize="sm" color="app.muted">Vidéo facultative : elle ne compte pas dans la note.</Text>
+      <Text fontSize="sm" color="app.muted">{t("Vidéo facultative : elle ne compte pas dans la note.")}</Text>
     </Stack>
   </Box>
 }

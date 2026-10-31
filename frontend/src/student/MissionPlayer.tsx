@@ -1,3 +1,4 @@
+import { locale, t } from "../i18n"
 import { isUngraded } from "../studioTypes"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Alert, Box, Button, Flex, Grid, Heading, Link, Stack, Text, VisuallyHidden } from "@chakra-ui/react"
@@ -56,8 +57,8 @@ export function MissionPlayer({ missionId, navigate }: Props) {
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) return
       setLoadError(error instanceof ApiError && error.status === 404
-        ? "Cette mission n’existe pas ou ne vous est pas attribuée."
-        : "Impossible de charger la mission.")
+        ? t("Cette mission n’existe pas ou ne vous est pas attribuée.")
+        : t("Impossible de charger la mission."))
     }
   }, [missionId])
 
@@ -134,14 +135,14 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       if (error instanceof ApiError && error.status === 401) return
       const wait = retryAfter(error, "pause")
       if (wait !== null) { pendingKey.current = null; startPause(wait) }
-      else if (error instanceof ApiError && error.status === 429) setSubmitError("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer.")
+      else if (error instanceof ApiError && error.status === 429) setSubmitError(t("Beaucoup d’essais en peu de temps. Patientez une minute avant de réessayer."))
       else if (error instanceof ApiError && error.status === 409) {
-        setSubmitError(error.message === "sequence paused" ? "La séquence est en pause : réessayez à la reprise." : "Cette mission est verrouillée pour le moment.")
+        setSubmitError(error.message === "sequence paused" ? t("La séquence est en pause : réessayez à la reprise.") : t("Cette mission est verrouillée pour le moment."))
         if (error.message === "sequence paused") setMission((current) => current && { ...current, paused: true })
       }
-      else if (error instanceof ApiError && error.status === 422) setSubmitError("Votre réponse est incomplète. Vérifiez chaque élément.")
+      else if (error instanceof ApiError && error.status === 422) setSubmitError(t("Votre réponse est incomplète. Vérifiez chaque élément."))
       // ADR-0038: the answer stays on screen and in memory; the same key is sent again on the next try.
-      else setSubmitError("La plateforme est momentanément indisponible : votre réponse est conservée. Réessayez dans un instant.")
+      else setSubmitError(t("La plateforme est momentanément indisponible : votre réponse est conservée. Réessayez dans un instant."))
     } finally {
       setBusy(false)
     }
@@ -162,7 +163,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
     } catch (error) {
       const wait = retryAfter(error, "reading")
       if (wait !== null) { setClock(Date.now()); setReadingUntil(Date.now() + wait * 1000); return }
-      if (!(error instanceof ApiError && error.status === 401)) setSubmitError(error instanceof ApiError && error.status === 409 ? "La séquence est en pause : réessayez à la reprise." : "Connexion interrompue. Réessayez.")
+      if (!(error instanceof ApiError && error.status === 401)) setSubmitError(error instanceof ApiError && error.status === 409 ? t("La séquence est en pause : réessayez à la reprise.") : t("Connexion interrompue. Réessayez."))
     } finally {
       setBusy(false)
     }
@@ -175,7 +176,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       const response = await api<{ hints: string[]; hint_count: number }>(`/student/missions/${missionId}/hints`, "POST")
       setMission({ ...mission, hints: response.hints, hint_count: response.hint_count })
     } catch (error) {
-      if (!(error instanceof ApiError && error.status === 401)) setSubmitError("Impossible d’afficher l’indice. Réessayez.")
+      if (!(error instanceof ApiError && error.status === 401)) setSubmitError(t("Impossible d’afficher l’indice. Réessayez."))
     } finally {
       setHintBusy(false)
     }
@@ -184,7 +185,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   async function toggleHistory() {
     if (history) return setHistory(null)
     try { setHistory(await api<AttemptHistoryItem[]>(`/student/missions/${missionId}/attempts`)) }
-    catch (error) { if (!(error instanceof ApiError && error.status === 401)) setSubmitError("Impossible de charger l’historique.") }
+    catch (error) { if (!(error instanceof ApiError && error.status === 401)) setSubmitError(t("Impossible de charger l’historique.")) }
   }
 
   function retry() {
@@ -194,7 +195,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   }
 
   if (loadError) return <Stack gap="4"><BackLink navigate={navigate} /><ErrorState message={loadError} onRetry={() => void load()} /></Stack>
-  if (!mission) return <LoadingState label="Chargement de la mission…" />
+  if (!mission) return <LoadingState label={t("Chargement de la mission…")} />
 
   const definition = mission.definition
   const complete = definition ? isAnswerComplete(definition, answer) : false
@@ -203,7 +204,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
   return <Stack gap="5">
     <Flex justify="space-between" align="center" gap="3" wrap="wrap">
       <BackLink navigate={navigate} />
-      <Text color="app.muted" fontSize="sm">Mission {mission.position} sur {mission.total}</Text>
+      <Text color="app.muted" fontSize="sm">{t("Mission")}{" "}{mission.position} {t("sur")}{" "}{mission.total}</Text>
     </Flex>
 
     <Stack gap="2">
@@ -212,25 +213,25 @@ export function MissionPlayer({ missionId, navigate }: Props) {
         <StatusBadge status={mission.status} />
         <Text fontSize="sm" color="app.muted">{mission.course_title} · {mission.module} · {mission.chapter}</Text>
         {mission.score && <Text fontSize="sm" fontWeight="semibold" ml="auto" css={{ fontVariantNumeric: "tabular-nums" }}>
-          Meilleur score : {formatPoints(mission.score.best)} / {mission.score.possible} pts{mission.score.bonus ? " (bonus)" : ""}</Text>}
+          {t("Meilleur score :")}{" "}{formatPoints(mission.score.best)} / {mission.score.possible} {t("pts")}{mission.score.bonus ? " (bonus)" : ""}</Text>}
       </Flex>
       <Heading as="h1" size={{ base: "2xl", md: "3xl" }} ref={headingRef} tabIndex={-1} outline="none">{mission.title}</Heading>
-      <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={`Position dans le cours : ${mission.position} sur ${mission.total}`}>
+      <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={t("Position dans le cours : {{position}} sur {{total}}", { position: mission.position, total: mission.total })}>
         <Box h="full" bg="brand.solid" w={`${(mission.position / mission.total) * 100}%`} />
       </Box>
     </Stack>
 
     {mission.status === "locked" || !definition ? <Panel>
       <Stack gap="3" align="start">
-        <Flex gap="2" align="center" fontWeight="semibold"><Icon name="lock" />Mission verrouillée</Flex>
-        <Text>Terminez d’abord : {mission.locked_by.join(", ")}.</Text>
-        <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>Retour au tableau de bord</Button>
+        <Flex gap="2" align="center" fontWeight="semibold"><Icon name="lock" />{t("Mission verrouillée")}</Flex>
+        <Text>{t("Terminez d’abord :")}{" "}{mission.locked_by.join(", ")}.</Text>
+        <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>
       </Stack>
     </Panel> : <Stack gap="5">
       <Stack gap="5" minW="0">
         {isUngraded(definition.kind) ? <Panel as="section" aria-labelledby="lesson-title">
           <Stack gap="4">
-            <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{definition.kind === "review" ? "Révision" : "Leçon"}</Text>
+            <Text id="lesson-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{definition.kind === "review" ? t("Révision") : t("Leçon")}</Text>
             <LessonView definition={definition} media={<>
               <DataView data={definition.display_data} />
               <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
@@ -239,17 +240,17 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             {mission.status !== "completed" && readingLeft > 0 && mission.rules?.reading_seconds ? <ReadingBar left={readingLeft} total={mission.rules.reading_seconds} /> : null}
             <Flex gap="3" wrap="wrap" align="center">
               {mission.status === "completed"
-                ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />{definition.kind === "review" ? "Révision faite" : "Leçon comprise"}</Flex>
-                : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused || readingLeft > 0} onClick={() => void markUnderstood()}>J’ai compris</Button>}
-              {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
-              {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
+                ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />{definition.kind === "review" ? t("Révision faite") : t("Leçon comprise")}</Flex>
+                : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused || readingLeft > 0} onClick={() => void markUnderstood()}>{t("J’ai compris")}</Button>}
+              {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>{t("Mission suivante")}<Icon name="arrow-right" /></Button>}
+              {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>}
             </Flex>
-            <Text fontSize="sm" color="app.muted">{definition.kind === "review" ? "Une révision" : "Une leçon"} ne compte pas dans la note : elle aide à réussir les missions suivantes.</Text>
+            <Text fontSize="sm" color="app.muted">{definition.kind === "review" ? t("Une révision") : t("Une leçon")} {t("ne compte pas dans la note : elle aide à réussir les missions suivantes.")}</Text>
           </Stack>
         </Panel> : <>
         <Panel as="section" aria-labelledby="situation-title">
           <Stack gap="4">
-            <Text id="situation-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Situation</Text>
+            <Text id="situation-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{t("Situation")}</Text>
             <RichText text={definition.scenario} fontSize="lg" />
             <DataView data={definition.display_data} />
             <RunPanel runs={definition.run} missionId={mission.mission_version_id} />
@@ -258,7 +259,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
 
         <Panel as="section" aria-labelledby="question-title">
           <Stack gap="4">
-            <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">Votre décision</Text>
+            <Text id="question-title" fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.08em">{t("Votre décision")}</Text>
             <RichText text={definition.instructions} fontSize="lg" fontWeight="semibold" />
             {definition.kind === "sql_challenge"
               ? <SqlChallenge missionId={mission.mission_version_id} starter={definition.starter_sql ?? ""} disabled={mission.paused}
@@ -269,28 +270,28 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                 })} />
               : <Activity definition={definition} answer={answer} onChange={change} disabled={busy || Boolean(result?.correct)} name={`mission-${missionId}`} />}
             {!["lesson", "sql_challenge", "reorder", "matching"].includes(definition.kind) && !result && <Text fontSize="xs" color="app.muted" display={{ base: "none", md: "block" }}>
-              Raccourcis : touches 1 à {Math.min(9, definition.choices.length)} pour choisir, Entrée pour valider.</Text>}
+              {t("Raccourcis : touches 1 à")}{" "}{Math.min(9, definition.choices.length)} {t("pour choisir, Entrée pour valider.")}</Text>}
             {mission.paused && <Alert.Root status="warning" variant="subtle" rounded="lg">
-              <Alert.Indicator /><Alert.Content><Alert.Title>Séquence en pause</Alert.Title>
-                <Alert.Description>Votre enseignant a suspendu les réponses. Vous pouvez relire la mission ; rechargez la page à la reprise.</Alert.Description></Alert.Content>
+              <Alert.Indicator /><Alert.Content><Alert.Title>{t("Séquence en pause")}</Alert.Title>
+                <Alert.Description>{t("Votre enseignant a suspendu les réponses. Vous pouvez relire la mission ; rechargez la page à la reprise.")}</Alert.Description></Alert.Content>
             </Alert.Root>}
             {mission.status === "completed" && !result && <Alert.Root status="info" variant="subtle" rounded="lg">
-              <Alert.Indicator /><Alert.Content><Alert.Title>Vous avez déjà réussi cette mission.</Alert.Title>
-                <Alert.Description>Vous pouvez la refaire pour vous entraîner.</Alert.Description></Alert.Content>
+              <Alert.Indicator /><Alert.Content><Alert.Title>{t("Vous avez déjà réussi cette mission.")}</Alert.Title>
+                <Alert.Description>{t("Vous pouvez la refaire pour vous entraîner.")}</Alert.Description></Alert.Content>
             </Alert.Root>}
             {submitError && <Alert.Root status="error" variant="subtle" rounded="lg" role="alert">
               <Alert.Indicator /><Alert.Content><Alert.Title>{submitError}</Alert.Title>
-                <Alert.Description>Votre sélection est conservée.</Alert.Description></Alert.Content>
+                <Alert.Description>{t("Votre sélection est conservée.")}</Alert.Description></Alert.Content>
             </Alert.Root>}
             {pauseLeft > 0 && <PauseNotice seconds={pauseLeft} canHint={mission.hint_count > mission.hints.length && !mission.paused}
               hintBusy={hintBusy} onHint={() => { if (!helpOpen) toggleHelp(); void revealHint() }} />}
             {!result && mission.rules?.next_percent != null && mission.rules.next_attempt != null && definition.kind !== "sql_challenge" &&
-              <Text fontSize="sm" fontWeight="semibold" color="saffron.fg" role="note">Essai {mission.rules.next_attempt} : jusqu’à {mission.rules.next_percent} % des points</Text>}
+              <Text fontSize="sm" fontWeight="semibold" color="saffron.fg" role="note">{t("Essai")}{" "}{mission.rules.next_attempt} {t(": jusqu’à")}{" "}{mission.rules.next_percent} {t("% des points")}</Text>}
             <Flex gap="3" wrap="wrap" align="center">
-              {!result && definition.kind !== "sql_challenge" && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText="Vérification…" disabled={!complete || mission.paused || pauseLeft > 0}>
-                {submitError ? "Renvoyer ma décision" : "Tester ma décision"}
+              {!result && definition.kind !== "sql_challenge" && <Button colorPalette="brand" size="lg" onClick={() => void submit()} loading={busy} loadingText={t("Vérification…")} disabled={!complete || mission.paused || pauseLeft > 0}>
+                {submitError ? t("Renvoyer ma décision") : t("Tester ma décision")}
               </Button>}
-              {!complete && !result && definition.kind !== "sql_challenge" && <Text fontSize="sm" color="app.muted">Complétez votre réponse pour la tester.</Text>}
+              {!complete && !result && definition.kind !== "sql_challenge" && <Text fontSize="sm" color="app.muted">{t("Complétez votre réponse pour la tester.")}</Text>}
             </Flex>
           </Stack>
         </Panel>
@@ -301,89 +302,89 @@ export function MissionPlayer({ missionId, navigate }: Props) {
             <Stack gap="3">
               <Flex gap="2" align="center" fontWeight="bold" fontSize="lg" color={result.correct ? "green.fg" : "saffron.fg"}>
                 <Icon name={result.correct ? "check" : "retry"} size={22} />
-                {result.correct ? "Bonne décision" : "Presque ! Réessayez"}
+                {result.correct ? t("Bonne décision") : t("Presque ! Réessayez")}
               </Flex>
-              {!result.correct && <Text>Relisez la situation ou ouvrez un indice : vous pouvez réessayer autant de fois que vous voulez, votre meilleur essai compte.</Text>}
+              {!result.correct && <Text>{t("Relisez la situation ou ouvrez un indice : vous pouvez réessayer autant de fois que vous voulez, votre meilleur essai compte.")}</Text>}
               {result.feedback.length > 0 && <Stack gap="2" as="ul" listStyleType="none" p="0" m="0">
                 {result.feedback.map((item) => <Box as="li" key={item.choice_id} p="3" bg="app.sunken" rounded="md">
                   <Text fontSize="sm" color="app.muted">« {labelOf(item.choice_id)} »</Text><Text>{item.text}</Text>
                 </Box>)}
               </Stack>}
-              {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">Explication</Text><RichText text={result.explanation} /></Box>}
-              <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>Essai n° {result.attempts_count}{result.replayed ? " (déjà enregistré)" : ""} : {formatPoints(result.points)} / {result.score.possible} pts. Meilleur score conservé : {formatPoints(result.score.best)} pts.</Text>
+              {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">{t("Explication")}</Text><RichText text={result.explanation} /></Box>}
+              <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("Essai n°")}{" "}{result.attempts_count}{result.replayed ? t(" (déjà enregistré)") : ""} : {formatPoints(result.points)} / {result.score.possible} {t("pts. Meilleur score conservé :")}{" "}{formatPoints(result.score.best)} {t("pts.")}</Text>
               <Flex gap="3" wrap="wrap">
-                {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry} disabled={pauseLeft > 0}><Icon name="retry" />{pauseLeft > 0 ? `Réessayer dans ${pauseLeft} s` : "Réessayer"}</Button>}
-                {result.correct && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>}
-                {result.correct && !mission.next_id && <Button colorPalette="brand" onClick={() => navigate("/")}>Retour au tableau de bord</Button>}
+                {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry} disabled={pauseLeft > 0}><Icon name="retry" />{pauseLeft > 0 ? t("Réessayer dans {{pauseLeft}} s", { pauseLeft }) : t("Réessayer")}</Button>}
+                {result.correct && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>{t("Mission suivante")}<Icon name="arrow-right" /></Button>}
+                {result.correct && !mission.next_id && <Button colorPalette="brand" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>}
               </Flex>
             </Stack>
           </Panel>}
-          {!result && mission.explanation && <Panel><Text fontWeight="semibold" mb="1">Explication</Text><RichText text={mission.explanation} /></Panel>}
+          {!result && mission.explanation && <Panel><Text fontWeight="semibold" mb="1">{t("Explication")}</Text><RichText text={mission.explanation} /></Panel>}
         </Box>
         </>}
       </Stack>
 
-      <Box as="aside" aria-label="Aide" borderWidth="1px" borderColor="app.border" rounded="card" bg="app.sunken" p={{ base: "3", md: "4" }}>
+      <Box as="aside" aria-label={t("Aide")} borderWidth="1px" borderColor="app.border" rounded="card" bg="app.sunken" p={{ base: "3", md: "4" }}>
         <Button variant="ghost" size="sm" px="1" h="auto" minH={{ base: "11", md: "8" }} py="1" whiteSpace="normal" textAlign="start" aria-expanded={helpOpen} aria-controls="mission-help" onClick={() => toggleHelp()}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
             style={{ transform: helpOpen ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>
-          Aide : indices, question à l’enseignant{mission.attempts_count > 0 ? ", historique" : ""}
+          {t("Aide : indices, question à l’enseignant")}{mission.attempts_count > 0 ? ", historique" : ""}
         </Button>
         {helpOpen && <Grid id="mission-help" mt="3" gap="4" templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))" }} alignItems="start">
         <Panel>
           <Stack gap="3">
-            <Flex gap="2" align="center" fontWeight="semibold"><Icon name="bulb" />Indices</Flex>
-            {mission.hint_count === 0 && <Text color="app.muted" fontSize="sm">Aucun indice pour cette mission.</Text>}
+            <Flex gap="2" align="center" fontWeight="semibold"><Icon name="bulb" />{t("Indices")}</Flex>
+            {mission.hint_count === 0 && <Text color="app.muted" fontSize="sm">{t("Aucun indice pour cette mission.")}</Text>}
             {mission.hints.length > 0 && <Stack gap="2.5" as="ol" listStyleType="none" p="0" m="0">{mission.hints.map((hint, index) => <Flex as="li" key={index} gap="2.5" align="start">
               <Flex flexShrink={0} w="6" h="6" rounded="full" bg="saffron.subtle" color="saffron.fg" fontSize="xs" fontWeight="bold" align="center" justify="center" aria-hidden="true">{index + 1}</Flex>
-              <Text><VisuallyHidden>Indice {index + 1} : </VisuallyHidden>{hint}</Text></Flex>)}</Stack>}
-            {mission.hints.length > 0 && <Text fontSize="xs" color="app.muted">{mission.hints.length === 1 ? "Indice déjà consulté." : `${mission.hints.length} indices déjà consultés.`} Ils restent affichés.</Text>}
+              <Text><VisuallyHidden>{t("Indice")}{" "}{index + 1} : </VisuallyHidden>{hint}</Text></Flex>)}</Stack>}
+            {mission.hints.length > 0 && <Text fontSize="xs" color="app.muted">{mission.hints.length === 1 ? t("Indice déjà consulté.") : t("{{length}} indices déjà consultés.", { length: mission.hints.length })} {t("Ils restent affichés.")}</Text>}
             {mission.hint_count > mission.hints.length && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void revealHint()} loading={hintBusy} disabled={mission.paused}>
-              {mission.hints.length === 0 ? "Afficher un indice" : "Indice suivant"} ({mission.hints.length + 1}/{mission.hint_count})
+              {mission.hints.length === 0 ? t("Afficher un indice") : t("Indice suivant")} ({mission.hints.length + 1}/{mission.hint_count})
             </Button>}
-            {mission.hint_count > 0 && mission.hint_count === mission.hints.length && <Text fontSize="xs" color="app.muted">Tous les indices sont affichés.</Text>}
+            {mission.hint_count > 0 && mission.hint_count === mission.hints.length && <Text fontSize="xs" color="app.muted">{t("Tous les indices sont affichés.")}</Text>}
           </Stack>
         </Panel>
         <HelpRequest key={mission.mission_version_id} missionId={mission.mission_version_id} initial={mission.help_request} />
         {mission.attempts_count > 0 && <Panel>
           <Stack gap="2">
             <Button size="sm" variant="ghost" alignSelf="start" px="0" aria-expanded={Boolean(history)} onClick={() => void toggleHistory()}>
-              {history ? "Masquer l’historique" : `Historique de vos essais (${mission.attempts_count})`}
+              {history ? t("Masquer l’historique") : t("Historique de vos essais ({{attempts_count}})", { attempts_count: mission.attempts_count })}
             </Button>
             {history && <Stack as="ol" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{history.map((item, index) => <Flex as="li" key={item.id} justify="space-between" gap="2">
-              <Text color="app.muted">Essai {history.length - index} · {new Date(item.created_at).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" })}</Text>
-              <Text fontWeight="semibold" color={item.correct ? "green.fg" : "app.ink"}>{item.correct ? "Réussi" : "Pas encore"} · {formatPoints(item.points)} pts</Text>
+              <Text color="app.muted">{t("Essai")}{" "}{history.length - index} · {new Date(item.created_at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })}</Text>
+              <Text fontWeight="semibold" color={item.correct ? "green.fg" : "app.ink"}>{item.correct ? t("Réussi") : t("Pas encore")} · {formatPoints(item.points)} {t("pts")}</Text>
             </Flex>)}</Stack>}
           </Stack>
         </Panel>}
-        {definition.resources.length > 0 && <Panel><Stack gap="2"><Text fontWeight="semibold">Ressources</Text>
+        {definition.resources.length > 0 && <Panel><Stack gap="2"><Text fontWeight="semibold">{t("Ressources")}</Text>
           {definition.resources.map((url) => <Link key={url} href={url} target="_blank" rel="noreferrer" color="brand.fg" textDecoration="underline" wordBreak="break-all">{url}</Link>)}
         </Stack></Panel>}
         <Stack gap="1.5" px="1">
-          {!mission.ai_enabled && <Text fontSize="xs" color="app.muted">Assistant IA désactivé : les indices restent disponibles.</Text>}
-          <Flex gap="1.5" align="center" fontSize="sm" color="app.muted"><Icon name="clock" size={14} />Environ {definition.estimated_duration_minutes} min, sans chronomètre.</Flex>
+          {!mission.ai_enabled && <Text fontSize="xs" color="app.muted">{t("Assistant IA désactivé : les indices restent disponibles.")}</Text>}
+          <Flex gap="1.5" align="center" fontSize="sm" color="app.muted"><Icon name="clock" size={14} />{t("Environ")}{" "}{definition.estimated_duration_minutes} {t("min, sans chronomètre.")}</Flex>
         </Stack>
         </Grid>}
       </Box>
     </Stack>}
 
-    <Flex as="nav" aria-label="Navigation entre missions" justify="space-between" wrap="wrap" gap="3" pt="2" borderTopWidth="1px" borderColor="app.border">
-      <Button variant="ghost" disabled={!mission.previous_id} onClick={() => mission.previous_id && navigate(`/mission/${mission.previous_id}`)}><Icon name="arrow-left" />Mission précédente</Button>
-      <Button variant="ghost" disabled={!mission.next_id} onClick={() => mission.next_id && navigate(`/mission/${mission.next_id}`)}>Mission suivante<Icon name="arrow-right" /></Button>
+    <Flex as="nav" aria-label={t("Navigation entre missions")} justify="space-between" wrap="wrap" gap="3" pt="2" borderTopWidth="1px" borderColor="app.border">
+      <Button variant="ghost" disabled={!mission.previous_id} onClick={() => mission.previous_id && navigate(`/mission/${mission.previous_id}`)}><Icon name="arrow-left" />{t("Mission précédente")}</Button>
+      <Button variant="ghost" disabled={!mission.next_id} onClick={() => mission.next_id && navigate(`/mission/${mission.next_id}`)}>{t("Mission suivante")}<Icon name="arrow-right" /></Button>
     </Flex>
   </Stack>
 }
 
 function BackLink({ navigate }: { navigate: (path: string) => void }) {
-  return <Button variant="ghost" size="sm" alignSelf="start" px="2" onClick={() => navigate("/")}><Icon name="arrow-left" size={16} />Tableau de bord</Button>
+  return <Button variant="ghost" size="sm" alignSelf="start" px="2" onClick={() => navigate("/")}><Icon name="arrow-left" size={16} />{t("Tableau de bord")}</Button>
 }
 
 /** ADR-0027: countdown after a wrong answer, with the hint button put forward. */
 function PauseNotice({ seconds, canHint, hintBusy, onHint }: { seconds: number; canHint: boolean; hintBusy: boolean; onHint: () => void }) {
   return <Flex role="status" gap="3" align="center" wrap="wrap" p="3" rounded="lg" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.solid">
     <Box color="saffron.fg"><Icon name="clock" /></Box>
-    <Text flex="1" minW="48"><Text as="span" fontWeight="semibold">Pause de {seconds} s : relisez la situation.</Text> Un indice peut vous aider avant le prochain essai.</Text>
-    {canHint && <Button size="sm" colorPalette="brand" onClick={onHint} loading={hintBusy}><Icon name="bulb" size={16} />Voir un indice</Button>}
+    <Text flex="1" minW="48"><Text as="span" fontWeight="semibold">{t("Pause de")}{" "}{seconds} {t("s : relisez la situation.")}</Text> {t("Un indice peut vous aider avant le prochain essai.")}</Text>
+    {canHint && <Button size="sm" colorPalette="brand" onClick={onHint} loading={hintBusy}><Icon name="bulb" size={16} />{t("Voir un indice")}</Button>}
   </Flex>
 }
 
@@ -391,9 +392,9 @@ function PauseNotice({ seconds, canHint, hintBusy, onHint }: { seconds: number; 
 function ReadingBar({ left, total }: { left: number; total: number }) {
   const done = Math.min(100, Math.round(((total - left) / total) * 100))
   return <Stack gap="1">
-    <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="progressbar" aria-label="Temps de lecture" aria-valuemin={0} aria-valuemax={100} aria-valuenow={done}>
+    <Box h="1.5" bg="app.sunken" rounded="full" overflow="hidden" role="progressbar" aria-label={t("Temps de lecture")} aria-valuemin={0} aria-valuemax={100} aria-valuenow={done}>
       <Box h="full" w={`${done}%`} bg="brand.solid" transition="width 250ms linear" />
     </Box>
-    <Text fontSize="xs" color="app.muted">Prenez le temps de lire : « J’ai compris » s’active dans {left} s.</Text>
+    <Text fontSize="xs" color="app.muted">{t("Prenez le temps de lire : « J’ai compris » s’active dans")}{" "}{left} s.</Text>
   </Stack>
 }

@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import type { Account } from "./PreferencesProvider"
 
 function parts(username: string): string[] {
@@ -16,5 +17,5 @@ export function initials(username: string): string {
 }
 
 export function roleLabel(role: Account["role"]): string {
-  return role === "teacher" ? "Enseignant" : role === "observer" ? "Observateur (lecture seule)" : "Étudiant"
+  return role === "teacher" ? t("Enseignant") : role === "observer" ? t("Observateur (lecture seule)") : t("Étudiant")
 }

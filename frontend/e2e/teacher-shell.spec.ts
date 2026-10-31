@@ -81,7 +81,7 @@ test("addresses, back button, direct links and Ctrl+K", async ({ page }) => {
 
 for (const theme of ["light", "dark"] as const) {
   test(`AA and captures in the ${theme} theme`, async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const page = await context.newPage()
     const name = theme === "light" ? "clair" : "sombre"

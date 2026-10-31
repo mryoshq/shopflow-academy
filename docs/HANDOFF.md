@@ -5,6 +5,16 @@
 
 
 
+## Interface en anglais — PR 3/3 (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` (PR « Radio simplifiée » et « Plus de plaisir » encore ouvertes : leurs textes seront traduits en fusionnant `main` dans cette branche après leur fusion ; le test des clés le rappellera). Fichiers clés : `frontend/src/i18n/` (`index.ts`, `en.json`, `fr.json`, `server.ts`, `keys.test.ts`), `main.tsx`, `public/theme-init.js`, `public/offline.js`, `playwright.config.ts`, ADR-0040. Captures : `docs/captures/anglais/`.
+
+### Anglais — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`), puis recharger la page.
+2. Un navigateur réglé en anglais affiche l'interface en anglais ; « Français » se choisit dans le menu de compte ou Paramètres > Général.
+
+Prochaine action unique : revue et fusion des PR « Radio simplifiée » et « Plus de plaisir », puis fusion de `main` dans la PR « Interface en anglais » pour traduire leurs textes.
+
 ## Tableaux Markdown dans les leçons (30/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée). Fichiers clés : `frontend/src/student/RichText.tsx` (`parseTable`, `RichTable`), `backend/app/course_md.py` (`table_problems`, `table_warnings` ; ligne exacte pour un `body: |`), `docs/COURSE-AUTHORING.md` § 5 ter, ADR-0022. `ProjectText.tsx` (espace projet) garde son rendu tolérant pour les textes des binômes.
@@ -13,7 +23,7 @@ Branche `claude/lucid-brahmagupta-htwgun-tableaux` depuis `main` (#65 fusionnée
 1. Pas de migration. Redéployer à une pause selon le runbook (`docker compose build`, puis `docker compose up -d --wait`).
 2. Recompiler le module CampusEquip (`python3 scripts/course_md.py compile "<dossier du cours>/cours"`) : chaque tableau mal formé est signalé avec sa ligne. Les versions déjà publiées s'affichent avec les tableaux dès le redéploiement (rendu côté navigateur), sans republier.
 
-Prochaine action unique : revue et fusion de la PR « Tableaux Markdown dans les leçons ».
+PR #66 fusionnée le 30/10/2026.
 
 ## PR 1 « Accueil et suivi » (30/10/2026)
 

@@ -79,7 +79,7 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   await expect(page.getByRole("button", { name: "Déjà attribuée" })).toBeDisabled()
   await openFirstBlock(page, cohortTitle)
 
-  const learner = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const learner = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learnerPage = await learner.newPage()
   await login(learnerPage, student)
   const learnerCourse = learnerPage.getByRole("region", { name: courseTitle })

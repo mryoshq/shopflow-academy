@@ -1,3 +1,4 @@
+import { msg, t, tn } from "../i18n"
 import { isUngraded } from "../studioTypes"
 import { useEffect, useId, useMemo, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Grid, Input, NativeSelect, Stack, Text } from "@chakra-ui/react"
@@ -10,8 +11,8 @@ export type OutlineMission = { id: number; title: string; definition: AnyDefinit
 export type OutlineFilter = "all" | "lesson" | "graded" | "bonus" | "run" | "todo"
 
 const FILTERS: { value: OutlineFilter; label: string }[] = [
-  { value: "all", label: "Tous les éléments" }, { value: "lesson", label: "Leçons" }, { value: "graded", label: "Missions notées" },
-  { value: "bonus", label: "Bonus" }, { value: "run", label: "Avec exécution" }, { value: "todo", label: "À compléter ou en erreur" },
+  { value: "all", label: msg("Tous les éléments") }, { value: "lesson", label: msg("Leçons") }, { value: "graded", label: msg("Missions notées") },
+  { value: "bonus", label: "Bonus" }, { value: "run", label: msg("Avec exécution") }, { value: "todo", label: msg("À compléter ou en erreur") },
 ]
 
 export type ItemFacts = {
@@ -22,7 +23,7 @@ export type ItemFacts = {
 /** Facts shown on one line; points come from the private definition when the caller has it. */
 export function itemFacts(mission: OutlineMission, objectives?: Objective[], privateDefinition?: MissionDefinition | null): ItemFacts {
   const definition = mission.definition
-  if (!definition) return { kind: null, lesson: false, bonus: false, run: false, points: 0, duration: 0, state: "todo", stateLabel: "À compléter" }
+  if (!definition) return { kind: null, lesson: false, bonus: false, run: false, points: 0, duration: 0, state: "todo", stateLabel: t("À compléter") }
   const source = (privateDefinition ?? definition) as Partial<MissionDefinition>
   const lesson = isUngraded(definition.kind)
   const known = objectives ? new Set(objectives.map((item) => item.id)) : null
@@ -98,9 +99,9 @@ export function CourseOutline<M extends OutlineMission>(props: Props<M>) {
   let number = 0
 
   return <Stack gap="4" aria-label={props.label}>
-    <Grid templateColumns={{ base: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", xl: "repeat(5, 1fr)" }} gap="2" as="dl" m="0" aria-label="Compteurs du cours">
-      {([["Blocs", totals.blocks], ["Missions", totals.missions], ["Leçons", totals.lessons], ["Bonus", totals.bonus],
-        ["Points", `${totals.points}${totals.bonusPoints ? ` + ${totals.bonusPoints} bonus` : ""}`]] as [string, number | string][]).map(([name, value]) =>
+    <Grid templateColumns={{ base: "repeat(2, 1fr)", sm: "repeat(3, 1fr)", xl: "repeat(5, 1fr)" }} gap="2" as="dl" m="0" aria-label={t("Compteurs du cours")}>
+      {([[t("Blocs"), totals.blocks], [t("Missions"), totals.missions], [t("Leçons"), totals.lessons], ["Bonus", totals.bonus],
+        [t("Points"), `${totals.points}${totals.bonusPoints ? ` + ${totals.bonusPoints} bonus` : ""}`]] as [string, number | string][]).map(([name, value]) =>
         <Box key={name} p="2.5" rounded="md" bg="app.sunken" borderWidth="1px" borderColor="app.border">
           <Text as="dt" fontSize="xs" color="app.muted">{name}</Text>
           <Text as="dd" m="0" fontWeight="bold" fontSize="lg" css={{ fontVariantNumeric: "tabular-nums" }}>{value}</Text>
@@ -109,24 +110,24 @@ export function CourseOutline<M extends OutlineMission>(props: Props<M>) {
     <Flex gap="2" wrap="wrap" align="center">
       <Box position="relative" flex="1" minW="44">
         <Box position="absolute" left="2.5" top="50%" transform="translateY(-50%)" color="app.muted" pointerEvents="none"><Icon name="search" size={16} /></Box>
-        <Input pl="8" size="sm" type="search" aria-label="Rechercher un élément" placeholder="Rechercher un titre" value={query} onChange={(event) => setQuery(event.target.value)} />
+        <Input pl="8" size="sm" type="search" aria-label={t("Rechercher un élément")} placeholder={t("Rechercher un titre")} value={query} onChange={(event) => setQuery(event.target.value)} />
       </Box>
       <NativeSelect.Root size="sm" maxW="56">
-        <NativeSelect.Field aria-label="Filtrer par type" value={filter} onChange={(event) => setFilter(event.target.value as OutlineFilter)}>
-          {FILTERS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        <NativeSelect.Field aria-label={t("Filtrer par type")} value={filter} onChange={(event) => setFilter(event.target.value as OutlineFilter)}>
+          {FILTERS.map((item) => <option key={item.value} value={item.value}>{t(item.label)}</option>)}
         </NativeSelect.Field><NativeSelect.Indicator />
       </NativeSelect.Root>
     </Flex>
     {objective && <Flex gap="2" align="center" wrap="wrap" p="2" rounded="md" bg="brand.subtle" color="brand.fg" fontSize="sm" role="status">
-      <Text>Éléments qui couvrent <Badge variant="outline" colorPalette="brand">{objective.code}</Badge> {objective.statement}</Text>
-      <Button size="xs" variant="ghost" colorPalette="brand" onClick={props.onClearObjectiveFilter}>Retirer le filtre</Button>
+      <Text>{t("Éléments qui couvrent")}{" "}<Badge variant="outline" colorPalette="brand">{objective.code}</Badge> {objective.statement}</Text>
+      <Button size="xs" variant="ghost" colorPalette="brand" onClick={props.onClearObjectiveFilter}>{t("Retirer le filtre")}</Button>
     </Flex>}
-    {narrowing && <Text fontSize="sm" color="app.muted" role="status">{shown} élément{shown > 1 ? "s" : ""} affiché{shown > 1 ? "s" : ""}</Text>}
+    {narrowing && <Text fontSize="sm" color="app.muted" role="status">{tn("{{count}} élément affiché", shown)}</Text>}
 
     <Stack gap="5">
       {modules.map((module, moduleIndex) => {
         const moduleBlocks = module.chapters
-        return <Box as="section" key={module.id} aria-label={`Module : ${module.title}`}>
+        return <Box as="section" key={module.id} aria-label={t("Module : {{title}}", { title: module.title })}>
           <Flex align="center" gap="2" wrap="wrap" mb="2">
             <Box color="brand.fg"><Icon name="layers" size={16} /></Box>
             <Text fontSize="sm" fontWeight="bold" color="brand.fg" textTransform="uppercase" letterSpacing="0.06em" flex="1">{module.title}</Text>
@@ -152,14 +153,14 @@ export function CourseOutline<M extends OutlineMission>(props: Props<M>) {
                     <Flex as="span" flex="1" gap={{ base: "0.5", md: "3" }} direction={{ base: "column", md: "row" }} align={{ base: "start", md: "center" }}>
                       <Text as="span" fontWeight="semibold" flex="1">{chapter.title}</Text>
                       <Text as="span" fontSize="xs" color="app.muted" fontWeight="normal" css={{ fontVariantNumeric: "tabular-nums" }}>
-                        {chapter.missions.length} élément{chapter.missions.length > 1 ? "s" : ""} · {duration} min · {points} pts{bonusPoints ? ` + ${bonusPoints} bonus` : ""}
+                        {tn("{{count}} élément", chapter.missions.length)} · {duration} {t("min ·")}{" "}{points} {t("pts")}{bonusPoints ? ` + ${bonusPoints} bonus` : ""}
                       </Text>
                     </Flex>
                   </Button>
                   {props.blockActions && <Box pl={{ base: "3", md: "0" }} pb={{ base: "2", md: "0" }}>{props.blockActions(chapter, chapterIndex, module)}</Box>}
                 </Flex>
                 <Box id={panelId} hidden={!isOpen}>
-                  {chapter.missions.length === 0 && <Text px="3" py="2" fontSize="sm" color="app.muted">Bloc vide.</Text>}
+                  {chapter.missions.length === 0 && <Text px="3" py="2" fontSize="sm" color="app.muted">{t("Bloc vide.")}</Text>}
                   <Box as="ul" listStyleType="none" m="0" p="0">
                     {chapter.missions.map((mission, index) => {
                       if (!visible(mission)) return null
@@ -171,11 +172,11 @@ export function CourseOutline<M extends OutlineMission>(props: Props<M>) {
                         <Button variant="ghost" size="sm" colorPalette="brand" h="auto" minH="8" py="1" px="1.5" whiteSpace="normal" textAlign="start" flex="1" minW="48" justifyContent="start"
                           onClick={() => props.onSelect?.(mission)} fontWeight={selected ? "semibold" : "medium"}>{mission.title}</Button>
                         <Flex gap="1.5" align="center" wrap="wrap" fontSize="xs">
-                          {meta && !item.lesson && <Flex gap="1" align="center" color="app.muted" minW="28"><Icon name={meta.icon} size={14} />{meta.label}</Flex>}
-                          {item.lesson && <Badge size="sm" colorPalette="brand" variant="subtle"><Icon name="book" size={12} />Leçon</Badge>}
-                          {item.bonus && <Badge size="sm" colorPalette="saffron" variant="outline">Bonus</Badge>}
-                          {item.run && <Badge size="sm" colorPalette="gray" variant="outline"><Icon name="play" size={10} />Exécution</Badge>}
-                          <Text color="app.muted" minW="16" textAlign="right" css={{ fontVariantNumeric: "tabular-nums" }}>{item.lesson ? "—" : `${item.points} pts`} · {item.duration} min</Text>
+                          {meta && !item.lesson && <Flex gap="1" align="center" color="app.muted" minW="28"><Icon name={meta.icon} size={14} />{t(meta.label)}</Flex>}
+                          {item.lesson && <Badge size="sm" colorPalette="brand" variant="subtle"><Icon name="book" size={12} />{t("Leçon")}</Badge>}
+                          {item.bonus && <Badge size="sm" colorPalette="saffron" variant="outline">{t("Bonus")}</Badge>}
+                          {item.run && <Badge size="sm" colorPalette="gray" variant="outline"><Icon name="play" size={10} />{t("Exécution")}</Badge>}
+                          <Text color="app.muted" minW="16" textAlign="right" css={{ fontVariantNumeric: "tabular-nums" }}>{item.lesson ? "—" : `${item.points} pts`} · {item.duration} {t("min")}</Text>
                           <Flex gap="1" align="center" minW="20" color={item.state === "valid" ? "green.fg" : item.state === "error" ? "red.fg" : "saffron.fg"}>
                             <Icon name={item.state === "valid" ? "check" : "alert"} size={14} />{item.stateLabel}
                           </Flex>

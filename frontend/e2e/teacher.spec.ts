@@ -35,7 +35,7 @@ test("the teacher follows the class live, pauses, unlocks and exports", async ({
     .filter((item) => ["serious", "critical"].includes(item.impact ?? "")).map((item) => item.id)).toEqual([])
 
   // Live update: a student answers, the teacher table shows it within 10 seconds without reloading.
-  const learnerContext = await browser.newContext({ viewport: { width: 1366, height: 768 } })
+  const learnerContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learner = await learnerContext.newPage()
   await login(learner, "demo.etudiant06")
   const dashboard = await (await learner.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string }[] }[] }

@@ -1,3 +1,4 @@
+import { locale, t } from "../i18n"
 import { useCallback, useEffect, useState, type ReactNode } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -65,24 +66,24 @@ export function Today({ username, assignmentId }: { username: string; assignment
     setNotice("")
     try {
       const result = await api<{ title?: string }>(`/teacher/classes/${assignmentId}/blocks/open-next`, "POST")
-      setNotice(`Bloc « ${result.title} » ouvert pour toute la classe.`)
+      setNotice(t("Bloc « {{title}} » ouvert pour toute la classe.", { title: result.title }))
       await refresh()
     } catch (reason) {
-      setNotice(reason instanceof ApiError && reason.status === 409 ? "Tous les blocs sont déjà ouverts." : "Ouverture impossible. Réessayez.")
+      setNotice(reason instanceof ApiError && reason.status === 409 ? t("Tous les blocs sont déjà ouverts.") : t("Ouverture impossible. Réessayez."))
     } finally {
       setBusy(false)
     }
   }
 
-  const date = new Date(now).toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })
+  const date = new Date(now).toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long" })
   const header = <Stack gap="1">
-    <Heading as="h1" size={{ base: "2xl", md: "3xl" }} letterSpacing="-0.01em">Bonjour, {username}</Heading>
-    <Text color="app.muted" fontSize="lg">{date.charAt(0).toUpperCase() + date.slice(1)} · l’essentiel de votre journée.</Text>
+    <Heading as="h1" size={{ base: "2xl", md: "3xl" }} letterSpacing="-0.01em">{t("Bonjour,")}{" "}{username}</Heading>
+    <Text color="app.muted" fontSize="lg">{date.charAt(0).toUpperCase() + date.slice(1)} {t("· l’essentiel de votre journée.")}</Text>
   </Stack>
   if (!assignmentId) return <Stack gap="6">{header}<Panel><Stack gap="2">
-    <Text fontWeight="semibold">Votre cours n’est pas encore publié</Text>
-    <Text color="app.muted">Dans « Mon cours », onglet Publication, cliquez sur « Publier pour la classe ». Les blocs arrivent fermés : vous les ouvrirez ici, un par un.</Text>
-    <Link href="#/cours/publication" color="brand.fg" fontWeight="semibold">Aller à la publication →</Link>
+    <Text fontWeight="semibold">{t("Votre cours n’est pas encore publié")}</Text>
+    <Text color="app.muted">{t("Dans « Mon cours », onglet Publication, cliquez sur « Publier pour la classe ». Les blocs arrivent fermés : vous les ouvrirez ici, un par un.")}</Text>
+    <Link href="#/cours/publication" color="brand.fg" fontWeight="semibold">{t("Aller à la publication →")}</Link>
   </Stack></Panel></Stack>
 
   const open = timeline?.blocks.filter((block) => block.open && block.opened_at) ?? []
@@ -97,28 +98,28 @@ export function Today({ username, assignmentId }: { username: string; assignment
     {header}
     {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
     <Grid gap="4" templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))", xl: "repeat(3, minmax(0, 1fr))" }}>
-      <Card title="Bloc ouvert" href="#/classe/frise" linkLabel="Voir la frise"
-        value={current ? current.title : timeline ? "Aucun" : "…"}
-        detail={current ? <>ouvert depuis {elapsed} min{timeline && elapsed >= timeline.block_minutes ? <Badge ml="2" colorPalette="saffron" variant="subtle">repère de {timeline.block_minutes} min dépassé</Badge> : null}</> : "Aucun bloc ouvert pour le moment."}>
+      <Card title={t("Bloc ouvert")} href="#/classe/frise" linkLabel={t("Voir la frise")}
+        value={current ? current.title : timeline ? t("Aucun") : "…"}
+        detail={current ? <>{t("ouvert depuis")}{" "}{elapsed} {t("min")}{timeline && elapsed >= timeline.block_minutes ? <Badge ml="2" colorPalette="saffron" variant="subtle">{t("repère de")}{" "}{timeline.block_minutes} {t("min dépassé")}</Badge> : null}</> : t("Aucun bloc ouvert pour le moment.")}>
         <Button colorPalette="brand" alignSelf="start" h="auto" minH="11" py="2" whiteSpace="normal" textAlign="start" loading={busy} disabled={!next} onClick={() => void openNext()}>
-          {next ? `Ouvrir le bloc suivant : ${next.title}` : "Tous les blocs sont ouverts"}</Button>
+          {next ? t("Ouvrir le bloc suivant : {{title}}", { title: next.title }) : t("Tous les blocs sont ouverts")}</Button>
       </Card>
-      <Card title="Étudiants en ligne" href="#/classe/etudiants" linkLabel="Voir les étudiants"
+      <Card title={t("Étudiants en ligne")} href="#/classe/etudiants" linkLabel={t("Voir les étudiants")}
         value={live ? <>{live.online_count} <Text as="span" fontSize="lg" color="app.muted">/ {live.student_count}</Text></> : "…"}
-        detail="Présence mise à jour toutes les 30 s environ." />
-      <Card title="Demandes d’aide en attente" href="#/classe/aide" linkLabel="Traiter les demandes" tone={help.length ? "alert" : undefined}
+        detail={t("Présence mise à jour toutes les 30 s environ.")} />
+      <Card title={t("Demandes d’aide en attente")} href="#/classe/aide" linkLabel={t("Traiter les demandes")} tone={help.length ? "alert" : undefined}
         value={timeline ? help.length : "…"}
-        detail={help.length ? help.slice(0, 3).map((item) => `${item.student} · ${item.mission}`).join(" ; ") : "Aucune demande pour le moment."} />
-      <Card title="Étudiants bloqués" href="#/classe/difficultes" linkLabel="Voir les difficultés" tone={stuck.length ? "alert" : undefined}
+        detail={help.length ? help.slice(0, 3).map((item) => `${item.student} · ${item.mission}`).join(" ; ") : t("Aucune demande pour le moment.")} />
+      <Card title={t("Étudiants bloqués")} href="#/classe/difficultes" linkLabel={t("Voir les difficultés")} tone={stuck.length ? "alert" : undefined}
         value={timeline ? stuck.length : "…"}
-        detail={stuck.length ? stuck.slice(0, 4).join(", ") + (stuck.length > 4 ? "…" : "") : "Personne n’est bloqué."} />
-      <Card title="Progression moyenne" href="#/resultats" linkLabel="Voir les résultats"
+        detail={stuck.length ? stuck.slice(0, 4).join(", ") + (stuck.length > 4 ? "…" : "") : t("Personne n’est bloqué.")} />
+      <Card title={t("Progression moyenne")} href="#/resultats" linkLabel={t("Voir les résultats")}
         value={progress === null ? (overview ? "—" : "…") : `${progress} %`}
-        detail="Missions notées réussies, moyenne de la classe." >
-        {progress !== null && <Box h="2" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={`Progression moyenne : ${progress} %`}>
+        detail={t("Missions notées réussies, moyenne de la classe.")} >
+        {progress !== null && <Box h="2" bg="app.sunken" rounded="full" overflow="hidden" role="img" aria-label={t("Progression moyenne : {{progress}} %", { progress })}>
           <Box h="full" bg="brand.solid" w={`${progress}%`} /></Box>}
       </Card>
-      <Card title="Blocs ouverts" href="#/classe/frise" linkLabel="Gérer les blocs"
+      <Card title={t("Blocs ouverts")} href="#/classe/frise" linkLabel={t("Gérer les blocs")}
         value={timeline ? <>{open.length} <Text as="span" fontSize="lg" color="app.muted">/ {timeline.blocks.length}</Text></> : "…"}
         detail={<Flex gap="1.5" wrap="wrap" mt="1">{timeline?.blocks.slice(0, 12).map((block) => <Box key={block.chapter_id} w="3" h="3" rounded="sm" title={block.title}
           bg={block.open ? "brand.solid" : "app.border"} aria-hidden="true" />)}</Flex>} />

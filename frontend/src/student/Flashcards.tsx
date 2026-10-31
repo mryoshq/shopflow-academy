@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { useMemo, useState, type KeyboardEvent } from "react"
 import { Box, Button, Flex, Stack, Text, VisuallyHidden, chakra } from "@chakra-ui/react"
 import type { FlashcardsDisplay } from "../studioTypes"
@@ -68,15 +69,15 @@ export function Flashcards({ data }: { data: FlashcardsDisplay }) {
     if (event.key === "ArrowLeft") { event.preventDefault(); go(-1) }
   }
 
-  return <Stack as="section" gap="3" aria-label={data.title ? `Cartes : ${data.title}` : "Cartes à retourner"} onKeyDown={onKey} maxW="36rem" w="full">
+  return <Stack as="section" gap="3" aria-label={data.title ? `Cartes : ${data.title}` : t("Cartes à retourner")} onKeyDown={onKey} maxW="36rem" w="full">
     <Flex justify="space-between" align="center" gap="2" wrap="wrap">
-      <Text fontWeight="semibold">{data.title || "Cartes à retourner"}</Text>
+      <Text fontWeight="semibold">{data.title || t("Cartes à retourner")}</Text>
       <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }} aria-live="polite">{position + 1} / {order.length}</Text>
     </Flex>
     {/* The card: a button, so Space and Enter flip it like a click. */}
     <Box css={{ perspective: "1200px" }}>
       <chakra.button type="button" onClick={() => setFlipped((value) => !value)} aria-pressed={flipped}
-        aria-label={flipped ? `Verso de la carte ${position + 1}. Retourner la carte` : `Carte ${position + 1} : ${spoken(card.front)}. Retourner pour voir le verso`}
+        aria-label={flipped ? t("Verso de la carte {{p0}}. Retourner la carte", { p0: position + 1 }) : t("Carte {{p0}} : {{p1}}. Retourner pour voir le verso", { p0: position + 1, p1: spoken(card.front) })}
         position="relative" display="block" w="full" minH={{ base: "12rem", md: "14rem" }} textAlign="center" cursor="pointer" rounded="card"
         css={{ transformStyle: "preserve-3d", transition: "transform 0.5s ease", transform: flipped ? "rotateY(180deg)" : "none" }}>
         <Face side="front" hidden={flipped}><RichText text={card.front} fontSize={{ base: "lg", md: "xl" }} fontWeight="semibold" /></Face>
@@ -86,23 +87,23 @@ export function Flashcards({ data }: { data: FlashcardsDisplay }) {
     <VisuallyHidden aria-live="polite">{flipped ? `Verso : ${spoken(card.back)}` : ""}</VisuallyHidden>
     <Flex gap="2" wrap="wrap" justify="space-between">
       <Flex gap="2">
-        <Button size="sm" variant="outline" onClick={() => go(-1)} aria-label="Carte précédente">← Précédente</Button>
-        <Button size="sm" variant="outline" onClick={() => go(1)} aria-label="Carte suivante">Suivante →</Button>
+        <Button size="sm" variant="outline" onClick={() => go(-1)} aria-label={t("Carte précédente")}>{t("← Précédente")}</Button>
+        <Button size="sm" variant="outline" onClick={() => go(1)} aria-label={t("Carte suivante")}>{t("Suivante →")}</Button>
       </Flex>
-      <Button size="sm" variant="ghost" colorPalette="brand" onClick={() => start(shuffled(order.length).map((index) => order[index]))}>Mélanger</Button>
+      <Button size="sm" variant="ghost" colorPalette="brand" onClick={() => start(shuffled(order.length).map((index) => order[index]))}>{t("Mélanger")}</Button>
     </Flex>
-    {flipped && <Flex gap="2" wrap="wrap" aria-label="Votre auto-évaluation (facultative, sans effet sur la note)" role="group">
-      <Button size="sm" colorPalette="green" variant="subtle" onClick={() => judge(true)}>Je savais</Button>
-      <Button size="sm" colorPalette="saffron" variant="subtle" onClick={() => judge(false)}>À revoir</Button>
+    {flipped && <Flex gap="2" wrap="wrap" aria-label={t("Votre auto-évaluation (facultative, sans effet sur la note)")} role="group">
+      <Button size="sm" colorPalette="green" variant="subtle" onClick={() => judge(true)}>{t("Je savais")}</Button>
+      <Button size="sm" colorPalette="saffron" variant="subtle" onClick={() => judge(false)}>{t("À revoir")}</Button>
     </Flex>}
     {(finished || toReview.length > 0) && <Flex gap="2" align="center" wrap="wrap" p="3" rounded="lg" bg="app.sunken" fontSize="sm" role="status">
       <Text flex="1" minW="40">{toReview.length
-        ? `${toReview.length} carte${toReview.length > 1 ? "s" : ""} à revoir (notée${toReview.length > 1 ? "s" : ""} dans ce navigateur, sans effet sur la note).`
-        : "Toutes les cartes sont sues. Bravo !"}</Text>
-      {toReview.length > 0 && <Button size="xs" colorPalette="saffron" onClick={() => start([...toReview])}>Reprendre les cartes à revoir</Button>}
-      {order.length !== data.cards.length && <Button size="xs" variant="ghost" onClick={() => start(data.cards.map((_, index) => index))}>Toutes les cartes</Button>}
+        ? tn("{{count}} carte à revoir (notée dans ce navigateur, sans effet sur la note).", toReview.length)
+        : t("Toutes les cartes sont sues. Bravo !")}</Text>
+      {toReview.length > 0 && <Button size="xs" colorPalette="saffron" onClick={() => start([...toReview])}>{t("Reprendre les cartes à revoir")}</Button>}
+      {order.length !== data.cards.length && <Button size="xs" variant="ghost" onClick={() => start(data.cards.map((_, index) => index))}>{t("Toutes les cartes")}</Button>}
     </Flex>}
-    <Text fontSize="xs" color="app.muted">Cliquez sur la carte, ou appuyez sur Espace ou Entrée, pour la retourner ; flèches gauche et droite pour changer de carte.</Text>
+    <Text fontSize="xs" color="app.muted">{t("Cliquez sur la carte, ou appuyez sur Espace ou Entrée, pour la retourner ; flèches gauche et droite pour changer de carte.")}</Text>
   </Stack>
 }
 
@@ -111,7 +112,7 @@ function Face({ side, hidden, children }: { side: "front" | "back"; hidden: bool
     borderColor={side === "front" ? "app.border" : "brand.solid"} bg={side === "front" ? "app.surface" : "brand.subtle"} boxShadow="card"
     css={{ backfaceVisibility: "hidden", WebkitBackfaceVisibility: "hidden", transform: side === "back" ? "rotateY(180deg)" : "none" }}>
     <Stack gap="1" align="center">
-      <Text fontSize="xs" fontWeight="bold" color={side === "front" ? "app.muted" : "brand.fg"} textTransform="uppercase" letterSpacing="0.08em">{side === "front" ? "Recto" : "Verso"}</Text>
+      <Text fontSize="xs" fontWeight="bold" color={side === "front" ? "app.muted" : "brand.fg"} textTransform="uppercase" letterSpacing="0.08em">{side === "front" ? t("Recto") : t("Verso")}</Text>
       {children}
     </Stack>
   </Flex>

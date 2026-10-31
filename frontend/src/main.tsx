@@ -4,12 +4,20 @@ import { ChakraProvider } from "@chakra-ui/react"
 import { App } from "./App"
 import { PwaBanner } from "./pwa"
 import { system } from "./theme"
+import { applyLanguage, useLanguage } from "./i18n"
 
+/** ADR-0040: a language change renders the whole interface again in the new language (the hash route is kept). */
+function Root() {
+  const lang = useLanguage()
+  return <ChakraProvider value={system}>
+    <App key={lang} />
+    <PwaBanner key={`pwa-${lang}`} />
+  </ChakraProvider>
+}
+
+applyLanguage()
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ChakraProvider value={system}>
-      <App />
-      <PwaBanner />
-    </ChakraProvider>
+    <Root />
   </React.StrictMode>,
 )

@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import type { ReactNode } from "react"
 import { CloseButton, Drawer, Portal } from "@chakra-ui/react"
 
@@ -19,7 +20,7 @@ export function SidePanel({ open, title, onClose, children, footer }: {
           <Drawer.Body py="5">{children}</Drawer.Body>
           {footer && <Drawer.Footer borderTopWidth="1px" borderColor="app.border">{footer}</Drawer.Footer>}
           <Drawer.CloseTrigger asChild position="absolute" top="3" right="3">
-            <CloseButton size="md" aria-label="Fermer le panneau" />
+            <CloseButton size="md" aria-label={t("Fermer le panneau")} />
           </Drawer.CloseTrigger>
         </Drawer.Content>
       </Drawer.Positioner>

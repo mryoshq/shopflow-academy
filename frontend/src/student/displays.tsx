@@ -1,3 +1,4 @@
+import { t, tn } from "../i18n"
 import { Fragment, useState, type ReactNode } from "react"
 import { Box, Button, Flex, Grid, Stack, Table, Text, VisuallyHidden } from "@chakra-ui/react"
 import type { CodeDisplay, ComparisonDisplay, LineChartDisplay, TableDisplay } from "../studioTypes"
@@ -56,11 +57,11 @@ export function CodeBlock({ code, language, title, label }: { code: string; lang
   const name = language === "sql" ? "SQL" : language === "python" ? "Python" : "Texte"
   return <Box as="figure" m="0" borderWidth="1px" borderColor="code.border" rounded="lg" overflow="hidden" bg="code.bg">
     <Flex as="figcaption" justify="space-between" gap="2" px="3" py="1.5" borderBottomWidth="1px" borderColor="code.border" fontSize="sm">
-      <Text fontWeight="semibold" color="code.fg">{title || label || "Code"}</Text>
+      <Text fontWeight="semibold" color="code.fg">{title || label || t("Code")}</Text>
       <Text color="code.comment">{name}</Text>
     </Flex>
     <Box as="pre" m="0" p="3" overflowX="auto" fontSize="sm" lineHeight="1.55" color="code.fg" tabIndex={0}
-      aria-label={`${title || "Code"} (${name}, ${lines.length} ligne${lines.length > 1 ? "s" : ""})`}
+      aria-label={`${title || t("Code")} (${name}, ${tn("{{count}} ligne", lines.length)})`}
       css={{ fontFamily: MONO, tabSize: 4 }}>
       <code><Highlighted code={code} language={language} /></code>
     </Box>
@@ -112,9 +113,9 @@ export function LineChart({ data }: { data: LineChartDisplay }) {
     })
     return d.trim()
   })
-  const summary = data.series.map((serie) => `${serie.name} : ${serie.values.map((value, index) => `${data.labels[index]} ${value === null ? "donnée absente" : `${value}${unit}`}`).join(", ")}`).join(". ")
+  const summary = data.series.map((serie) => `${serie.name} : ${serie.values.map((value, index) => `${data.labels[index]} ${value === null ? t("donnée absente") : `${value}${unit}`}`).join(", ")}`).join(". ")
   return <Stack gap="3">
-    {asTable ? <DataTable caption={data.title} columns={["Libellé", ...data.series.map((serie) => serie.name + (data.unit ? ` (${data.unit})` : ""))]}
+    {asTable ? <DataTable caption={data.title} columns={[t("Libellé"), ...data.series.map((serie) => serie.name + (data.unit ? ` (${data.unit})` : ""))]}
       rows={data.labels.map((label, index) => [label, ...data.series.map((serie) => serie.values[index])])} />
       : <Box as="figure" m="0" p="4" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
         <Text as="figcaption" fontWeight="semibold" mb="2">{data.title}</Text>
@@ -136,22 +137,22 @@ export function LineChart({ data }: { data: LineChartDisplay }) {
             ? <circle key={`${index}-${point}`} cx={x(point)} cy={y(value)} r="4" fill={cssColor(colors[index])} />
             : <rect key={`${index}-${point}`} x={x(point) - 4} y={y(value) - 4} width="8" height="8" fill={cssColor(colors[index])} />))}
         </svg>
-        {data.series.some((serie) => serie.values.includes(null)) && <Text fontSize="xs" color="app.muted" mt="1">Une interruption de la courbe signale une donnée absente (ce n’est pas zéro).</Text>}
+        {data.series.some((serie) => serie.values.includes(null)) && <Text fontSize="xs" color="app.muted" mt="1">{t("Une interruption de la courbe signale une donnée absente (ce n’est pas zéro).")}</Text>}
         <VisuallyHidden>{summary}</VisuallyHidden>
       </Box>}
     <Button alignSelf="start" size="sm" variant="ghost" colorPalette="brand" aria-expanded={asTable} onClick={() => setAsTable(!asTable)}>
-      {asTable ? "Afficher le graphique" : "Afficher les données en tableau"}
+      {asTable ? t("Afficher le graphique") : t("Afficher les données en tableau")}
     </Button>
   </Stack>
 }
 
 function ComparisonSide({ item }: { item: CodeDisplay | TableDisplay }) {
   if (item.kind === "code") return <CodeBlock code={item.code} language={item.language} title={item.title} />
-  return <DataTable caption={item.title || "Tableau"} columns={item.columns} rows={item.rows} />
+  return <DataTable caption={item.title || t("Tableau")} columns={item.columns} rows={item.rows} />
 }
 
 export function Comparison({ data }: { data: ComparisonDisplay }) {
-  return <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))" }} gap="3" role="group" aria-label="Comparaison côte à côte">
+  return <Grid templateColumns={{ base: "1fr", md: "repeat(2, minmax(0, 1fr))" }} gap="3" role="group" aria-label={t("Comparaison côte à côte")}>
     {data.items.map((item, index) => <ComparisonSide key={index} item={item} />)}
   </Grid>
 }

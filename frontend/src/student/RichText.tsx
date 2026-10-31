@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { Fragment, type ReactNode } from "react"
 import { Box, Heading, Stack, Table, Text } from "@chakra-ui/react"
 
@@ -150,7 +151,7 @@ function RichTable({ table }: { table: Extract<RichBlock, { type: "table" }> }) 
   // a long sentence may still wrap, within a readable width.
   const wrap = (cell: string) => cell.length > SHORT_CELL ? { whiteSpace: "normal", minW: "16ch" } : { whiteSpace: "nowrap" }
   return <Box className="rich-table" style={{ overflowX: "auto", maxWidth: "100%" }} borderWidth="1px" borderColor="app.border" rounded="lg" tabIndex={0}
-    role="region" aria-label={`Tableau : ${table.head.filter(Boolean).slice(0, 3).join(", ")}`}>
+    role="region" aria-label={t("Tableau : {{p0}}", { p0: table.head.filter(Boolean).slice(0, 3).join(", ") })}>
     <Table.Root size="sm" variant="line" css={{
       // Alternate rows at half the header tint: visible, never louder than the header.
       "& tbody tr:nth-of-type(even)": { background: "color-mix(in srgb, var(--chakra-colors-app-sunken) 50%, transparent)" },

@@ -1,3 +1,4 @@
+import { t, tn } from "./i18n"
 import { useEffect, useState } from "react"
 import { Badge, Box, Button, Field, Flex, Heading, Input, NativeSelect, SimpleGrid, Stack, Tabs, Text, Textarea } from "@chakra-ui/react"
 import { api, ApiError } from "./api"
@@ -16,11 +17,11 @@ function slugify(value: string): string {
 
 function errorText(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.status === 409) return `Conflit : ${error.message}. Vérifiez le nom ou l’état du cours.`
-    if (error.status === 422) return `Contenu incomplet ou invalide : ${error.message}. Corrigez les champs puis réessayez.`
+    if (error.status === 409) return t("Conflit : {{message}}. Vérifiez le nom ou l’état du cours.", { message: error.message })
+    if (error.status === 422) return t("Contenu incomplet ou invalide : {{message}}. Corrigez les champs puis réessayez.", { message: error.message })
     return error.message
   }
-  return "Connexion réseau indisponible. Réessayez."
+  return t("Connexion réseau indisponible. Réessayez.")
 }
 
 type Direction = -1 | 1
@@ -162,7 +163,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       const title = newCourseTitle.trim()
       const slug = slugify(title)
-      if (!title || !slug) throw new ApiError(422, "Saisissez un titre de cours.")
+      if (!title || !slug) throw new ApiError(422, t("Saisissez un titre de cours."))
       const created = await api<{ id: number }>("/teacher/courses", "POST", { slug, title, description: newCourseDescription.trim() })
       setNewCourseTitle("")
       setNewCourseDescription("")
@@ -170,7 +171,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       setRefreshKey((value) => value + 1)
       setSelectedId(created.id)
       setTab("plan")
-    }, "Cours créé. Ajoutez maintenant un objectif, un module et une mission.")
+    }, t("Cours créé. Ajoutez maintenant un objectif, un module et une mission."))
   }
 
   function saveCourse() {
@@ -178,7 +179,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       await api(`/teacher/courses/${course.id}`, "PATCH", { title: editTitle.trim(), description: editDescription.trim() })
       await refreshCourse(course.id)
-    }, "Cours enregistré.")
+    }, t("Cours enregistré."))
   }
 
   function addObjective() {
@@ -190,7 +191,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       setObjectiveStatement("")
       setObjectiveCategoryInput("")
       await refreshCourse(course.id)
-    }, "Objectif ajouté.")
+    }, t("Objectif ajouté."))
   }
 
   function addModule() {
@@ -199,7 +200,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       await api(`/teacher/courses/${course.id}/modules`, "POST", { title: newModuleTitle.trim(), sort_order: course.modules.length })
       setNewModuleTitle("")
       await refreshCourse(course.id)
-    }, "Module ajouté.")
+    }, t("Module ajouté."))
   }
 
   function addChapter(module: CourseModule) {
@@ -208,7 +209,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       await api(`/teacher/modules/${module.id}/chapters`, "POST", { title: (chapterTitles[module.id] ?? "").trim(), sort_order: module.chapters.length })
       setChapterTitles({ ...chapterTitles, [module.id]: "" })
       await refreshCourse(course.id)
-    }, "Chapitre ajouté.")
+    }, t("Chapitre ajouté."))
   }
 
   function addMission(chapter: Chapter) {
@@ -216,13 +217,13 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       const title = (missionTitles[chapter.id] ?? "").trim()
       const slug = slugify(title)
-      if (!slug) throw new ApiError(422, "Saisissez un titre de mission.")
+      if (!slug) throw new ApiError(422, t("Saisissez un titre de mission."))
       const created = await api<{ id: number }>(`/teacher/chapters/${chapter.id}/missions`, "POST", { slug, title, sort_order: chapter.missions.length })
       setMissionTitles({ ...missionTitles, [chapter.id]: "" })
       await refreshCourse(course.id)
       setSelectedMissionId(created.id)
       setTab("missions")
-    }, "Mission créée. Complétez maintenant ses champs.")
+    }, t("Mission créée. Complétez maintenant ses champs."))
   }
 
   function reorder<T extends { id: number }>(items: T[], index: number, direction: Direction, route: (id: number) => string) {
@@ -234,7 +235,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       for (let order = 0; order < copy.length; order += 1) await api(route(copy[order].id), "PATCH", { sort_order: order })
       await refreshCourse(course.id)
-    }, "Ordre enregistré.")
+    }, t("Ordre enregistré."))
   }
 
   function saveMission(title: string, definition: MissionDefinition) {
@@ -243,7 +244,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       await api(`/teacher/missions/${selectedMissionId}`, "PATCH", { title })
       await api(`/teacher/missions/${selectedMissionId}/draft`, "PUT", definition)
       await refreshCourse(course.id)
-    }, "Mission enregistrée.")
+    }, t("Mission enregistrée."))
   }
 
   function loadPreview() {
@@ -251,15 +252,15 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       setPreview(await api<PreviewTree>(`/teacher/courses/${course.id}/preview`, "POST"))
       setTab("apercu")
-    }, "Aperçu chargé sans créer de note ni de tentative.")
+    }, t("Aperçu chargé sans créer de note ni de tentative."))
   }
 
   function validate() {
     if (!course) return
     return run(async () => {
       const result = await api<{ valid: boolean; mission_count: number }>(`/teacher/courses/${course.id}/validate`, "POST")
-      setNotice(`Brouillon valide : ${result.mission_count} mission(s).`)
-    }, "Brouillon valide.")
+      setNotice(tn("Brouillon valide : {{count}} mission.", result.mission_count))
+    }, t("Brouillon valide."))
   }
 
   function publish() {
@@ -270,17 +271,17 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       await refreshCourse(course.id)
       onPublished?.()
       setNotice(isMain
-        ? `Version ${result.version} publiée pour votre classe. Les nouveaux blocs restent fermés : ouvrez-les dans « Ma classe ».`
-        : `Version ${result.version} publiée. Vous pouvez maintenant l’attribuer à une cohorte.`)
-    }, "Version publiée.")
+        ? t("Version {{version}} publiée pour votre classe. Les nouveaux blocs restent fermés : ouvrez-les dans « Ma classe ».", { version: result.version })
+        : t("Version {{version}} publiée. Vous pouvez maintenant l’attribuer à une cohorte.", { version: result.version }))
+    }, t("Version publiée."))
   }
 
   function archive() {
-    if (!course || !window.confirm("Archiver ce cours et retirer ses versions de l’accès étudiant ?")) return
+    if (!course || !window.confirm(t("Archiver ce cours et retirer ses versions de l’accès étudiant ?"))) return
     return run(async () => {
       await api(`/teacher/courses/${course.id}/archive`, "POST")
       await refreshCourse(course.id)
-    }, "Cours archivé. Son contenu reste consultable par l’enseignant en lecture seule.")
+    }, t("Cours archivé. Son contenu reste consultable par l’enseignant en lecture seule."))
   }
 
   function createCohort() {
@@ -289,7 +290,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
       setNewCohortLabel("")
       setSelectedCohortId(created.id)
       await refreshCohorts(created.id)
-    }, "Cohorte créée.")
+    }, t("Cohorte créée."))
   }
 
   function enroll(studentId: number) {
@@ -297,7 +298,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       await api(`/teacher/cohorts/${selectedCohortId}/enrollments`, "POST", { user_id: studentId })
       await refreshCohorts()
-    }, "Étudiant inscrit à la cohorte.")
+    }, t("Étudiant inscrit à la cohorte."))
   }
 
   function assign() {
@@ -305,7 +306,7 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
     return run(async () => {
       await api(`/teacher/cohorts/${selectedCohortId}/assignments`, "POST", { course_release_id: selectedReleaseId })
       await refreshCohorts()
-    }, "Version attribuée à la cohorte.")
+    }, t("Version attribuée à la cohorte."))
   }
 
   const missions = course?.modules.flatMap((module) => module.chapters.flatMap((chapter) => chapter.missions)) ?? []
@@ -314,52 +315,52 @@ export function TeacherStudio({ mainCourseId = null, onPublished, tab: routeTab,
   const archived = course?.status === "archived"
 
   const sidebar = <Stack gap="5" as="aside" bg="app.surface" p="5" rounded="xl" borderWidth="1px">
-        <Heading as="h3" size="md">Mes cours</Heading>
-        {courses.length === 0 ? <Text color="app.muted">Aucun cours créé. Commencez ci-dessous.</Text> : <CourseSearch selectedId={selectedId} refreshKey={refreshKey} onSelect={(id) => { setSelectedId(id); stayOrPlan(); setError(""); setNotice("") }} />}
-        <Box borderTopWidth="1px" pt="4"><Heading as="h4" size="sm" mb="3">Nouveau cours</Heading><Stack gap="3"><Field.Root required><Field.Label>Titre</Field.Label><Input value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder="Démo : qualité des données" /></Field.Root><Field.Root><Field.Label>Description</Field.Label><Textarea value={newCourseDescription} onChange={(event) => setNewCourseDescription(event.target.value)} rows={3} /></Field.Root><Button colorPalette="brand" onClick={createCourse} loading={busy} disabled={!newCourseTitle.trim()}>Créer le cours</Button></Stack></Box>
-        <Box borderTopWidth="1px" pt="4"><CourseImport onImported={(id) => { setCourses((items) => [...items]); setRefreshKey((value) => value + 1); setSelectedId(id); stayOrPlan(); setNotice("Cours importé comme nouveau brouillon. Vérifiez-le puis publiez une version.") }} /></Box>
+        <Heading as="h3" size="md">{t("Mes cours")}</Heading>
+        {courses.length === 0 ? <Text color="app.muted">{t("Aucun cours créé. Commencez ci-dessous.")}</Text> : <CourseSearch selectedId={selectedId} refreshKey={refreshKey} onSelect={(id) => { setSelectedId(id); stayOrPlan(); setError(""); setNotice("") }} />}
+        <Box borderTopWidth="1px" pt="4"><Heading as="h4" size="sm" mb="3">{t("Nouveau cours")}</Heading><Stack gap="3"><Field.Root required><Field.Label>{t("Titre")}</Field.Label><Input value={newCourseTitle} onChange={(event) => setNewCourseTitle(event.target.value)} placeholder={t("Démo : qualité des données")} /></Field.Root><Field.Root><Field.Label>{t("Description")}</Field.Label><Textarea value={newCourseDescription} onChange={(event) => setNewCourseDescription(event.target.value)} rows={3} /></Field.Root><Button colorPalette="brand" onClick={createCourse} loading={busy} disabled={!newCourseTitle.trim()}>{t("Créer le cours")}</Button></Stack></Box>
+        <Box borderTopWidth="1px" pt="4"><CourseImport onImported={(id) => { setCourses((items) => [...items]); setRefreshKey((value) => value + 1); setSelectedId(id); stayOrPlan(); setNotice(t("Cours importé comme nouveau brouillon. Vérifiez-le puis publiez une version.")) }} /></Box>
         {mainCourseId && <Box borderTopWidth="1px" pt="4"><Cleanup onDone={() => { void api<CourseSummary[]>("/teacher/courses").then(setCourses); setRefreshKey((value) => value + 1) }} /></Box>}
-        {mainCourseId && selectedId !== mainCourseId && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => { setSelectedId(mainCourseId); setTab("plan") }}>Revenir à mon cours</Button>}
+        {mainCourseId && selectedId !== mainCourseId && <Button size="sm" variant="outline" colorPalette="brand" onClick={() => { setSelectedId(mainCourseId); setTab("plan") }}>{t("Revenir à mon cours")}</Button>}
       </Stack>
 
-  return <Stack gap="6" aria-label="Studio de cours">
-    <Flex align="start" justify="space-between" gap="4" wrap="wrap"><Box><Heading as="h2" size="xl">Studio de cours</Heading><Text color="app.muted" mt="1">Créez une démonstration, puis vérifiez-la avant de publier une version.</Text></Box><Badge colorPalette="brand" variant="subtle">Aucun code requis</Badge></Flex>
+  return <Stack gap="6" aria-label={t("Studio de cours")}>
+    <Flex align="start" justify="space-between" gap="4" wrap="wrap"><Box><Heading as="h2" size="xl">{t("Studio de cours")}</Heading><Text color="app.muted" mt="1">{t("Créez une démonstration, puis vérifiez-la avant de publier une version.")}</Text></Box><Badge colorPalette="brand" variant="subtle">{t("Aucun code requis")}</Badge></Flex>
     {error && <Box role="alert" bg="red.subtle" color="red.fg" p="4" rounded="md">{error}</Box>}
     {notice && <Box role="status" bg="brand.subtle" color="brand.fg" p="4" rounded="md">{notice}</Box>}
-    {loading ? <Text role="status">Chargement du studio…</Text> : <SimpleGrid columns={{ base: 1, lg: mainCourseId ? 1 : 2 }} gap="6" gridTemplateColumns={mainCourseId ? undefined : { lg: "270px minmax(0, 1fr)" }} alignItems="start">
+    {loading ? <Text role="status">{t("Chargement du studio…")}</Text> : <SimpleGrid columns={{ base: 1, lg: mainCourseId ? 1 : 2 }} gap="6" gridTemplateColumns={mainCourseId ? undefined : { lg: "270px minmax(0, 1fr)" }} alignItems="start">
       {mainCourseId ? null : sidebar}
       <Box minW="0">{course ? <Tabs.Root value={tab} onValueChange={(event) => setTab(event.value)} variant="line">
-        <Flex justify="space-between" align="start" wrap="wrap" gap="3" mb="3"><Box><Heading as="h3" size="lg">{course.title}</Heading><Text color="app.muted">{course.status === "archived" ? "Archivé — lecture seule" : course.status === "published" ? "Publié — une nouvelle édition créera une révision" : "Brouillon"}</Text></Box><Badge colorPalette={archived ? "gray" : "brand"}>{course.status === "archived" ? "Archivé" : course.status === "published" ? "Publié" : "Brouillon"}</Badge></Flex>
-        <Tabs.List overflowX="auto"><Tabs.Trigger value="plan">Plan</Tabs.Trigger><Tabs.Trigger value="missions">Missions</Tabs.Trigger><Tabs.Trigger value="apercu">Aperçu</Tabs.Trigger>{mainCourseId ? <Tabs.Trigger value="import">Import</Tabs.Trigger> : null}<Tabs.Trigger value="regles">Règles</Tabs.Trigger><Tabs.Trigger value="publication">Publication</Tabs.Trigger></Tabs.List>
+        <Flex justify="space-between" align="start" wrap="wrap" gap="3" mb="3"><Box><Heading as="h3" size="lg">{course.title}</Heading><Text color="app.muted">{course.status === "archived" ? t("Archivé — lecture seule") : course.status === "published" ? t("Publié — une nouvelle édition créera une révision") : t("Brouillon")}</Text></Box><Badge colorPalette={archived ? "gray" : "brand"}>{course.status === "archived" ? t("Archivé") : course.status === "published" ? t("Publié") : t("Brouillon")}</Badge></Flex>
+        <Tabs.List overflowX="auto"><Tabs.Trigger value="plan">{t("Plan")}</Tabs.Trigger><Tabs.Trigger value="missions">{t("Missions")}</Tabs.Trigger><Tabs.Trigger value="apercu">{t("Aperçu")}</Tabs.Trigger>{mainCourseId ? <Tabs.Trigger value="import">{t("Import")}</Tabs.Trigger> : null}<Tabs.Trigger value="regles">{t("Règles")}</Tabs.Trigger><Tabs.Trigger value="publication">{t("Publication")}</Tabs.Trigger></Tabs.List>
         <Tabs.Content value="plan"><Stack gap="6" py="5">
-          <Box bg="app.surface" p="5" rounded="xl" borderWidth="1px"><Stack gap="3"><Heading as="h4" size="md">Informations du cours</Heading><Field.Root><Field.Label>Titre</Field.Label><Input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} disabled={archived} /></Field.Root><Field.Root><Field.Label>Description</Field.Label><Textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} disabled={archived} rows={3} /></Field.Root><Button alignSelf="start" colorPalette="brand" onClick={saveCourse} loading={busy} disabled={archived}>Enregistrer le cours</Button></Stack></Box>
+          <Box bg="app.surface" p="5" rounded="xl" borderWidth="1px"><Stack gap="3"><Heading as="h4" size="md">{t("Informations du cours")}</Heading><Field.Root><Field.Label>{t("Titre")}</Field.Label><Input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} disabled={archived} /></Field.Root><Field.Root><Field.Label>{t("Description")}</Field.Label><Textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} disabled={archived} rows={3} /></Field.Root><Button alignSelf="start" colorPalette="brand" onClick={saveCourse} loading={busy} disabled={archived}>{t("Enregistrer le cours")}</Button></Stack></Box>
           <Box bg="app.surface" p="5" rounded="xl" borderWidth="1px"><ObjectivesPanel objectives={course.objectives} modules={course.modules}
             onFilter={(id) => { setObjectiveFilter(id); document.getElementById("course-outline")?.scrollIntoView({ behavior: "smooth", block: "start" }) }}
             form={<Stack gap="2"><NewObjectiveFields code={objectiveCode} statement={objectiveStatement} category={objectiveCategoryInput} disabled={archived}
               placeholder={`OBJ-${course.objectives.length + 1}`} onCode={setObjectiveCode} onStatement={setObjectiveStatement} onCategory={setObjectiveCategoryInput} />
-              <Button alignSelf="start" colorPalette="brand" variant="outline" onClick={addObjective} loading={busy} disabled={archived || !objectiveStatement.trim()}>Ajouter l’objectif</Button>
-              <Text fontSize="xs" color="app.muted">Sans catégorie, elle est déduite du code : SQL-, PY-, BLOC- (objectifs de bloc).</Text></Stack>} /></Box>
-          <Box id="course-outline" bg="app.surface" p="5" rounded="xl" borderWidth="1px"><Stack gap="4"><Heading as="h4" size="md">Modules, blocs et éléments</Heading>
-            {course.modules.length === 0 && <Text color="app.muted">Ajoutez un module pour organiser les missions.</Text>}
-            <CourseOutline label="Plan du cours" modules={course.modules} objectives={course.objectives} selectedId={selectedMissionId}
+              <Button alignSelf="start" colorPalette="brand" variant="outline" onClick={addObjective} loading={busy} disabled={archived || !objectiveStatement.trim()}>{t("Ajouter l’objectif")}</Button>
+              <Text fontSize="xs" color="app.muted">{t("Sans catégorie, elle est déduite du code : SQL-, PY-, BLOC- (objectifs de bloc).")}</Text></Stack>} /></Box>
+          <Box id="course-outline" bg="app.surface" p="5" rounded="xl" borderWidth="1px"><Stack gap="4"><Heading as="h4" size="md">{t("Modules, blocs et éléments")}</Heading>
+            {course.modules.length === 0 && <Text color="app.muted">{t("Ajoutez un module pour organiser les missions.")}</Text>}
+            <CourseOutline label={t("Plan du cours")} modules={course.modules} objectives={course.objectives} selectedId={selectedMissionId}
               objectiveFilter={objectiveFilter} onClearObjectiveFilter={() => setObjectiveFilter(null)}
               onSelect={(mission) => { setSelectedMissionId(mission.id); setTab("missions") }}
-              moduleActions={(module, moduleIndex) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={`Monter le module ${module.title}`} disabled={archived || moduleIndex === 0} onClick={() => reorder(course.modules, moduleIndex, -1, (id) => `/teacher/modules/${id}`)}>Monter</Button><Button size="xs" variant="outline" aria-label={`Descendre le module ${module.title}`} disabled={archived || moduleIndex === course.modules.length - 1} onClick={() => reorder(course.modules, moduleIndex, 1, (id) => `/teacher/modules/${id}`)}>Descendre</Button></Flex>}
-              blockActions={(chapter, chapterIndex, module) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={`Monter le bloc ${chapter.title}`} disabled={archived || chapterIndex === 0} onClick={() => reorder(module.chapters, chapterIndex, -1, (id) => `/teacher/chapters/${id}`)}>Monter</Button><Button size="xs" variant="outline" aria-label={`Descendre le bloc ${chapter.title}`} disabled={archived || chapterIndex === module.chapters.length - 1} onClick={() => reorder(module.chapters, chapterIndex, 1, (id) => `/teacher/chapters/${id}`)}>Descendre</Button></Flex>}
-              itemActions={(mission, missionIndex, chapter) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={`Monter la mission ${mission.title}`} disabled={archived || missionIndex === 0} onClick={() => reorder(chapter.missions, missionIndex, -1, (id) => `/teacher/missions/${id}`)}>Monter</Button><Button size="xs" variant="outline" aria-label={`Descendre la mission ${mission.title}`} disabled={archived || missionIndex === chapter.missions.length - 1} onClick={() => reorder(chapter.missions, missionIndex, 1, (id) => `/teacher/missions/${id}`)}>Descendre</Button></Flex>}
-              blockFooter={(chapter) => <Flex gap="2" wrap="wrap"><Input size="sm" aria-label={`Nouvelle mission pour ${chapter.title}`} value={missionTitles[chapter.id] ?? ""} onChange={(event) => setMissionTitles({ ...missionTitles, [chapter.id]: event.target.value })} placeholder="Titre de la mission" flex="1" minW="44" disabled={archived} /><Button size="sm" colorPalette="brand" variant="outline" onClick={() => addMission(chapter)} disabled={archived || !(missionTitles[chapter.id] ?? "").trim()}>Ajouter une mission</Button></Flex>}
-              moduleFooter={(module) => <Flex gap="2" wrap="wrap"><Input size="sm" aria-label={`Nouveau bloc pour ${module.title}`} value={chapterTitles[module.id] ?? ""} onChange={(event) => setChapterTitles({ ...chapterTitles, [module.id]: event.target.value })} placeholder="Titre du bloc" flex="1" minW="44" disabled={archived} /><Button size="sm" variant="outline" onClick={() => addChapter(module)} disabled={archived || !(chapterTitles[module.id] ?? "").trim()}>Ajouter un bloc</Button></Flex>} />
-            <Flex gap="2" wrap="wrap"><Input aria-label="Titre du nouveau module" value={newModuleTitle} onChange={(event) => setNewModuleTitle(event.target.value)} placeholder="Titre du module" flex="1" minW="44" disabled={archived} /><Button colorPalette="brand" variant="outline" onClick={addModule} disabled={archived || !newModuleTitle.trim()}>Ajouter un module</Button></Flex></Stack></Box>
+              moduleActions={(module, moduleIndex) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={t("Monter le module {{title}}", { title: module.title })} disabled={archived || moduleIndex === 0} onClick={() => reorder(course.modules, moduleIndex, -1, (id) => `/teacher/modules/${id}`)}>{t("Monter")}</Button><Button size="xs" variant="outline" aria-label={t("Descendre le module {{title}}", { title: module.title })} disabled={archived || moduleIndex === course.modules.length - 1} onClick={() => reorder(course.modules, moduleIndex, 1, (id) => `/teacher/modules/${id}`)}>{t("Descendre")}</Button></Flex>}
+              blockActions={(chapter, chapterIndex, module) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={t("Monter le bloc {{title}}", { title: chapter.title })} disabled={archived || chapterIndex === 0} onClick={() => reorder(module.chapters, chapterIndex, -1, (id) => `/teacher/chapters/${id}`)}>{t("Monter")}</Button><Button size="xs" variant="outline" aria-label={t("Descendre le bloc {{title}}", { title: chapter.title })} disabled={archived || chapterIndex === module.chapters.length - 1} onClick={() => reorder(module.chapters, chapterIndex, 1, (id) => `/teacher/chapters/${id}`)}>{t("Descendre")}</Button></Flex>}
+              itemActions={(mission, missionIndex, chapter) => <Flex gap="1"><Button size="xs" variant="outline" aria-label={t("Monter la mission {{title}}", { title: mission.title })} disabled={archived || missionIndex === 0} onClick={() => reorder(chapter.missions, missionIndex, -1, (id) => `/teacher/missions/${id}`)}>{t("Monter")}</Button><Button size="xs" variant="outline" aria-label={t("Descendre la mission {{title}}", { title: mission.title })} disabled={archived || missionIndex === chapter.missions.length - 1} onClick={() => reorder(chapter.missions, missionIndex, 1, (id) => `/teacher/missions/${id}`)}>{t("Descendre")}</Button></Flex>}
+              blockFooter={(chapter) => <Flex gap="2" wrap="wrap"><Input size="sm" aria-label={t("Nouvelle mission pour {{title}}", { title: chapter.title })} value={missionTitles[chapter.id] ?? ""} onChange={(event) => setMissionTitles({ ...missionTitles, [chapter.id]: event.target.value })} placeholder={t("Titre de la mission")} flex="1" minW="44" disabled={archived} /><Button size="sm" colorPalette="brand" variant="outline" onClick={() => addMission(chapter)} disabled={archived || !(missionTitles[chapter.id] ?? "").trim()}>{t("Ajouter une mission")}</Button></Flex>}
+              moduleFooter={(module) => <Flex gap="2" wrap="wrap"><Input size="sm" aria-label={t("Nouveau bloc pour {{title}}", { title: module.title })} value={chapterTitles[module.id] ?? ""} onChange={(event) => setChapterTitles({ ...chapterTitles, [module.id]: event.target.value })} placeholder={t("Titre du bloc")} flex="1" minW="44" disabled={archived} /><Button size="sm" variant="outline" onClick={() => addChapter(module)} disabled={archived || !(chapterTitles[module.id] ?? "").trim()}>{t("Ajouter un bloc")}</Button></Flex>} />
+            <Flex gap="2" wrap="wrap"><Input aria-label={t("Titre du nouveau module")} value={newModuleTitle} onChange={(event) => setNewModuleTitle(event.target.value)} placeholder={t("Titre du module")} flex="1" minW="44" disabled={archived} /><Button colorPalette="brand" variant="outline" onClick={addModule} disabled={archived || !newModuleTitle.trim()}>{t("Ajouter un module")}</Button></Flex></Stack></Box>
         </Stack></Tabs.Content>
-        <Tabs.Content value="missions" py="5">{missions.length === 0 ? <Text>Créez d’abord un module, un chapitre et une mission dans Structure.</Text> : <Stack gap="5"><NativeSelect.Root maxW="md"><NativeSelect.Field aria-label="Mission à éditer" value={selectedMissionId ?? ""} onChange={(event) => setSelectedMissionId(Number(event.target.value))}><option value="">Choisir une mission</option>{missions.map((mission) => <option key={mission.id} value={mission.id}>{mission.title}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>{selectedMission && <Box bg="app.surface" p={{ base: "4", md: "6" }} borderWidth="1px" rounded="xl"><MissionEditor key={selectedMission.id} mission={selectedMission} course={course} busy={busy} onSave={saveMission} /></Box>}</Stack>}</Tabs.Content>
-        <Tabs.Content value="apercu" py="5"><Stack gap="4"><Text color="app.muted">Aperçu étudiant sans notation ni tentative. Les corrections restent réservées à l’enseignant.</Text><Button alignSelf="start" colorPalette="brand" onClick={loadPreview} loading={busy}>Charger l’aperçu</Button>{preview ? <CoursePreview course={preview} corrections={corrections} /> : <Text>Chargez l’aperçu du brouillon actuel.</Text>}</Stack></Tabs.Content>
-        {mainCourseId ? <Tabs.Content value="import" py="5"><Stack gap="3"><Text color="app.muted">Autres cours, import d’un cours JSON et ménage des cours de test. Le cours de la classe s’écrit en Markdown et s’importe avec <code>scripts/course_md.py</code>.</Text>{sidebar}</Stack></Tabs.Content> : null}
+        <Tabs.Content value="missions" py="5">{missions.length === 0 ? <Text>{t("Créez d’abord un module, un chapitre et une mission dans Structure.")}</Text> : <Stack gap="5"><NativeSelect.Root maxW="md"><NativeSelect.Field aria-label={t("Mission à éditer")} value={selectedMissionId ?? ""} onChange={(event) => setSelectedMissionId(Number(event.target.value))}><option value="">{t("Choisir une mission")}</option>{missions.map((mission) => <option key={mission.id} value={mission.id}>{mission.title}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>{selectedMission && <Box bg="app.surface" p={{ base: "4", md: "6" }} borderWidth="1px" rounded="xl"><MissionEditor key={selectedMission.id} mission={selectedMission} course={course} busy={busy} onSave={saveMission} /></Box>}</Stack>}</Tabs.Content>
+        <Tabs.Content value="apercu" py="5"><Stack gap="4"><Text color="app.muted">{t("Aperçu étudiant sans notation ni tentative. Les corrections restent réservées à l’enseignant.")}</Text><Button alignSelf="start" colorPalette="brand" onClick={loadPreview} loading={busy}>{t("Charger l’aperçu")}</Button>{preview ? <CoursePreview course={preview} corrections={corrections} /> : <Text>{t("Chargez l’aperçu du brouillon actuel.")}</Text>}</Stack></Tabs.Content>
+        {mainCourseId ? <Tabs.Content value="import" py="5"><Stack gap="3"><Text color="app.muted">{t("Autres cours, import d’un cours JSON et ménage des cours de test. Le cours de la classe s’écrit en Markdown et s’importe avec")}{" "}<code>{t("scripts/course_md.py")}</code>.</Text>{sidebar}</Stack></Tabs.Content> : null}
         <Tabs.Content value="regles" py="5"><Box bg="app.surface" p={{ base: "4", md: "6" }} borderWidth="1px" rounded="xl"><AttemptRulesPanel key={course.id} courseId={course.id} disabled={archived} /></Box></Tabs.Content>
-        <Tabs.Content value="publication" py="5"><Stack gap="6"><Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">Vérifier et publier</Heading><Text>{course.id === mainCourseId ? "La publication fige une version et la donne à votre classe. Les blocs nouveaux arrivent fermés : vous les ouvrez un par un dans « Ma classe »." : "La publication fige une version. Les anciennes versions et leurs réponses privées restent intactes."}</Text><Flex gap="3" wrap="wrap"><Button variant="outline" onClick={validate} disabled={archived} loading={busy}>Vérifier le brouillon</Button><Button colorPalette="brand" onClick={publish} disabled={archived} loading={busy}>{course.id === mainCourseId ? "Publier pour la classe" : "Publier une version"}</Button><Button colorPalette="red" variant="outline" onClick={archive} disabled={archived} loading={busy}>Archiver le cours</Button></Flex>{releases.length === 0 && <Text color="app.muted">Aucune version publiée.</Text>}</Stack></Box>
-          <Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">Versions, sauvegardes et historique</Heading><Text>Chaque version publiée reste intacte. Vous pouvez l’exporter, ou remettre son contenu dans le brouillon ; le brouillon actuel est alors sauvegardé.</Text><ReleaseTools courseId={course.id} releases={releases} archived={archived} refreshKey={refreshKey} onRestored={() => void refreshCourse(course.id)} /></Stack></Box>
-          <Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Advanced key={course.id} label="Options avancées : cohortes et attributions" defaultOpen={course.id !== mainCourseId}><Stack gap="4"><Heading as="h4" size="md">Attribuer une version</Heading><Text>Créez une cohorte, inscrivez les étudiants voulus, puis attribuez la version publiée.</Text><Flex gap="2" wrap="wrap"><Input aria-label="Nom de la nouvelle cohorte" value={newCohortLabel} onChange={(event) => setNewCohortLabel(event.target.value)} placeholder="Nom de la cohorte" flex="1" minW="44" /><Button variant="outline" onClick={createCohort} disabled={!newCohortLabel.trim()} loading={busy}>Créer la cohorte</Button></Flex><Field.Root><Field.Label>Cohorte</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedCohortId ?? ""} onChange={(event) => setSelectedCohortId(Number(event.target.value))}><option value="">Choisir une cohorte</option>{cohorts.map((group) => <option key={group.id} value={group.id}>{group.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>{selectedCohortId !== null && <><Heading as="h5" size="sm">Étudiants de la cohorte</Heading>{students.length === 0 ? <Text>Aucun étudiant actif.</Text> : <Stack gap="2" maxH="52" overflowY="auto">{students.map((student) => <Flex key={student.id} gap="2" align="center" justify="space-between"><Text overflowWrap="anywhere">{student.username}</Text>{cohortDetail?.student_ids.includes(student.id) ? <Badge colorPalette="brand">Inscrit</Badge> : <Button size="xs" variant="outline" onClick={() => enroll(student.id)} loading={busy}>Inscrire</Button>}</Flex>)}</Stack>}</>}<Field.Root><Field.Label>Version publiée</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedReleaseId ?? ""} onChange={(event) => setSelectedReleaseId(Number(event.target.value))}><option value="">Choisir une version</option>{releases.filter((release) => release.status === "published").map((release) => <option key={release.id} value={release.id}>Version {release.version}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root><Button colorPalette="brand" alignSelf="start" onClick={assign} disabled={archived || selectedCohortId === null || selectedReleaseId === null || cohortDetail?.release_ids.includes(selectedReleaseId)} loading={busy}>{selectedReleaseId !== null && cohortDetail?.release_ids.includes(selectedReleaseId) ? "Déjà attribuée" : "Attribuer à la cohorte"}</Button></Stack></Advanced></Box>
+        <Tabs.Content value="publication" py="5"><Stack gap="6"><Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">{t("Vérifier et publier")}</Heading><Text>{course.id === mainCourseId ? t("La publication fige une version et la donne à votre classe. Les blocs nouveaux arrivent fermés : vous les ouvrez un par un dans « Ma classe ».") : t("La publication fige une version. Les anciennes versions et leurs réponses privées restent intactes.")}</Text><Flex gap="3" wrap="wrap"><Button variant="outline" onClick={validate} disabled={archived} loading={busy}>{t("Vérifier le brouillon")}</Button><Button colorPalette="brand" onClick={publish} disabled={archived} loading={busy}>{course.id === mainCourseId ? t("Publier pour la classe") : t("Publier une version")}</Button><Button colorPalette="red" variant="outline" onClick={archive} disabled={archived} loading={busy}>{t("Archiver le cours")}</Button></Flex>{releases.length === 0 && <Text color="app.muted">{t("Aucune version publiée.")}</Text>}</Stack></Box>
+          <Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Stack gap="3"><Heading as="h4" size="md">{t("Versions, sauvegardes et historique")}</Heading><Text>{t("Chaque version publiée reste intacte. Vous pouvez l’exporter, ou remettre son contenu dans le brouillon ; le brouillon actuel est alors sauvegardé.")}</Text><ReleaseTools courseId={course.id} releases={releases} archived={archived} refreshKey={refreshKey} onRestored={() => void refreshCourse(course.id)} /></Stack></Box>
+          <Box bg="app.surface" p="5" borderWidth="1px" rounded="xl"><Advanced key={course.id} label={t("Options avancées : cohortes et attributions")} defaultOpen={course.id !== mainCourseId}><Stack gap="4"><Heading as="h4" size="md">{t("Attribuer une version")}</Heading><Text>{t("Créez une cohorte, inscrivez les étudiants voulus, puis attribuez la version publiée.")}</Text><Flex gap="2" wrap="wrap"><Input aria-label={t("Nom de la nouvelle cohorte")} value={newCohortLabel} onChange={(event) => setNewCohortLabel(event.target.value)} placeholder={t("Nom de la cohorte")} flex="1" minW="44" /><Button variant="outline" onClick={createCohort} disabled={!newCohortLabel.trim()} loading={busy}>{t("Créer la cohorte")}</Button></Flex><Field.Root><Field.Label>{t("Cohorte")}</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedCohortId ?? ""} onChange={(event) => setSelectedCohortId(Number(event.target.value))}><option value="">{t("Choisir une cohorte")}</option>{cohorts.map((group) => <option key={group.id} value={group.id}>{group.label}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root>{selectedCohortId !== null && <><Heading as="h5" size="sm">{t("Étudiants de la cohorte")}</Heading>{students.length === 0 ? <Text>{t("Aucun étudiant actif.")}</Text> : <Stack gap="2" maxH="52" overflowY="auto">{students.map((student) => <Flex key={student.id} gap="2" align="center" justify="space-between"><Text overflowWrap="anywhere">{student.username}</Text>{cohortDetail?.student_ids.includes(student.id) ? <Badge colorPalette="brand">{t("Inscrit")}</Badge> : <Button size="xs" variant="outline" onClick={() => enroll(student.id)} loading={busy}>{t("Inscrire")}</Button>}</Flex>)}</Stack>}</>}<Field.Root><Field.Label>{t("Version publiée")}</Field.Label><NativeSelect.Root><NativeSelect.Field value={selectedReleaseId ?? ""} onChange={(event) => setSelectedReleaseId(Number(event.target.value))}><option value="">{t("Choisir une version")}</option>{releases.filter((release) => release.status === "published").map((release) => <option key={release.id} value={release.id}>{t("Version")}{" "}{release.version}</option>)}</NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root></Field.Root><Button colorPalette="brand" alignSelf="start" onClick={assign} disabled={archived || selectedCohortId === null || selectedReleaseId === null || cohortDetail?.release_ids.includes(selectedReleaseId)} loading={busy}>{selectedReleaseId !== null && cohortDetail?.release_ids.includes(selectedReleaseId) ? t("Déjà attribuée") : t("Attribuer à la cohorte")}</Button></Stack></Advanced></Box>
         </Stack></Tabs.Content>
-      </Tabs.Root> : <Box bg="app.surface" p="8" borderWidth="1px" rounded="xl"><Heading as="h3" size="md">Choisissez un cours</Heading><Text mt="2">Créez votre premier cours dans le panneau de gauche.</Text></Box>}</Box>
+      </Tabs.Root> : <Box bg="app.surface" p="8" borderWidth="1px" rounded="xl"><Heading as="h3" size="md">{t("Choisissez un cours")}</Heading><Text mt="2">{t("Créez votre premier cours dans le panneau de gauche.")}</Text></Box>}</Box>
     </SimpleGrid>}
   </Stack>
 }

@@ -36,7 +36,7 @@ async function csrf(page: Page) {
 }
 
 async function context(browser: Browser, theme: "light" | "dark", width = 1366, height = 768) {
-  const ctx = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" })
+  const ctx = await browser.newContext({ locale: "fr-FR", viewport: { width, height }, reducedMotion: "reduce" })
   await ctx.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
   return ctx
 }

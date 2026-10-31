@@ -1,3 +1,4 @@
+import { t } from "../i18n"
 import { Flashcards } from "./Flashcards"
 import { isUngraded } from "../studioTypes"
 import { useEffect, useRef, useState } from "react"
@@ -47,8 +48,8 @@ export function ChoiceActivity({ definition, answer, onChange, disabled, name }:
     onChange({ ...answer, choice_ids: next })
   }
   return <Box as="fieldset" border="0" p="0" m="0">
-    <VisuallyHidden as="legend">{multiple ? "Choisissez une ou plusieurs réponses" : "Choisissez une réponse"}</VisuallyHidden>
-    <Stack gap="2.5" role={multiple ? "group" : "radiogroup"} aria-label={multiple ? "Propositions, plusieurs réponses possibles" : "Propositions"}>
+    <VisuallyHidden as="legend">{multiple ? t("Choisissez une ou plusieurs réponses") : t("Choisissez une réponse")}</VisuallyHidden>
+    <Stack gap="2.5" role={multiple ? "group" : "radiogroup"} aria-label={multiple ? t("Propositions, plusieurs réponses possibles") : t("Propositions")}>
       {definition.choices.map((choice, index) => <Box key={choice.id} css={optionStyles}>
         <Box as="label" display="flex" alignItems="flex-start" gap="3" flex="1" p="3.5" cursor="inherit">
           <input type={multiple ? "checkbox" : "radio"} name={name} value={choice.id} disabled={disabled}
@@ -59,7 +60,7 @@ export function ChoiceActivity({ definition, answer, onChange, disabled, name }:
         {index < 9 && <Box as="kbd" aria-hidden="true" alignSelf="center" mr="3.5" fontSize="xs" color="app.muted" borderWidth="1px" borderColor="app.border" rounded="sm" px="1.5" lineHeight="1.6" fontFamily="inherit">{index + 1}</Box>}
       </Box>)}
     </Stack>
-    {multiple && <Text mt="2" fontSize="sm" color="app.muted">Plusieurs réponses peuvent être justes.</Text>}
+    {multiple && <Text mt="2" fontSize="sm" color="app.muted">{t("Plusieurs réponses peuvent être justes.")}</Text>}
   </Box>
 }
 
@@ -80,19 +81,19 @@ export function ReorderActivity({ definition, answer, onChange, disabled }: Acti
     ;[next[index], next[target]] = [next[target], next[index]]
     onChange({ ...answer, choice_ids: next })
     const id = next[target]
-    setAnnouncement(`« ${byId.get(id)?.label} » est maintenant en position ${target + 1} sur ${next.length}.`)
+    setAnnouncement(t("« {{label}} » est maintenant en position {{p1}} sur {{length}}.", { label: byId.get(id)?.label, p1: target + 1, length: next.length }))
     const edge = target === 0 || target === next.length - 1
     focusAfterMove.current = `${id}:${edge ? (direction < 0 ? 1 : -1) : direction}`
   }
-  return <Box><Stack gap="2" as="ol" listStyleType="none" m="0" p="0" aria-label="Étapes à ordonner">
+  return <Box><Stack gap="2" as="ol" listStyleType="none" m="0" p="0" aria-label={t("Étapes à ordonner")}>
     {answer.choice_ids.map((id, index) => <Flex as="li" key={id} align="center" gap="3" p="3" bg="app.surface"
       borderWidth="1px" borderColor="app.border" rounded="lg">
       <Flex align="center" justify="center" w="8" h="8" rounded="full" bg="brand.subtle" color="brand.fg" fontWeight="bold" flexShrink={0} aria-hidden="true">{index + 1}</Flex>
       <Text flex="1">{byId.get(id)?.label}</Text>
       <Button size="sm" variant="outline" disabled={disabled || index === 0} onClick={() => move(index, -1)}
-        ref={(node) => { refs.current[`${id}:-1`] = node }} aria-label={`Monter « ${byId.get(id)?.label} »`}>Monter</Button>
+        ref={(node) => { refs.current[`${id}:-1`] = node }} aria-label={t("Monter « {{label}} »", { label: byId.get(id)?.label })}>{t("Monter")}</Button>
       <Button size="sm" variant="outline" disabled={disabled || index === answer.choice_ids.length - 1} onClick={() => move(index, 1)}
-        ref={(node) => { refs.current[`${id}:1`] = node }} aria-label={`Descendre « ${byId.get(id)?.label} »`}>Descendre</Button>
+        ref={(node) => { refs.current[`${id}:1`] = node }} aria-label={t("Descendre « {{label}} »", { label: byId.get(id)?.label })}>{t("Descendre")}</Button>
     </Flex>)}
   </Stack>
   <VisuallyHidden aria-live="polite">{announcement}</VisuallyHidden>
@@ -105,9 +106,9 @@ export function MatchingActivity({ definition, answer, onChange, disabled }: Act
       direction={{ base: "column", md: "row" }} p="3" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="lg">
       <Text flex="1" fontWeight="medium">{choice.label}</Text>
       <NativeSelect.Root maxW={{ md: "72" }} disabled={disabled}>
-        <NativeSelect.Field aria-label={`Associer « ${choice.label} »`} value={answer.pairs[choice.id] ?? ""}
+        <NativeSelect.Field aria-label={t("Associer « {{label}} »", { label: choice.label })} value={answer.pairs[choice.id] ?? ""}
           onChange={(event) => onChange({ ...answer, pairs: { ...answer.pairs, [choice.id]: event.target.value } })}>
-          <option value="">Choisir…</option>
+          <option value="">{t("Choisir…")}</option>
           {definition.match_targets.map((target) => <option key={target.id} value={target.id}>{target.label}</option>)}
         </NativeSelect.Field>
         <NativeSelect.Indicator />
@@ -129,7 +130,7 @@ export function DataView({ data }: { data: DisplayData | null }) {
 function MediaBody({ data }: { data: DisplayData | null }) {
   const [asTable, setAsTable] = useState(false)
   if (!data) return null
-  if (data.kind === "table") return <DataTable columns={data.columns} rows={data.rows} caption={data.title || "Extrait de données fictives"} />
+  if (data.kind === "table") return <DataTable columns={data.columns} rows={data.rows} caption={data.title || t("Extrait de données fictives")} />
   if (data.kind === "line_chart") return <LineChart data={data} />
   if (data.kind === "code") return <CodeBlock code={data.code} language={data.language} title={data.title} />
   if (data.kind === "comparison") return <Comparison data={data} />
@@ -143,7 +144,7 @@ function MediaBody({ data }: { data: DisplayData | null }) {
   if (data.kind === "download") return <Downloads data={data} />
   const max = Math.max(1, ...data.values.map((value) => Math.abs(value)))
   return <Stack gap="3">
-    {asTable ? <DataTable caption={data.title} columns={["Libellé", data.unit ? `Valeur (${data.unit})` : "Valeur"]}
+    {asTable ? <DataTable caption={data.title} columns={[t("Libellé"), data.unit ? `Valeur (${data.unit})` : t("Valeur")]}
       rows={data.labels.map((label, index) => [label, data.values[index]])} />
       : <Box as="figure" m="0" p="4" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
         <Text as="figcaption" fontWeight="semibold" mb="3">{data.title}</Text>
@@ -157,7 +158,7 @@ function MediaBody({ data }: { data: DisplayData | null }) {
         <VisuallyHidden>{data.labels.map((label, index) => `${label} : ${data.values[index]} ${data.unit}`).join(" ; ")}</VisuallyHidden>
       </Box>}
     <Button alignSelf="start" size="sm" variant="ghost" colorPalette="brand" aria-expanded={asTable} onClick={() => setAsTable(!asTable)}>
-      {asTable ? "Afficher le graphique" : "Afficher les données en tableau"}
+      {asTable ? t("Afficher le graphique") : t("Afficher les données en tableau")}
     </Button>
   </Stack>
 }

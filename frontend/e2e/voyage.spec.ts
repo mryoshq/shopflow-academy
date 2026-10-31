@@ -56,7 +56,7 @@ test("student: menu entry, the 7 scenes by address and buttons, back button, pla
 
 for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768], ["light", 390, 844], ["dark", 390, 844]] as const) {
   test(`AA, no page overflow and capture: ${theme} at ${width}px`, async ({ browser }) => {
-    const context = await browser.newContext({ viewport: { width, height }, reducedMotion: "reduce" })
+    const context = await browser.newContext({ locale: "fr-FR", viewport: { width, height }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const page = await context.newPage()
     await login(page, "demo.etudiant03")

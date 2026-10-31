@@ -1,3 +1,4 @@
+import { LANGUAGES, info, setLanguage, t, useLanguage, type Lang } from "../i18n"
 import type { ReactNode } from "react"
 import { Box, Flex, Menu, Portal, Text, chakra } from "@chakra-ui/react"
 import { useColorMode, type ThemeChoice } from "../useColorMode"
@@ -38,6 +39,7 @@ export function AccountMenu({ account, onLogout, busy = false, variant, collapse
   account: Account; onLogout: () => void; busy?: boolean; variant: "sidebar" | "header"; collapsed?: boolean
 }) {
   const { openSettings } = usePreferences()
+  const lang = useLanguage()
   const { choice, choose } = useColorMode()
   const { zoom, setZoom } = useZoom()
   const name = displayName(account.username)
@@ -45,7 +47,7 @@ export function AccountMenu({ account, onLogout, busy = false, variant, collapse
   const submenu = sidebar ? "right-end" : "left-start"
 
   const trigger = sidebar
-    ? <chakra.button type="button" aria-label={`Compte et paramètres : ${name}`} display="flex" alignItems="center" gap="2.5" w="full" minH="12" px="2" rounded="lg"
+    ? <chakra.button type="button" aria-label={t("Compte et paramètres : {{name}}", { name })} display="flex" alignItems="center" gap="2.5" w="full" minH="12" px="2" rounded="lg"
         textAlign="start" color="app.ink" cursor="pointer" justifyContent={collapsed ? "center" : "flex-start"}
         _hover={{ bg: "app.sunken" }} _expanded={{ bg: "app.sunken" }}>
         <Avatar username={account.username} />
@@ -55,7 +57,7 @@ export function AccountMenu({ account, onLogout, busy = false, variant, collapse
         </Box>
         <Box color="app.muted" display={{ base: "none", md: "block" }}><Icon name="chevrons" /></Box></>}
       </chakra.button>
-    : <chakra.button type="button" aria-label={`Compte et paramètres : ${name}`} display="inline-flex" alignItems="center" justifyContent="center" p="1" rounded="full"
+    : <chakra.button type="button" aria-label={t("Compte et paramètres : {{name}}", { name })} display="inline-flex" alignItems="center" justifyContent="center" p="1" rounded="full"
         cursor="pointer" _hover={{ bg: "app.sunken" }} _expanded={{ bg: "app.sunken" }}>
         <Avatar username={account.username} size="8" />
       </chakra.button>
@@ -72,38 +74,38 @@ export function AccountMenu({ account, onLogout, busy = false, variant, collapse
           </Box>
           <Menu.Separator borderColor="app.border" />
           <Menu.Item value="settings" {...itemStyle} onClick={() => openSettings("general")}>
-            <Icon name="settings" /><Box flex="1">Paramètres</Box><Menu.ItemCommand color="app.muted">{modKey()} ,</Menu.ItemCommand>
+            <Icon name="settings" /><Box flex="1">{t("Paramètres")}</Box><Menu.ItemCommand color="app.muted">{modKey()} ,</Menu.ItemCommand>
           </Menu.Item>
           <Menu.Root positioning={{ placement: submenu, gutter: 4 }}>
-            <Menu.TriggerItem {...itemStyle}><Icon name="theme" /><Box flex="1">Thème</Box><Text as="span" fontSize="xs" color="app.muted">{choice === "light" ? "Clair" : choice === "dark" ? "Sombre" : "Système"}</Text></Menu.TriggerItem>
+            <Menu.TriggerItem {...itemStyle}><Icon name="theme" /><Box flex="1">{t("Thème")}</Box><Text as="span" fontSize="xs" color="app.muted">{choice === "light" ? t("Clair") : choice === "dark" ? t("Sombre") : t("Système")}</Text></Menu.TriggerItem>
             <Portal><Menu.Positioner><Menu.Content minW="44" p="1.5" rounded="xl" bg="app.surface" borderWidth="1px" borderColor="app.border" boxShadow="lg" className="menu-pop">
               <Menu.RadioItemGroup value={choice} onValueChange={(event) => choose(event.value as ThemeChoice)}>
-                {([["system", "Système"], ["light", "Clair"], ["dark", "Sombre"]] as const).map(([value, label]) =>
+                {([["system", t("Système")], ["light", t("Clair")], ["dark", t("Sombre")]] as const).map(([value, label]) =>
                   <Menu.RadioItem key={value} value={value} {...radioStyle}>{check}<Box flex="1">{label}</Box></Menu.RadioItem>)}
               </Menu.RadioItemGroup>
             </Menu.Content></Menu.Positioner></Portal>
           </Menu.Root>
           <Menu.Root positioning={{ placement: submenu, gutter: 4 }}>
-            <Menu.TriggerItem {...itemStyle}><Icon name="text" /><Box flex="1">Taille du texte</Box><Text as="span" fontSize="xs" color="app.muted">{percent(zoom)}</Text></Menu.TriggerItem>
+            <Menu.TriggerItem {...itemStyle}><Icon name="text" /><Box flex="1">{t("Taille du texte")}</Box><Text as="span" fontSize="xs" color="app.muted">{percent(zoom)}</Text></Menu.TriggerItem>
             <Portal><Menu.Positioner><Menu.Content minW="44" p="1.5" rounded="xl" bg="app.surface" borderWidth="1px" borderColor="app.border" boxShadow="lg" className="menu-pop">
               <Menu.RadioItemGroup value={String(zoom)} onValueChange={(event) => setZoom(Number(event.value))}>
                 {ZOOM_STEPS.map((step) => <Menu.RadioItem key={step} value={String(step)} {...radioStyle}>
-                  {check}<Box flex="1" css={{ fontVariantNumeric: "tabular-nums" }}>{percent(step)}{step === 1 ? " (normal)" : ""}</Box></Menu.RadioItem>)}
+                  {check}<Box flex="1" css={{ fontVariantNumeric: "tabular-nums" }}>{percent(step)}{step === 1 ? t(" (normal)") : ""}</Box></Menu.RadioItem>)}
               </Menu.RadioItemGroup>
             </Menu.Content></Menu.Positioner></Portal>
           </Menu.Root>
           <Menu.Root positioning={{ placement: submenu, gutter: 4 }}>
-            <Menu.TriggerItem {...itemStyle}><Icon name="language" /><Box flex="1">Langue</Box><Text as="span" fontSize="xs" color="app.muted">Français</Text></Menu.TriggerItem>
+            <Menu.TriggerItem {...itemStyle}><Icon name="language" /><Box flex="1">{t("Langue")}</Box><Text as="span" fontSize="xs" color="app.muted">{info(lang).label}</Text></Menu.TriggerItem>
             <Portal><Menu.Positioner><Menu.Content minW="52" p="1.5" rounded="xl" bg="app.surface" borderWidth="1px" borderColor="app.border" boxShadow="lg" className="menu-pop">
-              <Menu.RadioItemGroup value="fr">
-                <Menu.RadioItem value="fr" {...radioStyle}>{check}<Box flex="1">Français</Box></Menu.RadioItem>
+              <Menu.RadioItemGroup value={lang} onValueChange={(event) => setLanguage(event.value as Lang)}>
+                {/* Each language is named in itself (never translated), with its own lang attribute. */}
+                {LANGUAGES.map((item) => <Menu.RadioItem key={item.code} value={item.code} {...radioStyle}>{check}<Box flex="1" lang={item.code}>{item.label}</Box></Menu.RadioItem>)}
               </Menu.RadioItemGroup>
-              <Text px="2.5" py="1.5" fontSize="xs" color="app.muted">D’autres langues arriveront plus tard.</Text>
             </Menu.Content></Menu.Positioner></Portal>
           </Menu.Root>
-          <Menu.Item value="shortcuts" {...itemStyle} onClick={() => openSettings("shortcuts")}><Icon name="keyboard" /><Box flex="1">Raccourcis clavier</Box></Menu.Item>
+          <Menu.Item value="shortcuts" {...itemStyle} onClick={() => openSettings("shortcuts")}><Icon name="keyboard" /><Box flex="1">{t("Raccourcis clavier")}</Box></Menu.Item>
           <Menu.Separator borderColor="app.border" />
-          <Menu.Item value="logout" {...itemStyle} disabled={busy} onClick={onLogout}><Icon name="logout" /><Box flex="1">Se déconnecter</Box></Menu.Item>
+          <Menu.Item value="logout" {...itemStyle} disabled={busy} onClick={onLogout}><Icon name="logout" /><Box flex="1">{t("Se déconnecter")}</Box></Menu.Item>
         </Menu.Content>
       </Menu.Positioner>
     </Portal>

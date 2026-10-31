@@ -1,3 +1,4 @@
+import { locale, t } from "../i18n"
 import { Box, Stack, Table } from "@chakra-ui/react"
 import { RichText } from "../student/RichText"
 
@@ -27,7 +28,7 @@ export function ProjectText({ text }: { text: string }) {
     if (block.kind === "text") return <RichText key={index} text={block.lines.join("\n")} />
     const rows = block.lines.filter((line) => !/^\s*\|?\s*:?-{2,}/.test(line)).map(tableCells)
     const [head, ...body] = rows
-    return <Box key={index} overflowX="auto" tabIndex={0} role="region" aria-label={`Tableau ${index + 1}`} borderWidth="1px" borderColor="app.border" rounded="lg">
+    return <Box key={index} overflowX="auto" tabIndex={0} role="region" aria-label={t("Tableau {{p0}}", { p0: index + 1 })} borderWidth="1px" borderColor="app.border" rounded="lg">
       <Table.Root size="sm"><Table.Header><Table.Row bg="app.sunken">{head.map((cell, i) => <Table.ColumnHeader key={i}>{cell}</Table.ColumnHeader>)}</Table.Row></Table.Header>
         <Table.Body>{body.map((row, r) => <Table.Row key={r}>{row.map((cell, c) => <Table.Cell key={c}>{cell}</Table.Cell>)}</Table.Row>)}</Table.Body></Table.Root>
     </Box>
@@ -37,9 +38,9 @@ export function ProjectText({ text }: { text: string }) {
 export function fileSize(bytes: number): string {
   if (bytes < 1024) return `${bytes} o`
   const [value, unit] = bytes < 1024 * 1024 ? [bytes / 1024, "Ko"] : [bytes / (1024 * 1024), "Mo"]
-  return `${value.toLocaleString("fr-FR", { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`
+  return `${value.toLocaleString(locale(), { maximumFractionDigits: value < 10 ? 1 : 0 })} ${unit}`
 }
 
 export function when(iso: string | null): string {
-  return iso ? new Date(iso).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "—"
+  return iso ? new Date(iso).toLocaleString(locale(), { dateStyle: "medium", timeStyle: "short" }) : "—"
 }
