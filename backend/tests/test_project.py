@@ -9,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.main import app
-from app.models import AuditEvent
+from app.auth import password_hash
+from app.models import AuditEvent, Enrollment, User
 from test_observer import create as create_observer, sign_in
 from test_student import env, post  # noqa: F401  (fixture reuse)
 
@@ -22,6 +23,23 @@ def upload(client, name: str, content: bytes):
 
 def put(client, path, payload):
     return client.put(path, json=payload, headers={"X-CSRF-Token": client.cookies["academy_csrf"]})
+
+
+def add_students(engine, cohort_id: int, names: list[str]) -> dict[str, TestClient]:
+    """More students in the class, signed in (the demo class has two)."""
+    with Session(engine) as db:
+        for name in names:
+            user = User(username=name, password_hash=password_hash.hash(f"{name}-pass"), role="student")
+            db.add(user)
+            db.flush()
+            db.add(Enrollment(cohort_id=cohort_id, user_id=user.id))
+        db.commit()
+    clients = {}
+    for name in names:
+        client = TestClient(app)
+        assert client.post("/api/v1/auth/login", json={"username": name, "password": f"{name}-pass"}).status_code == 200
+        clients[name] = client
+    return clients
 
 
 @pytest.fixture
@@ -62,6 +80,16 @@ def test_versioned_submissions_with_files_late_flag_comments_and_privacy(project
     a, b, teacher = clients["a"], clients["b"], clients["teacher"]
     cohort = a.get("/api/v1/student/project").json()["cohort_id"]
     post(a, "/api/v1/student/project/team", {"cohort_id": cohort})
+    solo_milestone = post(teacher, f"/api/v1/teacher/classes/{assignment}/project/milestones", {"title": "Essai seul", "sort_order": 9}).json()
+    # ADR-0041: a team of one cannot submit; the teacher adds a third classmate (B stays outside, for the privacy checks).
+    refused = post(a, f"/api/v1/student/project/milestones/{solo_milestone['id']}/submissions", {"text": "Seul"})
+    assert refused.status_code == 409 and "travail individuel" in refused.json()["detail"]
+    add_students(engine, cohort, ["demo.etudiant03"])
+    me = a.get("/api/v1/auth/me").json()["id"]
+    c_id = next(c["id"] for c in a.get("/api/v1/student/project").json()["classmates"] if c["name"] == "demo.etudiant03")
+    team_id = a.get("/api/v1/student/project").json()["team"]["id"]
+    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}", {"user_ids": [me, c_id]}).status_code == 200
+    teacher.delete(f"/api/v1/teacher/project/milestones/{solo_milestone['id']}", headers={"X-CSRF-Token": teacher.cookies["academy_csrf"]})
     past = (datetime.now(timezone.utc) - timedelta(hours=1)).isoformat()
     base = f"/api/v1/teacher/classes/{assignment}/project"
     conception = post(teacher, f"{base}/milestones", {"title": "Conception du 29 octobre", "instructions": "Tableau des sources, règles, schéma.",

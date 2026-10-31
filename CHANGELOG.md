@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-31 — Binôme surprise : plus de travail individuel dans l'espace projet (`claude/lucid-brahmagupta-htwgun-binome`)
+
+- Sans équipe, l'étudiant choisit « Former mon binôme » ou « Je tente le binôme surprise » ; l'option « travailler seul » disparaît et une équipe d'une seule personne ne peut plus déposer.
+- Inscrit, il voit son statut et peut sortir du tirage tant qu'il n'a pas eu lieu.
+- Projet > Binômes : « Lancer le tirage » (aperçu, autre tirage, validation). Le tirage, côté serveur, apparie au hasard les étudiants sans équipe, avec un trinôme si le nombre est impair. Il est déterministe pour sa graine, enregistré, audité et idempotent ; un second tirage demande une confirmation.
+- Les équipes formées et les dépôts ne bougent pas ; les équipes d'une seule personne ne rejoignent le tirage qu'avec l'accord de l'enseignant.
+- Notification aux étudiants tirés au sort et révélation unique par cartes qui se retournent (environ 1,2 s), coupée par « Réduire les animations ». Textes traduits en anglais. ADR-0041, migration `0016_project_draw`.
+
 ## 2026-10-31 — Interface en anglais (`claude/lucid-brahmagupta-htwgun-anglais`)
 
 - Toute l'interface existe en anglais (étudiant, enseignant, observateur, connexion, page indisponible, messages d'erreur, notifications automatiques) ; le français reste la langue de référence.

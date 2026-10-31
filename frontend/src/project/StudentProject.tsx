@@ -1,9 +1,10 @@
-import { locale, t } from "../i18n"
+import { locale, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Field, Flex, Heading, Input, Link, NativeSelect, Stack, Text, Textarea } from "@chakra-ui/react"
 import { api, ApiError, csrfToken } from "../api"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
 import { ProjectText, TABLE_TEMPLATE, fileSize, when } from "./ProjectText"
+import { SurpriseReveal } from "./SurpriseDraw"
 import type { Milestone, ProjectFileRef, StudentProjectData } from "./types"
 
 const ACCEPT = ".pdf,.png,.jpg,.jpeg,.md,.zip"
@@ -29,6 +30,11 @@ export function StudentProject() {
     catch (reason) { if (!(reason instanceof ApiError && reason.status === 401)) setError(t("Chargement impossible. Réessayez.")) }
   }, [])
   useEffect(() => { void load() }, [load])
+  useEffect(() => {  // ADR-0041: a draw notification refreshes the page (and brings the reveal)
+    const refresh = () => void load()
+    window.addEventListener("academy:refresh", refresh)
+    return () => window.removeEventListener("academy:refresh", refresh)
+  }, [load])
 
   async function act(path: string, body: unknown, success: string) {
     setNotice("")
@@ -46,15 +52,16 @@ export function StudentProject() {
     <Stack gap="1">
       <Link href="#/" color="brand.fg" fontSize="sm" alignSelf="start">{t("← Tableau de bord")}</Link>
       <Heading as="h1" size={{ base: "2xl", md: "3xl" }}>{t("Projet CampusEquip")}</Heading>
-      <Text color="app.muted">{data.cohort} {t("· travail en binôme (ou seul), dépôts par jalon, soutenance.")}</Text>
+      <Text color="app.muted">{data.cohort} {t("· travail en binôme, dépôts par jalon, soutenance.")}</Text>
     </Stack>
+    {data.surprise && data.surprise.partners.length > 0 && <SurpriseReveal key={data.surprise.draw_id} partners={data.surprise.partners} cohortId={data.cohort_id} />}
     {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
 
     <Panel as="section" aria-labelledby="team-title"><Stack gap="3">
       <Heading as="h2" size="md" id="team-title">{t("Mon binôme")}</Heading>
       {team ? <>
         <Flex gap="2" wrap="wrap">{team.members.map((member) => <Badge key={member.id} colorPalette="brand" variant="subtle" rounded="full" px="3" py="1">{member.name}</Badge>)}
-          {team.members.length === 1 && <Text fontSize="sm" color="app.muted">{t("Vous travaillez seul pour l’instant.")}</Text>}</Flex>
+          {team.members.length === 1 && <Text fontSize="sm" color="app.muted">{t("En attente d’un camarade : invitez-le ci-dessous. Seul, vous ne pouvez pas déposer.")}</Text>}</Flex>
         {team.invitations.length > 0 && <Text fontSize="sm">{t("Invitation envoyée à")}{" "}{team.invitations.map((item) => item.name).join(", ")} {t(": en attente.")}</Text>}
         {!team.full && <Flex gap="2" wrap="wrap" align="end">
           <Field.Root maxW="sm"><Field.Label>{t("Inviter un camarade")}</Field.Label>
@@ -66,8 +73,18 @@ export function StudentProject() {
         </Flex>}
         <Button alignSelf="start" size="sm" variant="ghost" colorPalette="red" onClick={() => void act("/student/project/leave", undefined, t("Vous avez quitté le binôme."))}>{t("Quitter le binôme")}</Button>
       </> : <>
-        <Text>{t("Créez votre binôme, puis invitez un camarade ; il devra accepter. Vous pouvez aussi travailler seul.")}</Text>
-        <Button alignSelf="start" colorPalette="brand" onClick={() => void act("/student/project/team", { cohort_id: data.cohort_id }, t("Binôme créé."))}>{t("Créer mon binôme")}</Button>
+        <Text>{t("Le projet se fait à deux. Formez votre binôme en invitant un camarade, qui devra accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.")}</Text>
+        {data.draw?.registered ? <Stack gap="2" p="3" rounded="lg" bg="brand.subtle" data-testid="draw-status">
+          <Text fontWeight="semibold">{t("Vous êtes inscrit au binôme surprise.")}</Text>
+          <Text fontSize="sm">{tn("{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage.", data.draw.registered_count)}</Text>
+          <Flex gap="2" wrap="wrap">
+            <Button size="sm" variant="outline" colorPalette="brand" onClick={() => void act("/student/project/draw/leave", { cohort_id: data.cohort_id }, t("Vous êtes sorti du tirage."))}>{t("Me retirer du tirage")}</Button>
+            <Button size="sm" variant="ghost" colorPalette="brand" onClick={() => void act("/student/project/team", { cohort_id: data.cohort_id }, t("Binôme créé : invitez un camarade."))}>{t("Former mon binôme")}</Button>
+          </Flex>
+        </Stack> : <Flex gap="2" wrap="wrap">
+          <Button colorPalette="brand" onClick={() => void act("/student/project/team", { cohort_id: data.cohort_id }, t("Binôme créé : invitez un camarade."))}>{t("Former mon binôme")}</Button>
+          <Button colorPalette="brand" variant="outline" onClick={() => void act("/student/project/draw/join", { cohort_id: data.cohort_id }, t("Inscription au binôme surprise enregistrée."))}>{t("Je tente le binôme surprise")}</Button>
+        </Flex>}
       </>}
       {(data.invitations ?? []).map((item) => <Flex key={item.id} gap="3" align="center" wrap="wrap" p="3" bg="brand.subtle" rounded="lg">
         <Text flex="1" minW="48">{item.from} {t("vous invite dans son binôme (")}{item.members.join(", ")}).</Text>
@@ -79,7 +96,7 @@ export function StudentProject() {
     <Stack as="section" gap="4" aria-labelledby="milestones-title">
       <Heading as="h2" size="md" id="milestones-title">{t("Jalons")}</Heading>
       {(data.milestones ?? []).length === 0 && <Text color="app.muted">{t("L’enseignant n’a pas encore publié de jalon.")}</Text>}
-      {(data.milestones ?? []).map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={Boolean(team)} onSubmitted={load} />)}
+      {(data.milestones ?? []).map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={Boolean(team && team.members.length >= 2)} onSubmitted={load} />)}
     </Stack>
 
     <Panel as="section" aria-labelledby="slots-title"><Stack gap="2">
@@ -88,7 +105,7 @@ export function StudentProject() {
         : <Stack as="ul" listStyleType="none" p="0" m="0" gap="1.5">{data.slots!.map((slot) => <Flex as="li" key={slot.id} gap="3" wrap="wrap" p="2.5" rounded="md"
           bg={slot.mine ? "brand.subtle" : "transparent"} fontWeight={slot.mine ? "semibold" : "normal"}>
           <Text css={{ fontVariantNumeric: "tabular-nums" }}>{when(slot.starts_at)} – {slot.ends_at ? new Date(slot.ends_at).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" }) : ""}</Text>
-          <Text color="app.muted">{slot.label}</Text><Text>{slot.team.length ? slot.team.join(" + ") : "libre"}</Text>
+          <Text color="app.muted">{slot.label}</Text><Text>{slot.team.length ? slot.team.join(" + ") : t("libre")}</Text>
           {slot.mine && <Badge colorPalette="brand">{t("Votre créneau")}</Badge>}</Flex>)}</Stack>}
     </Stack></Panel>
   </Stack>
@@ -171,6 +188,6 @@ function MilestoneCard({ milestone, canSubmit, onSubmitted }: { milestone: Miles
       <Button type="submit" colorPalette="brand" alignSelf="start" loading={busy} disabled={!text.trim() && !link.trim() && files.length === 0}>
         {latest ? t("Déposer une nouvelle version") : t("Déposer")}</Button>
       {overdue && <Text fontSize="xs" color="saffron.fg">{t("La date limite est passée : le dépôt reste possible et sera signalé comme en retard.")}</Text>}
-    </Stack> : <Text fontSize="sm" color="app.muted">{t("Créez ou rejoignez un binôme pour déposer.")}</Text>}
+    </Stack> : <Text fontSize="sm" color="app.muted">{t("Il faut être au moins deux pour déposer : formez votre binôme ou tentez le binôme surprise.")}</Text>}
   </Stack></Panel>
 }

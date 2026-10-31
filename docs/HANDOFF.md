@@ -5,6 +5,18 @@
 
 
 
+## Binôme surprise (31/10/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-binome` depuis `main` (#70 fusionnée). Fichiers clés : `backend/app/project_draw.py` (tirage, inscriptions, révélation), `backend/app/project.py` (pas de dépôt seul, état du tirage dans la page étudiant), `backend/app/models.py`, migration `0016_project_draw`, `frontend/src/project/SurpriseDraw.tsx` (panneau enseignant, révélation), `StudentProject.tsx`, `TeacherProject.tsx`, `e2e/project-draw.spec.ts`. ADR-0041. Captures : `docs/captures/binome/`.
+
+### Binôme surprise — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md` (Sauvegardes et restauration), avec `avant-0016-binome` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0016_project_draw` s'applique seule.
+3. Prévenir la classe que le travail seul n'est plus possible : les étudiants sans binôme le forment ou s'inscrivent au binôme surprise.
+4. Le moment venu : Projet > Binômes > « Lancer le tirage », vérifier l'aperçu, cocher au besoin les équipes d'une seule personne, puis « Valider ce tirage ».
+
+Prochaine action unique : revue et fusion de la PR « Binôme surprise ».
+
 ## Interface en anglais — PR 3/3 (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` ; `main` fusionnée après #67 et #69, dont les textes (radio, séries, badges, niveaux, objectif de classe, son de réussite) sont traduits. Fichiers clés : `frontend/src/i18n/` (`index.ts`, `en.json`, `fr.json`, `server.ts`, `keys.test.ts`), `main.tsx`, `public/theme-init.js`, `public/offline.js`, `playwright.config.ts`, ADR-0040. Captures : `docs/captures/anglais/`.
@@ -13,7 +25,7 @@ Branche `claude/lucid-brahmagupta-htwgun-anglais` depuis `main` ; `main` fusionn
 1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`), puis recharger la page.
 2. Un navigateur réglé en anglais affiche l'interface en anglais ; « Français » se choisit dans le menu de compte ou Paramètres > Général.
 
-Prochaine action unique : revue et fusion de la PR « Interface en anglais » (#70).
+PR #70 fusionnée le 31/10/2026.
 
 ## Plus de plaisir — PR 2/3 (31/10/2026)
 
