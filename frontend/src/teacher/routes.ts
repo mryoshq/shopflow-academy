@@ -10,7 +10,7 @@ import { msg } from "../i18n"
  *   #/projet                (ADR-0034)
  *   #/voyage[/<scène>]      (ADR-0033, in the menu once the application is integrated)
  *   #/classement            #/classement/<assignment id>
- *   #/reglages/notifications | observateurs | classes
+ *   #/reglages/notifications | observateurs | classes | objectif
  */
 
 export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "projet" | "classement" | "voyage" | "reglages"
@@ -31,7 +31,7 @@ export const VIEWS: ViewInfo[] = [
   { key: "classement", label: "Leaderboard", title: "Leaderboard", icon: "trophy", subs: [] },
   { key: "voyage", label: msg("Le voyage d’une donnée"), title: msg("Le voyage d’une donnée"), icon: "route", subs: [] },
   { key: "reglages", label: msg("Réglages"), title: msg("Réglages"), icon: "settings", subs: [
-    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }] },
+    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }, { key: "objectif", label: msg("Objectif de classe") }] },
 ]
 
 export const DEFAULT_ROUTE: TeacherRoute = { view: "aujourdhui", sub: "", params: {} }

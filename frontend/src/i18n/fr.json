@@ -44,5 +44,7 @@
   "{{count}} étudiant en ligne sur {{total}}_one": "{{count}} étudiant en ligne sur {{total}}",
   "{{count}} étudiant en ligne sur {{total}}_other": "{{count}} étudiants en ligne sur {{total}}",
   "{{n}} rejetée_one": "{{n}} rejetée",
-  "{{n}} rejetée_other": "{{n}} rejetées"
+  "{{n}} rejetée_other": "{{n}} rejetées",
+  "mission réussie du premier coup_one": "mission réussie du premier coup",
+  "mission réussie du premier coup_other": "missions réussies du premier coup"
 }

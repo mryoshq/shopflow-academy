@@ -55,6 +55,8 @@ export type DashboardCourse = {
   missions: DashboardMission[]
   /** ADR-0027: announcement of the rules against random clicking. */
   rules_notice?: { text: string; since: string } | null
+  /** ADR-0039: streak, level, badges and class goal (never part of the score). */
+  rewards?: Rewards
 }
 
 export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[] }
@@ -115,6 +117,8 @@ export type AttemptRules = {
   reading_remaining: number
 }
 
+import type { AttemptRewards, Rewards } from "../rewards/types"
+
 export type Answer = { choice_ids: string[]; pairs: Record<string, string> }
 
 export type AttemptResult = {
@@ -129,4 +133,6 @@ export type AttemptResult = {
   score: MissionScore
   feedback: { choice_id: string; text: string }[]
   explanation: string | null
+  /** ADR-0039: absent on a replayed attempt. */
+  rewards?: AttemptRewards
 }

@@ -7,6 +7,7 @@ import { MODULE, SchoolName } from "../BrandName"
 import { AccountMenu } from "../preferences/AccountMenu"
 import { TeacherStudio } from "../TeacherStudio"
 import { LeaderboardPage } from "../leaderboard/LeaderboardPage"
+import { GoalSettings, TeacherGoalBar } from "../rewards/Rewards"
 import { NotificationBell, useNotificationFeed } from "../live/notifications"
 import { HELP_CHANGED, HelpBadge, HelpText } from "./HelpBadge"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
@@ -257,7 +258,7 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
     case "aujourdhui":
       return <Today username={username} assignmentId={assignmentId} />
     case "classe":
-      return <Stack gap="0">{context}<SubTabs route={route} go={go} label={t("Ma classe")} counts={{ aide: helpPending }}>
+      return <Stack gap="0">{context}{assignmentId && <TeacherGoalBar assignmentId={assignmentId} />}<SubTabs route={route} go={go} label={t("Ma classe")} counts={{ aide: helpPending }}>
         {!assignmentId ? <NoClass /> : <>
           <Tabs.Content value="frise"><Stack gap="8"><ClassTimeline assignmentId={assignmentId} section="frise" /><AutoPlanPanel assignmentId={assignmentId} /></Stack></Tabs.Content>
           <Tabs.Content value="etudiants"><Stack gap="8">
@@ -287,6 +288,7 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
         <Tabs.Content value="notifications"><Panel><NotificationSettingsPanel /></Panel></Tabs.Content>
         <Tabs.Content value="observateurs"><ObserversPanel /></Tabs.Content>
         <Tabs.Content value="classes"><TeacherDashboard /></Tabs.Content>
+        <Tabs.Content value="objectif">{assignmentId ? <GoalSettings assignmentId={assignmentId} /> : <NoClass />}</Tabs.Content>
       </SubTabs>
   }
 }

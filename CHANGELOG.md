@@ -5,7 +5,17 @@
 - Toute l'interface existe en anglais (étudiant, enseignant, observateur, connexion, page indisponible, messages d'erreur, notifications automatiques) ; le français reste la langue de référence.
 - Choix « Français / English » dans le menu de compte et dans Paramètres > Général, mémorisé dans le navigateur, langue du navigateur par défaut ; `<html lang>` suit le choix.
 - Dates et nombres formatés selon la langue ; le contenu des cours reste dans sa langue d'origine.
+- Les textes de « Plus de plaisir » (niveaux, badges, séries, objectif de classe, son de réussite et leurs notifications) sont traduits ; un badge nommé d'après un objectif ou un module garde les mots du cours.
 - Une clé de traduction manquante fait échouer la CI. Structure prête pour l'arabe (direction de droite à gauche), non livré. ADR-0040.
+
+## 2026-10-31 — Plus de plaisir : séries, badges, niveaux, objectif de classe (`claude/lucid-brahmagupta-htwgun-plaisir`)
+
+- Séries de missions réussies du premier coup (effet discret à 3, 5 et 10 ; un essai raté remet à zéro sans message).
+- Badges personnels attribués par le serveur (première mission, premier bloc, séries de 5 et 10, un par objectif atteint, tous les bonus d'un module), avec notification et collection ; recalcul `python -m app.rewards recompute`.
+- Niveaux de « Stagiaire Data » à « Lead Data Engineer » avec des points d'expérience distincts de la note, jamais exportés.
+- Objectif de classe anonyme, réglable par l'enseignant, avec une notification à 25, 50, 75 et 100 %.
+- Confettis à la fin d'un bloc et son court facultatif (coupé par défaut), coupés avec « Réduire les animations ». ADR-0039, migration `0015_rewards`.
+
 ## 2026-10-31 — Test de charge : limite propre à la connexion (`claude/lucid-brahmagupta-htwgun-charge`)
 
 - `scripts/load_test.py` : la connexion (hachage Argon2 volontairement coûteux, 11 connexions simultanées, une fois par session de 30 jours) a sa propre limite de p95, 3 s ; toutes les autres requêtes gardent 1,5 s. Le contrôle CI ne dépend plus de la vitesse de la machine.

@@ -4,6 +4,7 @@ import { Box, Button, CloseButton, Dialog, Flex, HStack, Kbd, NativeSelect, Port
 import { useColorMode, type ThemeChoice } from "../useColorMode"
 import { displayName, roleLabel } from "./account"
 import { ZOOM_STEPS, modKey, nextZoom, percent, useReducedMotion, useZoom } from "./display"
+import { useSound } from "../rewards/celebrate"
 import type { Account } from "./PreferencesProvider"
 
 export type SettingsTab = "general" | "appearance" | "shortcuts"
@@ -116,6 +117,7 @@ function Appearance() {
   const { choice, choose } = useColorMode()
   const { zoom, setZoom } = useZoom()
   const { reduce, choose: chooseMotion } = useReducedMotion()
+  const sound = useSound()
   const mod = modKey()
   return <Stack gap="0">
     <Section title={t("Thème")} description={t("Mémorisé dans ce navigateur.")}>
@@ -148,6 +150,13 @@ function Appearance() {
       <Switch.Root checked={reduce} onCheckedChange={(event) => chooseMotion(event.checked)} colorPalette="brand" display="flex" justifyContent="space-between" w="full">
         <Switch.HiddenInput />
         <Switch.Label fontSize="sm" fontWeight="normal">{t("Réduire les animations")}</Switch.Label>
+        <Switch.Control><Switch.Thumb /></Switch.Control>
+      </Switch.Root>
+    </Section>
+    <Section title={t("Son de réussite")} description={t("Un son court à la fin d’un bloc ou d’une belle série. Coupé par défaut, et toujours coupé avec « Réduire les animations ».")}>
+      <Switch.Root checked={sound.on} onCheckedChange={(event) => sound.choose(event.checked)} colorPalette="brand" display="flex" justifyContent="space-between" w="full">
+        <Switch.HiddenInput />
+        <Switch.Label fontSize="sm" fontWeight="normal">{t("Jouer un son de réussite")}</Switch.Label>
         <Switch.Control><Switch.Thumb /></Switch.Control>
       </Switch.Root>
     </Section>

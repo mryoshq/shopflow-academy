@@ -10,6 +10,7 @@ import { DemoBadge, ErrorState, Icon, LoadingState, Panel, StatusBadge, formatPo
 import { HelpRequest } from "./HelpRequest"
 import { LessonView } from "./Lesson"
 import { RichText } from "./RichText"
+import { AttemptRewardsNote } from "../rewards/Rewards"
 import { RunPanel } from "./RunPanel"
 import { SqlChallenge } from "./SqlChallenge"
 
@@ -310,6 +311,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                   <Text fontSize="sm" color="app.muted">« {labelOf(item.choice_id)} »</Text><Text>{item.text}</Text>
                 </Box>)}
               </Stack>}
+              <AttemptRewardsNote rewards={result.rewards} correct={result.correct} />
               {result.explanation && <Box p="4" bg="brand.subtle" rounded="md"><Text fontWeight="semibold" mb="1">{t("Explication")}</Text><RichText text={result.explanation} /></Box>}
               <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("Essai n°")}{" "}{result.attempts_count}{result.replayed ? t(" (déjà enregistré)") : ""} : {formatPoints(result.points)} / {result.score.possible} {t("pts. Meilleur score conservé :")}{" "}{formatPoints(result.score.best)} {t("pts.")}</Text>
               <Flex gap="3" wrap="wrap">
