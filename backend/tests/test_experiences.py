@@ -88,3 +88,19 @@ def test_the_page_reads_the_course_values_or_falls_back_to_defaults(env):
     post(teacher, f"/api/v1/teacher/cohorts/{cohort}/enrollments", {"user_id": student})
     post(teacher, f"/api/v1/teacher/cohorts/{cohort}/assignments", {"course_release_id": published["published"]["release_id"]})
     assert a.get("/api/v1/experiences/voyage/data").json()["data"] == VALUES
+
+
+def test_a_lesson_opens_the_campusequip_experience_at_a_step_without_course_values():
+    """ADR-0044: « Le voyage d'une location » (CampusEquip) has its own data; a data file is refused in French."""
+    text = lesson("  scene: 4\n").replace("experience: voyage", "experience: campusequip")
+    compiled = compile_files({"00-cours.md": HEADER, "10-m.md": module(text)}, {})
+    assert compiled.errors == []
+    assert compiled.modules[0].blocks[0].items[0].definition["display_data"] == {
+        "kind": "experience", "experience": "campusequip", "scene": 4, "data": None, "title": "", "description": ""}
+    with_file = lesson("  data_file: experiences/voyage.json\n").replace("experience: voyage", "experience: campusequip")
+    refused = compile_files({"00-cours.md": HEADER, "10-m.md": module(with_file)}, {"experiences/voyage.json": json.dumps(VALUES).encode()})
+    assert any("n'est accepté que pour `experience: voyage`" in issue.message for issue in refused.errors), [i.message for i in refused.errors]
+    adapter = TypeAdapter(DisplayData)
+    assert adapter.validate_python({"kind": "experience", "experience": "campusequip", "scene": 7}).scene == 7
+    with pytest.raises(ValidationError):
+        adapter.validate_python({"kind": "experience", "experience": "campusequip", "scene": 8})

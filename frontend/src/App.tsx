@@ -3,6 +3,7 @@ import { Suspense, useCallback, useEffect, useRef, useState, type FormEvent } fr
 import { Badge, Box, Button, Container, Field, Flex, Heading, Input, Link, Stack, Text, chakra } from "@chakra-ui/react"
 import { TeacherApp } from "./teacher/TeacherApp"
 import { StudentHome } from "./StudentHome"
+import { useExperienceRoute } from "./useHashRoute"
 import { ObserverHome } from "./observer/ObserverHome"
 import { InvitationPage, invitationToken } from "./observer/InvitationPage"
 import { useColorMode } from "./useColorMode"
@@ -135,6 +136,7 @@ export function App() {
     }
   }
 
+  const wide = useExperienceRoute() && state === "authenticated" && user?.role === "student"
   const page = (
     <Box minH="100vh" bg="app.canvas" color="app.ink">
       {/* ADR-0024: keyboard users skip the header. */}
@@ -158,7 +160,8 @@ export function App() {
           </Flex>
         </Container>
       </Box>
-      <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW="7xl" py={{ base: "8", md: "12" }}>
+      {/* ADR-0044: an interactive experience takes the whole width (it has its own header and margins). */}
+      <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW={wide ? "none" : "7xl"} px={wide ? "0" : undefined} py={wide ? "0" : { base: "8", md: "12" }}>
         {state === "loading" && <Text role="status" color="app.muted">{t("Chargement de votre espace…")}</Text>}
         {/* ADR-0042: an invited observer chooses a password before signing in. */}
         {state === "anonymous" && invitation && <InvitationPage token={invitation} onDone={(name) => {

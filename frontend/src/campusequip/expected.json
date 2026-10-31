@@ -1,0 +1,56 @@
+{
+  "propre-1": {
+    "received": 41,
+    "duplicates": 0,
+    "accepted": 41,
+    "rejected": 0,
+    "contracts": 20,
+    "anomalies": 0,
+    "cents": 2821500
+  },
+  "propre-2": {
+    "received": 39,
+    "duplicates": 0,
+    "accepted": 39,
+    "rejected": 0,
+    "contracts": 20,
+    "anomalies": 0,
+    "cents": 1988300
+  },
+  "propre-3": {
+    "received": 35,
+    "duplicates": 0,
+    "accepted": 35,
+    "rejected": 0,
+    "contracts": 20,
+    "anomalies": 0,
+    "cents": 1048400
+  },
+  "mixte-1": {
+    "received": 44,
+    "duplicates": 1,
+    "accepted": 34,
+    "rejected": 9,
+    "contracts": 16,
+    "anomalies": 1,
+    "cents": 2336300
+  },
+  "mixte-2": {
+    "received": 42,
+    "duplicates": 1,
+    "accepted": 29,
+    "rejected": 12,
+    "contracts": 16,
+    "anomalies": 1,
+    "cents": 1953400
+  },
+  "mixte-3": {
+    "received": 38,
+    "duplicates": 1,
+    "accepted": 29,
+    "rejected": 8,
+    "contracts": 16,
+    "anomalies": 1,
+    "cents": 2012000
+  }
+}

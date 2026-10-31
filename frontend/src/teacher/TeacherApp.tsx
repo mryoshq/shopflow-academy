@@ -20,6 +20,7 @@ import { TeacherDashboard } from "./TeacherDashboard"
 import { Today } from "./Today"
 import { TeacherProject } from "../project/TeacherProject"
 import { VOYAGE_READY, VoyagePage } from "../voyage"
+import { CAMPUSEQUIP_READY, CampusEquipPage } from "../campusequip"
 import { StudentView } from "../studentview/StudentView"
 import { OnlineStatus } from "./OnlineStatus"
 import { VIEWS, formatRoute, initialRoute, rememberRoute, viewInfo, parseRoute, type TeacherRoute, type ViewKey } from "./routes"
@@ -47,6 +48,7 @@ const ICONS: Record<string, ReactNode> = {
   expand: <path d="M9 6l6 6-6 6" />,
   logout: <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 17l5-5-5-5M15 12H3" />,
   folder: <><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><path d="M8 13h8" /></>,
+  layers: <><path d="M12 3l9 5-9 5-9-5z" /><path d="M3 13l9 5 9-5" /></>,
   eye: <><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></>,
   route: <><circle cx="6" cy="19" r="2" /><circle cx="18" cy="5" r="2" /><path d="M8 19h7a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h7" /></>,
 }
@@ -150,6 +152,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
   }
 
   const info = viewInfo(route.view)
+  const experience = route.view === "voyage" || route.view === "campusequip"
   function leaveStudentView() {
     const previous = lastTeacherRoute.current
     navigate(previous && previous.view !== "etudiant" ? previous : { view: "aujourdhui", sub: "", params: {} })
@@ -175,7 +178,7 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
         {!wide && <Flex display={{ base: "none", md: "flex" }} justify="center" mb="1">
       <IconButton variant="ghost" size="sm" color="app.muted" onClick={toggleSidebar} aria-expanded={false} aria-label={t("Déplier la navigation")} title={t("Déplier la navigation")}>
         <NavIcon name="expand" size={18} /></IconButton></Flex>}
-    {VIEWS.filter((view) => view.key !== "voyage" || VOYAGE_READY).map((view) => {
+    {VIEWS.filter((view) => (view.key !== "voyage" || VOYAGE_READY) && (view.key !== "campusequip" || CAMPUSEQUIP_READY)).map((view) => {
       const current = route.view === view.key
       const help = view.key === "classe" ? helpPending : 0
       return <Link key={view.key} aria-describedby={help ? "help-badge-nav" : undefined} href={formatRoute({ view: view.key, sub: view.subs[0]?.key ?? "", params: {} })} aria-current={current ? "page" : undefined}
@@ -229,7 +232,9 @@ export function TeacherApp({ username, onLogout, busy, resumed }: { username: st
     {sidebar}
     <Flex direction="column" flex="1" minW="0">
       {topbar}
-      <Box as="main" id="contenu" tabIndex={-1} outline="none" flex="1" minW="0" px={{ base: "3", md: "8" }} py={{ base: "5", md: "8" }} maxW="7xl" w="full" mx="auto">
+      {/* ADR-0044: an interactive experience takes the whole width (it has its own header and margins). */}
+      <Box as="main" id="contenu" tabIndex={-1} outline="none" flex="1" minW="0" w="full" mx="auto"
+        {...(experience ? { px: "0", py: "0", maxW: "none" } : { px: { base: "3", md: "8" }, py: { base: "5", md: "8" }, maxW: "7xl" })}>
         <Box key={`${route.view}`} className="view-enter">{content}</Box>
       </Box>
     </Flex>
@@ -292,6 +297,9 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
     case "voyage":
       return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
         <VoyagePage scene={route.sub ? Number(route.sub) : 1} onScene={(scene) => navigate({ view: "voyage", sub: String(scene), params: {} })} /></Suspense>
+    case "campusequip":
+      return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
+        <CampusEquipPage step={route.sub ? Number(route.sub) : 1} onStep={(step) => navigate({ view: "campusequip", sub: String(step), params: {} })} /></Suspense>
     case "classement": {
       const selected = route.sub ? Number(route.sub) : assignmentId
       return selected ? <LeaderboardPage key={selected} role="teacher" assignmentId={selected} /> : <NoClass />

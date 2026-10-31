@@ -1,0 +1,23 @@
+{
+  "source": "mryoshq/shopflow-courses@0fb639e assets/CampusEquip-experience.zip (EMPREINTES.json)",
+  "files": {
+    "documents/Sujet_CampusEquip_axes_1_2.pdf": "bdd684e651f291fbb49f051c3648394c5c5f8e8f109ae28c623a1370e682e159",
+    "data/propre-2.csv": "f53431517614116a93fdce33d41f001498d34ca2d0f00800bac6d0c412ac89f7",
+    "data/propre-3.csv": "8b0c92caa467d5e165953ad28536455c767a72f1d2d8649bf7faf05cdbd6cc7e",
+    "data/propre-1.csv": "16377ef4923e1237caaf610bf1523923939bbf7dabbd74d3a6987b25c27211e1",
+    "data/conflit.csv": "fba9017d888b37f0a639d3b256d344d3a014485f85c18312d08ba4e58f9b0fc8",
+    "data/provenance.json": "46f569d0fb45b65428412780df3f6cabcf9353a95cfbf40bc67384d9b0141522",
+    "data/mixte-1.csv": "0f48281c0dac1f6a5a2d473e3388098bc6a46c90d4ed6a1af56e83a15f582785",
+    "data/structure.csv": "2dee288b02b05b47e46d920812afcc2c7fe01d3f4bc50ae7fcb8b8a68cf7172a",
+    "data/referentiels.json": "ca418e9ede101b63bf07eaefa1ce7ec7ffd6e995c3cb54a5bbd1044f0bb4baea",
+    "data/mixte-2.csv": "309ddb019171014e89f3fbeb6091c7fe45fb5ef769c5dbb75009b159f15c24d8",
+    "data/mixte-3.csv": "2a1e852c9aa1b1e4fd8a8631d38b754f809e927227baf6e26d95e479851a7783",
+    "src/App.tsx": "fc9fd4ba63a2191f0b2ebf8c4a5c6046850f9ca4a17fb7a1a2226bf99806841f",
+    "src/model.test.ts": "d2f29fe2eca8479418c3cad6e9debcf141d60aaeb49d4215b4dcfbf48374d48d",
+    "src/model.ts": "2e12e697869e9949c07771241c56f2c57e9a1a5dcafcf90a36fde657dba88e94",
+    "src/style.css": "c0c6c8522424418ef158a35fc13201f912c39089a792fa7a57b16044ed2d3a0b",
+    "src/icons.tsx": "c7219781335476e8b94069a5dcd3c5df70b00570291151de393537893e23baa3",
+    "src/dataset.json": "3cba84fd199f610e17f8f4f2829c2b640abce13c85a7d4286620afa643a5d68e",
+    "verification/expected.json": "e7a08b6677af77f0677267988ff345a93bbaa854b51c2c858f3c0d2aa11852b1"
+  }
+}

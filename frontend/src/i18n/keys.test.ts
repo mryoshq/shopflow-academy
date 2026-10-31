@@ -11,7 +11,7 @@ import fr from "./fr.json"
  * experience) and tests are not scanned.
  */
 const SRC = resolve(process.cwd(), "src")
-const SKIP = /(\.test\.tsx?$|[\\/]voyage[\\/]|[\\/]i18n[\\/])/
+const SKIP = /(\.test\.tsx?$|[\\/]voyage[\\/]|[\\/]campusequip[\\/]|[\\/]i18n[\\/])/
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     const path = join(dir, name)
