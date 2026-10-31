@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-10-30 — Radio simplifiée (`claude/lucid-brahmagupta-htwgun-radio`)
+
+- Radio d'ambiance : lecteur audio de la plateforme (lecture/pause, volume mémorisé dans le navigateur) au lieu du lecteur YouTube ; deux stations, « Nightride FM — Chillsynth » et « Nightwave Plaza ». Rien ne démarre seul ; le navigateur lit le flux directement.
+- Flux définis sur le serveur (`RADIO_STREAMS`), limités aux hôtes de la CSP `media-src` ; « Radio indisponible pour le moment » en cas d'erreur réseau.
+- Panneau Confort : sur téléphone, il ne sort plus de l'écran.
+
 ## 2026-10-30 — Tableaux Markdown dans les leçons (`claude/lucid-brahmagupta-htwgun-tableaux`)
 
 - Texte des leçons : les tableaux Markdown simples (en-tête, séparation `| --- |`, alignement facultatif) s'affichent en vrai tableau, avec gras et code dans les cellules ; cadre qui défile seul sur téléphone, en clair et en sombre. Un tableau mal formé reste du texte. 12 colonnes et 100 lignes au plus.

@@ -4,6 +4,7 @@ import type { MissionStatus } from "./types"
 
 export type IconName = "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | "alert" | "clock" | "target" | "pencil"
   | "book" | "list" | "sort" | "link" | "chart" | "code" | "play" | "star" | "search" | "chevron" | "layers" | "bell" | "send" | "user"
+  | "pause" | "volume"
 
 /** Small inline icons (no icon font, no emoji). Always paired with text. */
 export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "bulb" | "arrow-right" | "arrow-left" | IconName; size?: number }) {
@@ -32,6 +33,8 @@ export function Icon({ name, size = 18 }: { name: "check" | "retry" | "lock" | "
     bell: <><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
     send: <><path d="M21 3L10 14" /><path d="M21 3l-7 18-4-7-7-4z" /></>,
     user: <><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></>,
+    pause: <><path d="M8 5v14" /><path d="M16 5v14" /></>,
+    volume: <><path d="M4 9.5h3.5L12 6v12l-4.5-3.5H4z" /><path d="M15.5 9a4 4 0 0 1 0 6" /><path d="M18 6.5a7.5 7.5 0 0 1 0 11" /></>,
   }
   return <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false">{paths[name]}</svg>
 }
