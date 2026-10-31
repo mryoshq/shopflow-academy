@@ -45,7 +45,9 @@ test("student: a success shows the streak and the badge; the dashboard shows lev
   await page.goto("/")
   const panel = page.getByRole("region", { name: "Votre progression" })
   await expect(panel).toBeVisible()
-  const rewards = (await (await page.request.get("/api/v1/student/dashboard")).json() as { courses: { rewards: Rewards }[] }).courses[0].rewards
+  // Same course as the panel: the main course (not a demonstration), else the first one (StudentDashboard.rewardsCourse).
+  const courses = (await (await page.request.get("/api/v1/student/dashboard")).json() as { courses: { is_demo: boolean; rewards: Rewards }[] }).courses
+  const rewards = (courses.find((course) => !course.is_demo) ?? courses[0]).rewards
   await expect(panel.getByText(rewards.level.name, { exact: true })).toBeVisible()
   await expect(panel.getByText(rewards.streak > 0 ? `Série : ${rewards.streak}` : "Réussissez une mission du premier coup pour lancer une série.")).toBeVisible()
   await expect(panel.getByText(`Badges : ${rewards.badges.filter((b) => b.earned).length} sur ${rewards.badges.length}`)).toBeVisible()
@@ -60,7 +62,8 @@ test("teacher: class goal in « Ma classe » and in Réglages, badges in the stu
   await teacherView(page, "Ma classe", "Étudiants")
   await expect(page.getByRole("group", { name: "Objectif de classe" })).toContainText(/La classe a (réussi|terminé) \d+/)
   await page.getByRole("button", { name: `Détail de ${STUDENT}` }).click()
-  await expect(page.getByRole("group", { name: "Progression (hors note)" })).toContainText("Première mission réussie")
+  // The class's main course: level, XP, streak and badge count, apart from the grade.
+  await expect(page.getByRole("group", { name: "Progression (hors note)" })).toContainText(/XP.*Série : \d+.*Badges : \d+ sur \d+/)
   await page.keyboard.press("Escape")
   await teacherView(page, "Réglages", "Objectif de classe")
   await expect(page.getByLabel("Ce qui compte")).toBeVisible()
