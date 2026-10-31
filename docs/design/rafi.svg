@@ -1,50 +1,58 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
-  <!-- Rafi, mascotte Rapidfox Academy (dessin original). Les groupes #pupil-left / #pupil-right bougent pour suivre le curseur. -->
-  <defs>
-    <radialGradient id="cheek" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#F28C6B" stop-opacity="0.75"/>
-      <stop offset="1" stop-color="#F28C6B" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
-  <!-- tail -->
-  <path d="M150 150 C190 140 192 100 172 92 C176 118 160 132 140 136 Z" fill="#B5532F"/>
-  <path d="M172 92 C182 100 184 112 178 120 C176 108 172 100 166 96 Z" fill="#FAF4EC"/>
-  <!-- body -->
-  <ellipse cx="100" cy="158" rx="42" ry="30" fill="#C96442"/>
-  <ellipse cx="100" cy="164" rx="24" ry="20" fill="#FAF4EC"/>
-  <!-- ears -->
-  <path d="M46 70 L40 18 L84 48 Z" fill="#B5532F"/>
-  <path d="M154 70 L160 18 L116 48 Z" fill="#B5532F"/>
-  <path d="M52 60 L49 30 L74 48 Z" fill="#2B2B29"/>
-  <path d="M148 60 L151 30 L126 48 Z" fill="#2B2B29"/>
-  <!-- head -->
-  <path d="M30 86 C30 52 62 38 100 38 C138 38 170 52 170 86 C170 118 140 138 100 138 C60 138 30 118 30 86 Z" fill="#C96442"/>
-  <!-- face mask -->
-  <path d="M100 74 C82 74 60 84 52 104 C62 124 80 134 100 134 C120 134 138 124 148 104 C140 84 118 74 100 74 Z" fill="#FAF4EC"/>
-  <!-- eyes -->
+  <!-- Rafi, mascotte Rapidfox Academy (dessin original) : renard rapide, anguleux et sûr de lui.
+       Les groupes #pupil-left / #pupil-right bougent pour suivre le curseur ; #lids-* servent au clignement. -->
+  <!-- speed streaks behind the head -->
+  <g stroke="#C96442" stroke-width="4" stroke-linecap="round" opacity="0.55">
+    <line x1="6" y1="70" x2="34" y2="70"/>
+    <line x1="2" y1="88" x2="40" y2="88"/>
+    <line x1="10" y1="106" x2="32" y2="106"/>
+  </g>
+  <!-- ears, swept back -->
+  <path d="M58 70 L30 14 L92 46 Z" fill="#9C4426"/>
+  <path d="M60 62 L44 30 L80 48 Z" fill="#1F1E1D"/>
+  <path d="M120 44 L132 0 L156 52 Z" fill="#9C4426"/>
+  <path d="M126 44 L133 18 L148 50 Z" fill="#1F1E1D"/>
+  <!-- neck and chest, sharp fur -->
+  <path d="M58 132 L100 196 L150 150 L136 128 Z" fill="#B5532F"/>
+  <path d="M86 150 L100 196 L116 158 L108 172 L102 150 L96 170 Z" fill="#FAF4EC"/>
+  <!-- head: angular planes -->
+  <path d="M40 92 L66 48 L124 40 L168 62 L196 98 L170 116 L128 138 L84 140 L52 122 Z" fill="#C96442"/>
+  <path d="M124 40 L168 62 L196 98 L150 84 L118 66 Z" fill="#B5532F"/>
+  <path d="M40 92 L66 48 L84 70 L60 96 Z" fill="#B5532F"/>
+  <!-- cheek tufts, strong jaw -->
+  <path d="M52 122 L28 128 L46 112 L34 110 L52 100 L72 120 Z" fill="#FAF4EC"/>
+  <path d="M84 140 L128 138 L170 116 L150 132 L120 146 L92 148 Z" fill="#9C4426"/>
+  <!-- muzzle, long and pointed -->
+  <path d="M96 96 L150 84 L196 98 L170 116 L128 126 L100 118 Z" fill="#FAF4EC"/>
+  <path d="M188 92 L198 98 L190 104 L182 99 Z" fill="#1F1E1D"/>
+  <!-- confident smirk -->
+  <path d="M140 118 L160 114 L170 108" fill="none" stroke="#1F1E1D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- eyes: narrow, hooded, focused -->
   <g id="eye-left">
-    <ellipse cx="74" cy="90" rx="19" ry="21" fill="#FFFFFF" stroke="#2B2B29" stroke-width="3"/>
-    <g id="pupil-left">
-      <circle cx="74" cy="92" r="11" fill="#1F1E1D"/>
-      <circle cx="78" cy="87" r="4" fill="#FFFFFF"/>
-      <circle cx="70" cy="97" r="1.8" fill="#FFFFFF"/>
+    <path d="M70 84 Q84 72 100 80 Q88 94 70 84 Z" fill="#FFFFFF" stroke="#1F1E1D" stroke-width="2.5"/>
+    <clipPath id="clip-left"><path d="M70 84 Q84 72 100 80 Q88 94 70 84 Z"/></clipPath>
+    <g clip-path="url(#clip-left)">
+      <g id="pupil-left">
+        <circle cx="86" cy="83" r="6.5" fill="#E39A33"/>
+        <circle cx="86" cy="83" r="3.6" fill="#1F1E1D"/>
+        <circle cx="88" cy="81" r="1.4" fill="#FFFFFF"/>
+      </g>
     </g>
+    <path id="lids-left" d="M68 82 Q84 70 102 78" fill="none" stroke="#1F1E1D" stroke-width="4" stroke-linecap="round"/>
   </g>
   <g id="eye-right">
-    <ellipse cx="126" cy="90" rx="19" ry="21" fill="#FFFFFF" stroke="#2B2B29" stroke-width="3"/>
-    <g id="pupil-right">
-      <circle cx="126" cy="92" r="11" fill="#1F1E1D"/>
-      <circle cx="130" cy="87" r="4" fill="#FFFFFF"/>
-      <circle cx="122" cy="97" r="1.8" fill="#FFFFFF"/>
+    <path d="M114 76 Q130 64 146 72 Q132 86 114 76 Z" fill="#FFFFFF" stroke="#1F1E1D" stroke-width="2.5"/>
+    <clipPath id="clip-right"><path d="M114 76 Q130 64 146 72 Q132 86 114 76 Z"/></clipPath>
+    <g clip-path="url(#clip-right)">
+      <g id="pupil-right">
+        <circle cx="131" cy="75" r="6.5" fill="#E39A33"/>
+        <circle cx="131" cy="75" r="3.6" fill="#1F1E1D"/>
+        <circle cx="133" cy="73" r="1.4" fill="#FFFFFF"/>
+      </g>
     </g>
+    <path id="lids-right" d="M112 74 Q130 62 148 70" fill="none" stroke="#1F1E1D" stroke-width="4" stroke-linecap="round"/>
   </g>
-  <!-- cheeks -->
-  <ellipse cx="58" cy="114" rx="12" ry="7" fill="url(#cheek)"/>
-  <ellipse cx="142" cy="114" rx="12" ry="7" fill="url(#cheek)"/>
-  <!-- nose and mouth -->
-  <path d="M93 112 Q100 107 107 112 Q100 120 93 112 Z" fill="#2B2B29"/>
-  <path d="M92 122 Q100 128 108 122" fill="none" stroke="#2B2B29" stroke-width="2.5" stroke-linecap="round"/>
-  <!-- paws -->
-  <ellipse cx="80" cy="182" rx="11" ry="7" fill="#B5532F"/>
-  <ellipse cx="120" cy="182" rx="11" ry="7" fill="#B5532F"/>
+  <!-- low, sharp brows -->
+  <path d="M66 74 L84 66 L102 70" fill="none" stroke="#1F1E1D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M112 66 L132 56 L150 62" fill="none" stroke="#1F1E1D" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
