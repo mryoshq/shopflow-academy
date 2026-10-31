@@ -397,12 +397,12 @@ def recompute(db: Session) -> dict:
 
 
 def main() -> None:
-    from app.database import SessionLocal
+    from app.database import get_engine
 
     parser = argparse.ArgumentParser(description="Badges (ADR-0039)")
     parser.add_argument("command", choices=["recompute"])
     parser.parse_args()
-    with SessionLocal() as db:
+    with Session(get_engine(), expire_on_commit=False) as db:
         print(json.dumps(recompute(db), ensure_ascii=False))
 
 

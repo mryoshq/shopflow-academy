@@ -180,3 +180,19 @@ def test_a_closed_block_announces_no_objective_or_bonus_badge_and_codes_never_sh
     assert objective_key("SQL-1") in [item["key"] for item in shown] and "SQL-1" not in str(shown)
     assert "bonus:Module 1" not in [item["key"] for item in shown]  # bonuses live in block 200, still closed
     assert len(rewards.collection(NoRows(), course, 7, facts)) == 6  # the teacher sees everything
+
+
+def test_recompute_command_line_opens_its_own_session(env, monkeypatch, capsys):
+    """`python -m app.rewards recompute` (run on the Mac after the 0015 migration) uses the app's engine."""
+    import json
+    import sys
+
+    from app import database
+
+    clients, engine = env
+    solve_first(clients["a"])
+    monkeypatch.setattr(database, "get_engine", lambda: engine)
+    monkeypatch.setattr(sys, "argv", ["app.rewards", "recompute"])
+    rewards.main()
+    printed = json.loads(capsys.readouterr().out)
+    assert printed["rules_version"] == rewards.RULES_VERSION and printed["added"] == 0

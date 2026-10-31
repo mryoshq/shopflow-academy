@@ -36,6 +36,7 @@ E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test
 Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauvegarde manuelle avant tout redéploiement qui ajoute une migration.
 
 ### Redéployer avec une coupure minimale (ADR-0038)
+0. **Vérifier l'activité juste avant de remplacer les conteneurs**, pas au début de la session : sessions actives et dernières tentatives des 10 dernières minutes, sans les noms. Si un étudiant travaille, attendre l'accord « redéploie maintenant » du propriétaire.
 1. **Construire d'abord, remplacer ensuite.**
    - `docker compose build` prépare toutes les images pendant que l'ancienne version sert toujours les étudiants (plusieurs minutes, sans coupure).
    - `docker compose up -d --wait` ne remplace ensuite que les conteneurs dont l'image a changé. La coupure se limite au redémarrage du backend (et des migrations s'il y en a).
@@ -44,7 +45,7 @@ Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauv
    - Dans un second terminal, avant l'étape 1 : `python3 scripts/ops/measure_downtime.py http://127.0.0.1:3080`.
    - Après le smoke test : Ctrl+C. Le script affiche la plus longue coupure de `/health/ready`, en lecture seule.
    - Noter la valeur dans `docs/PROGRESS.md`.
-   - Repère mesuré le 30/10/2026, hors Docker : redémarrage du seul processus backend = 1,2 s. La mesure du redéploiement Compose complet sur le Mac reste à faire (NOT RUN dans la session cloud, sans démon Docker).
+   - Mesures sur le Mac : 1,6 s et 2,9 s sans migration ; 16,3 s avec la migration 0015 et le remplacement du gateway (31/10/2026).
 3. **Pendant la coupure, côté étudiants** :
    - Les sessions sont en base : un redémarrage ou un redéploiement ne déconnecte personne. Une connexion dure 30 jours et se prolonge à chaque visite.
    - Une page déjà ouverte affiche un bandeau « La plateforme est momentanément indisponible… ». Elle retente seule, après 1, 2, 4, 8, 16 s puis toutes les 30 s. Les réponses en cours de saisie restent à l'écran.
