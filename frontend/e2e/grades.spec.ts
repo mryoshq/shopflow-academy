@@ -46,20 +46,20 @@ test.describe.serial("grades", () => {
   test("the teacher enters the new grid; the former grid is never written", async ({ page, request }) => {
     const { csrf, assignment } = await teacherApi(request)
     const project = async () => (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json()
-    let view = await project()
+    const view = await project()
     const free = () => (view.alone as { id: number; name: string }[]).filter((item) => accounts.some((a) => a.username === item.name))
-    for (const existing of [...view.teams]) {
-      if (free().length >= 2) break
-      await request.delete(`/api/v1/teacher/project/teams/${existing.id}`, { headers: { "X-CSRF-Token": csrf } })
-      view = await project()
-    }
+    // One or two students without a team (a team of one is allowed); otherwise an existing team, kept afterwards.
     const pair = free().slice(0, 2)
-    expect(pair).toHaveLength(2)
-    STUDENTS.splice(0, STUDENTS.length, ...pair.map((item) => item.name))
-    const ids = pair.map((item) => item.id)
-    const created = await request.post(`/api/v1/teacher/classes/${assignment}/project/teams`, { data: { user_ids: ids }, headers: { "X-CSRF-Token": csrf } })
-    expect(created.status()).toBe(201)
-    team = (await created.json()).team_id
+    if (pair.length) {
+      const created = await request.post(`/api/v1/teacher/classes/${assignment}/project/teams`, { data: { user_ids: pair.map((item) => item.id) }, headers: { "X-CSRF-Token": csrf } })
+      expect(created.status()).toBe(201)
+      team = (await created.json()).team_id
+      STUDENTS.splice(0, STUDENTS.length, ...pair.map((item) => item.name))
+    } else {
+      const existing = (view.teams as { members: { name: string }[] }[]).find((item) => item.members.length && item.members.every((m) => accounts.some((a) => a.username === m.name)))
+      expect(existing).toBeTruthy()
+      STUDENTS.splice(0, STUDENTS.length, ...existing!.members.map((m) => m.name))
+    }
 
     await signIn(page, "demo.enseignant")
     await teacherView(page, "Projet")
@@ -73,7 +73,7 @@ test.describe.serial("grades", () => {
       ["Preuves reproductibles et compréhension (commun) /1", "1"], ["Airflow et reprise /3", "3"], ["Événements MongoDB /2", "2"], ["Redis /2", "1,5"],
       ["Tentatives et analyse temporelle /2", "2"], ["Reproductibilité et explication du groupe /1", "1"], ["IoT ou API /2", "2"], ["Mesures et conservation /2", "2"]]
     for (const [label, value] of lines) await form.getByLabel(label).fill(value)
-    for (const name of STUDENTS) await form.getByLabel(`Point individuel de ${name} /1`).fill("1")
+    for (const name of STUDENTS) await form.getByLabel(`Point individuel de ${name} /1`).fill("1")  // one or two members
     await form.getByRole("button", { name: "Enregistrer la note" }).click()
     await expect(page.getByText("Note du projet enregistrée.")).toBeVisible()
     // 2 + 1.5 + 2 + 2 + 1 + 1 (individual) = 9.5 ; 3 + 2 + 1.5 + 2 + 1 = 9.5 → base 19 ; bonus 4.
