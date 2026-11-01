@@ -11,6 +11,8 @@ Depuis `main` 752d718. Composant visuel partagé `RafiAvatar` : image originale 
 
 Retour CI : six traductions devenues inutilisées après retrait des boutons ont été supprimées ; `npm run test -- src/i18n/keys.test.ts --maxWorkers=1` : 4 tests PASS.
 
+Retour CI navigateur : quatre cas `logo.spec.ts` cherchaient encore l'ancien logo de 56 px dans le formulaire remplacé par Rafi. Le test vérifie désormais l'image Rafi chargée/détourée et le logo thématique de l'en-tête ; les vérifications après connexion restent dans des cas séparés. `SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3186 SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npx playwright test e2e/logo.spec.ts --grep 'login:'` : 4 PASS, session anonyme simulée, clair/sombre à 1366/390 px et axe. La CI précédente comptait 89 autres tests navigateur PASS. Aucun code applicatif modifié dans cette correction.
+
 Prochaine étape : revue et fusion par le propriétaire, puis redéploiement sur autorisation distincte.
 
 

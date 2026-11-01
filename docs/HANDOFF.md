@@ -6,6 +6,8 @@ Branche `codex/rafi-sans-fond`, depuis `main` 752d718. Le composant `frontend/sr
 
 Validation locale : 18 tests Vitest, build, 5 tests Playwright/axe avec API simulée sur 3186 ; clair/sombre, ordinateur/mobile, yeux et mode mouvement réduit vérifiés. CI complète à attendre. Aucun fichier privé ni donnée réelle dans ce lot ; aucun backend ni migration.
 
+Retour CI traité : `logo.spec.ts` attend maintenant Rafi dans la carte de connexion et conserve les assertions du logo dans l'en-tête, avant et après connexion. Les quatre cas publics corrigés passent localement ; nouveaux contrôles GitHub déclenchés par le push. Le propriétaire surveille la CI, sans suivi automatique de l'agent.
+
 ### À faire en local après fusion autorisée
 1. Redéployer selon le runbook, sur accord distinct ; aucun redéploiement effectué pour ce correctif.
 2. Recharger la page : vérifier Rafi au chargement et à la connexion, puis dans l'interface étudiant sans barre de boutons ni carré blanc.
