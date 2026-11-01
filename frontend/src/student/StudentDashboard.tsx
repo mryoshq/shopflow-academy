@@ -1,4 +1,5 @@
 import { locale, t, tn } from "../i18n"
+import { HeroPanel, Overline, UpdatedAt } from "../brand/Hero"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -30,11 +31,12 @@ export function rewardsCourse(dashboard: Dashboard): DashboardCourse | null {
 export function StudentDashboard({ navigate }: Props) {
   const [data, setData] = useState<Dashboard | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [loadedAt, setLoadedAt] = useState(() => new Date())
 
   const load = useCallback(async () => {
     setError(null)
     setData(null)
-    try { setData(await api<Dashboard>("/student/dashboard")) }
+    try { setData(await api<Dashboard>("/student/dashboard")); setLoadedAt(new Date()) }
     catch (reason) {
       if (!(reason instanceof ApiError && reason.status === 401)) setError(t("Impossible de charger votre tableau de bord."))
     }
@@ -42,7 +44,7 @@ export function StudentDashboard({ navigate }: Props) {
   useEffect(() => { void load() }, [load])
   // ADR-0023: a block opened for the class or for this student arrives as a notification: reload quietly.
   useEffect(() => {
-    const refresh = () => { void api<Dashboard>("/student/dashboard").then(setData).catch(() => { /* next notification retries */ }) }
+    const refresh = () => { void api<Dashboard>("/student/dashboard").then((next) => { setData(next); setLoadedAt(new Date()) }).catch(() => { /* next notification retries */ }) }
     window.addEventListener("academy:refresh", refresh)
     return () => window.removeEventListener("academy:refresh", refresh)
   }, [])
@@ -53,28 +55,33 @@ export function StudentDashboard({ navigate }: Props) {
   const target = continueTarget(data, lastMission())
 
   return <Stack gap="8">
-    <Flex gap="6" justify="space-between" align={{ base: "start", md: "end" }} direction={{ base: "column", md: "row" }}>
-      <Stack gap="2">
-        <Heading as="h1" size={{ base: "3xl", md: "4xl" }} letterSpacing="-0.01em">{t("Bonjour,")}{" "}{data.display_name}</Heading>
-        <Text fontSize="lg" color="app.muted">{data.courses.length === 0 ? t("Votre enseignant ne vous a pas encore attribué de cours.") : t("Reprenez là où vous vous êtes arrêté.")}</Text>
-      </Stack>
-      {target && <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" onClick={() => navigate(`/mission/${target.mission_version_id}`)}>
-        {t("Continuer :")}{" "}{target.title}<Icon name="arrow-right" />
-      </Button>}
-    </Flex>
-    {data.courses.length > 0 && <Flex as="nav" aria-label={t("Projet")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+    {/* ADR-0048: the dark dotted header panel. */}
+    <HeroPanel as="section" aria-labelledby="dashboard-title">
+      <Flex gap="6" justify="space-between" align={{ base: "start", md: "end" }} direction={{ base: "column", md: "row" }}>
+        <Stack gap="3">
+          <Overline color="hero.accent">{t("Tableau de bord")}</Overline>
+          <Heading as="h1" id="dashboard-title" size={{ base: "4xl", md: "5xl" }} textStyle="display">{t("Bonjour,")}{" "}{data.display_name}</Heading>
+          <Text fontSize="lg" color="hero.muted">{data.courses.length === 0 ? t("Votre enseignant ne vous a pas encore attribué de cours.") : t("Reprenez là où vous vous êtes arrêté.")}</Text>
+          <UpdatedAt at={loadedAt} />
+        </Stack>
+        {target && <Button colorPalette="brand" size="lg" h="auto" minH="12" py="2.5" whiteSpace="normal" textAlign="start" maxW="full" onClick={() => navigate(`/mission/${target.mission_version_id}`)}>
+          {t("Continuer :")}{" "}{target.title}<Icon name="arrow-right" />
+        </Button>}
+      </Flex>
+    </HeroPanel>
+    {data.courses.length > 0 && <Flex as="nav" aria-label={t("Projet")} gap="3" align="center" wrap="wrap" px={{ base: "5", md: "7" }} py="5" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
       <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Projet CampusEquip")}</Text>
         <Text fontSize="sm" color="app.muted">{t("Binôme, jalons, dépôts et soutenance.")}</Text></Stack>
       <Button variant="outline" colorPalette="brand" onClick={() => navigate("/projet")}>{t("Ouvrir l’espace projet")}<Icon name="arrow-right" /></Button>
     </Flex>}
     {/* ADR-0033: the experience is in the menu once integrated. */}
-    {data.courses.length > 0 && VOYAGE_READY && <Flex as="nav" aria-label={t("Expérience interactive")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+    {data.courses.length > 0 && VOYAGE_READY && <Flex as="nav" aria-label={t("Expérience interactive")} gap="3" align="center" wrap="wrap" px={{ base: "5", md: "7" }} py="5" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
       <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Le voyage d’une donnée")}</Text>
         <Text fontSize="sm" color="app.muted">{t("Sept scènes : une commande traverse le pipeline ShopFlow.")}</Text></Stack>
       <Button variant="outline" colorPalette="brand" onClick={() => navigate("/voyage/1")}>{t("Ouvrir l’expérience")}<Icon name="arrow-right" /></Button>
     </Flex>}
     {/* ADR-0044: next to the voyage. */}
-    {data.courses.length > 0 && CAMPUSEQUIP_READY && <Flex as="nav" aria-label={t("Expérience CampusEquip")} gap="3" align="center" wrap="wrap" p="4" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
+    {data.courses.length > 0 && CAMPUSEQUIP_READY && <Flex as="nav" aria-label={t("Expérience CampusEquip")} gap="3" align="center" wrap="wrap" px={{ base: "5", md: "7" }} py="5" rounded="card" borderWidth="1px" borderColor="app.border" bg="app.surface">
       <Stack gap="0" flex="1" minW="48"><Text fontWeight="semibold">{t("Le voyage d’une location")}</Text>
         <Text fontSize="sm" color="app.muted">{t("Sept étapes : un lot CampusEquip, des guichets jusqu’aux indicateurs.")}</Text></Stack>
       <Button variant="outline" colorPalette="brand" onClick={() => navigate("/campusequip/1")} aria-label={t("Ouvrir l’expérience CampusEquip")}>{t("Ouvrir l’expérience")}<Icon name="arrow-right" /></Button>

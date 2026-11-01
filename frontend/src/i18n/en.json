@@ -96,7 +96,6 @@
   "Application": "Application",
   "Appliquer": "Apply",
   "Appliquer le seuil": "Apply the threshold",
-  "Apprenez la data en prenant de vraies décisions.": "Learn data by making real decisions.",
   "Après la date limite": "After the deadline",
   "Archive ZIP": "ZIP archive",
   "Archive les cours laissés par les tests automatiques (nom contenant e2e, test ou demo), jamais donnés à votre classe. Rien n’est supprimé.": "Archives the courses left by automated tests (name containing e2e, test or demo), never given to your class. Nothing is deleted.",
@@ -1445,5 +1444,10 @@
   "{{count}} jour avant_one": "{{count}} day before",
   "{{count}} jour avant_other": "{{count}} days before",
   "{{count}} envoi_one": "{{count}} sent",
-  "{{count}} envoi_other": "{{count}} sent"
+  "{{count}} envoi_other": "{{count}} sent",
+  "Apprenez": "Learn",
+  "la data": "data",
+  "la qualité": "data quality",
+  "en prenant de vraies décisions.": "by making real decisions.",
+  "Mis à jour à {{time}}": "Updated at {{time}}"
 }

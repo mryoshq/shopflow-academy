@@ -3,7 +3,20 @@
 Thème unique Chakra UI v3 : `frontend/src/theme.ts` (`createSystem(defaultConfig, defineConfig(...))`). Toute nouvelle interface (studio compris) utilise ces jetons plutôt que des couleurs codées en dur.
 
 ## Intention
-Professionnelle, calme et chaleureuse, dans l'esprit éditorial des interfaces de Claude (ADR-0035) : fond ivoire, gris chauds, un seul accent terre cuite utilisé avec parcimonie, grands titres en serif, coins doux, ombres légères ; anthracite chaud en mode sombre. Légèrement ludique, jamais enfantine. Français clair et **vouvoiement**. Contexte marocain fictif (DH, villes fictives : Tanzar, Oued Lmal), sans caricature. Aucun emoji ; icônes SVG en ligne toujours accompagnées de texte. Aucun logo, nom ni police propriétaire d'Anthropic.
+Professionnelle, calme et chaleureuse, dans l'esprit éditorial des interfaces de Claude (ADR-0035) : fond ivoire, gris chauds, un seul accent utilisé avec parcimonie, grands titres dans une grotesque géométrique (Space Grotesk, ADR-0048), grands panneaux arrondis avec de l'espace autour, ombres légères ; anthracite chaud en mode sombre. Légèrement ludique, jamais enfantine. Français clair et **vouvoiement**. Contexte marocain fictif (DH, villes fictives : Tanzar, Oued Lmal), sans caricature. Aucun emoji ; icônes SVG en ligne toujours accompagnées de texte. Aucun logo, nom ni police propriétaire d'Anthropic.
+
+## Typographie (ADR-0048)
+Deux familles, un système :
+- **Titres** : Space Grotesk Variable (SIL OFL 1.1), grotesque géométrique. Paquet `@fontsource-variable/space-grotesk` 5.3.0, fichiers WOFF2 latin et latin étendu intégrés au build et servis par l'Academy (CSP `font-src 'self'`, aucun CDN). Graisse 600, interlettrage −0,02 em (−0,03 em en `display`). Tailles `md` et plus (titres de page, de section, de cours).
+- **Texte** : sans-serif système (Segoe UI Variable sous Windows, San Francisco sur Mac), interligne 1,6. Les petits titres (`xs`, `sm` : cartes, blocs) restent dans cette police.
+- **Styles nommés** (`textStyles`) :
+  - `display` : grands titres (connexion 4xl/6xl, tableau de bord 4xl/5xl), interligne 1,05 ;
+  - `overline` : surtitre en capitales, `xs`, graisse 700, interlettrage 0,14 em, toujours dans la couleur d'accent (`brand.fg`, ou `hero.accent` sur l'en-tête sombre). Composant `Overline` (`src/brand/Hero.tsx`).
+- **Chiffres** : tabulaires pour les scores, compteurs et heures.
+
+## Panneaux et en-tête (ADR-0048)
+- **Panneaux** : coins de 24 px (`card`), marge intérieure 20 px (28 px sur ordinateur), 24 à 32 px d'espace entre les panneaux.
+- **En-tête du tableau de bord** : panneau sombre `hero.bg` (dans les deux thèmes), trame de points (`hero.dot`, pas de 18 px), surtitre « TABLEAU DE BORD » en `hero.accent`, « Bonjour, … » en `display` blanc, phrase en `hero.muted`, indicateur vert « Mis à jour à HH:MM » (pastille verte qui pulse deux fois après chaque actualisation, jamais avec « Réduire les animations »), bouton principal « Continuer : … » à droite (dessous sur téléphone).
 
 ## Nom affiché (ADR-0037)
 - **Rapidfox Academy** (l'école), en gras, avec « Academy » en `brand.fg` ; sous le nom, le module **Python Data Engineering & SQL Avancé** en `app.muted`, petit texte ; les cas d'étude « ShopFlow · CampusEquip » en texte secondaire à la suite, omis sur téléphone. Composant unique : `src/BrandName.tsx`.
@@ -27,8 +40,9 @@ Chaque jeton sémantique a une valeur claire et une valeur `_dark` ; les paires 
 | Texte | `app.ink` / `app.muted` | `#141413` / `#5E5D59` (6,3:1) | `#FAF9F5` / `#B7B5A9` | texte courant / secondaire |
 | Code | `code.*` | Catppuccin Latte | Catppuccin Mocha | blocs de code, coloration ≥ 4,5:1 |
 | Graphiques | `chart.*` | séries `brand.600` / `saffron.700` | `brand.300` / `saffron.300` | courbes, axes, grille |
-| Police | `heading` / `body` | serif système (Iowan Old Style, Charter, Palatino Linotype, Georgia) pour les grands titres ; sans-serif système pour le texte et les petits titres | idem | aucune police web (CSP) |
-| Rayon | `card`, `l1`/`l2`/`l3` | 12px ; 6/8/12px | idem | cartes ; boutons, champs, menus |
+| Police | `heading` / `body` | Space Grotesk Variable (OFL, servie par l'Academy) pour les titres à partir de `md` ; sans-serif système pour le texte et les petits titres | idem | voir « Typographie » |
+| Rayon | `card`, `l1`/`l2`/`l3` | 24px ; 6/8/12px | idem | panneaux et cartes ; boutons, champs, menus |
+| En-tête sombre | `hero.bg` / `hero.ink` / `hero.muted` / `hero.accent` / `hero.dot` | `#1F1E1D` / `#FAF9F5` (15,8:1) / `#C9C7BC` (9,8:1) / `#6FB6A6` (7,1:1) / points 16 % | `#191817` / idem (16,8:1) / idem (10,4:1) / `#E0967A` (7,4:1) / points 13 % | panneau d'en-tête du tableau de bord (ADR-0048) |
 | Ombre | `card` | très légère | légère | cartes |
 
 Règle Chakra : pour redéfinir un jeton qui existe déjà dans Chakra (`green.solid`, `bg`), utiliser les clés `_light` et `_dark`, pas `base` (la valeur `_light` de Chakra l'emporterait sur `base`).
@@ -48,9 +62,9 @@ Typographie : pile système (`Segoe UI Variable` sous Windows, `-apple-system` s
 - **Onglets** : libellé sur une ligne (`whiteSpace: nowrap`) ; une liste plus large que l'écran défile dans son cadre.
 
 ## Coupures (ADR-0038)
-- **Page « Momentanément indisponible »** : carte centrée `app.surface` sur `app.canvas`, logo 48 px + nom de l'école et module, titre serif, texte `app.muted` « La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique… », bouton à contour « Réessayer maintenant » et « Prochaine tentative dans N s » (chiffres tabulaires). Même rendu dans `public/offline.html` (autonome, thème de l'application via `theme-init.js`).
+- **Page « Momentanément indisponible »** : carte centrée `app.surface` sur `app.canvas`, logo 48 px + nom de l'école et module, titre en grotesque, texte `app.muted` « La plateforme est momentanément indisponible. Votre session et votre travail sont conservés. Nouvelle tentative automatique… », bouton à contour « Réessayer maintenant » et « Prochaine tentative dans N s » (chiffres tabulaires). Même rendu dans `public/offline.html` (autonome, thème de l'application via `theme-init.js`).
 - **Bandeau** sur une page déjà ouverte : en bas au centre, `app.surface`, liseré gauche `saffron.solid` 4 px, même texte et même bouton ; l'en-tête reste utilisable.
-- **Page de connexion** : à gauche, surtitre « RAPIDFOX ACADEMY » (`saffron.fg`, capitales espacées), titre h1 serif « Apprenez la data en prenant de vraies décisions. », ligne « Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data » (espaces insécables), puis le texte de présentation en `app.muted`. À droite, la carte de connexion.
+- **Page de connexion** : à gauche, surtitre « RAPIDFOX ACADEMY » (style `overline`, `brand.fg`), titre h1 en `display` 4xl/6xl « Apprenez la data en prenant de vraies décisions. », dont le mot en accent (`brand.fg`) s'écrit puis s'efface en machine à écrire (la data, SQL, Python, Airflow, la qualité) ; figé sur « la data » avec « Réduire les animations » ; les lecteurs d'écran lisent toujours la phrase avec « la data », ligne « Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data » (espaces insécables), puis le texte de présentation en `app.muted`. À droite, la carte de connexion.
 - **Ouverture de la page de connexion** (`src/LoginIntro.tsx`) : le logo apparaît en grand au centre (fondu sur 30 % du temps), puis rétrécit et glisse jusqu'au logo de la carte. Environ 700 ms, courbe `cubic-bezier(0.2, 0, 0, 1)`, `transform` et `opacity` seulement. Une fois par session de navigateur (`sessionStorage`), jamais avec les animations réduites (système ou réglage). La copie animée est décorative et inerte : le formulaire et le clavier sont utilisables dès le premier instant.
 - **Pastille « Demandes d'aide »** : même style que la pastille des notifications (`saffron`, plein, arrondi, chiffres tabulaires). Elle est en bout de ligne sur l'entrée « Ma classe » de la barre latérale ; petite pastille en haut à droite de l'icône quand la barre est repliée ou sur téléphone ; et sur l'onglet « Demandes d'aide ».
   - Le chiffre est décoratif. Le texte « 3 demandes d'aide en attente » est annoncé en description (`aria-describedby`), sans changer le nom du lien ou de l'onglet. Rien à zéro.

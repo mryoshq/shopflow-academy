@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-01 — Style de la plateforme : grotesque, grands panneaux, en-tête sombre (`claude/lucid-brahmagupta-htwgun-style`)
+
+- Grands titres en Space Grotesk : licence OFL, servie par l'Academy elle-même (CSP `font-src 'self'`, aucun CDN). Système typographique documenté (`display`, `overline`).
+- Panneaux arrondis à 24 px, avec plus d'espace autour.
+- Tableau de bord : en-tête en panneau sombre à trame de points, surtitre « TABLEAU DE BORD » dans l'accent, indicateur vert « Mis à jour à HH:MM ».
+- Connexion : surtitre en accent et grand titre dont le mot en accent change en machine à écrire (la data, SQL, Python, Airflow, la qualité), figé avec « Réduire les animations » et toujours lu de la même façon par les lecteurs d'écran.
+- Thème unique conservé (vert en clair, terre cuite en sombre), contrastes AA. ADR-0048.
+
 ## 2026-10-31 — Rappels automatiques des jalons (`claude/lucid-brahmagupta-htwgun-rappels`)
 
 - Pour chaque jalon daté du projet, une notification brève et encourageante 3 jours puis 1 jour avant, à 9 h heure du Maroc : « Rappel : « <jalon> » est attendu le <date> à <heure>. Il vous reste <n> jours. » (en anglais dans l'interface anglaise).

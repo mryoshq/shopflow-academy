@@ -5,6 +5,23 @@
 
 
 
+## Style : grotesque, grands panneaux, en-tête sombre (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-style` depuis `main`. Indépendante de #78 et #79, sans migration. Après fusion des trois PR, les conflits possibles (DESIGN.md, CHANGELOG, `StudentDashboard.tsx`, en.json) se résolvent en gardant les deux côtés.
+
+Fichiers clés :
+- `frontend/src/theme.ts` (police, rayon, `hero.*`, `textStyles`), `frontend/src/main.tsx` (police) ;
+- `frontend/src/brand/Hero.tsx`, `App.tsx` (connexion), `student/StudentDashboard.tsx` (en-tête) ;
+- `e2e/style.spec.ts`.
+
+ADR-0048. Captures : `docs/captures/style/`.
+
+### Style — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`). La police est dans le build : rien à installer sur le Mac.
+2. Recharger la page une fois (le service worker met la nouvelle version en cache).
+
+Prochaine action unique : revue et fusion des PR #78 (notes), #79 (Rafi) et de la PR « Style », dans cet ordre.
+
 ## Rappels automatiques des jalons (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-rappels` depuis `main` (après #76). Fichiers clés :
@@ -20,7 +37,7 @@ ADR-0045, runbook « Rappels automatiques des jalons ».
 2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0018_project_reminders` s'applique seule ; les rappels sont activés sur tous les jalons existants.
 3. Projet > Jalons : vérifier les heures prévues et désactiver les rappels des jalons qui n'en ont pas besoin.
 
-Prochaine action unique : revue et fusion de la PR « Rappels automatiques des jalons ».
+PR #77 fusionnée le 31/10/2026.
 
 ## Espace observateur professionnel (31/10/2026)
 

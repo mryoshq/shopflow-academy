@@ -3,7 +3,9 @@ import { createSystem, defaultConfig, defineConfig } from "@chakra-ui/react"
 /**
  * Rapidfox Academy visual direction (see docs/DESIGN.md, ADR-0035).
  * Calm, editorial interface: warm ivory canvas and warm greys, a clay accent used sparingly,
- * serif headings, soft corners and light shadows. Warm charcoal in dark mode. All text pairs meet WCAG AA.
+ * large titles in a geometric grotesque (Space Grotesk, OFL, self-hosted, ADR-0048), large rounded panels (24 px)
+ * with room around them, uppercase overlines in the accent, a dark dotted header panel. Warm charcoal in dark mode.
+ * All text pairs meet WCAG AA.
  */
 const config = defineConfig({
   globalCss: {
@@ -11,7 +13,7 @@ const config = defineConfig({
     html: { colorScheme: "light" },
     "html.dark": { colorScheme: "dark" },
     body: { lineHeight: "1.6" },
-    "h1, h2, h3": { letterSpacing: "-0.01em" },
+    "h1, h2, h3": { letterSpacing: "-0.02em" },
     // ADR-0029: 44 px touch targets on phones and touch screens (WCAG 2.5.5), without changing the desktop layout.
     "button, [role=button], [role=tab], select, input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea": {
       "@media (max-width: 47.99em), (pointer: coarse)": { minHeight: "44px" },
@@ -44,15 +46,21 @@ const config = defineConfig({
     },
   },
   theme: {
+    // ADR-0048: typographic system (docs/DESIGN.md « Typographie »).
+    textStyles: {
+      overline: { value: { fontFamily: "body", fontSize: "xs", fontWeight: "700", letterSpacing: "0.14em", textTransform: "uppercase", lineHeight: "1.4" } },
+      display: { value: { fontFamily: "heading", fontWeight: "600", letterSpacing: "-0.03em", lineHeight: "1.05" } },
+    },
     keyframes: {
+      livePulse: { "0%": { boxShadow: "0 0 0 0 rgba(34, 197, 94, 0.45)" }, "70%": { boxShadow: "0 0 0 6px rgba(34, 197, 94, 0)" }, "100%": { boxShadow: "0 0 0 0 rgba(34, 197, 94, 0)" } },
       viewEnter: { from: { opacity: 0, transform: "translateY(4px)" }, to: { opacity: 1, transform: "none" } },
       toastIn: { from: { opacity: 0, transform: "translate(-50%, 6px) scale(0.98)" }, to: { opacity: 1, transform: "translate(-50%, 0)" } },
       indicatorIn: { from: { opacity: 0, transform: "scaleY(0.4)" }, to: { opacity: 1, transform: "none" } },
     },
     tokens: {
       fonts: {
-        // Serif headings with fonts already installed (CSP: no web font): Iowan/Charter on Mac, Palatino Linotype or Georgia on Windows.
-        heading: { value: "'Iowan Old Style', Charter, 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, ui-serif, serif" },
+        // ADR-0048: Space Grotesk (SIL OFL 1.1), served by the Academy itself (CSP font-src 'self'), for titles only.
+        heading: { value: "'Space Grotesk Variable', 'Space Grotesk', 'Segoe UI', system-ui, sans-serif" },
         body: { value: "'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Arial, sans-serif" },
       },
       colors: {
@@ -80,7 +88,8 @@ const config = defineConfig({
           800: { value: "#643E16" }, 900: { value: "#4A2F12" }, 950: { value: "#2B1B0A" },
         },
       },
-      radii: { card: { value: "12px" } },
+      // ADR-0048: large panels, 24 px corners.
+      radii: { card: { value: "24px" } },
     },
     semanticTokens: {
       // Every colour has a light value and a `_dark` value (docs/DESIGN.md). Pairs meet WCAG AA in both.
@@ -135,6 +144,15 @@ const config = defineConfig({
           muted: { value: { _light: "#E6E3D9", _dark: "#3E3E3A" } },
           emphasized: { value: { _light: "#D1CFC5", _dark: "#5A5A54" } },
         },
+        // ADR-0048: the dark header panel (same in both themes, a step darker in dark mode), with a dot grid.
+        hero: {
+          bg: { value: { base: "#1F1E1D", _dark: "#191817" } },
+          ink: { value: { base: "#FAF9F5", _dark: "#FAF9F5" } }, // 15.8:1 and 16.8:1
+          muted: { value: { base: "#C9C7BC", _dark: "#C9C7BC" } }, // 9.8:1 and 10.4:1
+          accent: { value: { base: "{colors.pine.300}", _dark: "{colors.brand.300}" } }, // 7.1:1 and 7.4:1
+          dot: { value: { base: "rgba(250, 249, 245, 0.16)", _dark: "rgba(250, 249, 245, 0.13)" } },
+          border: { value: { base: "#3E3E3A", _dark: "#33322F" } },
+        },
         app: {
           canvas: { value: { base: "#FAF9F5", _dark: "#262624" } },
           surface: { value: { base: "#FFFFFF", _dark: "#30302E" } },
@@ -176,8 +194,8 @@ const config = defineConfig({
     },
     // ADR-0024: visible field boundaries (3:1) for text inputs, text areas and selects.
     recipes: {
-      // Serif only for large headings (page titles); card and section titles stay in the sans body font.
-      heading: { variants: { size: { xs: { fontFamily: "body" }, sm: { fontFamily: "body" }, md: { fontFamily: "body" }, lg: { fontFamily: "body" } } } },
+      // ADR-0048: the grotesque from size md upwards (titles); small card titles stay in the body font.
+      heading: { base: { fontWeight: "600" }, variants: { size: { xs: { fontFamily: "body" }, sm: { fontFamily: "body" } } } },
       // Solid buttons darken on hover (Chakra lightens them, which drops white text under 4.5:1 on the clay accent).
       button: { variants: { variant: { solid: { _hover: { bg: "colorPalette.solid", filter: "brightness(0.92)" }, _expanded: { bg: "colorPalette.solid", filter: "brightness(0.92)" } } } } },
       input: { variants: { variant: { outline: { borderColor: "app.field" } } } },
