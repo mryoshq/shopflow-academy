@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-11-01 — Notes : grille du projet, points des blocs, note finale (`claude/lucid-brahmagupta-htwgun-notes`)
+
+- Aucune note déjà obtenue ne change : tout est un calcul ou un affichage au-dessus des données existantes.
+- Projet > Notes : grille des deux sujets CampusEquip.
+  - Partie 1 : socle 10, dont 1 point individuel par étudiant.
+  - Partie 2 : socle 10, commun au groupe.
+  - Bonus : 5 au plus par partie.
+
+  Projet sur 20 + 10. Une note hors barème est refusée. Les saisies de l'ancienne grille restent visibles à part, « à reprendre ». L'export CSV du projet est mis à jour.
+- Blocs : « 4 / 10 pts », « 0 / 6 pts bonus » ou « Leçons », au lieu de « n / m missions » (étudiant, Ma classe ; points par module dans la fiche de l'observateur).
+- Note finale sur 20 : 30 % cours + 20 % ateliers + 50 % CampusEquip, bonus au plus +1 (projet) et +1 (cours hors ateliers), plafond 20, arrondi à 0,25.
+  - Détail de chaque composante ; une partie vide est « en attente » dans un aperçu « provisoire ».
+  - Visible dans Résultats (export `final.csv` séparé) et pour les observateurs « Administration » (tableau, fiche, CSV, PDF).
+  - Visible des étudiants seulement si l'enseignant l'active.
+- Réglages > Notes : poids, plafond, bonus maximaux, modules d'ateliers, visibilité. ADR-0046, migration `0019_final_grade`.
+
 ## 2026-10-31 — Rappels automatiques des jalons (`claude/lucid-brahmagupta-htwgun-rappels`)
 
 - Pour chaque jalon daté du projet, une notification brève et encourageante 3 jours puis 1 jour avant, à 9 h heure du Maroc : « Rappel : « <jalon> » est attendu le <date> à <heure>. Il vous reste <n> jours. » (en anglais dans l'interface anglaise).

@@ -1,4 +1,4 @@
-import { t, tn } from "../i18n"
+import { formatNumber, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -10,7 +10,7 @@ export const TIMELINE_REFRESH_MS = 5000
 
 export type TimelineBlock = {
   chapter_id: number; position: number; module: string; title: string; open: boolean; opened_at: string | null
-  mission_count: number; bonus_count: number; duration_minutes: number; completed_students: number; help_pending: number
+  mission_count: number; bonus_count: number; possible?: number; bonus_possible?: number; duration_minutes: number; completed_students: number; help_pending: number
   lesson_count?: number; lessons_read_students?: number
 }
 export type HelpItem = { id: number; student: string; mission_version_id: number; mission: string; block: string; message: string; created_at: string }
@@ -36,6 +36,14 @@ function waited(iso: string, now: number): string {
  * an automatic close, never shown to students), pending help requests and difficulties.
  */
 export type TimelineSection = "frise" | "aide" | "difficultes"
+
+/** ADR-0046: the block's points for the class (« 10 pts · 6 pts bonus »), « Leçons » for lessons only. */
+function blockTotal(block: { mission_count: number; bonus_count: number; possible?: number; bonus_possible?: number }): string {
+  const parts: string[] = []
+  if (block.mission_count > 0) parts.push(t("{{possible}} pts", { possible: formatNumber(block.possible ?? 0) }))
+  if (block.bonus_count > 0) parts.push(t("{{possible}} pts bonus", { possible: formatNumber(block.bonus_possible ?? 0) }))
+  return parts.length ? parts.join(" · ") : t("Leçons")
+}
 
 export function ClassTimeline({ assignmentId, section }: { assignmentId: number; section?: TimelineSection }) {
   const [data, setData] = useState<Timeline | null>(null)
@@ -126,7 +134,7 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
                 <Text fontWeight="bold" color="app.muted" minW="6" css={{ fontVariantNumeric: "tabular-nums" }}>{block.position}</Text>
                 <Stack gap="0" flex="1" minW="48">
                   <Text fontWeight="semibold">{block.title}</Text>
-                  <Text fontSize="sm" color="app.muted">{tn("{{count}} mission", block.mission_count)}{block.bonus_count ? ` + ${block.bonus_count} bonus` : ""} {t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
+                  <Text fontSize="sm" color="app.muted">{blockTotal(block)} {t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
                 </Stack>
                 <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? t("Ouvert") : t("Fermé")}</Badge>
                 <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_students} / {data.student_count} {t("terminé")}</Text>

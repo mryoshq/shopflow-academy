@@ -1,4 +1,5 @@
-import { locale, t, tn } from "../i18n"
+import { formatNumber, locale, t, tn } from "../i18n"
+import { PART_LABELS, type FinalGrade } from "../grading/FinalGrade"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -116,6 +117,9 @@ export function StudentDashboard({ navigate }: Props) {
             {course.score.bonus_possible > 0 && <Text fontSize="sm"><Text as="span" fontWeight="semibold">{t("Bonus :")}</Text> {formatPoints(course.score.bonus_points)} / {course.score.bonus_possible} {t("pts, comptés à part.")}</Text>}
           </Stack>
         </Panel>)}
+        {data.courses.filter((course) => course.final_grade).map((course) => <Panel key={`final-${course.release_id}`} as="section" aria-label={t("Note finale : {{title}}", { title: course.title })}>
+          <Stack gap="2"><Text fontWeight="semibold">{t("Note finale")}</Text><StudentFinal grade={course.final_grade!} /></Stack>
+        </Panel>)}
         {rewardsCourse(data) && <Stack gap="4">
           <ProgressPanel rewards={rewardsCourse(data)!.rewards!} />
           {rewardsCourse(data)!.rewards!.class_goal && <ClassGoalPanel goal={rewardsCourse(data)!.rewards!.class_goal!} />}
@@ -174,6 +178,29 @@ function CourseBlocks({ course, navigate }: { course: DashboardCourse; navigate:
   </Stack>
 }
 
+/** ADR-0046: the final grade as the student sees it (once the teacher shows it), with its parts. */
+function StudentFinal({ grade }: { grade: FinalGrade }) {
+  return <Stack gap="1.5" fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>
+    <Text fontSize="2xl" fontWeight="bold" lineHeight="1">{grade.final === null ? t("en attente") : `${formatNumber(grade.final)} / 20`}</Text>
+    {grade.provisional && <Text color="app.muted">{t("Provisoire : certaines parties ne sont pas encore notées.")}</Text>}
+    {(["course", "workshops", "project"] as const).filter((key) => grade.parts[key].weight > 0).map((key) => <Flex key={key} justify="space-between" gap="3">
+      <Text>{t(PART_LABELS[key])} ({formatNumber(grade.parts[key].weight)} %)</Text>
+      <Text color={grade.parts[key].pending ? "app.muted" : undefined}>{grade.parts[key].pending ? t("en attente") : `${formatNumber(grade.parts[key].on20 ?? 0)} / 20`}</Text>
+    </Flex>)}
+    {grade.project_bonus + grade.course_bonus > 0 && <Text>{t("Bonus : +{{value}}", { value: formatNumber(grade.project_bonus + grade.course_bonus) })}</Text>}
+  </Stack>
+}
+
+/** ADR-0046: « 4 / 10 pts », « 0 / 6 pts bonus », or « Leçons » for a block of lessons only. */
+export function blockPoints(block: DashboardBlock): string {
+  const parts: string[] = []
+  if (block.mission_count > 0) parts.push(t("{{points}} / {{possible}} pts", { points: formatNumber(block.points ?? 0), possible: formatNumber(block.possible ?? 0) }))
+  if (block.bonus_count > 0) parts.push(t("{{points}} / {{possible}} pts bonus", { points: formatNumber(block.bonus_points ?? 0), possible: formatNumber(block.bonus_possible ?? 0) }))
+  if (parts.length === 0) return t("Leçons")
+  if (block.lesson_count) parts.push(t("leçons lues {{p0}}/{{lesson_count}}", { p0: block.lessons_read ?? 0, lesson_count: block.lesson_count }))
+  return parts.join(" · ")
+}
+
 function BlockCard({ block, missions, offset, navigate }: { block: DashboardBlock; missions: DashboardMission[]; offset: number; navigate: (path: string) => void }) {
   const state = block.done ? { label: t("Terminé"), palette: "green", variant: "solid" as const }
     : block.open && block.for_you ? { label: t("Ouvert pour vous"), palette: "brand", variant: "solid" as const }
@@ -182,7 +209,7 @@ function BlockCard({ block, missions, offset, navigate }: { block: DashboardBloc
   return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={t("Bloc : {{title}}", { title: block.title })} role="group">
     <Flex gap="3" align="center" wrap="wrap" mb={missions.length ? "3" : "0"}>
       <Text fontWeight="semibold" flex="1">{block.title}</Text>
-      {block.open && (block.mission_count > 0 || (block.lesson_count ?? 0) > 0) && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_count} / {tn("{{count}} mission", block.mission_count)}{block.bonus_count ? ` · ${block.bonus_count} bonus` : ""}{block.lesson_count ? t(" · leçons lues {{p0}}/{{lesson_count}}", { p0: block.lessons_read ?? 0, lesson_count: block.lesson_count }) : ""}</Text>}
+      {block.open && (block.mission_count > 0 || block.bonus_count > 0 || (block.lesson_count ?? 0) > 0) && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }} data-testid="block-points">{blockPoints(block)}</Text>}
       <Badge colorPalette={state.palette} variant={state.variant} rounded="full" gap="1">{block.done && <Icon name="check" size={12} />}{!block.open && <Icon name="clock" size={12} />}{state.label}</Badge>
     </Flex>
     {block.open && block.objective && <Flex gap="2" align="start" mt="-1" mb="3" fontSize="sm" color="brand.fg"><Box mt="0.5" flexShrink={0}><Icon name="target" size={14} /></Box><Text><Text as="span" fontWeight="semibold">{t("Objectif :")}{" "}</Text>{block.objective}</Text></Flex>}

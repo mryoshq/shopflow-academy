@@ -34,6 +34,7 @@ from app.config import get_settings
 from app.curriculum_schema import MissionDefinition
 from app.database import get_db
 from app.models import AuditEvent, LoginThrottle, MissionVersion, Observer, ObserverAlias, ObserverInvitation, User, UserSession
+from app.final_grade import config_of
 from app.observer_stats import ClassData, charts, dashboard, grade_rows, student_file
 from app.teacher_dashboard import csv_cell, csv_number, list_classes, owned_class
 
@@ -180,7 +181,8 @@ def observer_grades(assignment_id: int, response: Response, auth: AuthContext = 
     data = ClassData(db, owner, assignment_id)
     consulted(db, auth, "grades", assignment_id)
     return {"cohort": data.cohort.label, "course_title": data.release.student_snapshot.get("title", ""), "version": data.release.version,
-            "generated_at": utcnow().isoformat(), "students": grade_rows(db, data)}
+            "generated_at": utcnow().isoformat(), "students": grade_rows(db, data),
+            "grading": config_of(db, data.assignment.id)}  # ADR-0046: weights shown beside the final grade
 
 
 @router.get("/observer/classes/{assignment_id}/grades.csv", tags=["observer"])
@@ -191,11 +193,13 @@ def observer_grades_csv(assignment_id: int, auth: AuthContext = Depends(require_
     buffer = StringIO()
     writer = csv.writer(buffer, delimiter=";")
     writer.writerow(["etudiant", "points_cours", "points_possibles", "pourcentage", "missions_reussies", "missions", "points_bonus",
-                     "lecons_lues", "lecons", "projet_sur_20"])
+                     "lecons_lues", "lecons", "projet_sur_20", "note_finale_20", "provisoire"])
     for item in grade_rows(db, data):
         writer.writerow([csv_cell(item["name"]), csv_number(item["core_points"]), item["core_possible"], csv_number(item["percent"]),
                          item["completed"], item["total"], csv_number(item["bonus_points"]), item["lessons_read"], item["lessons_total"],
-                         "" if item["project_total"] is None else csv_number(item["project_total"])])
+                         "" if item["project_total"] is None else csv_number(item["project_total"]),
+                         "" if item["final_grade"]["final"] is None else csv_number(item["final_grade"]["final"]),
+                         "oui" if item["final_grade"]["provisional"] else "non"])
     consulted(db, auth, "grades.csv", assignment_id)
     filename = f"rapidfox-notes-classe-{assignment_id}-v{data.release.version}-{utcnow():%Y-%m-%d}.csv"
     return Response(content="﻿" + buffer.getvalue(), media_type="text/csv; charset=utf-8",
@@ -244,11 +248,13 @@ def observer_report(assignment_id: int, auth: AuthContext = Depends(require_obse
         report.write(f"{label} : {value}", 10)
     report.rule()
     report.write("Notes", 12, True)
-    report.table(["Étudiant", "Cours", "%", "Missions", "Bonus", "Projet /20"],
+    report.table(["Étudiant", "Cours", "%", "Missions", "Bonus", "Projet /20", "Note /20"],
                  [[item["name"], f"{item['core_points']} / {item['core_possible']}", f"{item['percent']} %",
                    f"{item['completed']} / {item['total']}", str(item["bonus_points"]),
-                   "—" if item["project_total"] is None else str(item["project_total"])] for item in grade_rows(db, data)],
-                 [170, 90, 50, 70, 55, 64])
+                   "—" if item["project_total"] is None else str(item["project_total"]),
+                   "—" if item["final_grade"]["final"] is None
+                   else f"{item['final_grade']['final']}{' (prov.)' if item['final_grade']['provisional'] else ''}"] for item in grade_rows(db, data)],
+                 [140, 80, 45, 62, 45, 58, 70])
     report.rule()
     report.write("Réussite par module", 12, True)
     for item in figures["modules"]:

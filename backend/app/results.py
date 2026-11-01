@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.curriculum_schema import UNGRADED_KINDS
 from app.auth import AuthContext, display_name, require_teacher
 from app.database import get_db
+from app.final_grade import class_final, config_of
 from app.progress import course_score, definitions, mission_scores
 from app.student import flatten
 from app.teacher_dashboard import audit, class_students, csv_cell, csv_number, owned_class
@@ -59,8 +60,13 @@ def results_data(db: Session, auth: AuthContext, assignment_id: int, threshold: 
              "success_percentage": round(100 * successes[item["mission_version_id"]] / total, 2)}
             for item in principal if total and successes[item["mission_version_id"]] < total]
     weak.sort(key=lambda item: item["success_percentage"])
+    # ADR-0046: final grade on 20, a calculation over the same points (nothing stored changes).
+    config = config_of(db, assignment.id)
+    finals = class_final(db, release, cohort, config, class_students(db, cohort.id))
+    for row in students:
+        row["final_grade"] = finals[row["id"]]
     return ({"assignment_id": assignment.id, "cohort": cohort.label, "course_title": release.student_snapshot.get("title", ""),
-             "version": release.version, "threshold": threshold, "students": students, "weakest_missions": weak[:5]}, missions, exports)
+             "version": release.version, "threshold": threshold, "students": students, "grading": config, "weakest_missions": weak[:5]}, missions, exports)
 
 
 @router.get("/classes/{assignment_id}/results")
@@ -84,3 +90,31 @@ def results_csv(assignment_id: int, threshold: float = Query(default=50, ge=0, l
     filename = f"shopflow-notes-classe-{assignment_id}-v{data['version']}.csv"
     return Response(content="\ufeff" + buffer.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="{filename}"', "Cache-Control": "no-store"})
+
+
+@router.get("/classes/{assignment_id}/results/final.csv")
+def final_csv(assignment_id: int, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> Response:
+    """ADR-0046: the final grade on 20 and each of its components (a separate file: the results export keeps its columns)."""
+    assignment, release, cohort = owned_class(db, auth, assignment_id)
+    config = config_of(db, assignment.id)
+    students = class_students(db, cohort.id)
+    finals = class_final(db, release, cohort, config, students)
+    weights = config["weights"]
+    buffer = StringIO()
+    writer = csv.writer(buffer, delimiter=";")
+    writer.writerow(["etudiant", f"cours_sur_20_{csv_number(weights['course'])}pct", f"ateliers_sur_20_{csv_number(weights['workshops'])}pct",
+                     f"campusequip_sur_20_{csv_number(weights['project'])}pct", "socle_sur_20", "bonus_projet", "bonus_cours",
+                     "note_finale_20", "provisoire", "en_attente"])
+    cell = lambda value: "" if value is None else csv_number(value)  # noqa: E731
+    labels = {"course": "cours", "workshops": "ateliers", "project": "campusequip"}
+    for student in students:
+        final = finals[student.id]
+        parts = final["parts"]
+        writer.writerow([csv_cell(display_name(student.username)), cell(parts["course"]["on20"]), cell(parts["workshops"]["on20"]),
+                         cell(parts["project"]["on20"]), cell(final["base"]), cell(final["project_bonus"]), cell(final["course_bonus"]),
+                         cell(final["final"]), "oui" if final["provisional"] else "non", " ".join(labels[p] for p in final["pending"])])
+    audit(db, auth, "class.export", assignment_id, {"view": "final_grade"})
+    db.commit()
+    return Response(content="\ufeff" + buffer.getvalue(), media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": f'attachment; filename="shopflow-note-finale-classe-{assignment_id}-v{release.version}.csv"',
+                             "Cache-Control": "no-store"})
