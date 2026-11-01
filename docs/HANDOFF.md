@@ -5,6 +5,24 @@
 
 
 
+## Notes : grille du projet, points des blocs, note finale (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-notes` depuis `main` (après #77).
+
+Fichiers clés :
+- backend : `backend/app/project_grid.py` (grille), `backend/app/final_grade.py` (calcul, réglages), `results.py` (`final.csv`), `observer.py`, `student.py` (points des blocs, note visible), migration `0019_final_grade`, `tests/test_final_grade.py` ;
+- frontend : `frontend/src/project/ProjectGrades.tsx`, `frontend/src/grading/` (note finale, réglages), `e2e/grades.spec.ts`.
+
+ADR-0046 (le numéro 0043 demandé était déjà pris). Captures : `docs/captures/notes/`.
+
+### Notes — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0019-notes` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0019_final_grade` ajoute une colonne et une table, sans toucher aux notes existantes.
+3. Projet > Notes : reprendre sur la nouvelle grille les équipes qui affichent « Ancienne grille, à reprendre ».
+4. Réglages > Notes : vérifier les poids et les modules d'ateliers (par défaut, titres commençant par « Ateliers »). Ne cocher « Afficher la note finale aux étudiants » qu'au moment voulu.
+
+Prochaine action unique : revue et fusion de la PR « Notes : grille du projet, points des blocs, note finale ».
+
 ## Rappels automatiques des jalons (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-rappels` depuis `main` (après #76). Fichiers clés :
@@ -20,7 +38,7 @@ ADR-0045, runbook « Rappels automatiques des jalons ».
 2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0018_project_reminders` s'applique seule ; les rappels sont activés sur tous les jalons existants.
 3. Projet > Jalons : vérifier les heures prévues et désactiver les rappels des jalons qui n'en ont pas besoin.
 
-Prochaine action unique : revue et fusion de la PR « Rappels automatiques des jalons ».
+PR #77 fusionnée le 31/10/2026.
 
 ## Espace observateur professionnel (31/10/2026)
 

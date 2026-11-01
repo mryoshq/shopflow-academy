@@ -65,11 +65,26 @@ it("student: create a team, accept an invitation, submit a version with a table"
   expect(await screen.findByText("Version 1 déposée.")).toBeInTheDocument()
 })
 
+const line = (key: string, label: string, max: number) => ({ key, label, max })
+const GRID: TeacherProjectData["grid"] = { base_max: 20, bonus_max: 10, parts: [
+  { key: "part1", title: "Partie 1", individual_max: 1, bonus_cap: 5,
+    base: [line("p1_model", "Modèle relationnel et contraintes", 2), line("p1_sql", "Trois analyses SQL, tableaux et graphique", 2),
+      line("p1_python", "Contrôles Python, quarantaine et rapport", 2), line("p1_load", "Chargement transactionnel, rejeu et prise en charge automatique", 2),
+      line("p1_proofs", "Preuves reproductibles et compréhension (commun)", 1)],
+    bonus: [line("b1_plan", "Plan SQL avant et après index", 1), line("b1_recursive", "Analyse récursive ou précalcul", 1),
+      line("b1_chunks", "Lecture par morceaux", 1), line("b1_api", "IoT ou API", 2)] },
+  { key: "part2", title: "Partie 2", individual_max: 0, bonus_cap: 5,
+    base: [line("p2_airflow", "Airflow et reprise", 3), line("p2_mongo", "Événements MongoDB", 2), line("p2_redis", "Redis", 2),
+      line("p2_time", "Tentatives et analyse temporelle", 2), line("p2_repro", "Reproductibilité et explication du groupe", 1)],
+    bonus: [line("b2_queue", "File avec acquittement", 1), line("b2_metrics", "Mesures et conservation", 2),
+      line("b2_sensor", "Capteur local simulé", 1), line("b2_resume", "Reprise approfondie", 1)] }] }
+
 const teacherData: TeacherProjectData = {
-  assignment_id: 7, cohort: "Classe B3", cohort_id: 3, grid: { sql: 4, python: 4, nosql: 3, airflow: 3, reproducibility: 2 }, individual_max: 4,
+  assignment_id: 7, cohort: "Classe B3", cohort_id: 3, grid: GRID,
   teams: [{ id: 2, members: [{ id: 11, name: "demo.etudiant01" }, { id: 12, name: "demo.etudiant02" }],
-    grade: { sql: null, python: null, nosql: null, airflow: null, reproducibility: null, comment: "", students: [
-      { id: 11, name: "demo.etudiant01", common: null, individual: null, total: null }, { id: 12, name: "demo.etudiant02", common: null, individual: null, total: null }] } }],
+    grade: { criteria: {}, comment: "", legacy: null, students: [
+      { id: 11, name: "demo.etudiant01", part1: null, part2: null, individual: null, base: null, bonus: null, total: null, complete: false },
+      { id: 12, name: "demo.etudiant02", part1: null, part2: null, individual: null, base: null, bonus: null, total: null, complete: false }] } }],
   alone: [{ id: 13, name: "demo.etudiant03" }],
   milestones: [{ id: 1, title: "Rendu final", instructions: "", due_at: null, deliverables: [], sort_order: 0,
     submissions: [{ team_id: 2, version: 2, versions: 2, late: true, created_at: "2026-11-20T10:00:00Z" }] }],
@@ -99,17 +114,28 @@ it("teacher: reads every version of a submission in a side panel and comments", 
   await vi.waitFor(() => expect(fetchMock).toHaveBeenCalledWith("/api/v1/teacher/project/teams/2/comments", expect.objectContaining({ body: JSON.stringify({ milestone_id: 1, text: "Ajoutez le journal IA." }) })))
 })
 
-it("teacher: grades a team on 20 (common criteria and individual understanding)", async () => {
-  const fetchMock = vi.fn().mockImplementation(async (url: string) => url.endsWith("/grade") ? json({ ok: true }) : url.endsWith("/project/draw") ? json(EMPTY_DRAW) : json(teacherData))
+it("teacher: grades a team on the grid of the two subjects, with the individual point; the former grid is shown apart", async () => {
+  const data: TeacherProjectData = { ...teacherData, teams: [{ ...teacherData.teams[0], grade: { ...teacherData.teams[0].grade,
+    legacy: { sql: 4, python: 3, nosql: null, airflow: null, reproducibility: null, common: 7,
+      students: [{ id: 11, name: "demo.etudiant01", individual: 4, total: 11 }, { id: 12, name: "demo.etudiant02", individual: null, total: 7 }] } } }] }
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => url.endsWith("/grade") ? json({ ok: true }) : url.endsWith("/project/draw") ? json(EMPTY_DRAW) : json(data))
   vi.stubGlobal("fetch", fetchMock)
   wrap(<TeacherProject assignmentId={7} />)
   fireEvent.click(await screen.findByRole("tab", { name: "Notes" }))
-  fireEvent.change(await screen.findByLabelText("SQL /4"), { target: { value: "3,5" } })
-  fireEvent.change(screen.getByLabelText("Compréhension individuelle de demo.etudiant01 /4"), { target: { value: "4" } })
+  const legacy = await screen.findByTestId("legacy-grade")
+  expect(within(legacy).getByText("Ancienne grille, à reprendre")).toBeInTheDocument()
+  expect(within(legacy).getByText(/demo\.etudiant01 : compréhension 4\/4, total 11\/20/)).toBeInTheDocument()
+  fireEvent.change(screen.getByLabelText("Airflow et reprise /3"), { target: { value: "4" } })
+  expect(screen.getByRole("alert")).toHaveTextContent("Une note dépasse son barème.")
+  expect(screen.getByRole("button", { name: "Enregistrer la note" })).toBeDisabled()
+  fireEvent.change(screen.getByLabelText("Airflow et reprise /3"), { target: { value: "2,5" } })
+  fireEvent.change(screen.getByLabelText("Modèle relationnel et contraintes /2"), { target: { value: "2" } })
+  fireEvent.change(screen.getByLabelText("IoT ou API /2"), { target: { value: "1" } })
+  fireEvent.change(screen.getByLabelText("Point individuel de demo.etudiant01 /1"), { target: { value: "1" } })
   fireEvent.click(screen.getByRole("button", { name: "Enregistrer la note" }))
   await vi.waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).endsWith("/teams/2/grade"))).toBe(true))
   const grade = JSON.parse(String(fetchMock.mock.calls.find(([url]) => String(url).endsWith("/grade"))![1].body))
-  expect(grade).toMatchObject({ sql: 3.5, python: null, individual: { "11": 4 } })
+  expect(grade).toEqual({ criteria: { p1_model: 2, b1_api: 1, p2_airflow: 2.5 }, individual: { "11": 1 }, comment: "" })
 })
 
 // ADR-0041 ------------------------------------------------------------------------------------------

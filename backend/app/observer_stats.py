@@ -174,7 +174,11 @@ def project_totals(db: Session, cohort: Cohort) -> dict[int, dict]:
 
 
 def grade_rows(db: Session, data: ClassData) -> list[dict]:
+    from app.final_grade import class_final, config_of
+
     project = project_totals(db, data.cohort)
+    # ADR-0046: the final grade, for « Administration » accounts (the grades are theirs only).
+    finals = class_final(db, data.release, data.cohort, config_of(db, data.assignment.id), data.students)
     rows = []
     for student in data.students:
         summary = data.summary(student.id)
@@ -185,6 +189,8 @@ def grade_rows(db: Session, data: ClassData) -> list[dict]:
             "completed": summary["completed"], "total": summary["total"], "bonus_points": summary["bonus_points"],
             "lessons_read": summary["lessons_read"], "lessons_total": summary["lessons_total"],
             "project_total": project.get(student.id, {}).get("total"),
+            "project_bonus": project.get(student.id, {}).get("bonus"),
+            "final_grade": finals[student.id],
         })
     return rows
 
@@ -217,6 +223,7 @@ def student_file(db: Session, data: ClassData, student: User) -> dict:
         "percent": percent(summary["core_points"], summary["core_possible"]) or 0,
         "modules": list(modules.values()),
         "level": rewards["level"], "badges": [b for b in rewards["badges"] if b["earned"]], "badge_count": rewards["badge_count"],
-        "project": {"partners": partners, "common": project["common"], "individual": project["individual"], "total": project["total"]} if project else None,
+        "project": {"partners": partners, "base": project["base"], "bonus": project["bonus"], "individual": project["individual"],
+                    "total": project["total"], "complete": project["complete"]} if project else None,
     }
 

@@ -16,6 +16,7 @@ from app.leaderboard import router as leaderboard_router
 from app.attempt_rules import router as attempt_rules_router
 from app.live import router as live_router
 from app.autoplan import router as autoplan_router, start_background
+from app.final_grade import router as final_grade_router
 from app.results import router as results_router
 from app.comfort import router as comfort_router
 from app.observer import router as observer_router
@@ -68,6 +69,7 @@ app.include_router(attempt_rules_router)
 app.include_router(live_router)
 app.include_router(autoplan_router)
 app.include_router(results_router)
+app.include_router(final_grade_router)
 app.include_router(comfort_router)
 app.include_router(observer_router)
 app.include_router(downloads_router)
