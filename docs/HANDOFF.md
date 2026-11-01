@@ -17,7 +17,7 @@ ADR-0047. Captures : `docs/captures/rafi/`.
 
 ### Rafi — À faire en local après fusion
 1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
-2. Vérifier côté étudiant : Rafi en bas à droite, une annonce de test (message de l'enseignant à soi-même via « Vue étudiant » n'en montre pas : utiliser un compte de démonstration).
+2. Vérifier avec un compte de démonstration étudiant : Rafi en bas à droite. Envoyer un message à ce compte depuis Ma classe : il apparaît dans la bulle de Rafi. La « Vue étudiant » montre Rafi, mais sans annonce.
 3. Facultatif : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
 
 Prochaine action unique : revue et fusion de la PR « Annonces automatiques et Rafi », puis la PR 3 (style inspiré de filatov.design).
