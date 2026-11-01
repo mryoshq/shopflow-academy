@@ -11,7 +11,8 @@ const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test
 const accounts = JSON.parse(readFileSync(credentialsPath, "utf8")) as { username: string; password: string }[]
 const account = (name: string) => accounts.find((item) => item.username === name)!
 const shots = process.env.SHOPFLOW_SCREENSHOT_DIR
-const STUDENT = "demo.etudiant10"
+/** A demo student of the class, chosen at run time (the class composition differs between stacks). */
+let STUDENT = ""
 
 async function signIn(page: Page, name: string) {
   await page.goto("/")
@@ -31,6 +32,12 @@ async function teacherApi(request: APIRequestContext) {
   expect((await request.post("/api/v1/auth/login", { data: { username: "demo.enseignant", password: account("demo.enseignant").password } })).status()).toBe(200)
   const csrf = (await request.storageState()).cookies.find((cookie) => cookie.name === "academy_csrf")!.value
   const assignment = (await (await request.get("/api/v1/teacher/classes")).json())[0].id as number
+  if (!STUDENT) {
+    const view = await (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json()
+    const names = [...view.alone, ...view.teams.flatMap((team: { members: { name: string }[] }) => team.members)].map((item: { name: string }) => item.name)
+    STUDENT = names.filter((name) => accounts.some((a) => a.username === name)).sort().at(-1) ?? ""
+    expect(STUDENT).not.toBe("")
+  }
   return { csrf, assignment }
 }
 
