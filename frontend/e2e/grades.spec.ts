@@ -32,7 +32,9 @@ async function serious(page: Page) {
 async function teacherApi(request: APIRequestContext) {
   expect((await request.post("/api/v1/auth/login", { data: { username: "demo.enseignant", password: account("demo.enseignant").password } })).status()).toBe(200)
   const csrf = (await request.storageState()).cookies.find((cookie) => cookie.name === "academy_csrf")!.value
-  const assignment = (await (await request.get("/api/v1/teacher/classes")).json())[0].id as number
+  // The class the interface shows (« cours principal »), not merely the first one: CI has several classes.
+  const main = await (await request.get("/api/v1/teacher/main")).json()
+  const assignment = (main.assignment_id ?? (await (await request.get("/api/v1/teacher/classes")).json())[0].id) as number
   return { csrf, assignment }
 }
 
