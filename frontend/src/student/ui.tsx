@@ -61,7 +61,7 @@ export function DemoBadge() {
 }
 
 export function Panel({ children, ...rest }: { children: ReactNode } & Record<string, unknown>) {
-  return <Box bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "5", md: "6" }} {...rest}>{children}</Box>
+  return <Box bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "5", md: "7" }} {...rest}>{children}</Box>
 }
 
 export function ErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {

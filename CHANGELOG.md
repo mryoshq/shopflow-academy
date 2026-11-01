@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-01 — Style de la plateforme : grotesque, grands panneaux, en-tête sombre (`claude/lucid-brahmagupta-htwgun-style`)
+
+- Grands titres en Space Grotesk : licence OFL, servie par l'Academy elle-même (CSP `font-src 'self'`, aucun CDN). Système typographique documenté (`display`, `overline`).
+- Panneaux arrondis à 24 px, avec plus d'espace autour.
+- Tableau de bord : en-tête en panneau sombre à trame de points, surtitre « TABLEAU DE BORD » dans l'accent, indicateur vert « Mis à jour à HH:MM ».
+- Connexion : surtitre en accent et grand titre dont le mot en accent change en machine à écrire (la data, SQL, Python, Airflow, la qualité), figé avec « Réduire les animations » et toujours lu de la même façon par les lecteurs d'écran.
+- Thème unique conservé (vert en clair, terre cuite en sombre), contrastes AA. ADR-0048.
+- Intégration avec Notes (#78) et Rafi (#79) : `main` fusionnée dans #80 ; nouvel en-tête, note finale, compteurs de points et prochaine échéance conservés ensemble, traductions et documents des trois fonctionnalités gardés.
+
 ## 2026-11-01 — Annonces automatiques et Rafi (`claude/lucid-brahmagupta-htwgun-rafi`, depuis `design/rafi`)
 
 - Rafi, l'image du propriétaire telle quelle (72 px, srcset), en bas à droite de l'interface étudiant.

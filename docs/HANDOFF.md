@@ -1,5 +1,15 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Intégration de main dans Style — PR #80 (01/11/2026)
+
+Branche locale `codex/resolve-pr80`, destinée à la branche existante `claude/lucid-brahmagupta-htwgun-style` de #80. Merge de `main` `02363ad` après #78 et #79, sans rebase ni force-push. Les cinq conflits (CHANGELOG, HANDOFF, PROGRESS, `en.json`, imports de `StudentDashboard.tsx`) gardent les deux côtés. Le nouvel en-tête et la police locale restent présents avec la note finale, les points par bloc et la prochaine échéance ; aucune modification du backend par rapport à main, ni migration ajoutée.
+
+Validation : `pytest -q tests/test_final_grade.py tests/test_announcements.py tests/test_security_matrix.py` PASS 13 ; `npm run test -- --maxWorkers=1` PASS 203 ; `npm run build` PASS (TypeScript compris) ; `verify_kit.py` PASS. Playwright `e2e/style.spec.ts e2e/grades.spec.ts e2e/rafi.spec.ts e2e/live.spec.ts e2e/english.spec.ts` PASS 24 (axe clair/sombre, 1366/390 px, mouvement réduit, police servie localement, Notes et Rafi). Stack dédiée `shopflow-academy-pr80-test`, 127.0.0.1:3188, comptes fictifs, séparée de la production et de la stack de test existante. Captures Notes/style fusionnés examinées en clair sur ordinateur et en sombre sur téléphone.
+
+Aucune action sur la production, n8n ou le contenu privé ; aucune fusion de PR ni déploiement. Les procédures « À faire en local » ci-dessous restent à réaliser par le propriétaire.
+
+Prochaine action unique : vérifier les cinq contrôles CI sur le commit poussé de #80, puis laisser la revue et la fusion au propriétaire.
+
 ## Intégration de main dans Rafi — PR #79 (01/11/2026)
 
 `main` `ef563b6` (Notes #78) fusionnée dans la branche de #79 par un merge, sans rebase ni force-push. Les dix fichiers en conflit gardent les ajouts Notes et Rafi : routes API, champs du tableau de bord, types/imports, traductions, CHANGELOG, DESIGN, PROGRESS et HANDOFF. La note finale conserve son réglage de visibilité ; prochaine échéance et sons de Rafi restent dans la même réponse. Le test de `test_final_grade.py` vérifie cette coexistence et l’absence de changement de note quand les sons sont coupés.
@@ -8,13 +18,28 @@ Validation locale : pytest 365 PASS, 8 tests laboratoire conditionnels ignorés 
 
 Aucune publication, fusion de PR, action sur la production, n8n ou les cours privés. Les procédures de déploiement ci-dessous restent réservées au propriétaire ; la migration 0019 de Notes ne doit pas être supprimée.
 
-Prochaine action unique : vérifier les cinq contrôles CI sur le commit poussé de #79, puis laisser la revue et la fusion au propriétaire. La PR #80 n’est pas modifiée.
+PR #79 fusionnée dans main ; sa validation locale et ses consignes sont conservées ici.
 
 
 
 
 
+## Style : grotesque, grands panneaux, en-tête sombre (01/11/2026)
 
+Branche `claude/lucid-brahmagupta-htwgun-style` depuis `main`. Indépendante de #78 et #79, sans migration. Après fusion des trois PR, les conflits possibles (DESIGN.md, CHANGELOG, `StudentDashboard.tsx`, en.json) se résolvent en gardant les deux côtés.
+
+Fichiers clés :
+- `frontend/src/theme.ts` (police, rayon, `hero.*`, `textStyles`), `frontend/src/main.tsx` (police) ;
+- `frontend/src/brand/Hero.tsx`, `App.tsx` (connexion), `student/StudentDashboard.tsx` (en-tête) ;
+- `e2e/style.spec.ts`.
+
+ADR-0048. Captures : `docs/captures/style/`.
+
+### Style — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`). La police est dans le build : rien à installer sur le Mac.
+2. Recharger la page une fois (le service worker met la nouvelle version en cache).
+
+PR #78 et #79 fusionnées dans main ; la PR #80 intègre leurs changements.
 
 ## Annonces automatiques et Rafi (01/11/2026)
 
@@ -31,7 +56,7 @@ ADR-0047. Captures : `docs/captures/rafi/`.
 2. Vérifier avec un compte de démonstration étudiant : Rafi en bas à droite. Envoyer un message à ce compte depuis Ma classe : il apparaît dans la bulle de Rafi. La « Vue étudiant » montre Rafi, mais sans annonce.
 3. Facultatif : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
 
-Prochaine action unique : revue et fusion de la PR « Annonces automatiques et Rafi », puis la PR 3 (style inspiré de filatov.design).
+PR #79 fusionnée dans main ; ses consignes de déploiement restent documentées ci-dessus.
 
 ## Notes : grille du projet, points des blocs, note finale (01/11/2026)
 

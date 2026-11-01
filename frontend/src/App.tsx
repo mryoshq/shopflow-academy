@@ -11,6 +11,7 @@ import { LoginIntro } from "./LoginIntro"
 import { AccountMenu } from "./preferences/AccountMenu"
 import { PreferencesProvider } from "./preferences/PreferencesProvider"
 import { Logo } from "./Logo"
+import { Overline, Typewriter } from "./brand/Hero"
 import { BrandName } from "./BrandName"
 import { NotificationBell, NotificationProvider } from "./live/notifications"
 import { ComfortButton } from "./comfort/Comfort"
@@ -171,8 +172,11 @@ export function App() {
         {state === "anonymous" && !invitation && (
           <Flex gap={{ base: "10", md: "16" }} align="center" direction={{ base: "column", md: "row" }} minH={{ md: "60vh" }}>
             <Stack gap="5" flex="1" maxW="xl">
-              <Text fontWeight="bold" color="saffron.fg" textTransform="uppercase" letterSpacing="0.12em" fontSize="sm">{t("Rapidfox Academy")}</Text>
-              <Heading as="h1" size={{ base: "3xl", md: "5xl" }} lineHeight="1.1" letterSpacing="-0.02em">{t("Apprenez la data en prenant de vraies décisions.")}</Heading>
+              <Overline fontSize="sm">{t("Rapidfox Academy")}</Overline>
+              {/* ADR-0048: the accent word is typed, then the next one (still with « Réduire les animations »). */}
+              <Heading as="h1" size={{ base: "4xl", md: "6xl" }} textStyle="display">
+                {t("Apprenez")}{" "}<Typewriter words={[t("la data"), "SQL", "Python", "Airflow", t("la qualité")]} />{" "}{t("en prenant de vraies décisions.")}
+              </Heading>
               <Text fontWeight="medium" fontSize={{ base: "md", md: "lg" }}>{t("Module : Python Data Engineering & SQL Avancé · Classe : B3 IA/Data")}</Text>
               <Text fontSize="lg" color="app.muted" lineHeight="1.7">{t("Rapidfox Academy forme aux métiers de la donnée par la pratique : des missions courtes sur des cas réalistes, un retour immédiat à chaque décision, et votre meilleur essai qui compte. Dans ce module, vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip, la location de matériel entre campus.")}</Text>
             </Stack>

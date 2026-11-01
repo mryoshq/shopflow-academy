@@ -1,6 +1,8 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
 import { ChakraProvider } from "@chakra-ui/react"
+// ADR-0048: Space Grotesk (SIL OFL 1.1), bundled and served by the Academy (no font CDN).
+import "@fontsource-variable/space-grotesk"
 import { App } from "./App"
 import { PwaBanner } from "./pwa"
 import { system } from "./theme"
