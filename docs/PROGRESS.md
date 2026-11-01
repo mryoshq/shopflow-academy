@@ -9,6 +9,8 @@ Depuis `main` 752d718. Composant visuel partagé `RafiAvatar` : image originale 
 - PASS : `SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3186 SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npx playwright test e2e/rafi-entry.spec.ts` : 5 tests, API simulée, suivi du pointeur, transition chargement/connexion, formulaire utilisable, thèmes clair/sombre, 1366/390 px, aucun débordement, axe WCAG A/AA sans violation. Captures relues localement dans `frontend/test-results/` (ignoré).
 - Specs existantes `accueil` et `rafi` adaptées au retrait de l'introduction et du repli ; exécution intégrée sur stack fictive confiée à la CI.
 
+Retour CI : six traductions devenues inutilisées après retrait des boutons ont été supprimées ; `npm run test -- src/i18n/keys.test.ts --maxWorkers=1` : 4 tests PASS.
+
 Prochaine étape : revue et fusion par le propriétaire, puis redéploiement sur autorisation distincte.
 
 
