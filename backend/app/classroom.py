@@ -281,6 +281,9 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
             "open": is_open, "opened_at": iso(state.opened_at) if is_open else None,
             "mission_count": len([vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS]),
             "bonus_count": len([vid for vid in vids if vid in defs and defs[vid].bonus]), "lesson_count": len(lessons),
+            # ADR-0046: points of the block (main and bonus).
+            "possible": sum(defs[vid].max_points for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS),
+            "bonus_possible": sum(defs[vid].max_points for vid in vids if vid in defs and defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS),
             "duration_minutes": sum(defs[vid].estimated_duration_minutes for vid in vids if vid in defs and not defs[vid].bonus),
             "completed_students": done, "lessons_read_students": lessons_done, "help_pending": sum(1 for h in pending if h.mission_version_id in vids),
         })

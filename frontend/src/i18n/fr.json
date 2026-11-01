@@ -31,8 +31,6 @@
   "{{count}} mission réussie sur {{total}}_other": "{{count}} missions réussies sur {{total}}",
   "{{count}} mission à réussir_one": "{{count}} mission à réussir",
   "{{count}} mission à réussir_other": "{{count}} missions à réussir",
-  "{{count}} mission_one": "{{count}} mission",
-  "{{count}} mission_other": "{{count}} missions",
   "{{count}} objectif_one": "{{count}} objectif",
   "{{count}} objectif_other": "{{count}} objectifs",
   "{{count}} élément affiché_one": "{{count}} élément affiché",

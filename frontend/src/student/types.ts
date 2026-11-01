@@ -1,4 +1,5 @@
 import type { NextDeadline } from "./NextDeadline"
+import type { FinalGrade } from "../grading/FinalGrade"
 import type { Choice, DisplayData, MissionKind, RunView } from "../studioTypes"
 
 export type MissionStatus = "locked" | "not_started" | "in_progress" | "completed"
@@ -32,6 +33,11 @@ export type DashboardBlock = {
   completed_count: number
   lesson_count?: number
   lessons_read?: number
+  /** ADR-0046: points of the block (main missions, then bonus ones). */
+  points?: number
+  possible?: number
+  bonus_points?: number
+  bonus_possible?: number
   done: boolean
   mission_ids: number[]
 }
@@ -58,6 +64,8 @@ export type DashboardCourse = {
   rules_notice?: { text: string; since: string } | null
   /** ADR-0039: streak, level, badges and class goal (never part of the score). */
   rewards?: Rewards
+  /** ADR-0046: final grade on 20, only once the teacher shows it. */
+  final_grade?: FinalGrade | null
 }
 
 export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[]

@@ -35,7 +35,7 @@ export const VIEWS: ViewInfo[] = [
   { key: "campusequip", label: msg("Expérience CampusEquip"), title: msg("Expérience CampusEquip"), icon: "layers", subs: [] },
   { key: "etudiant", label: msg("Vue étudiant"), title: msg("Vue étudiant"), icon: "eye", subs: [] },
   { key: "reglages", label: msg("Réglages"), title: msg("Réglages"), icon: "settings", subs: [
-    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }, { key: "objectif", label: msg("Objectif de classe") }] },
+    { key: "notifications", label: "Notifications" }, { key: "observateurs", label: msg("Observateurs") }, { key: "classes", label: msg("Autres classes") }, { key: "objectif", label: msg("Objectif de classe") }, { key: "notes", label: msg("Notes") }] },
 ]
 
 export const DEFAULT_ROUTE: TeacherRoute = { view: "aujourdhui", sub: "", params: {} }

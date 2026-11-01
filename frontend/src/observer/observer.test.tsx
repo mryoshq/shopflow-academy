@@ -23,6 +23,11 @@ const admin = { ...guest, full_name: "Mme Direction", kind: "admin", rights: { n
 beforeEach(() => { document.cookie = `academy_csrf=${"D".repeat(43)}; Path=/`; window.history.replaceState(null, "", "/") })
 afterEach(() => { cleanup(); vi.unstubAllGlobals() })
 
+const GRADING = { weights: { course: 30, workshops: 20, project: 50 }, cap: 20, project_bonus_max: 1, course_bonus_max: 1, workshop_modules: null, visible_to_students: false }
+const FINAL = { parts: { course: { points: 30, possible: 40, on20: 15, pending: false, weight: 30 }, workshops: { points: 0, possible: 0, on20: null, pending: true, weight: 20 },
+  project: { points: 15, possible: 20, on20: 15, pending: false, weight: 50 } }, base: 15, project_bonus: 0.2, course_bonus: 0, course_bonus_points: 0, course_bonus_possible: 0,
+  raw: 15.2, final: 15.25, capped: false, provisional: true, pending: ["workshops"] }
+
 function observerFetch(me: object) {
   return vi.fn().mockImplementation(async (url: string) => {
     if (url.endsWith("/auth/me")) return json({ id: 9, username: "inspection@example.org", role: "observer" })
@@ -31,12 +36,12 @@ function observerFetch(me: object) {
     if (url.endsWith("/observer/classes/7/dashboard")) return json(dashboard)
     if (url.endsWith("/observer/classes/7/charts")) return json(charts)
     if (url.endsWith("/observer/classes/7/course")) return json(course)
-    if (url.endsWith("/observer/classes/7/grades")) return json({ generated_at: new Date().toISOString(), students: [
+    if (url.endsWith("/observer/classes/7/grades")) return json({ generated_at: new Date().toISOString(), grading: GRADING, students: [
       { id: 21, name: "salma", core_points: 20, core_possible: 40, percent: 50, completed: 4, total: 12, bonus_points: 3, lessons_read: 1, lessons_total: 2, project_total: 15 },
-      { id: 22, name: "youssef", core_points: 30, core_possible: 40, percent: 75, completed: 6, total: 12, bonus_points: 0, lessons_read: 2, lessons_total: 2, project_total: null }] })
+      { id: 22, name: "youssef", core_points: 30, core_possible: 40, percent: 75, completed: 6, total: 12, bonus_points: 0, lessons_read: 2, lessons_total: 2, project_total: null, final_grade: FINAL }] })
     if (url.endsWith("/observer/classes/7/students/22")) return json({ id: 22, name: "youssef", percent: 75, summary: { completed: 6, total: 12, core_points: 30, core_possible: 40, bonus_points: 0 },
       modules: [{ title: "SQL", completed: 6, total: 12, points: 30, possible: 40 }], level: { number: 3, name: "Analyste Data", xp: 90 }, badges: [{ key: "a", label: "Série de 5" }], badge_count: 1,
-      project: { partners: ["salma"], common: 12, individual: 3, total: 15 } })
+      project: { partners: ["salma"], base: 15, bonus: 2, individual: 1, total: 15 } })
     throw new Error(`Unexpected ${url}`)
   })
 }
@@ -67,6 +72,8 @@ it("administration: sortable, filterable grades, a student's file, CSV export an
   wrap(<App />)
   fireEvent.click(await screen.findByRole("tab", { name: "Notes" }))
   const table = await screen.findByRole("table", { name: "Notes de la classe" })
+  expect(within(table).getByRole("button", { name: /Note finale/ })).toBeInTheDocument()
+  expect(within(table).getAllByRole("row")[2]).toHaveTextContent("15,25 / 20")
   expect(within(table).getAllByRole("row").slice(1).map((row) => row.textContent?.split(/\d/)[0])).toEqual(["salma", "youssef"])
   fireEvent.click(within(table).getByRole("button", { name: /Cours/ }))  // by course grade, highest first
   expect(within(table).getAllByRole("row")[1]).toHaveTextContent("youssef")
@@ -77,7 +84,14 @@ it("administration: sortable, filterable grades, a student's file, CSV export an
   fireEvent.change(screen.getByLabelText("Filtrer par nom"), { target: { value: "" } })
   fireEvent.click(screen.getByRole("button", { name: "Fiche de youssef" }))
   expect(await screen.findByText("Niveau 3 : Analyste Data (90 XP)")).toBeInTheDocument()
-  expect(screen.getByText("Binôme : salma. Note : 15 / 20.")).toBeInTheDocument()
+  expect(screen.getByText("Binôme : salma. Socle : 15 / 20, bonus : 2 / 10.")).toBeInTheDocument()
+  expect(screen.getByText("30 / 40 pts")).toBeInTheDocument()  // ADR-0046: points by module
+  // ADR-0046: the final grade and each of its components, for « Administration ».
+  const detail = screen.getByTestId("final-breakdown")
+  expect(within(detail).getAllByText("15 / 20")).toHaveLength(3)  // course, CampusEquip, base
+  expect(within(detail).getByText("15,25 / 20")).toBeInTheDocument()
+  expect(within(detail).getByText("en attente")).toBeInTheDocument()
+  expect(within(detail).getByText("provisoire")).toBeInTheDocument()
 })
 
 it("teacher: invite (type, answer keys), copy the link or prepare the e-mail, resend, revoke, test e-mail, the log", async () => {

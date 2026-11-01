@@ -280,6 +280,11 @@ def course_payload(db: Session, user_id: int, release: CourseRelease, missions: 
             "mission_count": len(core), "bonus_count": sum(1 for vid in ids if scores[vid].bonus),
             "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
             "lesson_count": len(lessons), "lessons_read": sum(1 for vid in lessons if scores[vid].completed) if is_open else 0,
+            # ADR-0046: the block's points (« 4 / 10 pts », « 0 / 6 pts bonus »), stored points only.
+            "points": round(sum(scores[vid].best for vid in core), 2) if is_open else 0,
+            "possible": sum(scores[vid].possible for vid in core),
+            "bonus_points": round(sum(scores[vid].best for vid in ids if scores[vid].bonus), 2) if is_open else 0,
+            "bonus_possible": sum(scores[vid].possible for vid in ids if scores[vid].bonus),
             "done": is_open and block_done(scores, ids),
             "mission_ids": shown,
             # Closed blocks expose their title only.
@@ -306,6 +311,12 @@ def course_payload(db: Session, user_id: int, release: CourseRelease, missions: 
     }
 
 
+def student_final(db: Session, user_id: int, release: CourseRelease) -> dict | None:
+    from app.final_grade import student_final as final
+
+    return final(db, user_id, release)
+
+
 @router.get("/dashboard")
 def dashboard(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
@@ -318,6 +329,8 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
                                       opened=all_open_blocks(db, auth.user.id, release.id),
                                       paused=is_paused(db, auth.user.id, release.id),
                                       rewards=dashboard_rewards(db, release, auth.user.id)))
+        # ADR-0046: the final grade, only once the teacher turned it on for the student's class.
+        courses[-1]["final_grade"] = student_final(db, auth.user.id, release)
     from app.announcements import class_sounds, next_deadline
 
     return {"display_name": display_name(auth.user.username), "ai_enabled": ai_enabled(), "courses": courses,

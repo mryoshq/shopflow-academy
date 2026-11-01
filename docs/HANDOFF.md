@@ -1,5 +1,16 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Intégration de main dans Rafi — PR #79 (01/11/2026)
+
+`main` `ef563b6` (Notes #78) fusionnée dans la branche de #79 par un merge, sans rebase ni force-push. Les dix fichiers en conflit gardent les ajouts Notes et Rafi : routes API, champs du tableau de bord, types/imports, traductions, CHANGELOG, DESIGN, PROGRESS et HANDOFF. La note finale conserve son réglage de visibilité ; prochaine échéance et sons de Rafi restent dans la même réponse. Le test de `test_final_grade.py` vérifie cette coexistence et l’absence de changement de note quand les sons sont coupés.
+
+Validation locale : pytest 365 PASS, 8 tests laboratoire conditionnels ignorés ; Vitest 200 PASS ; TypeScript et build PASS ; `verify_kit.py` PASS ; une tête Alembic `0019_final_grade` (héritée de Notes, aucune migration ajoutée). Stack dédiée jetable `shopflow-academy-pr79-test` sur 3187, séparée de la production ET de la stack de test existante : Playwright `grades`, `live`, `rafi`, 17 PASS, axe clair/sombre 1366/390. Le test de notification d’aide du journal Claude passe ; les captures du tableau de bord fusionné ont été examinées. Les comptes et données utilisés sont fictifs.
+
+Aucune publication, fusion de PR, action sur la production, n8n ou les cours privés. Les procédures de déploiement ci-dessous restent réservées au propriétaire ; la migration 0019 de Notes ne doit pas être supprimée.
+
+Prochaine action unique : vérifier les cinq contrôles CI sur le commit poussé de #79, puis laisser la revue et la fusion au propriétaire. La PR #80 n’est pas modifiée.
+
+
 
 
 
@@ -22,6 +33,24 @@ ADR-0047. Captures : `docs/captures/rafi/`.
 
 Prochaine action unique : revue et fusion de la PR « Annonces automatiques et Rafi », puis la PR 3 (style inspiré de filatov.design).
 
+## Notes : grille du projet, points des blocs, note finale (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-notes` depuis `main` (après #77).
+
+Fichiers clés :
+- backend : `backend/app/project_grid.py` (grille), `backend/app/final_grade.py` (calcul, réglages), `results.py` (`final.csv`), `observer.py`, `student.py` (points des blocs, note visible), migration `0019_final_grade`, `tests/test_final_grade.py` ;
+- frontend : `frontend/src/project/ProjectGrades.tsx`, `frontend/src/grading/` (note finale, réglages), `e2e/grades.spec.ts`.
+
+ADR-0046 (le numéro 0043 demandé était déjà pris). Captures : `docs/captures/notes/`.
+
+### Notes — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0019-notes` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0019_final_grade` ajoute une colonne et une table, sans toucher aux notes existantes.
+3. Projet > Notes : reprendre sur la nouvelle grille les équipes qui affichent « Ancienne grille, à reprendre ».
+4. Réglages > Notes : vérifier les poids et les modules d'ateliers (par défaut, titres commençant par « Ateliers »). Ne cocher « Afficher la note finale aux étudiants » qu'au moment voulu.
+
+PR #78 fusionnée dans main ; ses consignes de déploiement restent documentées ci-dessus.
+
 ## Rappels automatiques des jalons (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-rappels` depuis `main` (après #76). Fichiers clés :
@@ -37,7 +66,7 @@ ADR-0045, runbook « Rappels automatiques des jalons ».
 2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0018_project_reminders` s'applique seule ; les rappels sont activés sur tous les jalons existants.
 3. Projet > Jalons : vérifier les heures prévues et désactiver les rappels des jalons qui n'en ont pas besoin.
 
-Prochaine action unique : revue et fusion de la PR « Rappels automatiques des jalons ».
+PR #77 fusionnée le 31/10/2026.
 
 ## Espace observateur professionnel (31/10/2026)
 

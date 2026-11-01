@@ -26,12 +26,20 @@ export type DrawPreview = {
   seed: string; fingerprint: string; pool_size: number
   groups: { members: string[]; existing_team: boolean }[]; left_out: string[]; previous: DrawRecord | null
 }
-export type GradeStudent = { id: number; name: string; common: number | null; individual: number | null; total: number | null }
-export type TeamGrade = { sql: number | null; python: number | null; nosql: number | null; airflow: number | null; reproducibility: number | null; comment: string; students: GradeStudent[] }
+/** ADR-0046: one student on the grid of the two subjects (base /20, bonus /10). */
+export type GradeStudent = { id: number; name: string; part1: number | null; part2: number | null; individual: number | null
+  base: number | null; bonus: number | null; total: number | null; complete: boolean }
+/** Points entered on the former grid (SQL 4, Python 4…), kept as they are and shown apart. */
+export type LegacyGrade = { sql: number | null; python: number | null; nosql: number | null; airflow: number | null; reproducibility: number | null
+  common: number | null; students: { id: number; name: string; individual: number | null; total: number | null }[] }
+export type TeamGrade = { criteria: Record<string, number>; comment: string; students: GradeStudent[]; legacy: LegacyGrade | null }
+export type GridLine = { key: string; label: string; max: number }
+export type ProjectGrid = { parts: { key: "part1" | "part2"; title: string; base: GridLine[]; individual_max: number; bonus: GridLine[]; bonus_cap: number }[]
+  base_max: number; bonus_max: number }
 export type TeacherProjectData = {
   assignment_id: number; cohort: string; cohort_id: number
   teams: { id: number; members: { id: number; name: string }[]; grade: TeamGrade }[]
   alone: { id: number; name: string }[]
   milestones: (Omit<Milestone, "submissions" | "comments"> & { reminders?: ReminderPlan; submissions: { team_id: number; version: number; versions: number; late: boolean; created_at: string | null }[] })[]
-  slots: Slot[]; grid: Record<"sql" | "python" | "nosql" | "airflow" | "reproducibility", number>; individual_max: number
+  slots: Slot[]; grid: ProjectGrid
 }

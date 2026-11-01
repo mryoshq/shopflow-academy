@@ -3,15 +3,19 @@ import { useEffect, useState, type FormEvent } from "react"
 import { Badge, Box, Button, Field, Flex, Heading, Input, NativeSelect, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
 import { ErrorState, Icon, LoadingState, Panel } from "../student/ui"
+import { FinalGradesPanel } from "../grading/FinalGradesPanel"
+import type { FinalGrade, GradingConfig } from "../grading/FinalGrade"
 
 type Unsuccessful = { mission_version_id: number; title: string; best_points: number; possible: number; attempts: number }
 export type ResultStudent = {
   id?: number; position?: number; display_name: string; core_points: number; core_possible: number; bonus_points: number
   percentage: number | null; needs_support: boolean; completed: number; total: number; unsuccessful_count: number
   unsuccessful_missions: Unsuccessful[]
+  /** ADR-0046: final grade on 20 (teacher only). */
+  final_grade?: FinalGrade
 }
 export type ResultsData = {
-  assignment_id: number; cohort: string; course_title: string; version: number; threshold: number; students: ResultStudent[]
+  assignment_id: number; cohort: string; course_title: string; version: number; threshold: number; students: ResultStudent[]; grading?: GradingConfig
   weakest_missions: { mission_version_id: number; title: string; completed: number; total: number; unsuccessful_count: number; success_percentage: number }[]
 }
 type Sort = "support" | "name" | "percentage_asc" | "percentage_desc"
@@ -121,6 +125,7 @@ export function Results({ assignmentId, scope = "teacher" }: { assignmentId: num
           </Box>)}</Box> : <Text color="app.muted">{data.students.length ? t("Aucun point faible à signaler sur les missions principales.") : t("Les points faibles apparaîtront quand la classe aura des étudiants.")}</Text>}
         </Stack>
       </Panel>
+      {scope === "teacher" && data.grading && <FinalGradesPanel assignmentId={assignmentId} students={data.students} config={data.grading} />}
     </>}
   </Stack>
 }

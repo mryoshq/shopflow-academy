@@ -28,6 +28,7 @@ from app.config import get_settings
 from app.database import get_db
 from app.models import (Assignment, AuditEvent, Cohort, Course, CourseRelease, Enrollment, Observer, ProjectComment, ProjectDrawEntry, ProjectFile,
                         ProjectGrade, ProjectInvitation, ProjectMember, ProjectMilestone, ProjectSlot, ProjectSubmission, ProjectTeam, User)
+from app.project_grid import CRITERIA, PART1, PART1_BONUS, PART1_INDIVIDUAL, PART2, PART2_BONUS, grid_out, legacy_out, student_total
 from app.teacher_dashboard import class_students, csv_cell, csv_number, owned_class
 
 router = APIRouter(prefix="/api/v1", tags=["project"])
@@ -35,8 +36,6 @@ MAX_FILE = 20 * 1024 * 1024
 MAX_TEXT = 50_000
 TEAM_SIZE = 2
 FILE_TYPES = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg", "md": "text/markdown; charset=utf-8", "zip": "application/zip"}
-GRID = {"sql": 4, "python": 4, "nosql": 3, "airflow": 3, "reproducibility": 2}
-INDIVIDUAL_MAX = 4
 
 
 # Helpers -------------------------------------------------------------------------------------
@@ -147,13 +146,9 @@ def all_teams(db: Session, cohort_id: int) -> dict[int, list[int]]:
 
 
 def total(grade: ProjectGrade | None, user_id: int) -> dict:
-    if grade is None:
-        return {"common": None, "individual": None, "total": None}
-    parts = [grade.sql, grade.python, grade.nosql, grade.airflow, grade.reproducibility]
-    common = round(sum(part for part in parts if part is not None), 2) if any(part is not None for part in parts) else None
-    individual = (grade.individual or {}).get(str(user_id))
-    return {"common": common, "individual": individual,
-            "total": round((common or 0) + (individual or 0), 2) if common is not None or individual is not None else None}
+    """ADR-0046: the student's project on the grid of the two subjects (base /20, bonus /10)."""
+    out = student_total(grade, user_id)
+    return {**out, "total": out["base"]}
 
 
 # Student -------------------------------------------------------------------------------------
@@ -429,15 +424,19 @@ def teacher_view(db: Session, cohort_id: int) -> dict:
                        "versions": counts[(tid, m.id)], "late": latest[(tid, m.id)].late, "created_at": iso(latest[(tid, m.id)].created_at)}
                        for tid in sorted(teams) if (tid, m.id) in latest]} for m in milestones],
         "slots": slots_out(db, cohort_id, team_names),
-        "grid": GRID, "individual_max": INDIVIDUAL_MAX,
+        "grid": grid_out(),
     }
 
 
 def grade_out(grade: ProjectGrade | None, members: list[int], who: dict[int, str]) -> dict:
-    return {"sql": grade.sql if grade else None, "python": grade.python if grade else None, "nosql": grade.nosql if grade else None,
-            "airflow": grade.airflow if grade else None, "reproducibility": grade.reproducibility if grade else None,
-            "comment": grade.comment if grade else "",
-            "students": [{"id": uid, "name": who.get(uid, ""), **total(grade, uid)} for uid in members]}
+    scores = (grade.scores if grade else None) or {}
+    legacy = legacy_out(grade, members)
+    if legacy:
+        for student in legacy["students"]:
+            student["name"] = who.get(student["id"], "")
+    return {"criteria": scores.get("criteria") or {}, "comment": grade.comment if grade else "",
+            "students": [{"id": uid, "name": who.get(uid, ""), **total(grade, uid)} for uid in members],
+            "legacy": legacy}
 
 
 @router.get("/teacher/classes/{assignment_id}/project")
@@ -625,12 +624,8 @@ def comment(team_id: int, payload: CommentInput, auth: AuthContext = Depends(req
 
 class GradeInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    sql: float | None = Field(default=None, ge=0, le=GRID["sql"])
-    python: float | None = Field(default=None, ge=0, le=GRID["python"])
-    nosql: float | None = Field(default=None, ge=0, le=GRID["nosql"])
-    airflow: float | None = Field(default=None, ge=0, le=GRID["airflow"])
-    reproducibility: float | None = Field(default=None, ge=0, le=GRID["reproducibility"])
-    individual: dict[str, float] = Field(default_factory=dict)
+    criteria: dict[str, float | None] = Field(default_factory=dict)
+    individual: dict[str, float | None] = Field(default_factory=dict)
     comment: str = Field(default="", max_length=4000)
 
 
@@ -638,12 +633,15 @@ class GradeInput(BaseModel):
 def grade(team_id: int, payload: GradeInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     team = owned_team(db, auth, team_id)
     members = {str(uid) for uid in team_members(db, team.id)}
-    if set(payload.individual) - members or any(not 0 <= value <= INDIVIDUAL_MAX for value in payload.individual.values()):
-        raise HTTPException(status_code=422, detail="compréhension individuelle : membres du binôme, de 0 à 4")
+    unknown = set(payload.criteria) - set(CRITERIA)
+    if unknown or any(v is not None and not 0 <= v <= CRITERIA[k] for k, v in payload.criteria.items()):
+        raise HTTPException(status_code=422, detail="grille : critère inconnu ou note hors barème")
+    if set(payload.individual) - members or any(v is not None and not 0 <= v <= PART1_INDIVIDUAL for v in payload.individual.values()):
+        raise HTTPException(status_code=422, detail=f"point individuel : membres du binôme, de 0 à {PART1_INDIVIDUAL}")
     row = db.get(ProjectGrade, team.id) or ProjectGrade(team_id=team.id, individual={})
-    for key in GRID:
-        setattr(row, key, getattr(payload, key))
-    row.individual = {key: round(value, 2) for key, value in payload.individual.items()}
+    # Only the new grid is written: the former grid's columns are left exactly as they were.
+    row.scores = {"criteria": {k: round(v, 2) for k, v in payload.criteria.items() if v is not None},
+                  "individual": {k: round(v, 2) for k, v in payload.individual.items() if v is not None}}
     row.comment = payload.comment
     row.updated_by = auth.user.id
     row.updated_at = utcnow()
@@ -651,7 +649,7 @@ def grade(team_id: int, payload: GradeInput, auth: AuthContext = Depends(require
     audit(db, auth, "project.grade", team.cohort_id, {"team": team.id})
     db.commit()
     who = names(db, [int(uid) for uid in members])
-    return grade_out(row, [int(uid) for uid in sorted(members)], who)
+    return grade_out(row, [int(uid) for uid in sorted(members, key=int)], who)
 
 
 @router.get("/teacher/classes/{assignment_id}/project/grades.csv")
@@ -662,16 +660,25 @@ def grades_csv(assignment_id: int, auth: AuthContext = Depends(require_teacher),
     who = {s.id: display_name(s.username) for s in class_students(db, cohort.id)}
     buffer = StringIO()
     writer = csv.writer(buffer, delimiter=";")
-    writer.writerow(["etudiant", "binome", "sql_4", "python_4", "mongodb_redis_3", "airflow_3", "reproductibilite_2",
-                     "commun_16", "individuel_4", "total_20"])
+    writer.writerow(["etudiant", "binome"] + [f"{key}_{points}" for key, _, points in PART1] + [f"p1_individuel_{PART1_INDIVIDUAL}", "partie1_10"]
+                    + [f"{key}_{points}" for key, _, points in PART1_BONUS]
+                    + [f"{key}_{points}" for key, _, points in PART2] + ["partie2_10"]
+                    + [f"{key}_{points}" for key, _, points in PART2_BONUS]
+                    + ["socle_20", "bonus_10", "ancienne_grille_20"])
     cell = lambda value: "" if value is None else csv_number(value)  # noqa: E731
     for tid, uids in sorted(teams.items()):
         g = grades.get(tid)
+        criteria = ((g.scores if g else None) or {}).get("criteria") or {}
+        legacy = legacy_out(g, uids)
         partner = " + ".join(who.get(uid, "") for uid in uids)
         for uid in uids:
             t = total(g, uid)
-            writer.writerow([csv_cell(who.get(uid, "")), csv_cell(partner)] + [cell(getattr(g, key) if g else None) for key in GRID]
-                            + [cell(t["common"]), cell(t["individual"]), cell(t["total"])])
+            old = next((item["total"] for item in legacy["students"] if item["id"] == uid), None) if legacy else None
+            writer.writerow([csv_cell(who.get(uid, "")), csv_cell(partner)] + [cell(criteria.get(k)) for k, _, _ in PART1]
+                            + [cell(t["individual"]), cell(t["part1"])] + [cell(criteria.get(k)) for k, _, _ in PART1_BONUS]
+                            + [cell(criteria.get(k)) for k, _, _ in PART2] + [cell(t["part2"])]
+                            + [cell(criteria.get(k)) for k, _, _ in PART2_BONUS]
+                            + [cell(t["base"]), cell(t["bonus"]), cell(old)])
     audit(db, auth, "project.export", cohort.id)
     db.commit()
     return Response(content="﻿" + buffer.getvalue(), media_type="text/csv; charset=utf-8",

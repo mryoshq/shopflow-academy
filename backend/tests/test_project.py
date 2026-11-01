@@ -139,14 +139,24 @@ def test_grid_on_20_csv_slots_teacher_composition_and_observer(project):
     team_id = post(teacher, f"{base}/teams", {"user_ids": [me, ids["demo.etudiant02"]]}).json()["team_id"]
     assert post(teacher, f"{base}/teams", {"user_ids": [me]}).status_code == 409  # already in a team
     assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}", {"user_ids": [me, ids["demo.etudiant02"]]}).status_code == 200
-    graded = put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"sql": 4, "python": 3.5, "nosql": 3, "airflow": 2, "reproducibility": 2,
-                                                                           "individual": {str(me): 4, str(ids["demo.etudiant02"]): 3}, "comment": "Solide."})
-    assert [(s["name"], s["common"], s["individual"], s["total"]) for s in graded.json()["students"]] == [
-        ("demo.etudiant01", 14.5, 4, 18.5), ("demo.etudiant02", 14.5, 3, 17.5)]
-    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"sql": 5}).status_code == 422
-    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"individual": {"999": 2}}).status_code == 422
+    full = {"p1_model": 2, "p1_sql": 1.5, "p1_python": 2, "p1_load": 2, "p1_proofs": 1, "b1_plan": 1, "b1_api": 2,
+            "p2_airflow": 3, "p2_mongo": 2, "p2_redis": 1, "p2_time": 2, "p2_repro": 1, "b2_metrics": 2}
+    graded = put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"criteria": full,
+                 "individual": {str(me): 1, str(ids["demo.etudiant02"]): 0.5}, "comment": "Solide."})
+    assert [(s["name"], s["part1"], s["part2"], s["base"], s["bonus"], s["complete"]) for s in graded.json()["students"]] == [
+        ("demo.etudiant01", 9.5, 9, 18.5, 5, True), ("demo.etudiant02", 9, 9, 18, 5, True)]
+    assert graded.json()["legacy"] is None
+    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"criteria": {"p2_airflow": 4}}).status_code == 422  # above its points
+    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"criteria": {"sql": 4}}).status_code == 422  # former grid closed
+    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"individual": {str(me): 2}}).status_code == 422  # 1 at most
+    assert put(teacher, f"/api/v1/teacher/project/teams/{team_id}/grade", {"individual": {"999": 1}}).status_code == 422
+    view = teacher.get(base).json()
+    assert [p["key"] for p in view["grid"]["parts"]] == ["part1", "part2"] and view["grid"]["base_max"] == 20 and view["grid"]["bonus_max"] == 10
     exported = teacher.get(f"{base}/grades.csv").content.decode("utf-8-sig")
-    assert exported.splitlines()[0].startswith("etudiant;binome;sql_4") and "demo.etudiant01;demo.etudiant01 + demo.etudiant02;4;3,5;3;2;2;14,5;4;18,5" in exported
+    head = exported.splitlines()[0].split(";")
+    assert head[:3] == ["etudiant", "binome", "p1_model_2"] and head[-3:] == ["socle_20", "bonus_10", "ancienne_grille_20"]
+    row = next(line for line in exported.splitlines() if line.startswith("demo.etudiant01;"))
+    assert row.endswith(";18,5;5;")
     # Defence slots of 23 November: assigned to a team, visible to students.
     slot = post(teacher, f"{base}/slots", {"starts_at": "2026-11-23T09:00:00+01:00", "ends_at": "2026-11-23T09:20:00+01:00", "label": "Salle B3",
                                            "team_id": team_id}).json()["id"]

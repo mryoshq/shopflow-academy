@@ -525,7 +525,21 @@ class ProjectGrade(Base):
     airflow: Mapped[float | None] = mapped_column(Float, nullable=True)
     reproducibility: Mapped[float | None] = mapped_column(Float, nullable=True)
     individual: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    # ADR-0046: grid of the two subjects ({"criteria": {key: points}, "individual": {user id: points}}).
+    # The columns above are the former grid, kept as entered and shown apart, « à reprendre ».
+    scores: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     comment: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+
+class GradeSetting(Base):
+    """ADR-0046: weights of the final grade of one class (no row = defaults)."""
+
+    __tablename__ = "grade_settings"
+
+    assignment_id: Mapped[int] = mapped_column(ForeignKey("assignments.id", ondelete="CASCADE"), primary_key=True)
+    config: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     updated_by: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
