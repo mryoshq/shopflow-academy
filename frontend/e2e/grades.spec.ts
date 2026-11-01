@@ -11,7 +11,8 @@ const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test
 const accounts = JSON.parse(readFileSync(credentialsPath, "utf8")) as { username: string; password: string }[]
 const account = (name: string) => accounts.find((item) => item.username === name)!
 const shots = process.env.SHOPFLOW_SCREENSHOT_DIR
-const STUDENTS = ["demo.etudiant08", "demo.etudiant09"]
+/** Two students of the class without a team, chosen at run time (the other specs form teams too). */
+const STUDENTS: string[] = []
 const DEFAULTS = { weights: { course: 30, workshops: 20, project: 50 }, cap: 20, project_bonus_max: 1, course_bonus_max: 1, workshop_modules: null }
 
 async function signIn(page: Page, name: string) {
@@ -44,12 +45,18 @@ test.describe.serial("grades", () => {
 
   test("the teacher enters the new grid; the former grid is never written", async ({ page, request }) => {
     const { csrf, assignment } = await teacherApi(request)
-    const view = await (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json()
-    for (const existing of view.teams.filter((item: { members: { name: string }[] }) => item.members.some((m) => STUDENTS.includes(m.name))))
+    const project = async () => (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json()
+    let view = await project()
+    const free = () => (view.alone as { id: number; name: string }[]).filter((item) => accounts.some((a) => a.username === item.name))
+    for (const existing of [...view.teams]) {
+      if (free().length >= 2) break
       await request.delete(`/api/v1/teacher/project/teams/${existing.id}`, { headers: { "X-CSRF-Token": csrf } })
-    const fresh = await (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json()
-    const ids = fresh.alone.filter((item: { name: string }) => STUDENTS.includes(item.name)).map((item: { id: number }) => item.id)
-    expect(ids).toHaveLength(2)
+      view = await project()
+    }
+    const pair = free().slice(0, 2)
+    expect(pair).toHaveLength(2)
+    STUDENTS.splice(0, STUDENTS.length, ...pair.map((item) => item.name))
+    const ids = pair.map((item) => item.id)
     const created = await request.post(`/api/v1/teacher/classes/${assignment}/project/teams`, { data: { user_ids: ids }, headers: { "X-CSRF-Token": csrf } })
     expect(created.status()).toBe(201)
     team = (await created.json()).team_id
