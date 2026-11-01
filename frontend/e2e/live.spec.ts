@@ -80,13 +80,18 @@ for (const theme of ["light", "dark"] as const) {
     const sent = Date.now()
     await teacher.getByRole("button", { name: "Envoyer" }).click()
     await expect(teacher.getByText("Message envoyé à 1 étudiant.")).toBeVisible()
-    const toast = student.getByRole("region", { name: "Notifications récentes" }).getByText(text)
-    await expect(toast).toBeVisible({ timeout: 10_000 })
+    // ADR-0047: on the student side, Rafi presents the teacher's messages (read the older announcements first).
+    const bubble = student.getByTestId("rafi-bubble")
+    for (let i = 0; i < 15 && !((await bubble.textContent({ timeout: 10_000 }))?.includes(text)); i++) {
+      await bubble.getByRole("button", { name: /^J’ai lu/ }).click()
+      await student.waitForTimeout(150)
+    }
+    await expect(bubble).toContainText(text, { timeout: 10_000 })
     test.info().annotations.push({ type: "latence-message-ms", description: String(Date.now() - sent) })
     expect(await serious(student)).toEqual([])
     await teacher.screenshot({ path: `${shots}/50-suivi-direct-${theme}-1366.png`, animations: "disabled" })
     await student.screenshot({ path: `${shots}/51-message-etudiant-${theme}-1366.png`, animations: "disabled" })
-    await student.getByRole("region", { name: "Notifications récentes" }).getByRole("button", { name: "J’ai lu" }).first().click()
+    await bubble.getByRole("button", { name: /^J’ai lu/ }).click()
     await expect(teacher.getByRole("list", { name: "Messages envoyés" }).getByText(/lu par 1\/1/).first()).toBeVisible({ timeout: 15_000 })
     await teacherCtx.close()
     await studentCtx.close()

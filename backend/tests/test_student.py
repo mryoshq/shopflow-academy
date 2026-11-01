@@ -97,7 +97,7 @@ def test_dashboard_lists_demo_course_with_states_and_no_answer_keys(env):
     assert course["missions"][2]["locked_by"] == ["Valider un import CSV de clients"]
     assert walk_keys(body) == []
     outsider = clients["out"].get("/api/v1/student/dashboard").json()
-    assert outsider == {"display_name": "prenom.nom", "ai_enabled": False, "courses": []}
+    assert outsider == {"display_name": "prenom.nom", "ai_enabled": False, "courses": [], "next_deadline": None, "rafi": {"sounds": True}}
 
 
 def test_mission_payload_is_redacted_recursively(env):

@@ -7,6 +7,41 @@
 - Tableau de bord : en-tête en panneau sombre à trame de points, surtitre « TABLEAU DE BORD » dans l'accent, indicateur vert « Mis à jour à HH:MM ».
 - Connexion : surtitre en accent et grand titre dont le mot en accent change en machine à écrire (la data, SQL, Python, Airflow, la qualité), figé avec « Réduire les animations » et toujours lu de la même façon par les lecteurs d'écran.
 - Thème unique conservé (vert en clair, terre cuite en sombre), contrastes AA. ADR-0048.
+- Intégration avec Notes (#78) et Rafi (#79) : `main` fusionnée dans #80 ; nouvel en-tête, note finale, compteurs de points et prochaine échéance conservés ensemble, traductions et documents des trois fonctionnalités gardés.
+
+## 2026-11-01 — Annonces automatiques et Rafi (`claude/lucid-brahmagupta-htwgun-rafi`, depuis `design/rafi`)
+
+- Rafi, l'image du propriétaire telle quelle (72 px, srcset), en bas à droite de l'interface étudiant.
+  - Pupilles qui suivent le curseur et le doigt (2 px au plus), clignement par une paupière superposée.
+  - Réactions sobres au toucher : clin d'œil, petit saut, légère bascule, regard.
+  - Repliable, état mémorisé.
+  - Absent côté enseignant et observateur, sauf dans la vue étudiant.
+- Rafi présente les annonces dans une bulle (file d'attente, « J'ai lu », fermeture, lien) :
+  - rappels des jalons, désormais aussi le jour même ;
+  - « bloc ouvert pas encore terminé », une fois par étudiant et par bloc, le lendemain à 9 h ;
+  - messages de l'enseignant.
+
+  Elles sont idempotentes, journalisées et traduites en anglais.
+- Compte à rebours vers la prochaine échéance du projet sur le tableau de bord.
+- Sons courts et rares (Web Audio), rien avant une interaction ; coupables sur Rafi, dans Paramètres et par l'enseignant pour toute la classe.
+- « Réduire les animations » fige tout. ADR-0047, sans migration.
+- Compatibilité avec Notes (#78) : `main` fusionnée dans la branche Rafi, imports/routes/types/traductions et documents conservés des deux côtés. Le tableau de bord expose ensemble la note finale (selon son réglage de visibilité), la prochaine échéance et les sons de Rafi ; un test couvre leur coexistence sans changement des points.
+
+## 2026-11-01 — Notes : grille du projet, points des blocs, note finale (`claude/lucid-brahmagupta-htwgun-notes`)
+
+- Aucune note déjà obtenue ne change : tout est un calcul ou un affichage au-dessus des données existantes.
+- Projet > Notes : grille des deux sujets CampusEquip.
+  - Partie 1 : socle 10, dont 1 point individuel par étudiant.
+  - Partie 2 : socle 10, commun au groupe.
+  - Bonus : 5 au plus par partie.
+
+  Projet sur 20 + 10. Une note hors barème est refusée. Les saisies de l'ancienne grille restent visibles à part, « à reprendre ». L'export CSV du projet est mis à jour.
+- Blocs : « 4 / 10 pts », « 0 / 6 pts bonus » ou « Leçons », au lieu de « n / m missions » (étudiant, Ma classe ; points par module dans la fiche de l'observateur).
+- Note finale sur 20 : 30 % cours + 20 % ateliers + 50 % CampusEquip, bonus au plus +1 (projet) et +1 (cours hors ateliers), plafond 20, arrondi à 0,25.
+  - Détail de chaque composante ; une partie vide est « en attente » dans un aperçu « provisoire ».
+  - Visible dans Résultats (export `final.csv` séparé) et pour les observateurs « Administration » (tableau, fiche, CSV, PDF).
+  - Visible des étudiants seulement si l'enseignant l'active.
+- Réglages > Notes : poids, plafond, bonus maximaux, modules d'ateliers, visibilité. ADR-0046, migration `0019_final_grade`.
 
 ## 2026-10-31 — Rappels automatiques des jalons (`claude/lucid-brahmagupta-htwgun-rappels`)
 

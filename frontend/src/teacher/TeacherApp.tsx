@@ -8,6 +8,8 @@ import { AccountMenu } from "../preferences/AccountMenu"
 import { TeacherStudio } from "../TeacherStudio"
 import { LeaderboardPage } from "../leaderboard/LeaderboardPage"
 import { GoalSettings, TeacherGoalBar } from "../rewards/Rewards"
+import { RafiClassSettings } from "./RafiClassSettings"
+import { GradeSettings } from "../grading/GradeSettings"
 import { NotificationBell, useNotificationFeed } from "../live/notifications"
 import { HELP_CHANGED, HelpBadge, HelpText } from "./HelpBadge"
 import { ErrorState, LoadingState, Panel } from "../student/ui"
@@ -306,10 +308,12 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
     }
     case "reglages":
       return <SubTabs route={route} go={go} label={t("Réglages")}>
-        <Tabs.Content value="notifications"><Panel><NotificationSettingsPanel /></Panel></Tabs.Content>
+        <Tabs.Content value="notifications"><Stack gap="4"><Panel><NotificationSettingsPanel /></Panel>
+          {assignmentId ? <RafiClassSettings key={assignmentId} assignmentId={assignmentId} /> : null}</Stack></Tabs.Content>
         <Tabs.Content value="observateurs"><ObserversPanel /></Tabs.Content>
         <Tabs.Content value="classes"><TeacherDashboard /></Tabs.Content>
         <Tabs.Content value="objectif">{assignmentId ? <GoalSettings assignmentId={assignmentId} /> : <NoClass />}</Tabs.Content>
+        <Tabs.Content value="notes">{assignmentId ? <GradeSettings key={assignmentId} assignmentId={assignmentId} /> : <NoClass />}</Tabs.Content>
       </SubTabs>
   }
 }

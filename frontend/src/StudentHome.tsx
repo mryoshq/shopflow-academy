@@ -7,8 +7,14 @@ import { StudentProject } from "./project/StudentProject"
 import { MissionPlayer } from "./student/MissionPlayer"
 import { StudentDashboard } from "./student/StudentDashboard"
 import { useHashRoute } from "./useHashRoute"
+import { Rafi } from "./rafi/Rafi"
 
+/** ADR-0047: the student's pages, with Rafi (also in the teacher's « Vue étudiant », never elsewhere for the teacher). */
 export function StudentHome() {
+  return <><StudentPage /><Rafi /></>
+}
+
+function StudentPage() {
   const { route, navigate } = useHashRoute()
   if (route.name === "voyage") return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
     <VoyagePage scene={route.scene} onScene={(scene) => navigate(`/voyage/${scene}`)} /></Suspense>

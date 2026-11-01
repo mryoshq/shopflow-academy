@@ -1,5 +1,24 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Intégration de main dans Style — PR #80 (01/11/2026)
+
+Branche locale `codex/resolve-pr80`, destinée à la branche existante `claude/lucid-brahmagupta-htwgun-style` de #80. Merge de `main` `02363ad` après #78 et #79, sans rebase ni force-push. Les cinq conflits (CHANGELOG, HANDOFF, PROGRESS, `en.json`, imports de `StudentDashboard.tsx`) gardent les deux côtés. Le nouvel en-tête et la police locale restent présents avec la note finale, les points par bloc et la prochaine échéance ; aucune modification du backend par rapport à main, ni migration ajoutée.
+
+Validation : `pytest -q tests/test_final_grade.py tests/test_announcements.py tests/test_security_matrix.py` PASS 13 ; `npm run test -- --maxWorkers=1` PASS 203 ; `npm run build` PASS (TypeScript compris) ; `verify_kit.py` PASS. Playwright `e2e/style.spec.ts e2e/grades.spec.ts e2e/rafi.spec.ts e2e/live.spec.ts e2e/english.spec.ts` PASS 24 (axe clair/sombre, 1366/390 px, mouvement réduit, police servie localement, Notes et Rafi). Stack dédiée `shopflow-academy-pr80-test`, 127.0.0.1:3188, comptes fictifs, séparée de la production et de la stack de test existante. Captures Notes/style fusionnés examinées en clair sur ordinateur et en sombre sur téléphone.
+
+Aucune action sur la production, n8n ou le contenu privé ; aucune fusion de PR ni déploiement. Les procédures « À faire en local » ci-dessous restent à réaliser par le propriétaire.
+
+Prochaine action unique : vérifier les cinq contrôles CI sur le commit poussé de #80, puis laisser la revue et la fusion au propriétaire.
+
+## Intégration de main dans Rafi — PR #79 (01/11/2026)
+
+`main` `ef563b6` (Notes #78) fusionnée dans la branche de #79 par un merge, sans rebase ni force-push. Les dix fichiers en conflit gardent les ajouts Notes et Rafi : routes API, champs du tableau de bord, types/imports, traductions, CHANGELOG, DESIGN, PROGRESS et HANDOFF. La note finale conserve son réglage de visibilité ; prochaine échéance et sons de Rafi restent dans la même réponse. Le test de `test_final_grade.py` vérifie cette coexistence et l’absence de changement de note quand les sons sont coupés.
+
+Validation locale : pytest 365 PASS, 8 tests laboratoire conditionnels ignorés ; Vitest 200 PASS ; TypeScript et build PASS ; `verify_kit.py` PASS ; une tête Alembic `0019_final_grade` (héritée de Notes, aucune migration ajoutée). Stack dédiée jetable `shopflow-academy-pr79-test` sur 3187, séparée de la production ET de la stack de test existante : Playwright `grades`, `live`, `rafi`, 17 PASS, axe clair/sombre 1366/390. Le test de notification d’aide du journal Claude passe ; les captures du tableau de bord fusionné ont été examinées. Les comptes et données utilisés sont fictifs.
+
+Aucune publication, fusion de PR, action sur la production, n8n ou les cours privés. Les procédures de déploiement ci-dessous restent réservées au propriétaire ; la migration 0019 de Notes ne doit pas être supprimée.
+
+PR #79 fusionnée dans main ; sa validation locale et ses consignes sont conservées ici.
 
 
 
@@ -20,7 +39,42 @@ ADR-0048. Captures : `docs/captures/style/`.
 1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`). La police est dans le build : rien à installer sur le Mac.
 2. Recharger la page une fois (le service worker met la nouvelle version en cache).
 
-Prochaine action unique : revue et fusion des PR #78 (notes), #79 (Rafi) et de la PR « Style », dans cet ordre.
+PR #78 et #79 fusionnées dans main ; la PR #80 intègre leurs changements.
+
+## Annonces automatiques et Rafi (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-rafi`, partie de `design/rafi` (`main` + images de Rafi). Indépendante de la PR « Notes » (#78) : pas de migration ici.
+
+Fichiers clés :
+- backend : `backend/app/announcements.py`, `project_reminders.py` (jour même), `tests/test_announcements.py` ;
+- frontend : `frontend/src/rafi/` (`Rafi.tsx`, `sound.ts`), `frontend/src/student/NextDeadline.tsx`, `frontend/src/teacher/RafiClassSettings.tsx`, `frontend/public/rafi/`, `e2e/rafi.spec.ts`.
+
+ADR-0047. Captures : `docs/captures/rafi/`.
+
+### Rafi — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier avec un compte de démonstration étudiant : Rafi en bas à droite. Envoyer un message à ce compte depuis Ma classe : il apparaît dans la bulle de Rafi. La « Vue étudiant » montre Rafi, mais sans annonce.
+3. Facultatif : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
+
+PR #79 fusionnée dans main ; ses consignes de déploiement restent documentées ci-dessus.
+
+## Notes : grille du projet, points des blocs, note finale (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-notes` depuis `main` (après #77).
+
+Fichiers clés :
+- backend : `backend/app/project_grid.py` (grille), `backend/app/final_grade.py` (calcul, réglages), `results.py` (`final.csv`), `observer.py`, `student.py` (points des blocs, note visible), migration `0019_final_grade`, `tests/test_final_grade.py` ;
+- frontend : `frontend/src/project/ProjectGrades.tsx`, `frontend/src/grading/` (note finale, réglages), `e2e/grades.spec.ts`.
+
+ADR-0046 (le numéro 0043 demandé était déjà pris). Captures : `docs/captures/notes/`.
+
+### Notes — À faire en local après fusion
+1. Sauvegarde manuelle avant la migration : commande « Manuelle » de `docs/RUNBOOK.md`, avec `avant-0019-notes` à la place de `OPERATION`.
+2. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`) : la migration `0019_final_grade` ajoute une colonne et une table, sans toucher aux notes existantes.
+3. Projet > Notes : reprendre sur la nouvelle grille les équipes qui affichent « Ancienne grille, à reprendre ».
+4. Réglages > Notes : vérifier les poids et les modules d'ateliers (par défaut, titres commençant par « Ateliers »). Ne cocher « Afficher la note finale aux étudiants » qu'au moment voulu.
+
+PR #78 fusionnée dans main ; ses consignes de déploiement restent documentées ci-dessus.
 
 ## Rappels automatiques des jalons (31/10/2026)
 

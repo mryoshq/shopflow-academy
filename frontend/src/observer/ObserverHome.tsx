@@ -5,6 +5,7 @@ import { api, ApiError } from "../api"
 import { CoursePreview, type PreviewTree } from "../CoursePreview"
 import type { MissionDefinition } from "../studioTypes"
 import { TeacherProject } from "../project/TeacherProject"
+import { FinalBreakdown, FinalValue, type FinalGrade, type GradingConfig } from "../grading/FinalGrade"
 import { ErrorState, LoadingState, Panel, ScoreBar } from "../student/ui"
 import { DataView } from "../student/activities"
 import { DataTable } from "../student/displays"
@@ -21,11 +22,11 @@ type Dashboard = { students: number; mean_progress: number | null; success_rate:
 type Charts = { progression: { day: string; percent: number }[]; modules: { label: string; percent: number }[]; objectives: { label: string; percent: number }[]
   grades: { label: string; count: number }[]; activity: { day: string; attempts: number; hints: number; help: number }[] }
 type GradeRow = { id: number; name: string; core_points: number; core_possible: number; percent: number; completed: number; total: number
-  bonus_points: number; lessons_read: number; lessons_total: number; project_total: number | null }
+  bonus_points: number; lessons_read: number; lessons_total: number; project_total: number | null; final_grade?: FinalGrade }
 type StudentFile = { id: number; name: string; percent: number; summary: { completed: number; total: number; core_points: number; core_possible: number; bonus_points: number }
   modules: { title: string; completed: number; total: number; points: number; possible: number }[]
   level: { number: number; name: string; xp: number }; badges: { key: string; label: string }[]; badge_count: number
-  project: { partners: string[]; common: number | null; individual: number | null; total: number | null } | null }
+  project: { partners: string[]; base: number | null; bonus: number | null; individual: number | null; total: number | null } | null }
 
 function useLoad<T>(path: string | null): { data: T | null; error: string | null } {
   const [data, setData] = useState<T | null>(null)
@@ -141,17 +142,18 @@ function ChartsPanel({ assignmentId }: { assignmentId: number }) {
   </SimpleGrid>
 }
 
-type SortKey = "name" | "percent" | "completed" | "bonus_points" | "project_total"
+type SortKey = "name" | "percent" | "completed" | "bonus_points" | "project_total" | "final"
 
 function GradesPanel({ assignmentId }: { assignmentId: number }) {
-  const { data, error } = useLoad<{ generated_at: string; students: GradeRow[] }>(`/observer/classes/${assignmentId}/grades`)
+  const { data, error } = useLoad<{ generated_at: string; students: GradeRow[]; grading?: GradingConfig }>(`/observer/classes/${assignmentId}/grades`)
   const [filter, setFilter] = useState("")
   const [sort, setSort] = useState<{ key: SortKey; down: boolean }>({ key: "name", down: false })
   const [open, setOpen] = useState<number | null>(null)
   const rows = useMemo(() => {
     const list = (data?.students ?? []).filter((row) => row.name.toLowerCase().includes(filter.trim().toLowerCase()))
     return [...list].sort((a, b) => {
-      const x = a[sort.key] ?? -1, y = b[sort.key] ?? -1
+      const value = (row: GradeRow) => sort.key === "final" ? row.final_grade?.final ?? null : row[sort.key]
+      const x = value(a) ?? -1, y = value(b) ?? -1
       const order = typeof x === "string" ? x.localeCompare(String(y)) : Number(x) - Number(y)
       return sort.down ? -order : order
     })
@@ -174,22 +176,25 @@ function GradesPanel({ assignmentId }: { assignmentId: number }) {
     <Box overflowX="auto" tabIndex={0} role="region" aria-label={t("Notes de la classe")} borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
       <Table.Root size="sm" aria-label={t("Notes de la classe")}>
         <Table.Header><Table.Row bg="app.sunken">{header("name", t("Étudiant"))}{header("percent", t("Cours"))}{header("completed", t("Missions"))}
-          {header("bonus_points", t("Bonus"))}{header("project_total", t("Projet /20"))}<Table.ColumnHeader scope="col">{t("Fiche")}</Table.ColumnHeader></Table.Row></Table.Header>
+          {header("bonus_points", t("Bonus"))}{header("project_total", t("Projet /20"))}{data.grading && header("final", t("Note finale /20"))}<Table.ColumnHeader scope="col">{t("Fiche")}</Table.ColumnHeader></Table.Row></Table.Header>
         <Table.Body>{rows.map((row) => <Table.Row key={row.id}>
           <Table.Cell fontWeight="semibold">{row.name}</Table.Cell>
           <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{formatNumber(row.core_points)} / {row.core_possible} ({pct(row.percent)})</Table.Cell>
           <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.completed} / {row.total}</Table.Cell>
           <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{formatNumber(row.bonus_points)}</Table.Cell>
           <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.project_total === null ? "—" : formatNumber(row.project_total)}</Table.Cell>
+          {data.grading && <Table.Cell>{row.final_grade ? <FinalValue grade={row.final_grade} /> : "—"}</Table.Cell>}
           <Table.Cell><Button size="xs" variant="outline" onClick={() => setOpen(row.id)} aria-label={t("Fiche de {{name}}", { name: row.name })}>{t("Fiche")}</Button></Table.Cell>
         </Table.Row>)}</Table.Body>
       </Table.Root>
     </Box>
-    <StudentFilePanel assignmentId={assignmentId} studentId={open} onClose={() => setOpen(null)} />
+    <StudentFilePanel assignmentId={assignmentId} studentId={open} onClose={() => setOpen(null)}
+      final={data.students.find((row) => row.id === open)?.final_grade} grading={data.grading} />
   </Stack>
 }
 
-function StudentFilePanel({ assignmentId, studentId, onClose }: { assignmentId: number; studentId: number | null; onClose: () => void }) {
+function StudentFilePanel({ assignmentId, studentId, onClose, final, grading }: { assignmentId: number; studentId: number | null; onClose: () => void
+  final?: FinalGrade; grading?: GradingConfig }) {
   const { data } = useLoad<StudentFile>(studentId === null ? null : `/observer/classes/${assignmentId}/students/${studentId}`)
   return <SidePanel open={studentId !== null} title={data ? t("Fiche : {{name}}", { name: data.name }) : t("Fiche de l’étudiant")} onClose={onClose}>
     {!data ? <LoadingState label={t("Chargement de la fiche…")} /> : <Stack gap="4">
@@ -197,14 +202,16 @@ function StudentFilePanel({ assignmentId, studentId, onClose }: { assignmentId: 
         points: formatNumber(data.summary.core_points), possible: data.summary.core_possible, percent: pct(data.percent),
         completed: data.summary.completed, total: data.summary.total, bonus: formatNumber(data.summary.bonus_points) })}</Text>
       <Stack gap="2"><Heading as="h3" size="sm">{t("Progression par module")}</Heading>
-        {data.modules.map((module) => <Box key={module.title}><Flex justify="space-between" fontSize="sm"><Text>{module.title}</Text><Text color="app.muted">{module.completed} / {module.total}</Text></Flex>
+        {data.modules.map((module) => <Box key={module.title}><Flex justify="space-between" fontSize="sm"><Text>{module.title}</Text><Text color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("{{points}} / {{possible}} pts", { points: formatNumber(module.points), possible: formatNumber(module.possible) })}</Text></Flex>
           <ScoreBar value={module.completed} max={Math.max(1, module.total)} label={t("{{name}} : {{completed}} missions sur {{total}}", { name: module.title, completed: module.completed, total: module.total })} /></Box>)}</Stack>
       <Stack gap="1"><Heading as="h3" size="sm">{t("Niveau et badges")}</Heading>
         <Text fontSize="sm">{t("Niveau {{number}} : {{name}} ({{xp}} XP)", { number: data.level.number, name: data.level.name, xp: data.level.xp })}</Text>
         <Text fontSize="sm" color="app.muted">{data.badges.length ? data.badges.map((badge) => badge.label).join(" · ") : t("Aucun badge pour le moment.")}</Text></Stack>
       <Stack gap="1"><Heading as="h3" size="sm">{t("Projet")}</Heading>
-        {data.project ? <Text fontSize="sm">{t("Binôme : {{partners}}. Note : {{total}} / 20.", { partners: data.project.partners.join(", ") || "—", total: data.project.total === null ? "—" : formatNumber(data.project.total) })}</Text>
+        {data.project ? <Text fontSize="sm">{t("Binôme : {{partners}}. Socle : {{total}} / 20, bonus : {{bonus}} / 10.", { partners: data.project.partners.join(", ") || "—",
+          total: data.project.base === null ? "—" : formatNumber(data.project.base), bonus: data.project.bonus === null ? "—" : formatNumber(data.project.bonus) })}</Text>
           : <Text fontSize="sm" color="app.muted">{t("Pas encore de binôme.")}</Text>}</Stack>
+      {final && grading && <Stack gap="1"><Heading as="h3" size="sm">{t("Note finale")}</Heading><FinalBreakdown grade={final} config={grading} /></Stack>}
     </Stack>}
   </SidePanel>
 }

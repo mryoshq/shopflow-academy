@@ -51,7 +51,9 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
     if path.endswith("/project/slots"):
         return {"starts_at": "2026-11-23T10:00:00+01:00", "ends_at": "2026-11-23T10:20:00+01:00"}
     if path.endswith("/grade"):
-        return {"sql": 4}
+        return {"criteria": {"p1_model": 2}}
+    if path.endswith("/grading"):  # ADR-0046: another teacher's final grade settings
+        return {"weights": {"course": 30, "workshops": 20, "project": 50}, "cap": 20, "project_bonus_max": 1, "course_bonus_max": 1}
     if path.endswith("/comments"):
         return {"text": "Commentaire d’un autre enseignant"}
     if "/project/teams/" in path and method == "PUT":
@@ -68,6 +70,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"release_id": ids["release_id"]}
     if path.endswith("/unlocks"):
         return {"user_id": extra["student_id"], "mission_version_id": extra["version_id"]}
+    if path.endswith("/rafi"):  # ADR-0047: Rafi's sounds of another teacher's class
+        return {"sounds": False}
     if path.endswith("/goal"):
         return {"metric": "missions", "target": 5}  # ADR-0039: another teacher's class goal
     if path.endswith("/messages"):

@@ -1,4 +1,4 @@
-import { locale, msg, t } from "../i18n"
+import { locale, t } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Field, Flex, Heading, Input, Link, NativeSelect, Stack, Table, Tabs, Text, Textarea } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -7,12 +7,9 @@ import { DetailPanel } from "./Drawer"
 import { TeacherDraw } from "./SurpriseDraw"
 import { MilestoneReminders } from "./MilestoneReminders"
 import { ProjectText, fileSize, when } from "./ProjectText"
-import type { Submission, TeacherProjectData, TeamGrade } from "./types"
+import { ProjectGrades } from "./ProjectGrades"
+import type { Submission, TeacherProjectData } from "./types"
 
-const CRITERIA: { key: keyof Omit<TeamGrade, "comment" | "students">; label: string }[] = [
-  { key: "sql", label: "SQL" }, { key: "python", label: "Python" }, { key: "nosql", label: msg("MongoDB et Redis") },
-  { key: "airflow", label: "Airflow" }, { key: "reproducibility", label: msg("Reproductibilité et preuves") },
-]
 
 /** ADR-0034, teacher side: teams, milestones, submissions, grid on 20, defence slots. `readOnly` for an allowed observer. */
 export function TeacherProject({ assignmentId, readOnly = false }: { assignmentId: number; readOnly?: boolean }) {
@@ -41,7 +38,7 @@ export function TeacherProject({ assignmentId, readOnly = false }: { assignmentI
   return <Stack gap="4">
     <Flex gap="3" align="center" wrap="wrap"><Heading as="h2" size="lg" flex="1">{t("Projet CampusEquip")}</Heading>
       {!readOnly && <Button size="sm" variant="outline" asChild><a href={`/api/v1/teacher/classes/${assignmentId}/project/grades.csv`} download>{t("Exporter les notes du projet (CSV)")}</a></Button>}</Flex>
-    <Text fontSize="sm" color="app.muted">{t("Note du projet sur 20, séparée de la note du cours : SQL 4, Python 4, MongoDB et Redis 3, Airflow 3, reproductibilité et preuves 2 (communs), compréhension individuelle 4 par étudiant.")}</Text>
+    <Text fontSize="sm" color="app.muted">{t("Note du projet sur 20 (socle) + 10 (bonus), grille des deux sujets. Elle entre dans la note finale (Réglages > Notes).")}</Text>
     {notice && <Text role="status" color="brand.fg" fontWeight="medium">{notice}</Text>}
     <Tabs.Root value={tab} onValueChange={(event) => setTab(event.value)} variant="line" colorPalette="brand" lazyMount>
       <Tabs.List aria-label={t("Projet")} overflowX="auto">
@@ -165,31 +162,7 @@ function Submissions({ data, readOnly, act }: Part) {
 }
 
 function Grades({ data, readOnly, act }: Part) {
-  return <Stack gap="4">{data.teams.length === 0 ? <Text color="app.muted">{t("Aucun binôme à noter.")}</Text>
-    : data.teams.map((team) => <GradeForm key={team.id} team={team} data={data} readOnly={readOnly} act={act} />)}</Stack>
-}
-
-function GradeForm({ team, data, readOnly, act }: Part & { team: TeacherProjectData["teams"][number] }) {
-  const toText = (value: number | null) => value === null ? "" : String(value).replace(".", ",")
-  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(CRITERIA.map((c) => [c.key, toText(team.grade[c.key])])))
-  const [individual, setIndividual] = useState<Record<string, string>>(() => Object.fromEntries(team.grade.students.map((s) => [String(s.id), toText(s.individual)])))
-  const [comment, setComment] = useState(team.grade.comment)
-  const parse = (value: string) => value.trim() === "" ? null : Number(value.replace(",", "."))
-  return <Panel as="section" aria-label={t("Note de {{p0}}", { p0: team.members.map((m) => m.name).join(" et ") })}><Stack gap="3">
-    <Heading as="h3" size="sm">{team.members.map((m) => m.name).join(" + ")}</Heading>
-    <Flex gap="3" wrap="wrap">{CRITERIA.map((criterion) => <Field.Root key={criterion.key} maxW="40">
-      <Field.Label fontSize="sm">{t(criterion.label)} /{data.grid[criterion.key]}</Field.Label>
-      <Input inputMode="decimal" value={values[criterion.key]} disabled={readOnly} onChange={(event) => setValues({ ...values, [criterion.key]: event.target.value })} /></Field.Root>)}</Flex>
-    <Flex gap="3" wrap="wrap">{team.grade.students.map((student) => <Field.Root key={student.id} maxW="56">
-      <Field.Label fontSize="sm">{t("Compréhension individuelle de")}{" "}{student.name} /{data.individual_max}</Field.Label>
-      <Input inputMode="decimal" value={individual[String(student.id)] ?? ""} disabled={readOnly} onChange={(event) => setIndividual({ ...individual, [String(student.id)]: event.target.value })} /></Field.Root>)}</Flex>
-    <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{team.grade.students.map((s) => `${s.name} : ${s.total === null ? "—" : String(s.total).replace(".", ",")} / 20`).join(" · ")}</Text>
-    <Field.Root><Field.Label fontSize="sm">{t("Commentaire")}</Field.Label><Textarea rows={2} value={comment} disabled={readOnly} onChange={(event) => setComment(event.target.value)} /></Field.Root>
-    {!readOnly && <Button alignSelf="start" colorPalette="brand" onClick={() => void act("PUT", `/teacher/project/teams/${team.id}/grade`, {
-      ...Object.fromEntries(CRITERIA.map((c) => [c.key, parse(values[c.key])])),
-      individual: Object.fromEntries(Object.entries(individual).filter(([, v]) => v.trim() !== "").map(([k, v]) => [k, Number(v.replace(",", "."))])), comment,
-    }, t("Note du projet enregistrée."))}>{t("Enregistrer la note")}</Button>}
-  </Stack></Panel>
+  return <ProjectGrades data={data} readOnly={readOnly} act={act} />
 }
 
 function Slots({ data, readOnly, act, assignmentId }: Part & { assignmentId: number }) {
