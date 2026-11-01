@@ -134,4 +134,3 @@ function Eyes({ pupil, lids, reduced }: { pupil: { x: number; y: number }; lids:
     </g>)}
   </svg>
 }
-
