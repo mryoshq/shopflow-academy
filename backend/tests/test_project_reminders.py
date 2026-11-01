@@ -1,6 +1,6 @@
 """ADR-0045: milestone reminders, 3 days then 1 day before, at 9:00 Morocco time; idempotent and targeted."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,8 +22,10 @@ def at(text: str) -> datetime:
 def test_calendar_at_nine_morocco_time_across_an_offset_change():
     # The legal offset changes on 22 March 2026 (tzdata): the 9:00 send time stays 9:00 in Morocco.
     due = at("2026-03-23 18:00")
-    j3, j1 = schedule(due)
-    assert (j3["key"], j1["key"]) == ("j3", "j1")
+    j3, j1, j0 = schedule(due)
+    assert (j3["key"], j1["key"], j0["key"]) == ("j3", "j1", "j0")  # ADR-0047: and on the day itself
+    assert j0["send_at"].astimezone(TZ).strftime("%Y-%m-%d %H:%M") == "2026-03-23 09:00"
+    assert [i["key"] for i in schedule(at("2026-03-23 08:30"))] == ["j3", "j1"]  # a deadline before 9:00 has no same-day reminder
     assert j3["send_at"].astimezone(TZ).strftime("%Y-%m-%d %H:%M") == "2026-03-20 09:00"
     assert j1["send_at"].astimezone(TZ).strftime("%Y-%m-%d %H:%M") == "2026-03-22 09:00"
     assert j3["send_at"].utcoffset() != j1["send_at"].utcoffset()  # the offset did change in between
@@ -39,6 +41,7 @@ def test_calendar_at_nine_morocco_time_across_an_offset_change():
     assert due_now(Milestone, at("2026-03-20 23:59"))["key"] == "j3"  # catch-up the same day
     assert due_now(Milestone, at("2026-03-21 10:00")) is None  # never the next day
     assert due_now(Milestone, at("2026-03-22 15:00"))["key"] == "j1"
+    assert due_now(Milestone, at("2026-03-23 09:30"))["key"] == "j0"
     assert due_now(Milestone, at("2026-03-23 18:00")) is None  # deadline reached
     Milestone.reminders = False
     assert due_now(Milestone, at("2026-03-22 10:00")) is None
@@ -76,11 +79,17 @@ def test_targets_idempotence_log_and_text(project):
         second = run(db, at("2026-11-20 09:05"))
         assert sorted(second) == sorted([me, ids["demo.etudiant03"], ids["demo.etudiant06"]])
         assert "Il vous reste 1 jour." in message(db.get(ProjectMilestone, rendu["id"]), at("2026-11-20 09:05"))
+        # ADR-0047: on the day itself, then nothing after the deadline.
+        assert sorted(run(db, at("2026-11-21 09:00"))) == sorted([me, ids["demo.etudiant03"], ids["demo.etudiant06"]])
+        assert message(db.get(ProjectMilestone, rendu["id"]), at("2026-11-21 09:00")) == \
+            "C’est aujourd’hui : « Rendu final » est attendu à 23:59. Vous y êtes presque !"
+        sent = db.scalars(select(Notification).where(Notification.kind == "project_reminder")).first()
+        assert sent.data["link"] == "#/projet"
         assert run(db, at("2026-11-22 09:00")) == []  # after the deadline
     # A team that submits meanwhile is no longer reminded; nothing twice to the same person (dedup per recipient).
     with Session(engine) as db:
         mine = db.scalars(select(Notification).where(Notification.recipient_id == me, Notification.kind == "project_reminder")).all()
-        assert len(mine) == 2
+        assert len(mine) == 3
 
 
 def test_the_background_pass_sends_and_the_teacher_sees_and_turns_reminders_off(project):
@@ -88,12 +97,13 @@ def test_the_background_pass_sends_and_the_teacher_sees_and_turns_reminders_off(
     a, teacher = clients["a"], clients["teacher"]
     cohort = a.get("/api/v1/student/project").json()["cohort_id"]
     base = f"/api/v1/teacher/classes/{assignment}/project"
-    future = datetime.now(UTC) + timedelta(days=10)
+    # 18:00 Morocco time in 10 days: the three reminders exist, whatever the hour the test runs.
+    future = datetime.combine((datetime.now(TZ) + timedelta(days=10)).date(), time(18), TZ)
     milestone = post(teacher, f"{base}/milestones", {"title": "Conception", "due_at": future.isoformat()}).json()
     no_date = post(teacher, f"{base}/milestones", {"title": "Sans date"}).json()
     view = teacher.get(base).json()
     plan = next(item["reminders"] for item in view["milestones"] if item["id"] == milestone["id"])
-    assert plan["enabled"] is True and [i["key"] for i in plan["items"]] == ["j3", "j1"] and {i["status"] for i in plan["items"]} == {"planned"}
+    assert plan["enabled"] is True and [i["key"] for i in plan["items"]] == ["j3", "j1", "j0"] and {i["status"] for i in plan["items"]} == {"planned"}
     assert all(datetime.fromisoformat(i["send_at"]).astimezone(TZ).hour == 9 for i in plan["items"])
     assert all(i["local"].endswith("T09:00") for i in plan["items"])
     assert next(item["reminders"] for item in view["milestones"] if item["id"] == no_date["id"])["items"] == []
@@ -114,7 +124,7 @@ def test_the_background_pass_sends_and_the_teacher_sees_and_turns_reminders_off(
         tick(db, j3 + timedelta(minutes=1))  # the existing background pass of the backend
         assert [r.reminder for r in db.scalars(select(ProjectReminder))] == ["j3"]
     plan = next(item["reminders"] for item in teacher.get(base).json()["milestones"] if item["id"] == milestone["id"])
-    assert [i["status"] for i in plan["items"]] == ["sent", "planned"] and plan["items"][0]["sent"] == 1
+    assert [i["status"] for i in plan["items"]] == ["sent", "planned", "planned"] and plan["items"][0]["sent"] == 1
     # Another teacher cannot switch it (ownership).
     assert a.patch(f"/api/v1/teacher/project/milestones/{milestone['id']}", json={"reminders": False},
                    headers={"X-CSRF-Token": a.cookies["academy_csrf"]}).status_code == 403

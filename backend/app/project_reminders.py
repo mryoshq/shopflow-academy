@@ -1,7 +1,7 @@
 """Automatic reminders of the project milestones (ADR-0034, ADR-0045).
 
-For each milestone with a deadline (and reminders on), a short, encouraging notification goes out 3 days and
-then 1 day before, at 9:00 Morocco time, to the members of the teams that have not submitted anything for it.
+For each milestone with a deadline (and reminders on), a short, encouraging notification goes out 3 days,
+1 day before and on the day itself (ADR-0047), at 9:00 Morocco time, to the members of the teams that have not submitted anything for it.
 For the « Binôme formé » milestone, it goes to the students without a team who did not sign up for the
 surprise draw. Sent by the existing background pass of the backend (``autoplan.tick``, every few seconds):
 a reminder missed while the server was down goes out later the same day, never on another day.
@@ -27,7 +27,8 @@ from app.models import ProjectDrawEntry, ProjectMember, ProjectMilestone, Projec
 log = logging.getLogger("academy.reminders")
 TZ = ZoneInfo("Africa/Casablanca")
 SEND_HOUR = 9
-REMINDERS = (("j3", 3), ("j1", 1))  # key, days before the deadline (Morocco calendar)
+REMINDERS = (("j3", 3), ("j1", 1), ("j0", 0))  # key, days before the deadline (Morocco calendar); j0: ADR-0047
+LINK = "#/projet"
 
 
 def local(value: datetime) -> datetime:
@@ -43,6 +44,8 @@ def schedule(due_at: datetime) -> list[dict]:
         send_at = datetime.combine(day, time(SEND_HOUR), TZ)
         # Catch-up after a restart: the same day only (until midnight in Morocco), and never past the deadline.
         until = min(datetime.combine(day + timedelta(days=1), time(0), TZ), due)
+        if send_at >= due:
+            continue  # a deadline before 9:00 has no reminder on its own day
         plan.append({"key": key, "days": days, "send_at": send_at, "until": until})
     return plan
 
@@ -88,7 +91,9 @@ def targets(db: Session, milestone: ProjectMilestone) -> list[tuple[str, list[in
 
 def message(milestone: ProjectMilestone, now: datetime) -> str:
     due = local(milestone.due_at)
-    left = max(1, (due.date() - now.astimezone(TZ).date()).days)
+    left = (due.date() - now.astimezone(TZ).date()).days
+    if left <= 0:
+        return f"C’est aujourd’hui : « {milestone.title} » est attendu à {due:%H:%M}. Vous y êtes presque !"
     return (f"Rappel : « {milestone.title} » est attendu le {due:%d/%m/%Y} à {due:%H:%M}. "
             f"Il vous reste {left} jour{'s' if left > 1 else ''}.")
 
@@ -114,7 +119,7 @@ def run(db: Session, now: datetime | None = None) -> list[int]:
                     db.add(ProjectReminder(milestone_id=milestone.id, reminder=reminder["key"], target=target, recipients=recipients))
             except IntegrityError:
                 continue  # sent at the same moment by another worker
-            pushes += notify(db, recipients, "project_reminder", text, data={"milestone_id": milestone.id, "reminder": reminder["key"]},
+            pushes += notify(db, recipients, "project_reminder", text, data={"milestone_id": milestone.id, "reminder": reminder["key"], "link": LINK},
                              dedup=f"reminder:{milestone.id}:{reminder['key']}")
             log.info("project reminder %s sent for milestone %s to %s (%d recipients)", reminder["key"], milestone.id, target, len(recipients))
         db.commit()

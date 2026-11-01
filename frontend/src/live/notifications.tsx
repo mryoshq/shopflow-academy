@@ -8,7 +8,7 @@ import { Icon } from "../student/ui"
 /** Sprint 2, part H (ADR-0023): notifications for students and the teacher, heartbeat, Web Push. */
 
 export type NotificationKind = "message" | "block_open" | "block_unlocked" | "help_handled"
-  | "help" | "blocked" | "block_done" | "auto_soon" | "auto_done" | "disconnect" | "project_draw" | "project_reminder"
+  | "help" | "blocked" | "block_done" | "auto_soon" | "auto_done" | "disconnect" | "project_draw" | "project_reminder" | "open_blocks"
 export type Note = { id: number; kind: NotificationKind | string; text: string; data: Record<string, unknown>; sender: string | null; created_at: string; read_at: string | null }
 type Feed = { unread: number; items: Note[] }
 
@@ -21,11 +21,17 @@ export const KIND_LABELS: Record<string, string> = {
   message: msg("Message"), block_open: msg("Bloc ouvert"), block_unlocked: msg("Ouvert pour vous"), help_handled: msg("Aide"),
   help: msg("Demande d’aide"), blocked: msg("Étudiant bloqué"), block_done: msg("Bloc terminé"), auto_soon: msg("Ouverture dans 2 min"),
   auto_done: msg("Ouverture automatique"), disconnect: msg("Déconnexion"), project_draw: msg("Binôme surprise"), project_reminder: msg("Rappel de jalon"),
+  open_blocks: msg("Bloc à terminer"),
 }
+/** ADR-0047: what Rafi presents on the student side (the other kinds stay toasts). */
+export const ANNOUNCE_KINDS = new Set(["message", "project_reminder", "open_blocks", "block_open", "block_unlocked"])
 const REFRESH_KINDS = new Set(["block_open", "block_unlocked", "badge", "class_goal", "project_draw"])
 
-type Ctx = { items: Note[]; unread: number; markRead: (ids: number[]) => Promise<void>; markAll: () => Promise<void> }
-const NotificationsContext = createContext<Ctx>({ items: [], unread: 0, markRead: async () => {}, markAll: async () => {} })
+type Ctx = { items: Note[]; unread: number; markRead: (ids: number[]) => Promise<void>; markAll: () => Promise<void>
+  /** ADR-0047: Rafi's queue of announcements, and whether Rafi is there to present them. */
+  announcements: Note[]; dismiss: (note: Note, read: boolean) => void; setAnnouncer: (on: boolean) => void }
+const NotificationsContext = createContext<Ctx>({ items: [], unread: 0, markRead: async () => {}, markAll: async () => {},
+  announcements: [], dismiss: () => {}, setAnnouncer: () => {} })
 export const useNotificationFeed = () => useContext(NotificationsContext)
 
 /** Consecutive notifications of the same type within 5 minutes are shown as one group. */
@@ -58,7 +64,12 @@ export function NotificationProvider({ children, heartbeat = false }: { children
   const [items, setItems] = useState<Note[]>([])
   const [unread, setUnread] = useState(0)
   const [toasts, setToasts] = useState<Note[]>([])
+  const [announcements, setAnnouncements] = useState<Note[]>([])
+  const [announcing, setAnnouncing] = useState(false)
+  const announcer = useRef(false)
   const lastId = useRef<number | null>(null)
+  // Rafi registers before the first poll (a child's effect runs before its parent's).
+  const setAnnouncer = useCallback((on: boolean) => { announcer.current = on; setAnnouncing(on) }, [])
 
   const poll = useCallback(async () => {
     try {
@@ -69,8 +80,11 @@ export function NotificationProvider({ children, heartbeat = false }: { children
       lastId.current = Math.max(lastId.current ?? 0, ...feed.items.map((item) => item.id))
       setItems((previous) => [...feed.items, ...previous.filter((item) => !feed.items.some((n) => n.id === item.id))].slice(0, 100))
       const fresh = feed.items.filter((item) => !item.read_at).reverse()
+      const announced = announcer.current ? fresh.filter((item) => ANNOUNCE_KINDS.has(item.kind)) : []
+      // Unread announcements already waiting (a reminder sent at 9:00 while away) are presented too.
+      if (announced.length) setAnnouncements((previous) => [...previous, ...announced.filter((item) => !previous.some((n) => n.id === item.id))].slice(-10))
       if (!first) {
-        setToasts((previous) => [...previous, ...fresh].slice(-3))
+        setToasts((previous) => [...previous, ...fresh.filter((item) => !announced.includes(item))].slice(-3))
         fresh.forEach(systemNotify)
       }
       // A block opened while the page was loading arrives in the first batch too: refresh the dashboard.
@@ -117,10 +131,15 @@ export function NotificationProvider({ children, heartbeat = false }: { children
     await api("/notifications/read-all", "POST").catch(() => undefined)
   }, [])
 
-  const value = useMemo(() => ({ items, unread, markRead, markAll }), [items, unread, markRead, markAll])
+  const dismiss = useCallback((note: Note, read: boolean) => {
+    setAnnouncements((previous) => previous.filter((item) => item.id !== note.id))
+    if (read) void markRead([note.id])
+  }, [markRead])
+  const value = useMemo(() => ({ items, unread, markRead, markAll, announcements, dismiss, setAnnouncer }),
+    [items, unread, markRead, markAll, announcements, dismiss, setAnnouncer])
   return <NotificationsContext.Provider value={value}>
     {children}
-    <Toasts toasts={toasts} onClose={(note, read) => {
+    <Toasts toasts={toasts} raised={announcing} onClose={(note, read) => {
       setToasts((previous) => previous.filter((item) => item.id !== note.id))
       if (read) void markRead([note.id])
     }} />
@@ -128,8 +147,9 @@ export function NotificationProvider({ children, heartbeat = false }: { children
 }
 
 /** Bottom-right toasts, 10 s at most; « J’ai lu » marks the item read (read receipt for the teacher). */
-function Toasts({ toasts, onClose }: { toasts: Note[]; onClose: (note: Note, read: boolean) => void }) {
-  return <Stack position="fixed" bottom={{ base: "3", md: "6" }} right={{ base: "3", md: "6" }} left={{ base: "3", md: "auto" }} gap="2" zIndex="toast"
+function Toasts({ toasts, onClose, raised = false }: { toasts: Note[]; onClose: (note: Note, read: boolean) => void; raised?: boolean }) {
+  // Above Rafi when he is there (ADR-0047).
+  return <Stack position="fixed" bottom={raised ? { base: "28", md: "32" } : { base: "3", md: "6" }} right={{ base: "3", md: "6" }} left={{ base: "3", md: "auto" }} gap="2" zIndex="toast"
     maxW={{ md: "sm" }} role="region" aria-label={t("Notifications récentes")}>
     {toasts.map((note) => <Toast key={note.id} note={note} onClose={onClose} />)}
   </Stack>

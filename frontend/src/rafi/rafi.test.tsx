@@ -1,0 +1,119 @@
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react"
+import { ChakraProvider } from "@chakra-ui/react"
+import { afterEach, beforeEach, expect, it, vi } from "vitest"
+import { system } from "../theme"
+import { setLanguage } from "../i18n"
+import { serverText } from "../i18n/server"
+import { NotificationProvider } from "../live/notifications"
+import { dueText, timeLeft } from "../student/NextDeadline"
+import { Rafi } from "./Rafi"
+
+/** ADR-0047: Rafi presents the announcements; the owner's image is shown as it is. */
+const json = (body: unknown, status = 200) => ({ status, ok: status < 400, json: async () => body })
+const note = (id: number, kind: string, text: string, data: Record<string, unknown> = {}) =>
+  ({ id, kind, text, data, sender: kind === "message" ? "demo.enseignant" : null, created_at: new Date().toISOString(), read_at: null })
+beforeEach(() => { document.cookie = `academy_csrf=${"E".repeat(43)}; Path=/`; window.localStorage.clear() })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers() })
+
+function stub(items: ReturnType<typeof note>[], sounds = true) {
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+    if (url.startsWith("/api/v1/notifications?")) return json({ unread: items.length, items })
+    if (url.endsWith("/student/rafi")) return json({ sounds })
+    return json({ ok: true })
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  return fetchMock
+}
+const wrap = () => render(<ChakraProvider value={system}><NotificationProvider><Rafi /></NotificationProvider></ChakraProvider>)
+
+it("shows the owner's image as it is, presents the announcements in a queue, with their link", async () => {
+  const fetchMock = stub([note(2, "message", "Pensez à la pause de 10 h."),
+    note(1, "project_reminder", "Rappel : « Conception » est attendu le 21/11/2026 à 23:59. Il vous reste 3 jours.", { link: "#/projet" })])
+  wrap()
+  const bubble = await screen.findByTestId("rafi-bubble")
+  expect(bubble).toHaveAttribute("role", "status")
+  expect(bubble).toHaveTextContent("Rappel : « Conception »")
+  expect(bubble).toHaveTextContent("1 sur 2")
+  expect(within(bubble).getByRole("link", { name: "Ouvrir l’espace projet" })).toHaveAttribute("href", "#/projet")
+  const image = screen.getByTestId("rafi").querySelector("img")!
+  expect(image.getAttribute("srcset")).toBe("/rafi/rafi-144.webp 144w, /rafi/rafi-216.webp 216w, /rafi/rafi-512.webp 512w")
+  expect(image.getAttribute("sizes")).toBe("72px")
+  expect(screen.getByRole("button", { name: "Rafi : 2 annonces" })).toBeInTheDocument()
+  // The announcements are Rafi's, not toasts.
+  expect(within(screen.getByRole("region", { name: "Notifications récentes" })).queryByText(/Conception/)).toBeNull()
+  fireEvent.click(within(bubble).getByRole("button", { name: "J’ai lu, suivante" }))
+  expect(fetchMock).toHaveBeenCalledWith("/api/v1/notifications/1/read", expect.objectContaining({ method: "POST" }))
+  expect(await screen.findByText("Pensez à la pause de 10 h.")).toBeInTheDocument()
+  expect(screen.getByTestId("rafi-bubble")).toHaveTextContent("Message · demo.enseignant")
+  fireEvent.click(screen.getByRole("button", { name: "Fermer l’annonce" }))
+  expect(screen.queryByTestId("rafi-bubble")).toBeNull()
+})
+
+it("folds away and remembers it; the eyelids blink over his own eyes", async () => {
+  vi.useFakeTimers()
+  vi.spyOn(Math, "random").mockReturnValue(0)  // first blink after 3.5 s
+  stub([])
+  const view = wrap()
+  await act(async () => { await vi.advanceTimersByTimeAsync(50) })
+  const lid = screen.getByTestId("rafi-lid-l")
+  expect(lid).toHaveAttribute("data-closed", "false")
+  await act(async () => { await vi.advanceTimersByTimeAsync(3500) })
+  expect(screen.getByTestId("rafi-lid-l")).toHaveAttribute("data-closed", "true")
+  expect(screen.getByTestId("rafi-lid-r")).toHaveAttribute("data-closed", "true")
+  await act(async () => { await vi.advanceTimersByTimeAsync(150) })
+  expect(screen.getByTestId("rafi-lid-l")).toHaveAttribute("data-closed", "false")
+  vi.useRealTimers()
+  vi.restoreAllMocks()
+  fireEvent.click(screen.getByRole("button", { name: "Replier Rafi" }))
+  expect(screen.getByRole("button", { name: "Afficher Rafi" })).toBeInTheDocument()
+  expect(window.localStorage.getItem("shopflow:rafi:collapsed")).toBe("1")
+  view.unmount()
+  wrap()
+  expect(await screen.findByRole("button", { name: "Afficher Rafi" })).toBeInTheDocument()
+})
+
+it("« Réduire les animations » freezes him: no blink, no reaction", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  window.localStorage.setItem("shopflow:motion", "reduce")
+  stub([])
+  wrap()
+  const face = await screen.findByRole("button", { name: "Rafi, votre assistant" })
+  fireEvent.click(face)
+  const pose = face.firstElementChild as HTMLElement
+  await act(async () => { vi.advanceTimersByTime(9000) })
+  expect(screen.getAllByTestId(/rafi-lid-/).every((item) => item.getAttribute("data-closed") === "false")).toBe(true)
+  expect(pose.style.transform === "none" || pose.style.transform === "").toBe(true)
+})
+
+it("no sound before an interaction, and none when the teacher muted the class", async () => {
+  const created = vi.fn()
+  class FakeAudio { currentTime = 0; destination = {}
+    constructor() { created() }
+    createOscillator() { return { type: "", frequency: { value: 0 }, connect: (x: unknown) => x, start() {}, stop() {} } }
+    createGain() { return { gain: { setValueAtTime() {}, linearRampToValueAtTime() {}, exponentialRampToValueAtTime() {} }, connect: (x: unknown) => x } } }
+  vi.stubGlobal("AudioContext", FakeAudio)
+  stub([note(5, "open_blocks", "Le bloc « Données » vous attend : il reste des missions à terminer. On continue ?", { link: "#/mission/3" })], false)
+  wrap()
+  expect(await screen.findByTestId("rafi-bubble")).toHaveTextContent("Bloc à terminer")
+  expect(within(screen.getByTestId("rafi-bubble")).getByRole("link", { name: "Y aller" })).toHaveAttribute("href", "#/mission/3")
+  expect(created).not.toHaveBeenCalled()  // nothing before a click or a key
+  fireEvent.pointerDown(document.body)
+  fireEvent.click(screen.getByRole("button", { name: "Rafi : 1 annonce" }))
+  expect(created).not.toHaveBeenCalled()  // the class is muted by the teacher
+  expect(screen.getByRole("button", { name: "Couper les sons de Rafi" })).toHaveAttribute("title", "Sons coupés par l’enseignant")
+})
+
+it("countdown, Morocco date from the server, and the English texts of the announcements", () => {
+  const now = Date.parse("2026-11-18T09:00:00Z")
+  expect(timeLeft("2026-11-21T23:59:00Z", now)).toBe("dans 3 j 14 h")
+  expect(timeLeft("2026-11-18T12:05:00Z", now)).toBe("dans 3 h 05")
+  expect(timeLeft("2026-11-18T09:12:00Z", now)).toBe("dans 12 min")
+  expect(dueText("2026-11-21T23:59")).toMatch(/samedi 21 novembre.*23:59/)
+  setLanguage("en")
+  try {
+    expect(serverText("C’est aujourd’hui : « Rendu final » est attendu à 23:59. Vous y êtes presque !")).toBe("It’s today: “Rendu final” is due at 23:59. You’re almost there!")
+    expect(serverText("Le bloc « Données » vous attend : il reste des missions à terminer. On continue ?"))
+      .toBe("Block “Données” is waiting for you: some missions are still to finish. Shall we carry on?")
+    expect(timeLeft("2026-11-21T23:59:00Z", now)).toBe("in 3 d 14 h")
+  } finally { setLanguage("fr") }
+})

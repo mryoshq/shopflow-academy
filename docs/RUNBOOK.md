@@ -57,8 +57,10 @@ Les migrations s'appliquent automatiquement (service `migrate`) ; faire une sauv
 - Recalculer tous les badges à partir des tentatives (sans notification, idempotent) : `docker compose exec backend python -m app.rewards recompute`. Le tableau de bord le fait aussi sans bruit pour chaque étudiant qui l'ouvre.
 - L'objectif de classe se règle dans Réglages > Objectif de classe ; rien à faire côté serveur.
 
-## Rappels automatiques des jalons (ADR-0045)
-- Rien à planifier sur le Mac : le backend envoie les rappels lui-même, dans sa boucle de fond (toutes les `LIVE_TICK_SECONDS`, 15 s par défaut), 3 jours puis 1 jour avant chaque date limite, à 9 h heure du Maroc.
+## Rappels automatiques des jalons et annonces (ADR-0045, ADR-0047)
+- Rien à planifier sur le Mac : le backend envoie les rappels lui-même, dans sa boucle de fond (toutes les `LIVE_TICK_SECONDS`, 15 s par défaut), 3 jours avant, 1 jour avant et le jour même de chaque date limite, à 9 h heure du Maroc.
+- Même boucle : « bloc ouvert pas encore terminé », une fois par étudiant et par bloc, à partir de 9 h le lendemain de l'ouverture. Vérifier : `docker compose logs backend | grep "open block announcement"`.
+- Rafi présente ces annonces et les messages de l'enseignant côté étudiant. Couper ses sons pour la classe : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
 - Le backend doit tourner ce jour-là : un rappel manqué pendant un arrêt part au redémarrage, le même jour seulement, jamais le lendemain.
 - Désactiver pour un jalon : Projet > Jalons > interrupteur « Rappels automatiques ».
 - Vérifier ce qui est parti :

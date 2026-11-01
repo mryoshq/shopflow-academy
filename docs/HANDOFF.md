@@ -5,6 +5,23 @@
 
 
 
+## Annonces automatiques et Rafi (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-rafi`, partie de `design/rafi` (`main` + images de Rafi). Indépendante de la PR « Notes » (#78) : pas de migration ici.
+
+Fichiers clés :
+- backend : `backend/app/announcements.py`, `project_reminders.py` (jour même), `tests/test_announcements.py` ;
+- frontend : `frontend/src/rafi/` (`Rafi.tsx`, `sound.ts`), `frontend/src/student/NextDeadline.tsx`, `frontend/src/teacher/RafiClassSettings.tsx`, `frontend/public/rafi/`, `e2e/rafi.spec.ts`.
+
+ADR-0047. Captures : `docs/captures/rafi/`.
+
+### Rafi — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier côté étudiant : Rafi en bas à droite, une annonce de test (message de l'enseignant à soi-même via « Vue étudiant » n'en montre pas : utiliser un compte de démonstration).
+3. Facultatif : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
+
+Prochaine action unique : revue et fusion de la PR « Annonces automatiques et Rafi », puis la PR 3 (style inspiré de filatov.design).
+
 ## Rappels automatiques des jalons (31/10/2026)
 
 Branche `claude/lucid-brahmagupta-htwgun-rappels` depuis `main` (après #76). Fichiers clés :

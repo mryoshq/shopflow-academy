@@ -1,3 +1,4 @@
+import { NextDeadlinePanel } from "./NextDeadline"
 import { locale, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Link, Stack, Text } from "@chakra-ui/react"
@@ -105,6 +106,7 @@ export function StudentDashboard({ navigate }: Props) {
         </Panel>)}
       </Stack>
       <Stack gap="4" as="aside" aria-label={t("Suivi")}>
+        {data.next_deadline && <NextDeadlinePanel deadline={data.next_deadline} navigate={navigate} />}
         {data.courses.map((course) => <Panel key={course.release_id} aria-label={t("Score : {{title}}", { title: course.title })}>
           <Stack gap="3">
             <Text fontWeight="semibold">{data.courses.length > 1 ? course.title : t("Votre score")}</Text>

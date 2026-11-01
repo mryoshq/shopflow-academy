@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-01 — Annonces automatiques et Rafi (`claude/lucid-brahmagupta-htwgun-rafi`, depuis `design/rafi`)
+
+- Rafi, l'image du propriétaire telle quelle (72 px, srcset), en bas à droite de l'interface étudiant.
+  - Pupilles qui suivent le curseur et le doigt (2 px au plus), clignement par une paupière superposée.
+  - Réactions sobres au toucher : clin d'œil, petit saut, légère bascule, regard.
+  - Repliable, état mémorisé.
+  - Absent côté enseignant et observateur, sauf dans la vue étudiant.
+- Rafi présente les annonces dans une bulle (file d'attente, « J'ai lu », fermeture, lien) :
+  - rappels des jalons, désormais aussi le jour même ;
+  - « bloc ouvert pas encore terminé », une fois par étudiant et par bloc, le lendemain à 9 h ;
+  - messages de l'enseignant.
+
+  Elles sont idempotentes, journalisées et traduites en anglais.
+- Compte à rebours vers la prochaine échéance du projet sur le tableau de bord.
+- Sons courts et rares (Web Audio), rien avant une interaction ; coupables sur Rafi, dans Paramètres et par l'enseignant pour toute la classe.
+- « Réduire les animations » fige tout. ADR-0047, sans migration.
+
 ## 2026-10-31 — Rappels automatiques des jalons (`claude/lucid-brahmagupta-htwgun-rappels`)
 
 - Pour chaque jalon daté du projet, une notification brève et encourageante 3 jours puis 1 jour avant, à 9 h heure du Maroc : « Rappel : « <jalon> » est attendu le <date> à <heure>. Il vous reste <n> jours. » (en anglais dans l'interface anglaise).

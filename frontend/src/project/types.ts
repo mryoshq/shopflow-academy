@@ -4,7 +4,7 @@ export type Milestone = { id: number; title: string; instructions: string; due_a
   submissions?: Submission[]; comments?: { id: number; text: string; created_at: string | null }[] }
 /** ADR-0045: automatic reminders of a milestone (3 days then 1 day before, 9:00 Morocco time). */
 export type ReminderPlan = { enabled: boolean; pairing?: boolean
-  items: { key: "j3" | "j1"; days: number; send_at: string; local: string; status: "planned" | "sent" | "passed" | "off"; sent: number }[] }
+  items: { key: "j3" | "j1" | "j0"; days: number; send_at: string; local: string; status: "planned" | "sent" | "passed" | "off"; sent: number }[] }
 export type Slot = { id: number; starts_at: string | null; ends_at: string | null; label: string; team_id: number | null; team: string[]; mine: boolean }
 export type StudentProjectData = {
   cohort_id: number | null; cohort?: string; cohorts: { id: number; label: string }[]

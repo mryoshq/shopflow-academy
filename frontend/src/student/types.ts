@@ -1,3 +1,4 @@
+import type { NextDeadline } from "./NextDeadline"
 import type { Choice, DisplayData, MissionKind, RunView } from "../studioTypes"
 
 export type MissionStatus = "locked" | "not_started" | "in_progress" | "completed"
@@ -59,7 +60,9 @@ export type DashboardCourse = {
   rewards?: Rewards
 }
 
-export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[] }
+export type Dashboard = { display_name: string; ai_enabled: boolean; courses: DashboardCourse[]
+  /** ADR-0047: next project deadline (countdown) and Rafi's class-wide sounds. */
+  next_deadline?: NextDeadline | null; rafi?: { sounds: boolean } }
 
 export type PlayerDefinition = {
   kind: MissionKind
