@@ -147,8 +147,15 @@ def test_settings_results_student_toggle_roles_and_nothing_stored_changes(projec
     # Students: nothing until the teacher turns it on.
     assert a.get("/api/v1/student/dashboard").json()["courses"][0]["final_grade"] is None
     assert put(teacher, url, {**body, "visible_to_students": True}).status_code == 200
-    mine = a.get("/api/v1/student/dashboard").json()["courses"][0]["final_grade"]
+    dashboard = a.get("/api/v1/student/dashboard").json()
+    mine = dashboard["courses"][0]["final_grade"]
     assert mine["final"] == 13.75
+    # Notes and Rafi share this response after merging their independent changes.
+    assert "next_deadline" in dashboard and dashboard["rafi"] == {"sounds": True}
+    assert put(teacher, f"/api/v1/teacher/classes/{assignment}/rafi", {"sounds": False}).status_code == 200
+    muted = a.get("/api/v1/student/dashboard").json()
+    assert muted["rafi"] == {"sounds": False} and "next_deadline" in muted
+    assert muted["courses"][0]["final_grade"] == mine
     assert a.get(f"/api/v1/teacher/classes/{assignment}/results").status_code == 403
 
     # Observers: « Administration » sees the final grade, a guest sees no grades at all.

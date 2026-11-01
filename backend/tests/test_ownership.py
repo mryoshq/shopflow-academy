@@ -70,6 +70,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"release_id": ids["release_id"]}
     if path.endswith("/unlocks"):
         return {"user_id": extra["student_id"], "mission_version_id": extra["version_id"]}
+    if path.endswith("/rafi"):  # ADR-0047: Rafi's sounds of another teacher's class
+        return {"sounds": False}
     if path.endswith("/goal"):
         return {"metric": "missions", "target": 5}  # ADR-0039: another teacher's class goal
     if path.endswith("/messages"):

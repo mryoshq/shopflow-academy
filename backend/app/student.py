@@ -331,7 +331,11 @@ def dashboard(response: Response, auth: AuthContext = Depends(require_student), 
                                       rewards=dashboard_rewards(db, release, auth.user.id)))
         # ADR-0046: the final grade, only once the teacher turned it on for the student's class.
         courses[-1]["final_grade"] = student_final(db, auth.user.id, release)
-    return {"display_name": display_name(auth.user.username), "ai_enabled": ai_enabled(), "courses": courses}
+    from app.announcements import class_sounds, next_deadline
+
+    return {"display_name": display_name(auth.user.username), "ai_enabled": ai_enabled(), "courses": courses,
+            # ADR-0047: countdown to the next project deadline, and Rafi's sounds (the teacher can switch them off for the class).
+            "next_deadline": next_deadline(db, auth.user.id), "rafi": {"sounds": class_sounds(db, auth.user.id)}}
 
 
 @router.get("/missions/{version_id}")

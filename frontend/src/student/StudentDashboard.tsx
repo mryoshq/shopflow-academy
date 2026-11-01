@@ -1,3 +1,4 @@
+import { NextDeadlinePanel } from "./NextDeadline"
 import { formatNumber, locale, t, tn } from "../i18n"
 import { PART_LABELS, type FinalGrade } from "../grading/FinalGrade"
 import { useCallback, useEffect, useState } from "react"
@@ -106,6 +107,7 @@ export function StudentDashboard({ navigate }: Props) {
         </Panel>)}
       </Stack>
       <Stack gap="4" as="aside" aria-label={t("Suivi")}>
+        {data.next_deadline && <NextDeadlinePanel deadline={data.next_deadline} navigate={navigate} />}
         {data.courses.map((course) => <Panel key={course.release_id} aria-label={t("Score : {{title}}", { title: course.title })}>
           <Stack gap="3">
             <Text fontWeight="semibold">{data.courses.length > 1 ? course.title : t("Votre score")}</Text>

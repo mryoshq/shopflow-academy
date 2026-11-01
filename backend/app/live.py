@@ -227,18 +227,28 @@ class SettingsInput(BaseModel):
 @router.get("/teacher/notification-settings")
 def get_settings_route(response: Response, auth: AuthContext = Depends(require_teacher), db: Session = Depends(get_db)) -> dict:
     response.headers["Cache-Control"] = "no-store"
-    return teacher_settings(db, auth.user.id)
+    return public_settings(teacher_settings(db, auth.user.id))
+
+
+def public_settings(data: dict) -> dict:
+    from app.announcements import RAFI_MUTED
+
+    return {k: v for k, v in data.items() if k != RAFI_MUTED}
 
 
 @router.put("/teacher/notification-settings")
 def put_settings(payload: SettingsInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    from app.announcements import RAFI_MUTED
+
     row = db.get(NotificationSetting, auth.user.id)
     if row is None:
         db.add(NotificationSetting(user_id=auth.user.id, data=payload.model_dump()))
     else:
-        row.data = payload.model_dump()
+        # ADR-0047: the class-wide switch of Rafi's sounds lives here too; it is kept.
+        kept = {k: v for k, v in (row.data or {}).items() if k == RAFI_MUTED}
+        row.data = {**payload.model_dump(), **kept}
     db.commit()
-    return teacher_settings(db, auth.user.id)
+    return public_settings(teacher_settings(db, auth.user.id))
 
 
 # Teacher messages to students ---------------------------------------------------------------

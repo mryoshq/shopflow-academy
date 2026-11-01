@@ -29,10 +29,10 @@ export function MilestoneReminders({ plan, readOnly, onToggle }: { plan: Reminde
         </Switch.Root>}
       </Flex>
       <Text fontSize="xs" color="app.muted">{plan.pairing
-        ? t("Envoyés à 9 h (heure du Maroc) aux étudiants sans binôme et non inscrits au binôme surprise.")
-        : t("Envoyés à 9 h (heure du Maroc) aux membres des binômes qui n’ont encore rien déposé.")}</Text>
+        ? t("Envoyés à 9 h (heure du Maroc), 3 jours avant, 1 jour avant et le jour même, aux étudiants sans binôme et non inscrits au binôme surprise.")
+        : t("Envoyés à 9 h (heure du Maroc), 3 jours avant, 1 jour avant et le jour même, aux membres des binômes qui n’ont encore rien déposé.")}</Text>
       <Stack as="ul" listStyleType="none" p="0" m="0" gap="1.5">{plan.items.map((item) => <Flex as="li" key={item.key} gap="2" align="center" wrap="wrap" fontSize="sm">
-        <Text minW="24">{tn("{{count}} jour avant", item.days)}</Text>
+        <Text minW="24">{item.days === 0 ? t("Le jour même") : tn("{{count}} jour avant", item.days)}</Text>
         <Text color="app.muted" flex="1">{moroccoTime(item.local)}</Text>
         <Badge variant="subtle" colorPalette={STATUS[item.status].palette}>{t(STATUS[item.status].label)}{item.status === "sent" ? ` · ${tn("{{count}} envoi", item.sent)}` : ""}</Badge>
       </Flex>)}</Stack>

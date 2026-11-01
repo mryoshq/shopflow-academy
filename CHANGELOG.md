@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-01 — Annonces automatiques et Rafi (`claude/lucid-brahmagupta-htwgun-rafi`, depuis `design/rafi`)
+
+- Rafi, l'image du propriétaire telle quelle (72 px, srcset), en bas à droite de l'interface étudiant.
+  - Pupilles qui suivent le curseur et le doigt (2 px au plus), clignement par une paupière superposée.
+  - Réactions sobres au toucher : clin d'œil, petit saut, légère bascule, regard.
+  - Repliable, état mémorisé.
+  - Absent côté enseignant et observateur, sauf dans la vue étudiant.
+- Rafi présente les annonces dans une bulle (file d'attente, « J'ai lu », fermeture, lien) :
+  - rappels des jalons, désormais aussi le jour même ;
+  - « bloc ouvert pas encore terminé », une fois par étudiant et par bloc, le lendemain à 9 h ;
+  - messages de l'enseignant.
+
+  Elles sont idempotentes, journalisées et traduites en anglais.
+- Compte à rebours vers la prochaine échéance du projet sur le tableau de bord.
+- Sons courts et rares (Web Audio), rien avant une interaction ; coupables sur Rafi, dans Paramètres et par l'enseignant pour toute la classe.
+- « Réduire les animations » fige tout. ADR-0047, sans migration.
+- Compatibilité avec Notes (#78) : `main` fusionnée dans la branche Rafi, imports/routes/types/traductions et documents conservés des deux côtés. Le tableau de bord expose ensemble la note finale (selon son réglage de visibilité), la prochaine échéance et les sons de Rafi ; un test couvre leur coexistence sans changement des points.
+
 ## 2026-11-01 — Notes : grille du projet, points des blocs, note finale (`claude/lucid-brahmagupta-htwgun-notes`)
 
 - Aucune note déjà obtenue ne change : tout est un calcul ou un affichage au-dessus des données existantes.

@@ -5,6 +5,7 @@ import { useColorMode, type ThemeChoice } from "../useColorMode"
 import { displayName, roleLabel } from "./account"
 import { ZOOM_STEPS, modKey, nextZoom, percent, useReducedMotion, useZoom } from "./display"
 import { useSound } from "../rewards/celebrate"
+import { useRafiSound } from "../rafi/sound"
 import type { Account } from "./PreferencesProvider"
 
 export type SettingsTab = "general" | "appearance" | "shortcuts"
@@ -40,7 +41,7 @@ export function SettingsDialog({ open, onClose, tab, onTab, account }: {
               </Tabs.List>
               <Box flex="1" minW="0" px={{ base: "5", md: "8" }} py="6" overflowY="auto" maxH={{ md: "70vh" }}>
                 <Tabs.Content value="general" p="0"><Box className="view-enter"><General account={account} /></Box></Tabs.Content>
-                <Tabs.Content value="appearance" p="0"><Box className="view-enter"><Appearance /></Box></Tabs.Content>
+                <Tabs.Content value="appearance" p="0"><Box className="view-enter"><Appearance student={account?.role === "student"} /></Box></Tabs.Content>
                 <Tabs.Content value="shortcuts" p="0"><Box className="view-enter"><Shortcuts teacher={account?.role === "teacher"} /></Box></Tabs.Content>
               </Box>
             </Tabs.Root>
@@ -113,11 +114,12 @@ function ThemePreview({ value }: { value: ThemeChoice }) {
   </Box>
 }
 
-function Appearance() {
+function Appearance({ student = false }: { student?: boolean }) {
   const { choice, choose } = useColorMode()
   const { zoom, setZoom } = useZoom()
   const { reduce, choose: chooseMotion } = useReducedMotion()
   const sound = useSound()
+  const rafi = useRafiSound()
   const mod = modKey()
   return <Stack gap="0">
     <Section title={t("Thème")} description={t("Mémorisé dans ce navigateur.")}>
@@ -160,6 +162,13 @@ function Appearance() {
         <Switch.Control><Switch.Thumb /></Switch.Control>
       </Switch.Root>
     </Section>
+    {student && <Section title={t("Sons de Rafi")} description={t("Deux notes courtes à l’arrivée d’une annonce, rarement. Rien avant votre premier clic ; votre enseignant peut aussi les couper pour la classe.")}>
+      <Switch.Root checked={rafi.on} onCheckedChange={(event) => rafi.choose(event.checked)} colorPalette="brand" display="flex" justifyContent="space-between" w="full">
+        <Switch.HiddenInput />
+        <Switch.Label fontSize="sm" fontWeight="normal">{t("Sons de Rafi")}</Switch.Label>
+        <Switch.Control><Switch.Thumb /></Switch.Control>
+      </Switch.Root>
+    </Section>}
   </Stack>
 }
 

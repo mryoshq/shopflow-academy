@@ -1,9 +1,37 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Intégration de main dans Rafi — PR #79 (01/11/2026)
+
+`main` `ef563b6` (Notes #78) fusionnée dans la branche de #79 par un merge, sans rebase ni force-push. Les dix fichiers en conflit gardent les ajouts Notes et Rafi : routes API, champs du tableau de bord, types/imports, traductions, CHANGELOG, DESIGN, PROGRESS et HANDOFF. La note finale conserve son réglage de visibilité ; prochaine échéance et sons de Rafi restent dans la même réponse. Le test de `test_final_grade.py` vérifie cette coexistence et l’absence de changement de note quand les sons sont coupés.
+
+Validation locale : pytest 365 PASS, 8 tests laboratoire conditionnels ignorés ; Vitest 200 PASS ; TypeScript et build PASS ; `verify_kit.py` PASS ; une tête Alembic `0019_final_grade` (héritée de Notes, aucune migration ajoutée). Stack dédiée jetable `shopflow-academy-pr79-test` sur 3187, séparée de la production ET de la stack de test existante : Playwright `grades`, `live`, `rafi`, 17 PASS, axe clair/sombre 1366/390. Le test de notification d’aide du journal Claude passe ; les captures du tableau de bord fusionné ont été examinées. Les comptes et données utilisés sont fictifs.
+
+Aucune publication, fusion de PR, action sur la production, n8n ou les cours privés. Les procédures de déploiement ci-dessous restent réservées au propriétaire ; la migration 0019 de Notes ne doit pas être supprimée.
+
+Prochaine action unique : vérifier les cinq contrôles CI sur le commit poussé de #79, puis laisser la revue et la fusion au propriétaire. La PR #80 n’est pas modifiée.
 
 
 
 
+
+
+
+## Annonces automatiques et Rafi (01/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-rafi`, partie de `design/rafi` (`main` + images de Rafi). Indépendante de la PR « Notes » (#78) : pas de migration ici.
+
+Fichiers clés :
+- backend : `backend/app/announcements.py`, `project_reminders.py` (jour même), `tests/test_announcements.py` ;
+- frontend : `frontend/src/rafi/` (`Rafi.tsx`, `sound.ts`), `frontend/src/student/NextDeadline.tsx`, `frontend/src/teacher/RafiClassSettings.tsx`, `frontend/public/rafi/`, `e2e/rafi.spec.ts`.
+
+ADR-0047. Captures : `docs/captures/rafi/`.
+
+### Rafi — À faire en local après fusion
+1. Pas de migration. Redéployer à une pause (`docker compose build`, puis `docker compose up -d --wait`).
+2. Vérifier avec un compte de démonstration étudiant : Rafi en bas à droite. Envoyer un message à ce compte depuis Ma classe : il apparaît dans la bulle de Rafi. La « Vue étudiant » montre Rafi, mais sans annonce.
+3. Facultatif : Réglages > Notifications > « Sons de Rafi pour toute la classe ».
+
+Prochaine action unique : revue et fusion de la PR « Annonces automatiques et Rafi », puis la PR 3 (style inspiré de filatov.design).
 
 ## Notes : grille du projet, points des blocs, note finale (01/11/2026)
 
@@ -21,7 +49,7 @@ ADR-0046 (le numéro 0043 demandé était déjà pris). Captures : `docs/capture
 3. Projet > Notes : reprendre sur la nouvelle grille les équipes qui affichent « Ancienne grille, à reprendre ».
 4. Réglages > Notes : vérifier les poids et les modules d'ateliers (par défaut, titres commençant par « Ateliers »). Ne cocher « Afficher la note finale aux étudiants » qu'au moment voulu.
 
-Prochaine action unique : revue et fusion de la PR « Notes : grille du projet, points des blocs, note finale ».
+PR #78 fusionnée dans main ; ses consignes de déploiement restent documentées ci-dessus.
 
 ## Rappels automatiques des jalons (31/10/2026)
 

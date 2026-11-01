@@ -60,5 +60,7 @@
   "{{count}} jour avant_one": "{{count}} jour avant",
   "{{count}} jour avant_other": "{{count}} jours avant",
   "{{count}} envoi_one": "{{count}} envoi",
-  "{{count}} envoi_other": "{{count}} envois"
+  "{{count}} envoi_other": "{{count}} envois",
+  "Rafi : {{count}} annonce_one": "Rafi : {{count}} annonce",
+  "Rafi : {{count}} annonce_other": "Rafi : {{count}} annonces"
 }
