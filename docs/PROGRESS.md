@@ -1,5 +1,21 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-01 — Rafi : silhouette et accueil (`codex/rafi-sans-fond`)
+
+Depuis `main` 752d718. Composant visuel partagé `RafiAvatar` : image originale masquée en CSS (aucun asset redessiné), yeux/paupières/réactions ; contrôles flottants supprimés. Grand Rafi au chargement réel de la session et dans le formulaire de connexion. Sons par défaut conservés, aucun son/API privée sur les écrans publics. Pas de modification du backend, de la notation ou de la production.
+
+- PASS : `npm run test -- src/rafi/rafi.test.tsx src/App.test.tsx src/preferences/preferences.test.tsx --maxWorkers=1` : 18 tests.
+- PASS : `npm run build` (avertissement existant sur la taille du bundle principal).
+- PASS : `SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3186 SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npx playwright test e2e/rafi-entry.spec.ts` : 5 tests, API simulée, suivi du pointeur, transition chargement/connexion, formulaire utilisable, thèmes clair/sombre, 1366/390 px, aucun débordement, axe WCAG A/AA sans violation. Captures relues localement dans `frontend/test-results/` (ignoré).
+- Specs existantes `accueil` et `rafi` adaptées au retrait de l'introduction et du repli ; exécution intégrée sur stack fictive confiée à la CI.
+
+Retour CI : six traductions devenues inutilisées après retrait des boutons ont été supprimées ; `npm run test -- src/i18n/keys.test.ts --maxWorkers=1` : 4 tests PASS.
+
+Retour CI navigateur : quatre cas `logo.spec.ts` cherchaient encore l'ancien logo de 56 px dans le formulaire remplacé par Rafi. Le test vérifie désormais l'image Rafi chargée/détourée et le logo thématique de l'en-tête ; les vérifications après connexion restent dans des cas séparés. `SHOPFLOW_E2E_BASE_URL=http://127.0.0.1:3186 SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npx playwright test e2e/logo.spec.ts --grep 'login:'` : 4 PASS, session anonyme simulée, clair/sombre à 1366/390 px et axe. La CI précédente comptait 89 autres tests navigateur PASS. Aucun code applicatif modifié dans cette correction.
+
+Prochaine étape : revue et fusion par le propriétaire, puis redéploiement sur autorisation distincte.
+
+
 ## Résultats — accompagnement, 28/10/2026
 
 Branche `codex/resultats` depuis `main` à jour, [PR #41](https://github.com/mryoshq/shopflow-academy/pull/41). Périmètre : `frontend/src/teacher/Results.tsx`, nouveau routeur `backend/app/results.py`, deux lignes d’inclusion dans `main.py`, tests dédiés et documentation de ce lot. Aucun changement dans `classroom.py`, `progress.py`, `student.py`, `teacher_dashboard.py`, `ClassTimeline`, `TeacherDashboard`. Aucune migration, aucun cours ajouté, aucun déploiement.

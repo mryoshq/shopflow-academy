@@ -7,7 +7,7 @@ import { useExperienceRoute } from "./useHashRoute"
 import { ObserverHome } from "./observer/ObserverHome"
 import { InvitationPage, invitationToken } from "./observer/InvitationPage"
 import { useColorMode } from "./useColorMode"
-import { LoginIntro } from "./LoginIntro"
+import { RafiAvatar } from "./rafi/RafiAvatar"
 import { AccountMenu } from "./preferences/AccountMenu"
 import { PreferencesProvider } from "./preferences/PreferencesProvider"
 import { Logo } from "./Logo"
@@ -35,7 +35,6 @@ export function App() {
   const [state, setState] = useState<PageState>("loading")
   // The login page has no theme switch: it follows the system, or the choice already remembered (ADR-0036).
   useColorMode()
-  const cardLogo = useRef<HTMLDivElement>(null)
   const [user, setUser] = useState<User | null>(null)
   const [username, setUsername] = useState("")
   const [invitation, setInvitation] = useState(() => invitationToken(window.location.hash))
@@ -163,7 +162,10 @@ export function App() {
       </Box>
       {/* ADR-0044: an interactive experience takes the whole width (it has its own header and margins). */}
       <Container as="main" id="contenu" tabIndex={-1} outline="none" maxW={wide ? "none" : "7xl"} px={wide ? "0" : undefined} py={wide ? "0" : { base: "8", md: "12" }}>
-        {state === "loading" && <Text role="status" color="app.muted">{t("Chargement de votre espace…")}</Text>}
+        {state === "loading" && <Stack align="center" justify="center" minH="65vh" gap="4" data-testid="rafi-loading">
+          <RafiAvatar size={240} />
+          <Text role="status" aria-live="polite" color="app.muted">{t("Chargement de votre espace…")}</Text>
+        </Stack>}
         {/* ADR-0042: an invited observer chooses a password before signing in. */}
         {state === "anonymous" && invitation && <InvitationPage token={invitation} onDone={(name) => {
           setUsername(name); setInvitation(null); setNotice(t("Compte activé : connectez-vous avec votre mot de passe."))
@@ -183,9 +185,7 @@ export function App() {
             <Box as="section" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="card" boxShadow="card" p={{ base: "6", md: "8" }} w="full" maxW="md" aria-label={t("Connexion")}>
               <form onSubmit={onLogin}>
               <Stack gap="5">
-                {/* The opening animation (LoginIntro) lands on this logo, once per browser session. */}
-                <Flex align="center" gap="3"><Box ref={cardLogo} w="56px" h="56px" flexShrink={0}><Logo size={56} /></Box>
-                  <BrandName size="lg" /></Flex>
+                <Stack align="center" gap="1" data-testid="rafi-login"><RafiAvatar size={176} /><BrandName size="lg" /></Stack>
                 <Stack gap="1"><Heading as="h2" size="xl">{t("Connexion")}</Heading><Text color="app.muted" fontSize="sm">{t("Utilisez l’identifiant transmis par votre enseignant.")}</Text></Stack>
                 <Field.Root required>
                   <Field.Label>{t("Identifiant")}</Field.Label>
@@ -203,7 +203,6 @@ export function App() {
               </Stack>
               </form>
             </Box>
-            <LoginIntro target={cardLogo} size={56} />
           </Flex>
         )}
         {state === "authenticated" && user?.role === "observer" && <Stack gap="4"><ObserverHome />{message && <Text role="alert" color="red.fg">{message}</Text>}</Stack>}

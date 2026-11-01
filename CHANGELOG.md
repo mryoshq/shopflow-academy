@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-01 — Rafi sans fond et accueil animé (`codex/rafi-sans-fond`)
+
+- Rafi détouré par un masque CSS sur l'image originale ; plus de carré blanc, de bouton volume ni de bouton de minimisation. Les anciens états repliés sont ignorés.
+- Même personnage et mêmes yeux animés au chargement de session (240 px), à la connexion (176 px) et auprès des annonces (72 px). L'introduction au logo est remplacée par cette scène, sans délai artificiel.
+- Sons toujours activés par défaut ; réglages individuels et enseignant conservés. La partie visuelle publique n'appelle aucune API privée et ne joue aucun son.
+- Réduction des animations, navigation clavier et formulaire conservés ; aucune migration ni modification de notes.
+
+
 ## 2026-11-01 — Style de la plateforme : grotesque, grands panneaux, en-tête sombre (`claude/lucid-brahmagupta-htwgun-style`)
 
 - Grands titres en Space Grotesk : licence OFL, servie par l'Academy elle-même (CSP `font-src 'self'`, aucun CDN). Système typographique documenté (`display`, `overline`).

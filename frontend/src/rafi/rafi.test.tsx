@@ -49,11 +49,12 @@ it("shows the owner's image as it is, presents the announcements in a queue, wit
   expect(screen.queryByTestId("rafi-bubble")).toBeNull()
 })
 
-it("folds away and remembers it; the eyelids blink over his own eyes", async () => {
+it("ignores the former folded preference, has no toolbar, and still blinks", async () => {
   vi.useFakeTimers()
   vi.spyOn(Math, "random").mockReturnValue(0)  // first blink after 3.5 s
   stub([])
-  const view = wrap()
+  window.localStorage.setItem("shopflow:rafi:collapsed", "1")
+  wrap()
   await act(async () => { await vi.advanceTimersByTimeAsync(50) })
   const lid = screen.getByTestId("rafi-lid-l")
   expect(lid).toHaveAttribute("data-closed", "false")
@@ -64,12 +65,9 @@ it("folds away and remembers it; the eyelids blink over his own eyes", async () 
   expect(screen.getByTestId("rafi-lid-l")).toHaveAttribute("data-closed", "false")
   vi.useRealTimers()
   vi.restoreAllMocks()
-  fireEvent.click(screen.getByRole("button", { name: "Replier Rafi" }))
-  expect(screen.getByRole("button", { name: "Afficher Rafi" })).toBeInTheDocument()
-  expect(window.localStorage.getItem("shopflow:rafi:collapsed")).toBe("1")
-  view.unmount()
-  wrap()
-  expect(await screen.findByRole("button", { name: "Afficher Rafi" })).toBeInTheDocument()
+  expect(screen.getByRole("button", { name: "Rafi, votre assistant" })).toBeInTheDocument()
+  expect(screen.queryByRole("button", { name: /Replier Rafi|Afficher Rafi|sons de Rafi/ })).toBeNull()
+  expect(screen.getByTestId("rafi").querySelector("img")!.style.clipPath).toMatch(/^polygon\(/)
 })
 
 it("« Réduire les animations » freezes him: no blink, no reaction", async () => {
@@ -100,7 +98,7 @@ it("no sound before an interaction, and none when the teacher muted the class", 
   fireEvent.pointerDown(document.body)
   fireEvent.click(screen.getByRole("button", { name: "Rafi : 1 annonce" }))
   expect(created).not.toHaveBeenCalled()  // the class is muted by the teacher
-  expect(screen.getByRole("button", { name: "Couper les sons de Rafi" })).toHaveAttribute("title", "Sons coupés par l’enseignant")
+  expect(screen.queryByRole("button", { name: /sons de Rafi/ })).toBeNull()
 })
 
 it("countdown, Morocco date from the server, and the English texts of the announcements", () => {
