@@ -17,6 +17,21 @@ afterEach(() => {
   document.cookie = "academy_csrf=; Max-Age=0; Path=/"
 })
 
+it("shows a large Rafi while recovering the session, then on login without private API calls", async () => {
+  let finish!: (value: { status: number; ok: boolean }) => void
+  const fetchMock = vi.fn().mockImplementation(() => new Promise((resolve) => { finish = resolve }))
+  vi.stubGlobal("fetch", fetchMock)
+  show()
+  expect(screen.getByTestId("rafi-loading")).toHaveTextContent("Chargement de votre espace…")
+  expect(screen.getByTestId("rafi-loading").querySelector("img")).toHaveAttribute("width", "240")
+  finish({ status: 401, ok: false })
+  expect(await screen.findByTestId("rafi-login")).toBeInTheDocument()
+  expect(screen.queryByTestId("rafi-loading")).toBeNull()
+  fireEvent.click(screen.getByRole("button", { name: "Rafi, votre assistant" }))
+  expect(fetchMock.mock.calls.every(([url]) => url === "/api/v1/auth/me")).toBe(true)
+  expect(screen.getByRole("textbox", { name: "Identifiant" })).toBeInTheDocument()
+})
+
 it("shows login without course content to an anonymous visitor", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 401, ok: false }))
   show()

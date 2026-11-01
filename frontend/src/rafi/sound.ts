@@ -15,7 +15,7 @@ function readOn(): boolean {
   try { return window.localStorage.getItem(KEY) !== "off" } catch { return true }
 }
 
-/** The student's own choice (Rafi's button and Paramètres), shared between them. */
+/** The student's own choice in Paramètres, observed by Rafi. */
 export function useRafiSound() {
   const [on, set] = useState(readOn)
   useEffect(() => {

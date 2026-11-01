@@ -1,5 +1,17 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Rafi — silhouette, chargement et connexion (01/11/2026)
+
+Branche `codex/rafi-sans-fond`, depuis `main` 752d718. Le composant `frontend/src/rafi/RafiAvatar.tsx` partage l'image originale détourée en CSS et les animations entre le chargement (240 px), la connexion (176 px) et les annonces (72 px). Boutons volume/repli retirés ; un ancien choix de repli ne masque plus Rafi. Les sons restent activés par défaut, contrôlables dans Paramètres et par l'enseignant. La scène publique est purement visuelle (aucune API privée, aucun son). L'ancien effet `LoginIntro` n'est plus monté par App.
+
+Validation locale : 18 tests Vitest, build, 5 tests Playwright/axe avec API simulée sur 3186 ; clair/sombre, ordinateur/mobile, yeux et mode mouvement réduit vérifiés. CI complète à attendre. Aucun fichier privé ni donnée réelle dans ce lot ; aucun backend ni migration.
+
+### À faire en local après fusion autorisée
+1. Redéployer selon le runbook, sur accord distinct ; aucun redéploiement effectué pour ce correctif.
+2. Recharger la page : vérifier Rafi au chargement et à la connexion, puis dans l'interface étudiant sans barre de boutons ni carré blanc.
+3. Conserver les préférences de son existantes. Dans l'aperçu enseignant, l'API `/student/rafi` reste réservée aux étudiants : les sons de cet aperçu ne sont pas un test du réglage de la classe.
+
+
 ## Intégration de main dans Style — PR #80 (01/11/2026)
 
 Branche locale `codex/resolve-pr80`, destinée à la branche existante `claude/lucid-brahmagupta-htwgun-style` de #80. Merge de `main` `02363ad` après #78 et #79, sans rebase ni force-push. Les cinq conflits (CHANGELOG, HANDOFF, PROGRESS, `en.json`, imports de `StudentDashboard.tsx`) gardent les deux côtés. Le nouvel en-tête et la police locale restent présents avec la note finale, les points par bloc et la prochaine échéance ; aucune modification du backend par rapport à main, ni migration ajoutée.

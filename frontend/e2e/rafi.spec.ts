@@ -4,7 +4,7 @@ import { readFileSync } from "node:fs"
 import { teacherView } from "./teacher-nav"
 
 /**
- * ADR-0047: Rafi on the student side (announcements in a bubble, eyes, folding), the countdown to the next deadline,
+ * ADR-0047: Rafi on the student side (announcements in a bubble, eyes, a transparent silhouette), the countdown to the next deadline,
  * absent for the teacher except in « Vue étudiant ». It removes the milestone it creates.
  */
 const credentialsPath = process.env.SHOPFLOW_DEMO_CREDENTIALS ?? "../.local/test-stack-credentials.json"
@@ -58,7 +58,7 @@ const pupils = (page: Page) => page.getByTestId("rafi-eyes").locator("g[transfor
 test.describe.serial("Rafi", () => {
   let milestone = 0
 
-  test("announcements in a bubble, eyes that follow, folding remembered; the teacher has no Rafi", async ({ page, request, browser }) => {
+  test("announcements in a bubble, eyes that follow, no toolbar; the teacher has no Rafi", async ({ page, request, browser }) => {
     const { csrf, assignment } = await teacherApi(request)
     const due = new Date(Date.now() + 3 * 86400_000 + 5 * 3600_000).toISOString()
     milestone = (await (await request.post(`/api/v1/teacher/classes/${assignment}/project/milestones`,
@@ -90,11 +90,11 @@ test.describe.serial("Rafi", () => {
     expect(Math.round(box!.width)).toBe(72)
 
     await bubble.getByRole("button", { name: /^J’ai lu/ }).click()
-    await rafi.getByRole("button", { name: "Replier Rafi" }).click()
+    await page.evaluate(() => window.localStorage.setItem("shopflow:rafi:collapsed", "1"))
     await page.reload()
-    await expect(page.getByRole("button", { name: "Afficher Rafi" })).toBeVisible()
-    await page.getByRole("button", { name: "Afficher Rafi" }).click()
-    await expect(page.getByRole("button", { name: "Replier Rafi" })).toBeVisible()
+    await expect(rafi.getByRole("button", { name: /^Rafi/ })).toBeVisible()
+    await expect(rafi.getByRole("button", { name: /Replier Rafi|Afficher Rafi|sons de Rafi/ })).toHaveCount(0)
+    expect(await rafi.locator("img").evaluate((image) => getComputedStyle(image).clipPath)).toMatch(/^polygon\(/)
 
     // No Rafi for the teacher, except in « Vue étudiant ».
     const teacher = await browser.newPage()

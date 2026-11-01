@@ -14,7 +14,7 @@ async function login(page: Page, name: string) {
   await expect(page.getByRole("heading", { name: `Bonjour, ${name}` })).toBeVisible()
 }
 
-test("login page: new text, no theme switch, opening once per session, form usable at once", async ({ page }) => {
+test("login page: new text, no theme switch, Rafi on login, form usable at once", async ({ page }) => {
   await page.goto("/")
   await expect(page.getByText("Rapidfox Academy", { exact: true }).first()).toBeVisible()
   await expect(page.getByRole("heading", { level: 1, name: "Apprenez la data en prenant de vraies décisions." })).toBeVisible()
@@ -22,23 +22,23 @@ test("login page: new text, no theme switch, opening once per session, form usab
   await expect(page.getByText(/Module\s:\sPython Data Engineering & SQL Avancé · Classe\s:\sB3\sIA\/Data/)).toBeVisible()
   await expect(page.getByText(/vous travaillez sur ShopFlow, une boutique en ligne fictive, et CampusEquip/)).toBeVisible()
   await expect(page.getByRole("radiogroup")).toHaveCount(0)
-  // The opening plays (a decorative, inert copy of the logo) and never blocks the form or the keyboard.
-  await expect(page.locator(".login-intro")).toHaveCount(1)
+  // The large fox stays on the login page and never blocks the form or the keyboard.
+  await expect(page.getByTestId("rafi-login")).toBeVisible()
   await page.getByRole("textbox", { name: "Identifiant" }).fill("demo.etudiant01")
   await expect(page.getByRole("textbox", { name: "Identifiant" })).toHaveValue("demo.etudiant01")
-  await expect(page.locator(".login-intro")).toHaveCount(0, { timeout: 3000 })
-  // Same browser session: no second opening.
+  await expect(page.getByTestId("rafi-login")).toBeVisible()
+  // Still present after a reload.
   await page.reload()
   await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible()
-  await expect(page.locator(".login-intro")).toHaveCount(0)
+  await expect(page.getByTestId("rafi-login")).toBeVisible()
 })
 
-test("the opening is skipped with reduced motion", async ({ browser }) => {
+test("Rafi stays visible and still with reduced motion", async ({ browser }) => {
   const context = await browser.newContext({ locale: "fr-FR", reducedMotion: "reduce" })
   const page = await context.newPage()
   await page.goto("/")
   await expect(page.getByRole("button", { name: "Se connecter" })).toBeVisible()
-  await expect(page.locator(".login-intro")).toHaveCount(0)
+  await expect(page.getByTestId("rafi-login")).toBeVisible()
   await context.close()
 })
 
