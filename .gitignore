@@ -26,3 +26,5 @@ test-results/
 *.dump
 .backups-test/
 RETOURS-PLATEFORME.md
+# Isolated component E2E build (not part of the application image).
+frontend/dist-evolutions/

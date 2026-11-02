@@ -1,4 +1,5 @@
-import { locale, msg, t, tn } from "../i18n"
+import { ActivityTime, activityRelative } from "../shared/ActivityTime"
+import { msg, t, tn } from "../i18n"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, NativeSelect, Stack, Table, Text } from "@chakra-ui/react"
 import { api, ApiError } from "../api"
@@ -35,14 +36,6 @@ const ACTIONS: Record<string, string> = {
   "block.open": msg("Bloc ouvert"), "block.close": msg("Bloc fermé"), "help.handled": msg("Demande d’aide traitée"),
   "release.assign": msg("Version donnée à la classe"), "release.move": msg("Classe passée à la nouvelle version"),
   "student.password_reset": msg("Mot de passe réinitialisé"),
-}
-
-function since(iso: string | null, now: number): string {
-  if (!iso) return t("Aucune activité")
-  const seconds = Math.max(0, Math.round((now - new Date(iso).getTime()) / 1000))
-  if (seconds < 60) return t("il y a {{seconds}} s", { seconds })
-  if (seconds < 3600) return t("il y a {{p0}} min", { p0: Math.floor(seconds / 60) })
-  return new Date(iso).toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" })
 }
 
 /** Class tracking. With ``assignmentId`` (the single class) there is no class selector. */
@@ -166,7 +159,6 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
     <Text color="app.muted">{t("Publiez un de vos cours puis attribuez-le à une cohorte dans le studio. Seuls les cours que vous avez créés apparaissent ici.")}</Text>
   </Stack></Panel>
 
-  const generated = overview ? new Date(overview.generated_at).getTime() : now
   const helpCount = overview?.students.filter((row) => row.needs_help.length > 0).length ?? 0
   const activeCount = overview?.students.filter((row) => row.active).length ?? 0
 
@@ -180,7 +172,7 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
       </Stack>}
       <Flex gap="2" wrap="wrap" align="center">
         <Text fontSize="sm" color={stale ? "red.fg" : "app.muted"} aria-live="polite">
-          {stale ? t("Connexion perdue : données possiblement anciennes") : t("Actualisé {{p0}}", { p0: since(new Date(generated).toISOString(), now) })}
+          {stale ? t("Connexion perdue : données possiblement anciennes") : t("Actualisé {{p0}}", { p0: activityRelative(overview?.generated_at, now) })}
         </Text>
         <Button size="sm" variant="ghost" onClick={() => setAutoRefresh(!autoRefresh)} aria-pressed={autoRefresh}>
           {autoRefresh ? t("Suspendre l’actualisation") : t("Reprendre l’actualisation")}</Button>
@@ -218,7 +210,7 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{row.completed} / {row.total}{row.lessons_total ? <Text as="span" display="block" fontSize="xs" color="app.muted">{t("leçons lues")}{" "}{row.lessons_read}/{row.lessons_total}</Text> : null}</Table.Cell>
               <Table.Cell css={{ fontVariantNumeric: "tabular-nums" }}>{formatPoints(row.core_points)} / {row.core_possible}{row.bonus_points > 0 ? ` (+${formatPoints(row.bonus_points)} bonus)` : ""}</Table.Cell>
               <Table.Cell>{row.current_mission ?? "—"}</Table.Cell>
-              <Table.Cell color="app.muted">{since(row.last_activity, now)}</Table.Cell>
+              <Table.Cell color="app.muted"><ActivityTime value={row.last_activity} now={now} /></Table.Cell>
               <Table.Cell>{row.needs_help.length ? <Badge colorPalette="saffron" variant="solid" rounded="full" title={row.needs_help.join(", ")}>{t("Besoin d’aide")}</Badge>
                 : row.active ? <Badge colorPalette="green" variant="subtle" rounded="full">{t("Actif")}</Badge> : <Badge variant="subtle" rounded="full">{t("Inactif")}</Badge>}</Table.Cell>
               <Table.Cell><Button size="xs" variant="outline" onClick={() => void openStudent(row.id)} aria-label={t("Détail de {{display_name}}", { display_name: row.display_name })}>{t("Détail")}</Button></Table.Cell>
@@ -256,7 +248,7 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
           <Text fontWeight="semibold">{t("Derniers essais")}</Text>
           {detail.attempts.length === 0 ? <Text color="app.muted" fontSize="sm">{t("Aucun essai pour le moment.")}</Text>
             : <Stack as="ol" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{detail.attempts.slice(0, 15).map((item) => <Flex as="li" key={item.id} justify="space-between" gap="3">
-              <Text>{item.mission}</Text><Text color="app.muted">{new Date(item.created_at).toLocaleTimeString(locale())} · {item.correct ? t("réussi") : t("à revoir")} · {formatPoints(item.points)} {t("pts")}{item.percent != null ? ` (${item.percent} %)` : ""}{item.fast ? " · clic rapide" : ""}</Text>
+              <Text>{item.mission}</Text><Text color="app.muted"><ActivityTime value={item.created_at} now={now} /> · {item.correct ? t("réussi") : t("à revoir")} · {formatPoints(item.points)} {t("pts")}{item.percent != null ? ` (${item.percent} %)` : ""}{item.fast ? " · clic rapide" : ""}</Text>
             </Flex>)}</Stack>}
         </Stack>}
       </SidePanel>
@@ -267,7 +259,7 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
           {log.length === 0 ? <Text color="app.muted" fontSize="sm">{t("Aucune intervention enregistrée.")}</Text>
             : <Stack as="ul" gap="1" listStyleType="none" p="0" m="0" fontSize="sm">{log.slice(0, 20).map((item) => <Flex as="li" key={item.id} gap="3" justify="space-between">
               <Text>{t(ACTIONS[item.action] ?? item.action)}{item.action === "student.password_reset" ? ` : ${item.details.student}` : ""}{item.details.block ? ` : « ${item.details.block} »` : ""}{item.details.mission ? t(" : « {{mission}} » pour {{student}}", { mission: item.details.mission, student: item.details.student }) : ""}</Text>
-              <Text color="app.muted">{item.actor} · {new Date(item.created_at).toLocaleString(locale(), { dateStyle: "short", timeStyle: "short" })}</Text>
+              <Text color="app.muted">{item.actor} · <ActivityTime value={item.created_at} now={now} /></Text>
             </Flex>)}</Stack>}
         </Stack>
       </Panel>

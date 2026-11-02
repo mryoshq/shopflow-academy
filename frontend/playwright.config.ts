@@ -9,6 +9,7 @@ if (productionHosts.includes(new URL(baseURL).host)) {
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: "evolutions-locales.spec.ts",
   timeout: 60_000,
   expect: { timeout: 10_000 },
   retries: process.env.CI ? 1 : 0,

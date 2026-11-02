@@ -1,3 +1,4 @@
+import { BlockStudents } from "./BlockStudents"
 import { formatNumber, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Heading, Stack, Table, Text } from "@chakra-ui/react"
@@ -137,7 +138,7 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
                   <Text fontSize="sm" color="app.muted">{blockTotal(block)} {t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
                 </Stack>
                 <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? t("Ouvert") : t("Fermé")}</Badge>
-                <Text fontSize="sm" css={{ fontVariantNumeric: "tabular-nums" }}>{block.completed_students} / {data.student_count} {t("terminé")}</Text>
+                <BlockStudents key={`${assignmentId}:${block.chapter_id}`} assignmentId={assignmentId} chapterId={block.chapter_id} title={block.title} completed={block.completed_students} total={data.student_count} />
                 {(block.lesson_count ?? 0) > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("leçons lues")}{" "}{block.lessons_read_students ?? 0}/{data.student_count}</Text>}
                 {block.help_pending > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full">{tn("{{count}} demande d’aide", block.help_pending)}</Badge>}
                 {block.open

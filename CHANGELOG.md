@@ -367,3 +367,10 @@
 ## 2026-10-27 — P0-01
 
 - Socle React/FastAPI/PostgreSQL/Compose, gateway local, migrations, CI et documentation d'exploitation.
+
+## Suivi enseignant — dates et détail des blocs
+
+- Dates d’activité explicites au fuseau Casablanca.
+- Détail accessible des compteurs de blocs, présence vérifiée et rafraîchissement limité à l’ouverture.
+- Tests composants isolés avec CSP du gateway, distincts de la stack applicative.
+- Aucun changement de barème, de données pédagogiques ou de schéma.

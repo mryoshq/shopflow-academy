@@ -1,3 +1,4 @@
+import { ActivityTime } from "../shared/ActivityTime"
 import { useEffect, useId, useRef, useState } from "react"
 import { Box, Flex, Link, Stack, Text } from "@chakra-ui/react"
 import { t, tn } from "../i18n"
@@ -7,8 +8,8 @@ const CLOSE_DELAY_MS = 150
 
 /** « depuis 12 min », from the start of the current connection. */
 export function onlineFor(since: string | null, now: number): string {
-  if (!since) return ""
-  const minutes = Math.floor((now - new Date(since).getTime()) / 60000)
+  if (!since || !Number.isFinite(new Date(since).getTime())) return ""
+  const minutes = Math.max(0, Math.floor((now - new Date(since).getTime()) / 60000))
   if (minutes < 1) return t("depuis moins d’une minute")
   if (minutes < 60) return tn("depuis {{count}} min", minutes)
   return t("depuis {{hours}} h {{minutes}}", { hours: Math.floor(minutes / 60), minutes: String(minutes % 60).padStart(2, "0") })
@@ -67,6 +68,7 @@ export function OnlineStatus({ online, total, students }: { online: number; tota
           <Box minW="0">
             <Text fontSize="sm" fontWeight="medium">{student.name}</Text>
             <Text fontSize="xs" color="app.muted">{student.mission ?? t("Tableau de bord")}{student.online_since ? ` · ${onlineFor(student.online_since, now)}` : ""}</Text>
+            {student.online_since && <Text fontSize="xs" color="app.muted"><ActivityTime value={student.online_since} relative={false} /></Text>}
           </Box>
         </Flex>)}</Stack>}
       <Link href="#/classe/etudiants" display="inline-block" mt="3" fontSize="sm" color="brand.fg" onClick={() => setOpen(false)}>{t("Voir toute la classe")}</Link>
