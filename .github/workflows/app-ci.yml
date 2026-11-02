@@ -45,6 +45,8 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Verify Node supports the PDF reader
+        run: node -e "const [major, minor] = process.versions.node.split('.').map(Number); if (major < 22 || (major === 22 && minor < 13)) { throw new Error('Node 22.13+ required'); }"
       - run: npm ci
         working-directory: frontend
       - run: npm run test -- --maxWorkers=1
@@ -74,6 +76,8 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
+      - name: Verify Node supports the PDF reader
+        run: node -e "const [major, minor] = process.versions.node.split('.').map(Number); if (major < 22 || (major === 22 && minor < 13)) { throw new Error('Node 22.13+ required'); }"
       - name: Start the test stack (same procedure as on the Mac)
         run: python3 scripts/test_stack.py up
       - name: Import the Markdown demonstration course (compile, draft, publish)
