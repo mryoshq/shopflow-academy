@@ -371,3 +371,17 @@ it("the studio leaves Markdown-only activities to the course source", async () =
   expect(isMarkdownOnly({ ...choice, display_data: { kind: "code", language: "sql", code: "SELECT 1" } })).toBe(true)
   expect(isMarkdownOnly({ ...choice, run: [{ id: "q", label: "q", sql: "SELECT 1" }] })).toBe(true)
 })
+
+it("marks bonus-only blocks optional and keeps their required done state unchanged", async () => {
+  const dashboard: Dashboard = { display_name: "Élève fictif", ai_enabled: false, courses: [{
+    release_id: 1, title: "Cours fictif", description: "", version: 1, is_demo: false, resources: [], paused: false,
+    score: { core_points: 0, core_possible: 0, bonus_points: 10, bonus_possible: 10, completed: 2, total: 2 },
+    modules: [{ title: "Module fictif", blocks: [{ id: 1, title: "Bonus A", open: true, mission_count: 0, bonus_count: 2, bonus_only: true, bonus_points: 10, bonus_possible: 10, completed_count: 0, done: false, mission_ids: [] }] }], missions: [],
+  }] }
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(dashboard)))
+  wrap(<StudentDashboard navigate={vi.fn()} />)
+  const block = await screen.findByRole("group", { name: "Bloc : Bonus A" })
+  expect(within(block).getByText("Bonus facultatifs")).toBeInTheDocument()
+  expect(within(block).getByText("10 / 10 pts bonus")).toBeInTheDocument()
+  expect(within(block).queryByText("Terminé")).not.toBeInTheDocument()
+})

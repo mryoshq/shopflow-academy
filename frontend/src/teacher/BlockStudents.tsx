@@ -10,8 +10,8 @@ const STATES: Record<LiveCell["state"], string> = {
   done: msg("terminé"), in_progress: msg("en cours"), not_started: msg("pas commencé"), closed: msg("fermé"),
 }
 /** Owner-only detail, fetched only while visible. Presence describes a page, never work. */
-export function BlockStudents({ assignmentId, chapterId, title, completed, total }: {
-  assignmentId: number; chapterId: number; title: string; completed: number; total: number
+export function BlockStudents({ assignmentId, chapterId, title, completed, total, bonusOnly = false }: {
+  assignmentId: number; chapterId: number; title: string; completed: number; total: number; bonusOnly?: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [data, setData] = useState<Live | null>(null)
@@ -55,11 +55,11 @@ export function BlockStudents({ assignmentId, chapterId, title, completed, total
     finalFocusEl={() => trigger.current} positioning={{ placement: "bottom-end", flip: true, slide: true, overflowPadding: 12, gutter: 6 }} lazyMount unmountOnExit>
     <Popover.Anchor asChild><Box onMouseEnter={show} onMouseLeave={hide} onPointerMove={(event) => { if (event.pointerType === "mouse" && (event.movementX || event.movementY)) { suppressFocus.current = false; show() } }}>
       <Button ref={trigger} size="xs" variant="ghost" aria-expanded={open} aria-controls={open ? panelId : undefined} aria-haspopup="dialog"
-        aria-label={t("Progression du bloc {{title}} : {{completed}} sur {{total}} terminé", { title, completed, total })}
+        aria-label={bonusOnly ? t("Bonus facultatifs du bloc {{title}} : {{completed}} sur {{total}} ont réussi tous les bonus", { title, completed, total }) : t("Progression du bloc {{title}} : {{completed}} sur {{total}} terminé", { title, completed, total })}
         onFocus={() => { if (!suppressFocus.current) show() }} onClick={() => {
           suppressFocus.current = false; setActivated(true); show()
           requestAnimationFrame(() => closeButton.current?.focus())
-        }}>{completed} / {total} {t("terminé")}</Button>
+        }}>{bonusOnly ? t("{{completed}} / {{total}} ont réussi tous les bonus", { completed, total }) : <>{completed} / {total} {t("terminé")}</>}</Button>
     </Box></Popover.Anchor>
     <Portal><Popover.Positioner><Popover.Content ref={content} id={panelId} aria-label={t("Progression du bloc {{title}}", { title })}
       w="sm" maxW="calc(100vw - 24px)" p="4" bg="app.surface" color="app.ink" maxH="var(--available-height)" overflowY="auto"
@@ -75,7 +75,8 @@ export function BlockStudents({ assignmentId, chapterId, title, completed, total
             const present = student.online && !old && !!student.seen_at && Number.isFinite(Date.parse(student.seen_at)) && now - Date.parse(student.seen_at) <= 75_000
             const name = student.name.includes("@") ? t("Étudiant {{id}}", { id: student.id }) : student.name
             return <Box as="li" key={student.id} fontSize="sm">
-              <Text fontWeight="semibold">{name} · {cell ? t(STATES[cell.state]) : t("État indisponible")}{cell ? ` (${cell.done}/${cell.total})` : ""}</Text>
+              <Text fontWeight="semibold">{name} · {cell ? bonusOnly ? t("{{done}} / {{total}} bonus réussis", { done: cell.bonus_done ?? 0, total: cell.bonus_total ?? 0 }) : t(STATES[cell.state]) : t("État indisponible")}{cell && !bonusOnly ? ` (${cell.done}/${cell.total})` : ""}</Text>
+              {!bonusOnly && !!cell?.bonus_total && <Text color="app.muted">{t("{{done}} / {{total}} bonus réussis", { done: cell.bonus_done ?? 0, total: cell.bonus_total })}</Text>}
               <Text color="app.muted">{old || (student.online && !present) ? t("Présence non confirmée") : present ? t("en ligne") : t("Hors ligne")}</Text>
               {student.mission && <Text>{present ? t("Page actuellement observée : {{mission}}", { mission: student.mission }) : t("Dernière page observée : {{mission}}", { mission: student.mission })}</Text>}
               <Text color="app.muted">{t("Dernière présence")} : <ActivityTime value={student.seen_at} /></Text>

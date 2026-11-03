@@ -272,6 +272,7 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
         # « Terminé » = every graded mission solved (not bonus, not lesson); lessons are counted apart.
         lessons = [vid for vid in vids if vid in defs and defs[vid].kind in UNGRADED_KINDS]
         core = [vid for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS] or lessons
+        bonus = [vid for vid in vids if vid in defs and defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS]
         done = sum(1 for sid in student_ids if core and all(sid in solved[vid] for vid in core))
         lessons_done = sum(1 for sid in student_ids if lessons and all(sid in solved[vid] for vid in lessons))
         if not is_open and next_block is None:
@@ -285,6 +286,8 @@ def timeline(assignment_id: int, response: Response, auth: AuthContext = Depends
             "possible": sum(defs[vid].max_points for vid in vids if vid in defs and not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS),
             "bonus_possible": sum(defs[vid].max_points for vid in vids if vid in defs and defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS),
             "duration_minutes": sum(defs[vid].estimated_duration_minutes for vid in vids if vid in defs and not defs[vid].bonus),
+            "bonus_only": bool(bonus) and len(bonus) == len(vids),
+            "bonus_completed_students": sum(1 for sid in student_ids if bonus and all(sid in solved[vid] for vid in bonus)),
             "completed_students": done, "lessons_read_students": lessons_done, "help_pending": sum(1 for h in pending if h.mission_version_id in vids),
         })
     now = utcnow()

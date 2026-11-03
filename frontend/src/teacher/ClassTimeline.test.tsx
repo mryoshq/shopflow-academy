@@ -67,3 +67,17 @@ it("polls at most every 10 seconds", async () => {
   expect(TIMELINE_REFRESH_MS).toBeLessThanOrEqual(10000)
   expect(fetchMock.mock.calls.length).toBeGreaterThan(before)
 })
+
+it("marks only bonus-only blocks and names the optional completion counter", async () => {
+  const data = timeline()
+  data.blocks[0] = { ...data.blocks[0], title: "Bonus A", mission_count: 0, bonus_count: 2, bonus_only: true, bonus_completed_students: 3 }
+  data.blocks[1] = { ...data.blocks[1], title: "Vide fictif", mission_count: 0, bonus_count: 0, bonus_only: false }
+  vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(data)))
+  wrap(<ClassTimeline assignmentId={7} />)
+  const list = await screen.findByRole("list", { name: "Blocs de la journée" })
+  const items = within(list).getAllByRole("listitem")
+  expect(items[0]).toHaveTextContent("Bonus facultatifs")
+  expect(items[0]).toHaveTextContent("3 / 10 ont réussi tous les bonus")
+  expect(items[0]).not.toHaveTextContent("terminé")
+  expect(items[1]).not.toHaveTextContent("Bonus facultatifs")
+})

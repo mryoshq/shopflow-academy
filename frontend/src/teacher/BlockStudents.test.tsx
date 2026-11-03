@@ -50,3 +50,14 @@ it("marks an old snapshot historical even when the next API read stays pending",
   expect(screen.getByText("Présence non confirmée")).toBeInTheDocument()
   expect(screen.queryByText("en ligne")).not.toBeInTheDocument()
 })
+
+it("labels optional bonus progress on keyboard focus without declaring the block completed", async () => {
+  vi.mocked(api).mockResolvedValue({ ...payload, students: payload.students.map((student, i) => ({ ...student, cells: [{ chapter_id: 7, state: "not_started", done: 0, total: 0, bonus_done: i ? 1 : 2, bonus_total: 2 }] })) })
+  render(<ChakraProvider value={system}><BlockStudents assignmentId={4} chapterId={7} title="Bonus A" completed={1} total={2} bonusOnly /></ChakraProvider>)
+  const trigger = screen.getByRole("button", { name: /Bonus facultatifs du bloc Bonus A : 1 sur 2 ont réussi tous les bonus/ })
+  expect(trigger).toHaveTextContent("1 / 2 ont réussi tous les bonus")
+  fireEvent.focus(trigger)
+  expect(await screen.findByText("Alice · 2 / 2 bonus réussis")).toBeInTheDocument()
+  expect(screen.getByText("Étudiant 2 · 1 / 2 bonus réussis")).toBeInTheDocument()
+  expect(screen.queryByText(/terminé/)).not.toBeInTheDocument()
+})

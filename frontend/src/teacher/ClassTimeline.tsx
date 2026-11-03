@@ -12,7 +12,7 @@ export const TIMELINE_REFRESH_MS = 5000
 export type TimelineBlock = {
   chapter_id: number; position: number; module: string; title: string; open: boolean; opened_at: string | null
   mission_count: number; bonus_count: number; possible?: number; bonus_possible?: number; duration_minutes: number; completed_students: number; help_pending: number
-  lesson_count?: number; lessons_read_students?: number
+  lesson_count?: number; lessons_read_students?: number; bonus_only?: boolean; bonus_completed_students?: number
 }
 export type HelpItem = { id: number; student: string; mission_version_id: number; mission: string; block: string; message: string; created_at: string }
 export type MissionStat = { mission_version_id: number; title: string; block: string; bonus: boolean; completed: number; attempts: number; hints: number; stuck: string[]
@@ -134,11 +134,12 @@ export function ClassTimeline({ assignmentId, section }: { assignmentId: number;
                 borderLeftColor={block.open ? "brand.solid" : "app.border"} rounded="lg" bg={block.open ? "app.surface" : "app.sunken"}>
                 <Text fontWeight="bold" color="app.muted" minW="6" css={{ fontVariantNumeric: "tabular-nums" }}>{block.position}</Text>
                 <Stack gap="0" flex="1" minW="48">
-                  <Text fontWeight="semibold">{block.title}</Text>
-                  <Text fontSize="sm" color="app.muted">{blockTotal(block)} {t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
+                  <Flex gap="2" wrap="wrap" align="center"><Text fontWeight="semibold">{block.title}</Text>{block.bonus_only && <Badge colorPalette="saffron" variant="outline" rounded="full">{t("Bonus facultatifs")}</Badge>}</Flex>
+                  <Text fontSize="sm" color="app.muted">{blockTotal(block)} {!block.bonus_only && t("· environ {{minutes}} min", { minutes: block.duration_minutes })}</Text>
                 </Stack>
                 <Badge colorPalette={block.open ? "green" : "gray"} variant="subtle" rounded="full">{block.open ? t("Ouvert") : t("Fermé")}</Badge>
-                <BlockStudents key={`${assignmentId}:${block.chapter_id}`} assignmentId={assignmentId} chapterId={block.chapter_id} title={block.title} completed={block.completed_students} total={data.student_count} />
+                <BlockStudents key={`${assignmentId}:${block.chapter_id}`} assignmentId={assignmentId} chapterId={block.chapter_id} title={block.title} completed={block.bonus_only ? block.bonus_completed_students ?? 0 : block.completed_students} total={data.student_count} bonusOnly={block.bonus_only} />
+                {!block.bonus_only && block.bonus_count > 0 && block.bonus_completed_students !== undefined && <Text fontSize="sm" color="app.muted">{t("{{completed}} / {{total}} ont réussi tous les bonus", { completed: block.bonus_completed_students, total: data.student_count })}</Text>}
                 {(block.lesson_count ?? 0) > 0 && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{t("leçons lues")}{" "}{block.lessons_read_students ?? 0}/{data.student_count}</Text>}
                 {block.help_pending > 0 && <Badge colorPalette="saffron" variant="solid" rounded="full">{tn("{{count}} demande d’aide", block.help_pending)}</Badge>}
                 {block.open
