@@ -1601,5 +1601,9 @@
   "Demandes d’aide en attente : {{count}}": "Pending help requests: {{count}}",
   "Aucune demande d’aide en attente.": "No pending help requests.",
   "Les dix demandes les plus récentes sont affichées.": "The ten most recent requests are shown.",
-  "Leçons lues": "Lessons read"
+  "Leçons lues": "Lessons read",
+  "Bonus facultatifs": "Optional bonuses",
+  "{{completed}} / {{total}} ont réussi tous les bonus": "{{completed}} / {{total}} have passed all bonuses",
+  "Bonus facultatifs du bloc {{title}} : {{completed}} sur {{total}} ont réussi tous les bonus": "Optional bonuses in block {{title}}: {{completed}} out of {{total}} have passed all bonuses",
+  "{{done}} / {{total}} bonus réussis": "{{done}} / {{total}} bonuses passed"
 }

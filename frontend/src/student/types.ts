@@ -30,6 +30,7 @@ export type DashboardBlock = {
   for_you?: boolean
   mission_count: number
   bonus_count: number
+  bonus_only?: boolean
   completed_count: number
   lesson_count?: number
   lessons_read?: number

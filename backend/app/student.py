@@ -277,6 +277,7 @@ def course_payload(db: Session, user_id: int, release: CourseRelease, missions: 
             "id": block["chapter_id"], "title": block["title"], "open": is_open,
             # ADR-0023: opened by the teacher for this student only (« ouvert pour vous »).
             "for_you": is_open and block["chapter_id"] not in class_open,
+            "bonus_only": bool(ids) and all(scores[vid].bonus and not scores[vid].lesson for vid in ids),
             "mission_count": len(core), "bonus_count": sum(1 for vid in ids if scores[vid].bonus),
             "completed_count": sum(1 for vid in core if scores[vid].completed) if is_open else 0,
             "lesson_count": len(lessons), "lessons_read": sum(1 for vid in lessons if scores[vid].completed) if is_open else 0,
