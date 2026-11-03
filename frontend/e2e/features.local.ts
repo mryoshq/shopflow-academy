@@ -58,3 +58,32 @@ for (const theme of ["light", "dark"]) {
     await expect(dialog).not.toBeVisible()
   })
 }
+for (const theme of ["light", "dark"]) for (const width of [390, 1366]) {
+  test(`student summary from protected detail — ${theme} ${width}`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 900 })
+    await page.addInitScript((theme) => localStorage.setItem("shopflow:theme", theme), theme)
+    await page.route("**/api/v1/**", (route) => {
+      const path = new URL(route.request().url()).pathname
+      if (path.endsWith("/classes")) return route.fulfill({ json: [{ id: 4, cohort: "Classe fictive", course_title: "Cours fictif", version: 1, paused: false, student_count: 1 }] })
+      if (path.endsWith("/interventions")) return route.fulfill({ json: [] })
+      if (path.endsWith("/overview")) return route.fulfill({ json: { generated_at: new Date().toISOString(), assignment_id: 4, cohort: "Classe fictive", course_title: "Cours fictif", version: 1, paused: false, missions: [], students: [{ id: 9, display_name: "Alice Fictive", completed: 2, total: 5, core_points: 9.5, core_possible: 40, bonus_points: 3, attempts: 4, hints: 0, current_mission: null, last_activity: null, active: false, needs_help: [] }] } })
+      if (path.endsWith("/students/9")) return route.fulfill({ json: { id: 9, display_name: "Alice Fictive", missions: [], attempts: [], summary: {
+        core_points: 9.5, core_possible: 40, bonus_points: 3, bonus_possible: 4, completed: 2, total: 5, remaining: 3, lessons_read: 1, lessons_total: 1,
+        attempted_unfinished: 1, not_started_open: 1, not_started_closed: 1, not_started_locked: 0, help_pending_count: 1,
+        help_pending: [{ mission: "Question fictive", created_at: "2024-07-01T12:00:00Z" }], last_activity: null,
+      } } })
+      return route.fulfill({ status: 404, json: {} })
+    })
+    await page.goto("/e2e/fixtures/features.html?screen=student")
+    await page.getByRole("button", { name: "Détail de Alice Fictive" }).click()
+    const panel = page.getByRole("dialog", { name: "Alice Fictive" })
+    await expect(panel.getByText("9,5 / 40")).toBeVisible()
+    await expect(panel.getByText("3 / 4")).toBeVisible()
+    await expect(panel.getByText("Jamais tentées, blocs fermés")).toBeVisible()
+    await expect(panel.getByText("Demandes d’aide en attente : 1")).toBeVisible()
+    expect((await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze()).violations).toEqual([])
+    await page.screenshot({ path: `test-results/student-summary-${theme}-${width}.png`, fullPage: true })
+    await page.getByRole("button", { name: "Fermer le panneau" }).press("Escape")
+    await expect(panel).not.toBeVisible()
+  })
+}
