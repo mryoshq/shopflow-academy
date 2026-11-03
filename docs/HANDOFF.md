@@ -1,5 +1,21 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Bonus facultatifs — correctif de lecture (03/11/2026)
+
+Branche `codex/blocs-bonus-explicites`, issue de `github/main` 065e395 puis merge normal de c301e8f (#85). Nouvelle PR vers `main` à ouvrir ; aucune fusion de PR ni mise en production effectuée.
+
+Fichiers : champs additifs dans `classroom.py`, `live.py`, `student.py` ; badge et libellés dans `ClassTimeline`, `LivePanel`, `BlockStudents`, `StudentDashboard` ; traductions FR/EN, tests API/Vitest et fixture navigateur isolée `playwright.bonus.config.ts` sur 3201. Les aperçus et la palette de main sont conservés.
+
+Le badge concerne uniquement un bloc non vide entièrement composé de bonus notés. Son compteur indique combien d'élèves ont réussi tous ses bonus. La complétion principale reste inchangée : aucun changement de `progress.py`, notation, récompenses, note finale ou exports. Les blocs mixtes conservent leur compteur principal et affichent le bonus séparément dans la frise et le détail.
+
+Preuves locales : pytest ciblé 36 PASS ; Vitest ciblé et clés FR/EN 45 PASS ; build PASS ; kit documentaire PASS ; Playwright 4 PASS avec API simulée, clair/sombre 390/1366 px, clavier, axe et captures inspectées. Commandes précises dans `docs/PROGRESS.md`. Aucun test sur données réelles ; aucun accès à la base de production. Suites complètes confiées à la CI de PR.
+
+### À faire en local après revue et fusion autorisées
+
+- Aucun déploiement réalisé pour ce lot. Sur autorisation distincte, reconstruire/redémarrer selon le runbook puis vérifier le badge et le compteur des bonus dans Ma classe et le tableau de bord étudiant. Aucune migration.
+
+Prochaine action unique : attendre les contrôles de la nouvelle PR bonus et laisser la décision de revue/fusion au propriétaire. Plateforme/studio avant contenus P2 ; Cloudflare sur Mac uniquement ; n8n préservé.
+
 ## Rafi — silhouette, chargement et connexion (01/11/2026)
 
 Branche `codex/rafi-sans-fond`, depuis `main` 752d718. Le composant `frontend/src/rafi/RafiAvatar.tsx` partage l'image originale détourée en CSS et les animations entre le chargement (240 px), la connexion (176 px) et les annonces (72 px). Boutons volume/repli retirés ; un ancien choix de repli ne masque plus Rafi. Les sons restent activés par défaut, contrôlables dans Paramètres et par l'enseignant. La scène publique est purement visuelle (aucune API privée, aucun son). L'ancien effet `LoginIntro` n'est plus monté par App.

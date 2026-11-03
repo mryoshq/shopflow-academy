@@ -91,6 +91,9 @@ jobs:
       - name: Isolated component E2E with the gateway CSP
         run: npm run test:e2e:components
         working-directory: frontend
+      - name: Optional bonus blocks (isolated component fixture on 3201)
+        run: npx playwright test --config playwright.bonus.config.ts
+        working-directory: frontend
       - name: Load test, 10 simultaneous demo students + teacher
         run: python3 scripts/load_test.py
       - name: Persistence after restart and container re-creation
