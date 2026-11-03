@@ -389,3 +389,7 @@
 
 - Préférence de navigateur indépendante du mode clair/sombre/système : Latte/Mocha, thème actuel conservé par défaut.
 - Bootstrap cohérent avant React, stockage indisponible pris en charge et vérification des contrastes/clavier dans le harness CSP existant.
+
+## Intégration des aperçus et de la palette vers main
+
+- Réunir les lots 3–5 déjà validés dans une PR visant main, après leurs revues fusionnées dans des branches intermédiaires. Aucun nouveau comportement ou lot supplémentaire.
