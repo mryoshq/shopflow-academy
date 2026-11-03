@@ -7,7 +7,9 @@
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "build:e2e:components": "vite build --config vite.evolutions.config.ts",
+    "test:e2e:components": "playwright test --config playwright.evolutions.config.ts"
   },
   "dependencies": {
     "@chakra-ui/react": "^3.0.0",

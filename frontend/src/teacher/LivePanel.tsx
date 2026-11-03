@@ -1,3 +1,4 @@
+import { ActivityTime } from "../shared/ActivityTime"
 import { locale, msg, t, tn } from "../i18n"
 import { useCallback, useEffect, useState } from "react"
 import { Badge, Box, Button, Flex, Grid, Heading, Input, NativeSelect, Stack, Table, Text, Textarea } from "@chakra-ui/react"
@@ -100,7 +101,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
               <Flex gap="2" align="center" wrap="wrap">
                 <Box w="2.5" h="2.5" rounded="full" flexShrink={0} bg={student.online ? "green.solid" : "app.border"} aria-hidden="true" />
                 <Text fontWeight="semibold" fontSize="sm">{student.name}</Text>
-                <Text fontSize="xs" color={student.online ? "green.fg" : "app.muted"}>{student.online ? t("en ligne") : student.seen_at ? t("vu à {{p0}}", { p0: hhmm(student.seen_at) }) : t("pas encore vu")}</Text>
+                <Text fontSize="xs" color={student.online ? "green.fg" : "app.muted"}>{student.online ? t("en ligne") : student.seen_at ? <ActivityTime value={student.seen_at} /> : t("pas encore vu")}</Text>
                 {student.help && <Badge colorPalette="saffron" variant="solid" rounded="full" size="sm">{t("Aide")}</Badge>}
                 {student.fast_attempts > 0 && <Badge colorPalette="saffron" variant="outline" rounded="full" size="sm">{t("Clics rapides :")}{" "}{student.fast_attempts}</Badge>}
               </Flex>
