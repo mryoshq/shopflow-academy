@@ -375,6 +375,21 @@
 - Tests composants isolés avec CSP du gateway, distincts de la stack applicative.
 - Aucun changement de barème, de données pédagogiques ou de schéma.
 
+## Aperçus protégés de code et PDF
+
+- Aperçu inerte des sources UTF-8 avec lignes numérotées et copie explicite.
+- Lecteur PDF.js local avec navigation, zoom, texte accessible, limites et nettoyage du worker.
+- Erreurs et refus d’accès conservent le téléchargement ; un chunk PDF indisponible reste contenu dans le dialogue.
+- Droits et CSP inchangés, tests isolés étendus et Node 22.13 minimum.
 ## Correctif de fixtures de dates
 
 - Utiliser des dates historiques pour tester Casablanca, avec minuit, Ramadan UTC0, fuseau navigateur distinct et changement de langue ; conserver le comportement IANA du produit.
+
+## Palette Catppuccin optionnelle
+
+- Préférence de navigateur indépendante du mode clair/sombre/système : Latte/Mocha, thème actuel conservé par défaut.
+- Bootstrap cohérent avant React, stockage indisponible pris en charge et vérification des contrastes/clavier dans le harness CSP existant.
+
+## Intégration des aperçus et de la palette vers main
+
+- Réunir les lots 3–5 déjà validés dans une PR visant main, après leurs revues fusionnées dans des branches intermédiaires. Aucun nouveau comportement ou lot supplémentaire.
