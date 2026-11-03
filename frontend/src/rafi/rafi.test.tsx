@@ -115,3 +115,28 @@ it("countdown, Morocco date from the server, and the English texts of the announ
     expect(timeLeft("2026-11-21T23:59:00Z", now)).toBe("in 3 d 14 h")
   } finally { setLanguage("fr") }
 })
+
+it("« Que faire maintenant ? » : a click shows the next step computed by the server, with its link", async () => {
+  const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+    if (url.startsWith("/api/v1/notifications?")) return json({ unread: 0, items: [] })
+    if (url.endsWith("/student/rafi")) return json({ sounds: false, next: { kind: "mission", title: "Choisir le modèle document", link: "#/mission/42", started: false } })
+    return json({ ok: true })
+  })
+  vi.stubGlobal("fetch", fetchMock)
+  wrap()
+  fireEvent.click(await screen.findByRole("button", { name: "Rafi, votre assistant" }))
+  const bubble = await screen.findByTestId("rafi-next")
+  expect(bubble).toHaveAttribute("role", "status")
+  expect(bubble).toHaveTextContent("Prochaine étape : « Choisir le modèle document ».")
+  expect(within(bubble).getByRole("link", { name: "Y aller" })).toHaveAttribute("href", "#/mission/42")
+  fireEvent.click(within(bubble).getByRole("button", { name: "Fermer" }))
+  expect(screen.queryByTestId("rafi-next")).toBeNull()
+})
+
+it("next step texts cover a started mission, a bonus, a deadline and nothing to do", async () => {
+  const { nextStepText } = await import("./Rafi")
+  expect(nextStepText({ kind: "mission", title: "A", link: "#/mission/1", started: true })).toBe("Reprenez « A » : vous l’avez commencée.")
+  expect(nextStepText({ kind: "bonus", title: "B", link: "#/mission/2", started: false })).toContain("Un bonus vous tente ? « B »")
+  expect(nextStepText({ kind: "deadline", title: "Conception", due_local: "2026-11-21T23:59", link: "#/projet" })).toContain("le 21/11 à 23:59")
+  expect(nextStepText({ kind: "done" })).toBe("Tout est à jour. Revoyez vos cartes ou profitez de la pause.")
+})
