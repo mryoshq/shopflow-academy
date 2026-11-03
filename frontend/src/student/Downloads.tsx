@@ -1,6 +1,9 @@
+import { useState } from "react"
+import { DownloadPreview } from "./DownloadPreview"
+import { codePreviewable, pdfPreviewable } from "./downloadPreviewData"
 import { locale, msg, t } from "../i18n"
-import { Box, Flex, Link, Stack, Text } from "@chakra-ui/react"
-import type { DownloadDisplay } from "../studioTypes"
+import { Box, Button, Flex, Link, Stack, Text } from "@chakra-ui/react"
+import type { DownloadDisplay, DownloadFile } from "../studioTypes"
 
 const TYPES: Record<string, string> = { pdf: "PDF", docx: "Word", zip: msg("Archive ZIP"), csv: "CSV", sql: "SQL", py: "Python", md: "Markdown" }
 
@@ -13,6 +16,7 @@ export function fileSize(bytes: number): string {
 
 /** ADR-0032: course files, served by the API to signed-in users of the class only. */
 export function Downloads({ data }: { data: DownloadDisplay }) {
+  const [preview, setPreview] = useState<DownloadFile | null>(null)
   return <Stack as="section" gap="2" aria-label={data.title || t("Fichiers à télécharger")}>
     {data.title && <Text fontWeight="semibold">{data.title}</Text>}
     <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">
@@ -27,11 +31,13 @@ export function Downloads({ data }: { data: DownloadDisplay }) {
             <Text fontWeight="semibold" overflowWrap="anywhere">{file.title}</Text>
             <Text fontSize="sm" color="app.muted">{t(TYPES[ext] ?? ext.toUpperCase())} · {fileSize(file.size)} · {file.name}</Text>
           </Stack>
+          {(codePreviewable(file) || pdfPreviewable(file)) && <Button variant="outline" onClick={() => setPreview(file)} aria-label={t("Aperçu de {{title}}", { title: file.title })}>{t("Aperçu")}</Button>}
           <Link href={`/api/v1/downloads/${encodeURIComponent(file.id)}`} download={file.name} minH="11" px="4" display="inline-flex" alignItems="center"
             rounded="md" bg="brand.solid" color="brand.contrast" fontWeight="semibold" _hover={{ textDecoration: "none", opacity: 0.92 }}
             aria-label={t("Télécharger {{title}} ({{p1}}, {{p2}})", { title: file.title, p1: t(TYPES[ext] ?? ext), p2: fileSize(file.size) })}>{t("Télécharger")}</Link>
         </Flex>
       })}
     </Stack>
+    {preview && <DownloadPreview key={preview.id} file={preview} onClose={() => setPreview(null)} />}
   </Stack>
 }
