@@ -218,6 +218,7 @@ function BlockCard({ block, missions, offset, navigate }: { block: DashboardBloc
   return <Box borderWidth="1px" borderColor="app.border" rounded="lg" p="4" bg={block.open ? "app.surface" : "app.sunken"} aria-label={t("Bloc : {{title}}", { title: block.title })} role="group">
     <Flex gap="3" align="center" wrap="wrap" mb={missions.length ? "3" : "0"}>
       <Text fontWeight="semibold" flex="1">{block.title}</Text>
+      {block.bonus_only && <Badge colorPalette="saffron" variant="outline" rounded="full">{t("Bonus facultatifs")}</Badge>}
       {block.open && (block.mission_count > 0 || block.bonus_count > 0 || (block.lesson_count ?? 0) > 0) && <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }} data-testid="block-points">{blockPoints(block)}</Text>}
       <Badge colorPalette={state.palette} variant={state.variant} rounded="full" gap="1">{block.done && <Icon name="check" size={12} />}{!block.open && <Icon name="clock" size={12} />}{state.label}</Badge>
     </Flex>

@@ -431,8 +431,10 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
         vids_here = [m["mission_version_id"] for m in block["missions"] if m["mission_version_id"] in defs]
         lessons = [vid for vid in vids_here if defs[vid].kind in UNGRADED_KINDS]
         core = [vid for vid in vids_here if not defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS] or lessons
+        bonus = [vid for vid in vids_here if defs[vid].bonus and defs[vid].kind not in UNGRADED_KINDS]
         blocks.append({"chapter_id": block["chapter_id"], "position": position, "title": block["title"], "module": block["module"],
-                       "open": block["chapter_id"] in opened, "core": core, "lessons": lessons})
+                       "open": block["chapter_id"] in opened, "core": core, "lessons": lessons, "bonus": bonus,
+                       "bonus_only": bool(bonus) and len(bonus) == len(block["missions"])})
     rows = []
     for student in students:
         cells = []
@@ -444,6 +446,8 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
             state = ("closed" if not available else "done" if block["core"] and done == len(block["core"])
                      else "in_progress" if started else "not_started")
             cells.append({"chapter_id": block["chapter_id"], "state": state, "done": done, "total": len(block["core"]), "for_student": mine and not block["open"],
+                          "bonus_done": sum(1 for vid in block["bonus"] if (student.id, vid) in solved),
+                          "bonus_total": len(block["bonus"]),
                           "lessons_read": sum(1 for vid in block["lessons"] if (student.id, vid) in solved), "lesson_count": len(block["lessons"])})
         here = presence[student.id]
         rows.append({"id": student.id, "name": display_name(student.username), "online": here["online"], "seen_at": here["seen_at"],
@@ -454,5 +458,5 @@ def live_grid(assignment_id: int, response: Response, auth: AuthContext = Depend
             "online_count": sum(1 for r in rows if r["online"]), "student_count": len(rows),
             # Badge « Demandes d'aide » of the teacher (same requests as the timeline's « en attente » list).
             "help_pending": len(pending_help),
-            "blocks": [{k: v for k, v in b.items() if k not in ("core", "lessons")} | {"mission_count": len(b["core"]), "lesson_count": len(b["lessons"])}
+            "blocks": [{k: v for k, v in b.items() if k not in ("core", "lessons", "bonus")} | {"mission_count": len(b["core"]), "lesson_count": len(b["lessons"])}
                        for b in blocks], "students": rows}

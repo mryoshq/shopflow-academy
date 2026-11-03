@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-03 — Blocs de bonus facultatifs (`codex/blocs-bonus-explicites`)
+
+- Badge « Bonus facultatifs » pour les blocs non vides composés exclusivement de missions bonus ; visible dans la frise, la grille en direct et le tableau de bord étudiant.
+- Le compteur enseignant de ces blocs devient « X / Y ont réussi tous les bonus » ; le détail et la grille indiquent les bonus réussis par élève. Les blocs mixtes gardent leur progression principale et leur détail bonus séparé.
+- Champs de lecture additifs fondés sur les réussites déjà enregistrées, y compris le report après republication. Aucun changement du moteur de notation, de `block_done`, des récompenses, notes finales ou exports ; aucune migration ni action en production.
+
 ## 2026-11-01 — Rafi sans fond et accueil animé (`codex/rafi-sans-fond`)
 
 - Rafi détouré par un masque CSS sur l'image originale ; plus de carré blanc, de bouton volume ni de bouton de minimisation. Les anciens états repliés sont ignorés.

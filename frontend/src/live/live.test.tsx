@@ -139,3 +139,12 @@ it("permission already granted without a Web Push subscription: the activation c
   expect(await screen.findByRole("button", { name: "Activer les notifications hors de l’onglet" })).toBeInTheDocument()
   Reflect.deleteProperty(navigator, "serviceWorker")
 })
+
+it("shows bonus progress without labelling optional work as required completion", async () => {
+  const data: Live = { ...live, blocks: [{ ...live.blocks[0], bonus_only: true }], students: live.students.map((student, i) => ({ ...student, cells: [{ ...student.cells[0], state: "not_started", done: 0, total: 0, bonus_done: i ? 1 : 2, bonus_total: 2 }] })) }
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => json(url.endsWith("/messages") ? [] : data)))
+  wrap(<LivePanel assignmentId={7} />)
+  expect(await screen.findByText("Bonus facultatifs")).toBeInTheDocument()
+  expect(screen.getByRole("img", { name: /demo.etudiant01, Bloc 1 : 2 \/ 2 bonus réussis/ })).toHaveTextContent("2 / 2 bonus réussis")
+  expect(screen.getByRole("img", { name: /demo.etudiant02, Bloc 1 : 1 \/ 2 bonus réussis/ })).not.toHaveTextContent("fait")
+})

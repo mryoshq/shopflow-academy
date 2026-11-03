@@ -1,5 +1,19 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-03 — Marqueur des bonus facultatifs (`codex/blocs-bonus-explicites`)
+
+[PR #86](https://github.com/mryoshq/shopflow-academy/pull/86), base `main`. Petit correctif de présentation : un bloc exclusivement bonus affichait « 0 terminé », même après réussite de ses activités facultatives. Il porte maintenant le badge « Bonus facultatifs » et un compteur nommé « ont réussi tous les bonus ». La grille et le survol indiquent les bonus réussis individuellement ; le tableau de bord étudiant porte le même badge. Les blocs mixtes gardent leur compteur principal. Les leçons et blocs vides ne reçoivent pas le badge. Les règles de complétion obligatoire et la notation restent inchangées.
+
+Branche créée depuis `github/main` 065e395, puis mise à jour par merge normal de `github/main` c301e8f pour conserver les aperçus et la palette de #85. Travail dans un worktree isolé ; données de test fictives uniquement.
+
+- PASS : backend, `python -m pytest -q tests/test_bonus_blocks.py tests/test_classroom.py tests/test_live.py tests/test_security_matrix.py tests/test_ownership.py tests/test_final_grade.py` avec l'environnement Python 3.12 local existant : 36 tests. Bonus jamais/partiellement/tous réussis, report après republication, mixte/leçons/vide, propriétaire/autre enseignant/étudiant, projection sans corrigés et points stockés inchangés.
+- PASS : frontend, `npm run test -- src/teacher/ClassTimeline.test.tsx src/teacher/BlockStudents.test.tsx src/live/live.test.tsx src/student/student.test.tsx src/i18n/keys.test.ts --maxWorkers=1` : 45 tests, clés FR/EN comprises.
+- PASS : `npm run build` (avertissement existant de taille du bundle) ; `python3 scripts/verify_kit.py` (vérification documentaire).
+- PASS : `SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm exec playwright -- test --config playwright.bonus.config.ts` : 4 cas, fixture API simulée sur 3201, clair/sombre à 390/1366 px, clavier/retour du focus, sans débordement ni violation axe WCAG A/AA. Captures fictives inspectées localement dans `frontend/test-results/` (ignoré).
+- CI distante : en attente sur la PR #86 vers `main`. La spec isolée est exclue des tests sur stack et appelée explicitement en CI, sur 3201.
+
+Aucun fichier privé, aucune migration, aucun import de cours, aucune fusion de PR ni aucun déploiement. Prochaine action unique : suivre la CI de la nouvelle PR bonus, puis laisser sa revue au propriétaire.
+
 ## 2026-11-01 — Rafi : silhouette et accueil (`codex/rafi-sans-fond`)
 
 Depuis `main` 752d718. Composant visuel partagé `RafiAvatar` : image originale masquée en CSS (aucun asset redessiné), yeux/paupières/réactions ; contrôles flottants supprimés. Grand Rafi au chargement réel de la session et dans le formulaire de connexion. Sons par défaut conservés, aucun son/API privée sur les écrans publics. Pas de modification du backend, de la notation ou de la production.

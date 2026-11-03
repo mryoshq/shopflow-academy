@@ -11,9 +11,9 @@ export const LIVE_REFRESH_MS = 5000
 const MAX_MESSAGE = 280
 
 export type LiveCell = { chapter_id: number; state: "closed" | "not_started" | "in_progress" | "done"; done: number; total: number; for_student: boolean
-  lessons_read?: number; lesson_count?: number }
+  lessons_read?: number; lesson_count?: number; bonus_done?: number; bonus_total?: number }
 export type LiveStudent = { id: number; name: string; online: boolean; seen_at: string | null; online_since?: string | null; mission: string | null; help: boolean; fast_attempts: number; cells: LiveCell[] }
-export type LiveBlock = { chapter_id: number; position: number; title: string; module: string; open: boolean; mission_count: number }
+export type LiveBlock = { chapter_id: number; position: number; title: string; module: string; open: boolean; mission_count: number; bonus_only?: boolean }
 export type Live = { generated_at: string; assignment_id: number; online_count: number; student_count: number; help_pending?: number; blocks: LiveBlock[]; students: LiveStudent[] }
 type Sent = { message_id: string; text: string; created_at: string; whole_class: boolean; read_count: number; recipients: { student: string; read_at: string | null }[] }
 export type PlanItem = { chapter_id: number; title: string; minutes: number; at: string; opened?: boolean }
@@ -93,6 +93,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
             <Table.ColumnHeader scope="col" position="sticky" left="0" bg="app.sunken" zIndex="1" minW="44">{t("Étudiant")}</Table.ColumnHeader>
             {blocks.map((block) => <Table.ColumnHeader key={block.chapter_id} scope="col" textAlign="center" minW="16" maxW="28" title={`${block.module} · ${block.title}`}>
               <Text fontSize="xs" lineClamp={2} fontWeight={block.open ? "bold" : "normal"}>{block.position}. {block.title}</Text>
+              {block.bonus_only && <Badge colorPalette="saffron" variant="outline" whiteSpace="normal" size="xs">{t("Bonus facultatifs")}</Badge>}
               {!block.open && <Text fontSize="2xs" color="app.muted">{t("fermé")}</Text>}
             </Table.ColumnHeader>)}
           </Table.Row></Table.Header>
@@ -110,8 +111,9 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
             {blocks.map((block) => {
               const cell = student.cells[index.get(block.chapter_id)!]
               const style = CELL[cell.state]
-              const text = cell.state === "done" ? t("fait") : cell.state === "in_progress" ? `${cell.done}/${cell.total}` : cell.state === "not_started" ? "—" : ""
-              const label = `${student.name}, ${block.title} : ${t(style.label)}${cell.state === "in_progress" ? t(" ({{done}} sur {{total}})", { done: cell.done, total: cell.total }) : ""}${cell.lesson_count ? t(", leçons lues {{p0}}/{{lesson_count}}", { p0: cell.lessons_read ?? 0, lesson_count: cell.lesson_count }) : ""}${cell.for_student ? t(", ouvert pour lui") : ""}`
+              const bonusLabel = t("{{done}} / {{total}} bonus réussis", { done: cell.bonus_done ?? 0, total: cell.bonus_total ?? 0 })
+              const text = block.bonus_only ? bonusLabel : cell.state === "done" ? t("fait") : cell.state === "in_progress" ? `${cell.done}/${cell.total}` : cell.state === "not_started" ? "—" : ""
+              const label = `${student.name}, ${block.title} : ${block.bonus_only ? bonusLabel : t(style.label)}${!block.bonus_only && cell.state === "in_progress" ? t(" ({{done}} sur {{total}})", { done: cell.done, total: cell.total }) : ""}${cell.lesson_count ? t(", leçons lues {{p0}}/{{lesson_count}}", { p0: cell.lessons_read ?? 0, lesson_count: cell.lesson_count }) : ""}${cell.for_student ? t(", ouvert pour lui") : ""}`
               const interactive = cell.state === "closed" || cell.for_student
               return <Table.Cell key={block.chapter_id} textAlign="center" p="1">
                 {interactive
@@ -121,7 +123,7 @@ export function LivePanel({ assignmentId }: { assignmentId: number }) {
                     {cell.for_student ? <Flex gap="1" align="center" fontSize="xs">{text || "—"}<Icon name="user" size={12} /></Flex> : <Icon name="lock" size={12} />}
                   </Button>
                   : <Flex role="img" aria-label={label} title={label} justify="center" align="center" gap="1" minH="7" rounded="md" bg={style.bg} color={style.fg} fontSize="xs" fontWeight="semibold">
-                    {cell.state === "done" && <Icon name="check" size={12} />}{text}
+                    {!block.bonus_only && cell.state === "done" && <Icon name="check" size={12} />}{text}
                   </Flex>}
               </Table.Cell>
             })}

@@ -1585,5 +1585,9 @@
   "Palette": "Palette",
   "Indépendante du mode clair, sombre ou système. Le thème habituel reste le choix par défaut.": "Independent of light, dark or system mode. The usual theme remains the default.",
   "Palette de couleurs": "Colour palette",
-  "Rapidfox (par défaut)": "Rapidfox (default)"
+  "Rapidfox (par défaut)": "Rapidfox (default)",
+  "Bonus facultatifs": "Optional bonuses",
+  "{{completed}} / {{total}} ont réussi tous les bonus": "{{completed}} / {{total}} have passed all bonuses",
+  "Bonus facultatifs du bloc {{title}} : {{completed}} sur {{total}} ont réussi tous les bonus": "Optional bonuses in block {{title}}: {{completed}} out of {{total}} have passed all bonuses",
+  "{{done}} / {{total}} bonus réussis": "{{done}} / {{total}} bonuses passed"
 }
