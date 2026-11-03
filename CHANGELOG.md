@@ -375,6 +375,12 @@
 - Tests composants isolés avec CSP du gateway, distincts de la stack applicative.
 - Aucun changement de barème, de données pédagogiques ou de schéma.
 
+## Aperçus protégés de code et PDF
+
+- Aperçu inerte des sources UTF-8 avec lignes numérotées et copie explicite.
+- Lecteur PDF.js local avec navigation, zoom, texte accessible, limites et nettoyage du worker.
+- Erreurs et refus d’accès conservent le téléchargement ; un chunk PDF indisponible reste contenu dans le dialogue.
+- Droits et CSP inchangés, tests isolés étendus et Node 22.13 minimum.
 ## Correctif de fixtures de dates
 
 - Utiliser des dates historiques pour tester Casablanca, avec minuit, Ramadan UTC0, fuseau navigateur distinct et changement de langue ; conserver le comportement IANA du produit.
