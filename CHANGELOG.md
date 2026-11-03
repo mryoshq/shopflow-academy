@@ -396,3 +396,6 @@
 - Accès individuel et versions équivalentes conservés, historique synthétique distinct des cent derniers essais.
 - Date de demande conservée après traitement et réponses UI tardives ignorées lors des changements de fiche.
 - Aucun changement de calcul de note ou de schéma.
+## Intégration des aperçus et de la palette vers main
+
+- Réunir les lots 3–5 déjà validés dans une PR visant main, après leurs revues fusionnées dans des branches intermédiaires. Aucun nouveau comportement ou lot supplémentaire.
