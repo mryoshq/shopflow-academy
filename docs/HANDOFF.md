@@ -2,7 +2,7 @@
 
 ## Bonus facultatifs — correctif de lecture (03/11/2026)
 
-Branche `codex/blocs-bonus-explicites`, issue de `github/main` 065e395 puis merge normal de c301e8f (#85). Nouvelle PR vers `main` à ouvrir ; aucune fusion de PR ni mise en production effectuée.
+Branche `codex/blocs-bonus-explicites`, issue de `github/main` 065e395 puis merge normal de c301e8f (#85). [PR #86](https://github.com/mryoshq/shopflow-academy/pull/86) vers `main` ; aucune fusion de PR ni mise en production effectuée.
 
 Fichiers : champs additifs dans `classroom.py`, `live.py`, `student.py` ; badge et libellés dans `ClassTimeline`, `LivePanel`, `BlockStudents`, `StudentDashboard` ; traductions FR/EN, tests API/Vitest et fixture navigateur isolée `playwright.bonus.config.ts` sur 3201. Les aperçus et la palette de main sont conservés.
 
