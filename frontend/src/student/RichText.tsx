@@ -3,7 +3,7 @@ import { Fragment, type ReactNode } from "react"
 import { Box, Heading, Stack, Table, Text } from "@chakra-ui/react"
 
 /**
- * Light formatting for course texts (ADR-0022): **bold**, `inline code`, "- " lists,
+ * Light formatting for course texts (ADR-0022): **bold**, *italic*, `inline code`, "- " lists,
  * "1. " numbered lists, simple Markdown tables and, when allowed, "### " subtitles. Everything
  * is rendered as React text nodes: no HTML is ever interpreted (no dangerouslySetInnerHTML).
  */
@@ -113,7 +113,13 @@ export function Inline({ text }: { text: string }) {
 
 function Bold({ text }: { text: string }) {
   const pieces = text.split(/\*\*(.+?)\*\*/g)
-  return <>{pieces.map((piece, index) => index % 2 ? <Text as="strong" key={index} fontWeight="semibold">{piece}</Text> : <Fragment key={index}>{piece}</Fragment>)}</>
+  return <>{pieces.map((piece, index) => index % 2 ? <Text as="strong" key={index} fontWeight="semibold"><Italic text={piece} /></Text> : <Italic key={index} text={piece} />)}</>
+}
+
+/** *italic* (or _italic_ between spaces); a lone asterisk, as in 2 * 3, stays literal. */
+function Italic({ text }: { text: string }) {
+  const pieces = text.split(/(?<![\w*])[*_](?=\S)(.+?)(?<=\S)[*_](?![\w*])/g)
+  return <>{pieces.map((piece, index) => index % 2 ? <Text as="em" key={index} fontStyle="italic">{piece}</Text> : <Fragment key={index}>{piece}</Fragment>)}</>
 }
 
 type Props = {

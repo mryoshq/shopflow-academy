@@ -1,6 +1,6 @@
 import { t } from "../i18n"
-import { useId, useState, type ReactNode } from "react"
-import { Box, Button, Flex, Grid, Stack, Text } from "@chakra-ui/react"
+import { useId, type ReactNode } from "react"
+import { Box, Flex, Grid, Stack, Text } from "@chakra-ui/react"
 import type { DisplayData, StudentDefinition } from "../studioTypes"
 
 export type LessonFields = Pick<StudentDefinition, "body" | "objective" | "hook" | "key_terms" | "example" | "practice">
@@ -44,25 +44,16 @@ export function LessonView({ definition, media, headingAs = "h2" }: { definition
 }
 
 /**
- * Wraps a media: its ``description`` is never shown in the lesson body. Screen readers get
- * it through ``aria-describedby``; sighted readers open « Description du média ».
+ * Wraps a media: its ``description`` is never shown on screen. Screen readers get it through
+ * ``aria-describedby`` on a visually hidden text.
  */
 export function DescribedMedia({ data, children }: { data: DisplayData | null; children: ReactNode }) {
   const id = useId()
-  const [open, setOpen] = useState(false)
   const description = data?.description?.trim()
   if (!data || !description) return <>{children}</>
   const descriptionId = `${id}-description`
-  return <Stack gap="2">
-    <Box role="group" aria-label={"title" in data && data.title ? t("Média : {{title}}", { title: data.title }) : t("Média")} aria-describedby={descriptionId}>{children}</Box>
-    <Button alignSelf="start" size="sm" variant="ghost" colorPalette="brand" px="1" h="auto" minH="8" py="1" whiteSpace="normal" textAlign="start"
-      aria-expanded={open} aria-controls={descriptionId} onClick={() => setOpen(!open)}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden="true" focusable="false"
-        style={{ transform: open ? "rotate(90deg)" : "none", transition: "transform 150ms" }}><path d="M9 6l6 6-6 6" /></svg>
-      {t("Description du média")}</Button>
-    {/* Hidden but still referenced: aria-describedby reads hidden content. */}
-    <Box id={descriptionId} hidden={!open} p="3" rounded="md" bg="app.sunken" fontSize="sm" maxW="72ch">
-      <RichText text={description} gap="2" />
-    </Box>
-  </Stack>
+  return <Box role="group" aria-label={"title" in data && data.title ? t("Média : {{title}}", { title: data.title }) : t("Média")} aria-describedby={descriptionId}>
+    {children}
+    <Box id={descriptionId} srOnly><RichText text={description} gap="2" /></Box>
+  </Box>
 }
