@@ -384,3 +384,8 @@
 ## Correctif de fixtures de dates
 
 - Utiliser des dates historiques pour tester Casablanca, avec minuit, Ramadan UTC0, fuseau navigateur distinct et changement de langue ; conserver le comportement IANA du produit.
+
+## Palette Catppuccin optionnelle
+
+- Préférence de navigateur indépendante du mode clair/sombre/système : Latte/Mocha, thème actuel conservé par défaut.
+- Bootstrap cohérent avant React, stockage indisponible pris en charge et vérification des contrastes/clavier dans le harness CSP existant.

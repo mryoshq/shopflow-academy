@@ -3,7 +3,7 @@ import { defineConfig, devices } from "@playwright/test"
 // Fully mocked component fixtures: no platform database or external origin is used.
 export default defineConfig({
   testDir: "./e2e",
-  testMatch: "evolutions-locales.spec.ts",
+  testMatch: ["evolutions-locales.spec.ts", "features.local.ts"],
   timeout: 60_000,
   expect: { timeout: 10_000 },
   workers: 1,
@@ -19,6 +19,8 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
     baseURL: "http://127.0.0.1:3197",
     locale: "fr-FR",
+    // Match the feature fixture's original settings: measure stable colours, not a dialog fade frame.
+    reducedMotion: "reduce",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     launchOptions: {

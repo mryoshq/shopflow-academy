@@ -1,7 +1,7 @@
 import { LANGUAGES, msg, setLanguage, t, useLanguage, type Lang } from "../i18n"
 import type { ReactNode } from "react"
 import { Box, Button, CloseButton, Dialog, Flex, HStack, Kbd, NativeSelect, Portal, RadioCard, Stack, Switch, Tabs, Text } from "@chakra-ui/react"
-import { useColorMode, type ThemeChoice } from "../useColorMode"
+import { useColorMode, useColorPalette, type ThemeChoice, type PaletteChoice } from "../useColorMode"
 import { displayName, roleLabel } from "./account"
 import { ZOOM_STEPS, modKey, nextZoom, percent, useReducedMotion, useZoom } from "./display"
 import { useSound } from "../rewards/celebrate"
@@ -100,9 +100,9 @@ const THEMES: { value: ThemeChoice; label: string; hint: string }[] = [
 ]
 
 /** Small drawing of the interface in each theme (decorative). */
-function ThemePreview({ value }: { value: ThemeChoice }) {
-  const light = { bg: "#FAF9F5", card: "#FFFFFF", line: "#E6E3D9", ink: "#141413", accent: "#146457" }
-  const dark = { bg: "#262624", card: "#30302E", line: "#3E3E3A", ink: "#FAF9F5", accent: "#B5532F" }
+function ThemePreview({ value, palette }: { value: ThemeChoice; palette: PaletteChoice }) {
+  const light = palette === "catppuccin" ? { bg: "#EFF1F5", card: "#EFF1F5", line: "#BCC0CC", ink: "#4C4F69", accent: "#8839EF" } : { bg: "#FAF9F5", card: "#FFFFFF", line: "#E6E3D9", ink: "#141413", accent: "#146457" }
+  const dark = palette === "catppuccin" ? { bg: "#1E1E2E", card: "#313244", line: "#585B70", ink: "#CDD6F4", accent: "#CBA6F7" } : { bg: "#262624", card: "#30302E", line: "#3E3E3A", ink: "#FAF9F5", accent: "#B5532F" }
   const half = (colours: typeof light, clip?: string) => <Box position="absolute" inset="0" bg={colours.bg} css={clip ? { clipPath: clip } : undefined}>
     <Box position="absolute" left="10%" top="16%" w="50%" h="10%" rounded="sm" bg={colours.ink} opacity="0.85" />
     <Box position="absolute" left="10%" top="38%" w="80%" h="46%" rounded="md" bg={colours.card} borderWidth="1px" borderColor={colours.line} />
@@ -116,12 +116,18 @@ function ThemePreview({ value }: { value: ThemeChoice }) {
 
 function Appearance({ student = false }: { student?: boolean }) {
   const { choice, choose } = useColorMode()
+  const { palette, choosePalette } = useColorPalette()
   const { zoom, setZoom } = useZoom()
   const { reduce, choose: chooseMotion } = useReducedMotion()
   const sound = useSound()
   const rafi = useRafiSound()
   const mod = modKey()
   return <Stack gap="0">
+    <Section title={t("Palette")} description={t("Indépendante du mode clair, sombre ou système. Le thème habituel reste le choix par défaut.")}>
+      <NativeSelect.Root><NativeSelect.Field aria-label={t("Palette de couleurs")} value={palette} onChange={(event) => choosePalette(event.target.value as PaletteChoice)}>
+        <option value="classic">{t("Rapidfox (par défaut)")}</option><option value="catppuccin">Catppuccin (Latte / Mocha)</option>
+      </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+    </Section>
     <Section title={t("Thème")} description={t("Mémorisé dans ce navigateur.")}>
       <RadioCard.Root value={choice} onValueChange={(event) => choose(event.value as ThemeChoice)} colorPalette="brand" variant="outline" size="sm">
         <RadioCard.Label srOnly>{t("Thème")}</RadioCard.Label>
@@ -130,10 +136,10 @@ function Appearance({ student = false }: { student?: boolean }) {
             css={{ transition: "border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease", "&:hover": { transform: "translateY(-1px)" } }}>
             <RadioCard.ItemHiddenInput />
             <RadioCard.ItemControl flexDirection="column" alignItems="stretch" gap="2" p="2.5">
-              <ThemePreview value={item.value} />
+              <ThemePreview value={item.value} palette={palette} />
               <Stack gap="0">
                 <RadioCard.ItemText fontSize="sm" fontWeight="semibold">{t(item.label)}</RadioCard.ItemText>
-                <RadioCard.ItemDescription fontSize="xs" color="app.muted">{t(item.hint)}</RadioCard.ItemDescription>
+                <RadioCard.ItemDescription fontSize="xs" color="app.muted">{palette === "catppuccin" && item.value !== "system" ? item.value === "light" ? "Latte" : "Mocha" : t(item.hint)}</RadioCard.ItemDescription>
               </Stack>
             </RadioCard.ItemControl>
           </RadioCard.Item>)}
