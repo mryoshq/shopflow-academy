@@ -1,5 +1,29 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Incident : un import en brouillon a fermé les blocs de la classe (04/11/2026)
+
+**Règle : un import en brouillon ne doit jamais toucher aux ouvertures de la classe.** Seul l'enseignant ouvre ou ferme un bloc.
+
+Ce qui s'est passé (production, session locale) :
+- 06:38 UTC : `course_md.py import` en brouillon. Les titres des modules avaient changé dans le dossier du cours, et des fichiers de modules avaient été renumérotés.
+- L'import retrouve un module par son titre (`backend/app/course_md.py`, boucle `compiled.modules`), puis un bloc par son module et son titre. Il a donc créé de nouveaux modules et blocs et y a déplacé les missions publiées. Il a ensuite supprimé les anciens blocs devenus vides (`db.delete(chapter)`).
+- `block_states.chapter_id` est en `ON DELETE CASCADE` : les 40 ouvertures de la classe ont disparu, et la version publiée (v7) pointait vers des blocs supprimés. Les élèves n'avaient plus aucun bloc ouvert, pendant environ 40 min ; personne n'était connecté.
+- Rien d'autre n'a été perdu : versions de mission, tentatives, badges et ouvertures de missions intacts. Le rejeu de la notation donne 0 écart.
+- `app.carryover` n'a rien signalé : il ne contrôle que les réussites, pas les ouvertures de blocs.
+
+Rétablissement, avec l'accord écrit du propriétaire :
+- publication de la v8 : réussites, points, bonus et leçons lues identiques avant et après, aucun élève en baisse ;
+- réouverture des 40 mêmes blocs dans la v8, retrouvés par les missions qu'ils contiennent, avec la fonction d'ouverture de l'application (`app.classroom.set_block`). Les notifications ont été coupées pour cette opération : 0 notification. Les dates d'ouverture d'origine sont reprises de la sauvegarde `academy-20261104-063441-avant-redeploiement-88.dump` ;
+- vue étudiant vérifiée : 12 modules dans l'ordre, 40 blocs ouverts, aucun bloc des axes 3 et 4 ni du bilan final.
+
+À corriger (PR à écrire, avec un test) :
+- l'import ne supprime jamais un bloc qui a un état d'ouverture ou qui figure dans une version publiée ;
+- un renommage de module ou de bloc conserve l'identifiant : rapprocher par les missions publiées qu'il contient, pas seulement par le titre ;
+- `app.carryover` signale aussi les blocs ouverts qui ne le seraient plus ;
+- en attendant, compter les blocs ouverts de la classe avant et après chaque import : s'il en manque, s'arrêter et prévenir le propriétaire.
+
+Prochaine action unique : écrire la PR de correction de l'import (conservation des blocs et de leurs ouvertures), sans fusion ni déploiement automatiques.
+
 ## Bonus facultatifs — correctif de lecture (03/11/2026)
 
 Branche `codex/blocs-bonus-explicites`, issue de `github/main` 065e395 puis merge normal de c301e8f (#85). [PR #86](https://github.com/mryoshq/shopflow-academy/pull/86) vers `main` ; aucune fusion de PR ni mise en production effectuée.
