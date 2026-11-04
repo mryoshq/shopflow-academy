@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-03 — Rafi : « Que faire maintenant ? » (`feat/rafi-que-faire`, ADR-0050)
+
+- Un clic sur Rafi donne la prochaine action : mission notée d'un bloc ouvert, sinon bonus, sinon prochaine échéance du projet, sinon « Tout est à jour ». Calcul serveur, titres visibles seulement.
+- Les annonces n'ouvrent la bulle d'elles-mêmes qu'une fois toutes les 10 minutes au plus.
+- Aucune migration. Après fusion : redéploiement habituel.
+
 ## 2026-11-03 — Cours plus lisible (`fix/cours-lisible`)
 
 - Textes du cours : *italique* (`*texte*` ou `_texte_`) en plus du gras, des listes et des tableaux ; un astérisque isolé (2 * 3) reste littéral.

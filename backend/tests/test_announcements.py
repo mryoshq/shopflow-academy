@@ -84,7 +84,7 @@ def test_countdown_and_class_wide_sounds(project):
     assert put(a, url, {"sounds": False}).status_code == 403
     assert put(teacher, url, {"sounds": False}).json() == {"sounds": False}
     assert a.get("/api/v1/student/dashboard").json()["rafi"] == {"sounds": False}
-    assert a.get("/api/v1/student/rafi").json() == {"sounds": False}
+    assert a.get("/api/v1/student/rafi").json()["sounds"] is False
     assert teacher.get("/api/v1/student/rafi").status_code == 403
     settings = teacher.get("/api/v1/teacher/notification-settings").json()
     assert "rafi_muted_assignments" not in settings
@@ -94,3 +94,31 @@ def test_countdown_and_class_wide_sounds(project):
     assert a.get("/api/v1/student/dashboard").json()["rafi"] == {"sounds": True}
     with Session(engine) as db:
         assert db.scalar(select(User.id).where(User.username == "demo.etudiant01"))
+
+
+def test_next_step_follows_open_blocks_then_bonus_then_deadline(project):
+    """ADR-0050 « Que faire maintenant ? »: only missions of open blocks, graded before bonus, never a closed title."""
+    clients, engine, assignment = project
+    a = clients["a"]
+    me = a.get("/api/v1/auth/me").json()["id"]
+    with Session(engine) as db:
+        klass = db.get(Assignment, assignment)
+        versions = db.scalars(select(MissionVersion.id).order_by(MissionVersion.id)).all()
+        defs = definitions(db, list(versions))
+    step = a.get("/api/v1/student/rafi").json()["next"]
+    assert step["kind"] == "mission" and step["started"] is False
+    assert step["link"].startswith("#/mission/")
+    target = int(step["link"].rsplit("/", 1)[1])
+    assert not defs[target].bonus or step["kind"] == "bonus"
+    # Once every mission is done, Rafi has nothing left in the open blocks.
+    with Session(engine) as db:
+        for vid, definition in defs.items():
+            db.add(MissionAttempt(user_id=me, course_release_id=klass.course_release_id, mission_version_id=vid,
+                                  idempotency_key=f"next-{vid}", answer={}, is_correct=True, points=definition.max_points))
+        db.commit()
+    assert a.get("/api/v1/student/rafi").json()["next"] == {"kind": "done"}
+    # With nothing to finish, the next project deadline comes first.
+    soon = datetime.combine((datetime.now(TZ) + timedelta(days=2)).date(), time(23, 59), TZ)
+    post(clients["teacher"], f"/api/v1/teacher/classes/{assignment}/project/milestones", {"title": "Conception", "due_at": soon.isoformat()})
+    after = a.get("/api/v1/student/rafi").json()["next"]
+    assert (after["kind"], after["title"], after["link"]) == ("deadline", "Conception", "#/projet")

@@ -172,4 +172,37 @@ student_router = APIRouter(prefix="/api/v1/student", tags=["announcements"])
 def student_rafi(response: Response, auth: AuthContext = Depends(require_student), db: Session = Depends(get_db)) -> dict:
     """What Rafi needs on the student side: may it play its sounds (class-wide switch of the teacher)."""
     response.headers["Cache-Control"] = "no-store"
-    return {"sounds": class_sounds(db, auth.user.id)}
+    return {"sounds": class_sounds(db, auth.user.id), "next": next_step(db, auth.user.id)}
+
+
+def next_step(db: Session, user_id: int, now: datetime | None = None) -> dict:
+    """« Que faire maintenant ? » (ADR-0050): the first unfinished graded mission of an open block, else an open
+    bonus, else the next project deadline, else nothing to do. Only titles the student can already see."""
+    from app.progress import mission_scores
+    from app.student import assigned_releases, flatten, statuses, visible_missions
+
+    bonus: dict | None = None
+    for release in assigned_releases(db, user_id):
+        missions = flatten(release.student_snapshot)
+        visible = visible_missions(db, user_id, release, missions)
+        if not visible:
+            continue
+        ids = [item["mission_version_id"] for item in visible]
+        state = statuses(db, user_id, missions, set(ids))
+        scores = mission_scores(db, user_id, ids)
+        for item in visible:
+            vid = item["mission_version_id"]
+            score = scores.get(vid)
+            if score is None or score.lesson or state[vid]["status"] not in ("not_started", "in_progress"):
+                continue
+            step = {"title": item["title"], "chapter": item.get("chapter"), "link": f"#/mission/{vid}",
+                    "started": state[vid]["status"] == "in_progress"}
+            if not score.bonus:
+                return {"kind": "mission", **step}
+            bonus = bonus or {"kind": "bonus", **step}
+    if bonus:
+        return bonus
+    deadline = next_deadline(db, user_id, now)
+    if deadline and not deadline["submitted"]:
+        return {"kind": "deadline", "title": deadline["title"], "due_local": deadline["due_local"], "link": deadline["link"]}
+    return {"kind": "done"}
