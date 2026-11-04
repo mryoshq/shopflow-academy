@@ -1103,6 +1103,35 @@ class ImportRefused(Exception):
     pass
 
 
+def holder_chapter(block_src, missions: dict, chapters: list, used: set):
+    """The existing, not yet reused chapter that holds most of this block's missions, or None."""
+    counts: dict[int, int] = {}
+    for item in block_src.items:
+        mission = missions.get(item.slug)
+        if mission is not None and mission.chapter_id not in used:
+            counts[mission.chapter_id] = counts.get(mission.chapter_id, 0) + 1
+    if not counts:
+        return None
+    best = max(counts, key=lambda cid: (counts[cid], -cid))
+    return next((c for c in chapters if c.id == best), None)
+
+
+def holder_module(module_src, missions: dict, chapters: list, modules: list, used: set):
+    """The existing, not yet reused module whose chapters hold most of this module's missions, or None."""
+    module_of = {c.id: c.module_id for c in chapters}
+    counts: dict[int, int] = {}
+    for block in module_src.blocks:
+        for item in block.items:
+            mission = missions.get(item.slug)
+            mid = module_of.get(mission.chapter_id) if mission is not None else None
+            if mid is not None and mid not in used:
+                counts[mid] = counts.get(mid, 0) + 1
+    if not counts:
+        return None
+    best = max(counts, key=lambda mid: (counts[mid], -mid))
+    return next((m for m in modules if m.id == best), None)
+
+
 def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> dict:
     """Create or update the course draft from a compiled source (one transaction).
 
@@ -1156,6 +1185,11 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     for mi, module_src in enumerate(compiled.modules):
         module = next((m for m in modules if m.title == module_src.title and m.id not in used_modules), None)
         if module is None:
+            # A renamed module keeps its identity: the old module that holds its missions (so its blocks keep their openings).
+            module = holder_module(module_src, missions, chapters, modules, used_modules)
+            if module is not None:
+                module.title = module_src.title
+        if module is None:
             module = CourseModule(course_id=course.id, title=module_src.title)
             db.add(module)
             db.flush()
@@ -1164,6 +1198,12 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
         module.sort_order, module.description = mi, module_src.description
         for bi, block_src in enumerate(module_src.blocks):
             chapter = next((c for c in chapters if c.module_id == module.id and c.title == block_src.title and c.id not in used_chapters), None)
+            if chapter is None:
+                # A renamed or moved block keeps its chapter, found by the missions it already holds: the class openings
+                # (block_states) hang on the chapter and would otherwise be deleted in cascade (incident of 04/11/2026).
+                chapter = holder_chapter(block_src, missions, chapters, used_chapters)
+                if chapter is not None:
+                    chapter.module_id, chapter.title = module.id, block_src.title
             if chapter is None:
                 chapter = Chapter(module_id=module.id, title=block_src.title)
                 db.add(chapter)
