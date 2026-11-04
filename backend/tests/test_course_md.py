@@ -314,3 +314,116 @@ def test_renamed_or_merged_modules_and_blocks_keep_their_class_openings(env, mon
             import_compiled(db, owner, compile_files({"00-cours.md": HEADER, "10-m.md": renamed}), publish=not draft_only)
             assert db.scalar(count) == before
     assert opened() == [("Axe 4 — Module renommé", "Partie 1", True), ("Axe 4 — Module renommé", "Partie 2", True)]
+
+
+@pytest.mark.parametrize("access", ["class", "individual"])
+def test_split_of_open_block_is_rejected_before_any_mutation(env, monkeypatch, access):
+    from os import environ
+
+    from app import course_md
+    from app.carryover import opening_message
+    from app.curriculum import course_tree
+    from app.models import AuditEvent, BlockUnlock, CourseRelease
+
+    clients, engine = env
+    monkeypatch.setattr(get_settings(), "main_course_slug", "cours-test")
+    monkeypatch.setattr(get_settings(), "class_label", "Classe fictive")
+    teacher, student = clients["teacher"], clients["a"]
+    source = compile_files({"00-cours.md": HEADER, "10-m.md": module(mission("m1"), mission("m2"))})
+    split = compile_files({"00-cours.md": HEADER, "20-m.md":
+                           module(mission("m1")) + "\n## Bloc : Nouvelle partie\n\n" + mission("m2")})
+    renamed = compile_files({"00-cours.md": HEADER, "30-nouveau.md":
+                             module(mission("m1"), mission("m2"), block="Bloc renommé")
+                             .replace("Module test", "Module renommé")})
+    assert not (source.errors or split.errors or renamed.errors)
+
+    with Session(engine, expire_on_commit=False) as db:
+        owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
+        result = import_compiled(db, owner, source, publish=True)
+        course_id = result["course_id"]
+        chapter = course_tree(db, db.get(Course, course_id), private=True)["modules"][0]["chapters"][0]
+        chapter_id = chapter["id"]
+        student_id = db.scalar(select(User.id).where(User.username == "demo.etudiant01"))
+    assignment = teacher.get("/api/v1/teacher/main").json()["assignment_id"]
+    if access == "class":
+        assert post(teacher, f"/api/v1/teacher/classes/{assignment}/blocks/{chapter_id}/open").status_code == 200
+    else:
+        assert post(teacher, f"/api/v1/teacher/classes/{assignment}/blocks/{chapter_id}/students/{student_id}/unlock").status_code == 200
+
+    def fingerprint(db):
+        return {
+            "draft": course_tree(db, db.get(Course, course_id), private=True),
+            "releases": [(r.id, r.snapshot_hash, r.student_snapshot) for r in db.scalars(select(CourseRelease).where(CourseRelease.course_id == course_id))],
+            "openings": list(db.execute(select(BlockState.id, BlockState.chapter_id, BlockState.opened_at, BlockState.closed_at))),
+            "individual": list(db.execute(select(BlockUnlock.id, BlockUnlock.chapter_id, BlockUnlock.created_at))),
+            "audit": db.scalar(select(func.count()).select_from(AuditEvent)),
+            "versions": db.scalar(select(func.count()).select_from(MissionVersion)),
+        }
+
+    def dashboard():
+        response = student.get("/api/v1/student/dashboard")
+        assert response.status_code == 200
+        payload = response.json()
+        [course] = [course for course in payload["courses"] if course["title"] == "Cours de test"]
+        [block] = [block for module in course["modules"] for block in module["blocks"]]
+        assert block["id"] == chapter_id and block["open"] is True
+        return payload
+
+    before_dashboard = dashboard()
+    with Session(engine, expire_on_commit=False) as db:
+        owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
+        before = fingerprint(db)
+        preview = import_compiled(db, owner, split, dry_run=True)
+        [conflict] = preview["opening_conflicts"]
+        assert preview["lost_successes"] == 0
+        assert conflict["title"] == "Bloc 1"
+        assert conflict["class_open"] == (access == "class")
+        assert conflict["personal_open"] == (access == "individual")
+        assert "Bloc 1" in opening_message(preview)
+        assert fingerprint(db) == before
+
+        def forbidden(_compiled):
+            pytest.fail("a refused import must not write media, downloads or lab data")
+
+        with monkeypatch.context() as guarded:
+            for effect in ("write_media", "write_downloads", "load_lab_dataset"):
+                guarded.setattr(course_md, effect, forbidden)
+            for publish in (False, True):
+                with pytest.raises(ImportRefused, match="des missions quittent le bloc ouvert"):
+                    import_compiled(db, owner, split, publish=publish)
+                assert not (db.new or db.dirty or db.deleted)
+                assert fingerprint(db) == before
+        rejected_dashboard = dashboard()
+        preview = import_compiled(db, owner, renamed, dry_run=True)
+        assert preview["opening_conflicts"] == [] and preview["preserved_openings"] == 1
+        import_compiled(db, owner, renamed)
+        after = fingerprint(db)
+        assert after["openings"] == before["openings"]
+        assert after["individual"] == before["individual"]
+        assert after["releases"] == before["releases"]
+        [chapter] = after["draft"]["modules"][0]["chapters"]
+        assert chapter["id"] == chapter_id and chapter["title"] == "Bloc renommé"
+
+    renamed_dashboard = dashboard()
+    fixture = environ.get("SHOPFLOW_IMPORT_GUARD_FIXTURE")
+    if access == "class" and fixture:
+        Path(fixture).write_text(json.dumps({
+            "before": before_dashboard, "refused": rejected_dashboard, "renamed": renamed_dashboard,
+        }, ensure_ascii=False), encoding="utf-8")
+
+    if access == "class":
+        from app.models import Chapter
+
+        assert post(teacher, f"/api/v1/teacher/classes/{assignment}/blocks/{chapter_id}/close").status_code == 200
+        merged = compile_files({"00-cours.md": HEADER, "40-m.md":
+                                module(mission("m1"), mission("m2"), block="Nouvelle partie")})
+        with Session(engine, expire_on_commit=False) as db:
+            owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
+            import_compiled(db, owner, split, publish=True)
+            result = import_compiled(db, owner, merged, publish=True)
+            old_block = db.get(Chapter, chapter_id)
+            assert old_block is not None
+            assert db.scalar(select(BlockState.closed_at).where(BlockState.chapter_id == chapter_id)) is not None
+            release = db.get(CourseRelease, result["published"]["release_id"])
+            [visible] = [block for module in release.student_snapshot["modules"] for block in module["chapters"]]
+            assert visible["id"] != chapter_id and visible["title"] == "Nouvelle partie"

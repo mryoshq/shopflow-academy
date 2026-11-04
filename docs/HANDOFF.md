@@ -1,5 +1,14 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Garde d’import des blocs ouverts (04/11/2026)
+
+Branche `codex/import-preserve-blocs-ouverts` vers `main`. Ce complément à la PR #91 compare les blocs des versions assignées au brouillon projeté, avant toute mutation. Il protège les ouvertures de classe et individuelles. Un renommage compatible conserve le bloc et ses dates. Si l’accès change, le message indique les blocs concernés. La publication directe du studio vérifie également la garde. Voir les commandes de vérification dans [PROGRESS.md](PROGRESS.md).
+
+### À faire en local
+
+Après revue et fusion humaines, vérifier la simulation `scripts/course_md.py import <dossier> --dry-run` avec la configuration locale. Relire la liste des ouvertures préservées et des conflits avant de demander une opération sur le cours réel. Déploiement et import du cours réel requièrent un accord du propriétaire.
+
+
 ## Incident : un import en brouillon a fermé les blocs de la classe (04/11/2026)
 
 **Règle : un import en brouillon ne doit jamais toucher aux ouvertures de la classe.** Seul l'enseignant ouvre ou ferme un bloc.
@@ -22,7 +31,7 @@ Rétablissement, avec l'accord écrit du propriétaire :
 - `app.carryover` signale aussi les blocs ouverts qui ne le seraient plus ;
 - en attendant, compter les blocs ouverts de la classe avant et après chaque import : s'il en manque, s'arrêter et prévenir le propriétaire.
 
-Prochaine action unique : écrire la PR de correction de l'import (conservation des blocs et de leurs ouvertures), sans fusion ni déploiement automatiques.
+La PR #91 a corrigé la réutilisation des identifiants. La branche ci-dessus ajoute la simulation et le refus avant mutation.
 
 ## Bonus facultatifs — correctif de lecture (03/11/2026)
 

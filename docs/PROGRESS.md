@@ -1,5 +1,15 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-04 — Garde d’import des blocs ouverts
+
+Branche `codex/import-preserve-blocs-ouverts`, base `main` (`ffb2e92`). Complément à #91. Une simulation Markdown ou `app.carryover` rapporte les ouvertures préservées et les conflits. L’import refuse les conflits avant de modifier les données, médias, téléchargements ou données de laboratoire. Les droits par classe et individu, dates, snapshots et identifiants sont vérifiés sur fixtures fictives. Le chemin Markdown `--publish` valide le brouillon, la publication et l’affectation dans une même transaction de la base Academy. La base de laboratoire et le stockage de fichiers restent des ressources distinctes.
+
+- PASS backend, depuis `backend` : `../.venv/bin/python -m pytest -q tests/test_course_md.py tests/test_carryover.py tests/test_republication.py tests/test_curriculum.py tests/test_classroom.py` (52 tests).
+- PASS frontend : `npm run test -- --maxWorkers=1` (245 tests) et `npm run build`.
+- PASS navigateur local : définir `SHOPFLOW_IMPORT_GUARD_FIXTURE` vers un chemin temporaire absolu lors du pytest ci-dessus, puis reprendre cette variable pour `npx playwright test --config playwright.import-guard.config.ts` depuis `frontend`. Quatre cas à 390 et 1366 px, clair et sombre, serveur 3204 et CSP du gateway. Les réponses du tableau de bord proviennent du test SQLite avant l’import, après refus et après renommage. Les douze captures sont dans `frontend/test-results/` (ignoré). Axe WCAG A/AA sans violation dans ces scénarios.
+- PASS `python3 scripts/verify_kit.py`. Production, cours réel et migrations de production non exécutés.
+
+
 ## 2026-11-03 — Marqueur des bonus facultatifs (`codex/blocs-bonus-explicites`)
 
 [PR #86](https://github.com/mryoshq/shopflow-academy/pull/86), base `main`. Petit correctif de présentation : un bloc exclusivement bonus affichait « 0 terminé », même après réussite de ses activités facultatives. Il porte maintenant le badge « Bonus facultatifs » et un compteur nommé « ont réussi tous les bonus ». La grille et le survol indiquent les bonus réussis individuellement ; le tableau de bord étudiant porte le même badge. Les blocs mixtes gardent leur compteur principal. Les leçons et blocs vides ne reçoivent pas le badge. Les règles de complétion obligatoire et la notation restent inchangées.

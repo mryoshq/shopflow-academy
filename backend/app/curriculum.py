@@ -229,6 +229,18 @@ def mission_course(db: Session, mission_id: int, auth: AuthContext) -> tuple[Mis
     return mission, course_or_404(db, module.course_id, auth)
 
 
+def historical_chapter_ids(db: Session, course_id: int, chapter_ids: list[int]) -> set[int]:
+    """Keep chapters referenced by released snapshots or classroom access records."""
+    from app.models import BlockState, BlockUnlock
+
+    snapshots = db.scalars(select(CourseRelease.student_snapshot).where(CourseRelease.course_id == course_id))
+    ids = {chapter["id"] for snapshot in snapshots for module in snapshot.get("modules", [])
+           for chapter in module.get("chapters", []) if chapter.get("id") is not None}
+    for model in (BlockState, BlockUnlock):
+        ids.update(db.scalars(select(model.chapter_id).where(model.chapter_id.in_(chapter_ids))))
+    return ids
+
+
 def course_tree(db: Session, course: Course, *, private: bool) -> dict:
     objectives = db.scalars(select(LearningObjective).where(LearningObjective.course_id == course.id).order_by(LearningObjective.id)).all()
     modules = db.scalars(select(CourseModule).where(CourseModule.course_id == course.id).order_by(CourseModule.sort_order, CourseModule.id)).all()
@@ -238,6 +250,7 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
         "objectives": [{"id": o.id, "code": o.code, "statement": o.statement, "category": o.category or ""} for o in objectives],
         "modules": [],
     }
+    historical = None
     for module in modules:
         module_data = {"id": module.id, "title": module.title, "description": module.description or "",
                        "sort_order": module.sort_order, "chapters": []}
@@ -245,6 +258,12 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
         for chapter in chapters:
             chapter_data = {"id": chapter.id, "title": chapter.title, "sort_order": chapter.sort_order, "missions": []}
             missions = db.scalars(select(Mission).where(Mission.chapter_id == chapter.id).order_by(Mission.sort_order, Mission.id)).all()
+            if not missions:
+                if historical is None:
+                    chapter_ids = list(db.scalars(select(Chapter.id).join(CourseModule).where(CourseModule.course_id == course.id)))
+                    historical = historical_chapter_ids(db, course.id, chapter_ids)
+                if chapter.id in historical:
+                    continue
             for mission in missions:
                 definition = mission.draft_definition
                 if definition and not private:
@@ -257,7 +276,8 @@ def course_tree(db: Session, course: Course, *, private: bool) -> dict:
                     "sort_order": mission.sort_order, "definition": definition,
                 })
             module_data["chapters"].append(chapter_data)
-        result["modules"].append(module_data)
+        if module_data["chapters"] or not chapters:
+            result["modules"].append(module_data)
     return result
 
 
@@ -587,12 +607,23 @@ def reusable_version(db: Session, mission_id: int, parsed: MissionDefinition) ->
 
 @router.post("/teacher/courses/{course_id}/publish", status_code=201)
 def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    result = stage_course_release(db, auth, course_id)
+    save(db)
+    return result
+
+
+def stage_course_release(db: Session, auth: AuthContext, course_id: int) -> dict:
     course = db.scalar(select(Course).where(Course.id == course_id).with_for_update())
     if course is None or course.created_by != auth.user.id:
         raise HTTPException(status_code=404, detail="course not found")
     if course.status == "archived":
         raise HTTPException(status_code=409, detail="course archived")
     tree, _ = validated_tree(db, course)
+    from app.carryover import opening_check, opening_message
+
+    openings = opening_check(db, course.id, tree)
+    if openings["opening_conflicts"]:
+        raise HTTPException(status_code=409, detail={"message": opening_message(openings), **openings})
     latest = db.scalar(select(func.max(CourseRelease.version)).where(CourseRelease.course_id == course.id)) or 0
     public = {key: value for key, value in tree.items() if key != "status"}
     public["version"] = latest + 1
@@ -623,7 +654,6 @@ def publish_course(course_id: int, auth: AuthContext = Depends(require_teacher_c
     flush(db)
     course.status = "published"
     audit(db, auth, "course.publish", "release", release.id)
-    save(db)
     return {"id": release.id, "course_id": course.id, "version": release.version, "snapshot_hash": release.snapshot_hash}
 
 

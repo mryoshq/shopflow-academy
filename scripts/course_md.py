@@ -203,7 +203,9 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("action", choices=["compile", "import"])
     parser.add_argument("folder", type=Path)
-    parser.add_argument("--publish", action="store_true", help="publier une nouvelle version pour la classe (accord écrit requis)")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="simuler l’import sans écrire en base")
+    mode.add_argument("--publish", action="store_true", help="publier une nouvelle version pour la classe (accord écrit requis)")
     parser.add_argument("--test-stack", action="store_true", help="viser la stack de test (port 3180)")
     parser.add_argument("--local", action="store_true", help="exécuter dans ce Python (développement, CI)")
     parser.add_argument("--skip-runs", action="store_true", help="ne pas exécuter les requêtes SQL et extraits Python")
@@ -211,8 +213,8 @@ def main() -> int:
     folder = args.folder.expanduser().resolve()
     if not folder.is_dir():
         raise SystemExit(f"Dossier introuvable : {folder}")
-    if args.publish and args.action != "import":
-        raise SystemExit("--publish ne s'utilise qu'avec import")
+    if (args.publish or args.dry_run) and args.action != "import":
+        raise SystemExit("--publish et --dry-run s’utilisent avec import")
     payload: dict = {"files": bundle(folder), "media": media_bundle(folder)}
     datasets = datasets_bundle(folder)
     if datasets:
@@ -223,7 +225,7 @@ def main() -> int:
         if sys.stdin.isatty():
             raise SystemExit("L'identité de l'enseignant se lit sur l'entrée standard : ... < .local/teacher-email.txt")
         payload["owner"] = sys.stdin.readline().strip()
-        command = ["import-bundle", *(["--publish"] if args.publish else [])]
+        command = ["import-bundle", *(["--publish"] if args.publish else ["--dry-run"] if args.dry_run else [])]
     code, output = run_backend(command, payload, args)
     target = (folder.parent if folder.name == "cours" else folder) / REPORT
     target.write_text(output.get("report", ""), encoding="utf-8")
@@ -238,7 +240,9 @@ def main() -> int:
         print(f"Brouillon {'créé' if done['created'] else 'mis à jour'} ({done['missions']} missions et leçons).")
         if done.get("published"):
             print(f"Version {done['published']['version']} publiée{' pour la classe, nouveaux blocs fermés' if done['assigned_to_class'] else ''}.")
-    if "import_error" in output:
+    if "preview_message" in output:
+        print(output["preview_message"])
+    if "import_error" in output and "preview_message" not in output:
         print(f"Import refusé : {output['import_error']}")
     print(f"Rapport : {target}")
     return code

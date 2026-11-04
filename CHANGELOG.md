@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — Garde d’import des blocs ouverts
+
+- La simulation indique les ouvertures préservées et liste les blocs dont l’accès serait modifié. L’import Markdown et la republication refusent ces modifications tant que les accès concernés restent ouverts.
+- Un renommage qui conserve les identifiants et les missions reste possible. Les chapitres historiques et leurs états sont préservés sans réapparaître comme blocs vides dans la version suivante.
+- Aucune migration.
+
 ## 2026-11-04 — Import : les blocs ouverts restent ouverts (`fix/import-garde-ouvertures`)
 
 - Un module ou un bloc renommé, déplacé ou fusionné garde son chapitre, retrouvé par les missions qu'il contient : les ouvertures de la classe (`block_states`) ne sont plus supprimées en cascade (incident du 04/11/2026).

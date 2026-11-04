@@ -56,6 +56,65 @@ def _places(tree: dict) -> list[tuple[tuple[int, int, str], dict]]:
     return result
 
 
+def opening_check(db: Session, course_id: int, proposed: dict) -> dict:
+    """Compare cohort access against the published snapshot, using stable chapter and mission IDs."""
+    from app.models import Assignment, BlockState, BlockUnlock, Cohort, CourseRelease
+
+    def chapters(tree):
+        return {chapter["id"]: (module.get("title", ""), chapter)
+                for module in tree.get("modules", []) for chapter in module.get("chapters", [])
+                if chapter.get("id") is not None}
+
+    def missions(chapter):
+        return {mission["id"] for mission in chapter.get("missions", []) if mission.get("id") is not None}
+
+    after = chapters(proposed)
+    assignments = db.execute(select(Assignment, CourseRelease, Cohort)
+                             .join(CourseRelease, CourseRelease.id == Assignment.course_release_id)
+                             .join(Cohort, Cohort.id == Assignment.cohort_id)
+                             .where(CourseRelease.course_id == course_id, CourseRelease.status == "published")
+                             .order_by(Assignment.id)).all()
+    cohorts = {cohort.id for _, _, cohort in assignments}
+    class_open = set(db.execute(select(BlockState.cohort_id, BlockState.chapter_id)
+                                .where(BlockState.cohort_id.in_(cohorts), BlockState.opened_at.is_not(None))).all())
+    personal_open = set(db.execute(select(BlockUnlock.cohort_id, BlockUnlock.chapter_id)
+                                   .where(BlockUnlock.cohort_id.in_(cohorts)).distinct()).all())
+    conflicts, preserved = [], 0
+    for assignment, release, cohort in assignments:
+        before = chapters(release.student_snapshot)
+        previously_published = {mid for _, chapter in before.values() for mid in missions(chapter)}
+        for chapter_id, (module_title, chapter) in before.items():
+            key = (cohort.id, chapter_id)
+            if key not in class_open and key not in personal_open:
+                continue
+            if chapter_id not in after:
+                reason = "le bloc perd son identifiant dans le parcours"
+            else:
+                previous = missions(chapter)
+                current = missions(after[chapter_id][1])
+                if previous - current:
+                    reason = "des missions quittent le bloc ouvert"
+                elif (current - previous) & previously_published:
+                    reason = "des missions publiées d’un autre bloc rejoignent le bloc ouvert"
+                else:
+                    preserved += 1
+                    continue
+            conflicts.append({"assignment_id": assignment.id, "cohort": cohort.label, "chapter_id": chapter_id,
+                              "module": module_title, "title": chapter.get("title", ""), "reason": reason,
+                              "class_open": key in class_open, "personal_open": key in personal_open})
+    return {"opening_conflicts": conflicts, "preserved_openings": preserved}
+
+
+def opening_message(result: dict) -> str:
+    if not result["opening_conflicts"]:
+        return f"Blocs ouverts préservés : {result['preserved_openings']}."
+    lines = ["Import ou republication refusé : des accès à des blocs ouverts seraient modifiés."]
+    lines.extend(f"- {item['cohort']} · {item['module']} · {item['title']} — {item['reason']}"
+                 for item in result["opening_conflicts"])
+    lines.append("Conservez ces blocs et leurs missions dans le brouillon, ou fermez-les explicitement avant de réessayer.")
+    return "\n".join(lines)
+
+
 def simulate(db: Session, course_id: int, new_tree: dict | None = None) -> dict:
     """Successes that the classes of this course would stop seeing if ``new_tree`` (default: the current
     draft) were published now. Nothing is written."""
@@ -101,20 +160,21 @@ def simulate(db: Session, course_id: int, new_tree: dict | None = None) -> dict:
                              "title": mission.get("title", ""), "reason": reason, "students": len(done),
                              "points": round(sum(item.best for item in done), 2)})
     return {"course_id": course_id, "classes": classes, "lost": lost,
-            "lost_successes": sum(item["students"] for item in lost), "lost_points": round(sum(item["points"] for item in lost), 2)}
+            "lost_successes": sum(item["students"] for item in lost), "lost_points": round(sum(item["points"] for item in lost), 2), **opening_check(db, course_id, tree)}
 
 
 def report(result: dict) -> str:
+    openings = opening_message(result)
     if not result["classes"]:
         return "Aucune classe n'a encore ce cours : rien ne peut être perdu."
     if not result["lost"]:
-        return "Aucune réussite ne serait perdue : la republication peut se faire."
+        return "Aucune réussite ne serait perdue.\n" + openings
     lines = [f"ATTENTION : {result['lost_successes']} réussite(s), {result['lost_points']} point(s) ne seraient plus affichés :"]
     for item in result["lost"]:
         lines.append(f"- {item['cohort']} · {item['title']} ({item['slug']}) : {item['reason']}, "
                      f"{item['students']} étudiant(s), {item['points']} point(s)")
     lines.append("Les tentatives restent en base ; seule la note affichée change. Vérifiez la notation avant de publier.")
-    return "\n".join(lines)
+    return "\n".join([*lines, openings])
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -132,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
         result = simulate(db, course.id)
         db.rollback()  # read-only, whatever happened
     print(report(result))
-    return 1 if result["lost"] else 0
+    return 1 if result["lost"] or result["opening_conflicts"] else 0
 
 
 if __name__ == "__main__":

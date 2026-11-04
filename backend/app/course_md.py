@@ -1116,9 +1116,8 @@ def holder_chapter(block_src, missions: dict, chapters: list, used: set):
     return next((c for c in chapters if c.id == best), None)
 
 
-def holder_module(module_src, missions: dict, chapters: list, modules: list, used: set):
+def holder_module(module_src, missions: dict, module_of: dict, modules: list, used: set):
     """The existing, not yet reused module whose chapters hold most of this module's missions, or None."""
-    module_of = {c.id: c.module_id for c in chapters}
     counts: dict[int, int] = {}
     for block in module_src.blocks:
         for item in block.items:
@@ -1132,21 +1131,58 @@ def holder_module(module_src, missions: dict, chapters: list, modules: list, use
     return next((m for m in modules if m.id == best), None)
 
 
-def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> dict:
+def import_layout(compiled, modules, chapters, missions):
+    """Resolve the existing identities once, without touching ORM rows."""
+    used_modules, used_chapters = set(), set()
+    module_of = {chapter.id: chapter.module_id for chapter in chapters}
+    layout = []
+    for module_src in compiled.modules:
+        module = next((m for m in modules if m.title == module_src.title and m.id not in used_modules), None)
+        if module is None:
+            module = holder_module(module_src, missions, module_of, modules, used_modules)
+        if module is not None:
+            used_modules.add(module.id)
+        blocks = []
+        for block_src in module_src.blocks:
+            chapter = next((c for c in chapters if module is not None and module_of[c.id] == module.id
+                            and c.title == block_src.title and c.id not in used_chapters), None)
+            if chapter is None:
+                chapter = holder_chapter(block_src, missions, chapters, used_chapters)
+            if chapter is not None:
+                used_chapters.add(chapter.id)
+                module_of[chapter.id] = module.id if module is not None else None
+            blocks.append(chapter)
+        layout.append((module, blocks))
+    return layout
+
+
+def layout_tree(compiled, layout, missions):
+    return {"modules": [{"chapters": [
+        {"id": chapter.id if chapter is not None else None, "missions": [
+            {"id": missions[item.slug].id if item.slug in missions else None,
+             "slug": item.slug, "definition": item.definition}
+            for item in block.items]}
+        for block, chapter in zip(module_src.blocks, blocks, strict=True)]}
+        for module_src, (_, blocks) in zip(compiled.modules, layout, strict=True)]}
+
+
+def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False, dry_run: bool = False) -> dict:
     """Create or update the course draft from a compiled source (one transaction).
 
     Matching: modules by title, blocks by (module, title), missions by slug. A mission that
     was already published cannot disappear from the source (its attempts must stay valid).
     Nothing is published unless ``publish``; no block is ever opened here.
     """
+    from fastapi import HTTPException
     from sqlalchemy import select
 
     from app.auth import AuthContext
+    from app.carryover import opening_check, opening_message, simulate
     from app.classroom import assign_to_class, main_cohort, setup_class
     from app.config import get_settings
     from app.course_io import validate_document
-    from app.curriculum import publish_course
-    from app.models import AuditEvent, Chapter, Course, CourseModule, LearningObjective, Mission, MissionVersion
+    from app.curriculum import historical_chapter_ids, stage_course_release
+    from app.models import AuditEvent, Chapter, Course, CourseModule, CourseRelease, LearningObjective, Mission, MissionVersion
 
     if compiled.errors:
         raise ImportRefused("la compilation a des erreurs : rien n'a été importé")
@@ -1155,16 +1191,45 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     if parsed is None:
         raise ImportRefused("document invalide : " + "; ".join(f"{p['path']} : {p['message']}" for p in problems[:5]))
     info = compiled.course
-    course = db.scalar(select(Course).where(Course.slug == info["slug"]))
+    query = select(Course).where(Course.slug == info["slug"])
+    course = db.scalar(query if dry_run else query.with_for_update())
     created_course = course is None
+    if course is not None and course.created_by != owner.id:
+        raise ImportRefused("ce cours appartient à un autre compte enseignant")
+    if course is not None and course.status == "archived":
+        raise ImportRefused("ce cours est archivé")
+
+    modules = list(db.scalars(select(CourseModule).where(CourseModule.course_id == course.id).order_by(CourseModule.id))) if course else []
+    chapters = list(db.scalars(select(Chapter).where(Chapter.module_id.in_([m.id for m in modules])).order_by(Chapter.id))) if modules else []
+    missions = {m.slug: m for m in db.scalars(select(Mission).where(Mission.chapter_id.in_([c.id for c in chapters])))} if chapters else {}
+    layout = import_layout(compiled, modules, chapters, missions)
+    tree = layout_tree(compiled, layout, missions)
+    protected_chapters = set()
+    opening_refusal = ""
+    if course is not None:
+        if dry_run:
+            return simulate(db, course.id, tree)
+        openings = opening_check(db, course.id, tree)
+        if openings["opening_conflicts"]:
+            opening_refusal = opening_message(openings)
+        # Old snapshots still reference their original chapter IDs after draft reorganisation.
+        protected_chapters = historical_chapter_ids(db, course.id, [chapter.id for chapter in chapters])
+    elif dry_run:
+        return {"classes": [], "lost": [], "lost_successes": 0, "lost_points": 0,
+                "opening_conflicts": [], "preserved_openings": 0}
+
+    imported_slugs = {item.slug for item in compiled.items()}
+    removed = [mission for slug, mission in missions.items() if slug not in imported_slugs]
+    if removed and (published_slug := db.scalar(select(Mission.slug).join(MissionVersion)
+                     .where(Mission.id.in_([mission.id for mission in removed])).order_by(Mission.id).limit(1))) is not None:
+        removal = f"la mission `{published_slug}` a déjà été publiée : elle ne peut pas être retirée du cours"
+        raise ImportRefused(f"{opening_refusal}\n{removal}" if opening_refusal else removal)
+    if opening_refusal:
+        raise ImportRefused(opening_refusal)
     if course is None:
         course = Course(slug=info["slug"], title=info["title"], description=info["description"], created_by=owner.id)
         db.add(course)
         db.flush()
-    elif course.created_by != owner.id:
-        raise ImportRefused("ce cours appartient à un autre compte enseignant")
-    elif course.status == "archived":
-        raise ImportRefused("ce cours est archivé")
     course.title, course.description = info["title"], info["description"]
 
     objectives = {o.code: o for o in db.scalars(select(LearningObjective).where(LearningObjective.course_id == course.id))}
@@ -1178,39 +1243,21 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
             db.add(objectives[item["code"]])
     db.flush()
 
-    modules = list(db.scalars(select(CourseModule).where(CourseModule.course_id == course.id)))
-    chapters = list(db.scalars(select(Chapter).where(Chapter.module_id.in_([m.id for m in modules])))) if modules else []
-    missions = {m.slug: m for m in db.scalars(select(Mission).where(Mission.chapter_id.in_([c.id for c in chapters])))} if chapters else {}
     used_modules, used_chapters, placed = set(), set(), {}
-    for mi, module_src in enumerate(compiled.modules):
-        module = next((m for m in modules if m.title == module_src.title and m.id not in used_modules), None)
-        if module is None:
-            # A renamed module keeps its identity: the old module that holds its missions (so its blocks keep their openings).
-            module = holder_module(module_src, missions, chapters, modules, used_modules)
-            if module is not None:
-                module.title = module_src.title
+    for mi, (module_src, (module, blocks)) in enumerate(zip(compiled.modules, layout, strict=True)):
         if module is None:
             module = CourseModule(course_id=course.id, title=module_src.title)
             db.add(module)
             db.flush()
-            modules.append(module)
         used_modules.add(module.id)
-        module.sort_order, module.description = mi, module_src.description
-        for bi, block_src in enumerate(module_src.blocks):
-            chapter = next((c for c in chapters if c.module_id == module.id and c.title == block_src.title and c.id not in used_chapters), None)
-            if chapter is None:
-                # A renamed or moved block keeps its chapter, found by the missions it already holds: the class openings
-                # (block_states) hang on the chapter and would otherwise be deleted in cascade (incident of 04/11/2026).
-                chapter = holder_chapter(block_src, missions, chapters, used_chapters)
-                if chapter is not None:
-                    chapter.module_id, chapter.title = module.id, block_src.title
+        module.title, module.sort_order, module.description = module_src.title, mi, module_src.description
+        for bi, (block_src, chapter) in enumerate(zip(module_src.blocks, blocks, strict=True)):
             if chapter is None:
                 chapter = Chapter(module_id=module.id, title=block_src.title)
                 db.add(chapter)
                 db.flush()
-                chapters.append(chapter)
             used_chapters.add(chapter.id)
-            chapter.sort_order = bi
+            chapter.module_id, chapter.title, chapter.sort_order = module.id, block_src.title, bi
             for xi, item in enumerate(block_src.items):
                 mission = missions.get(item.slug)
                 if mission is None:
@@ -1220,10 +1267,7 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
                 mission.chapter_id, mission.title, mission.sort_order = chapter.id, item.title, xi
                 placed[item.slug] = (mission, item)
     db.flush()
-    removed = [m for slug, m in missions.items() if slug not in placed]
     for mission in removed:
-        if db.scalar(select(MissionVersion.id).where(MissionVersion.mission_id == mission.id).limit(1)) is not None:
-            raise ImportRefused(f"la mission `{mission.slug}` a déjà été publiée : elle ne peut pas être retirée du cours")
         db.delete(mission)
     db.flush()
     for slug, (mission, item) in placed.items():
@@ -1231,7 +1275,7 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
                 "prerequisite_mission_ids": [placed[s][0].id for s in item.prerequisite_slugs]}
         mission.draft_definition = MissionDefinition.model_validate(body).model_dump()
     for chapter in chapters:
-        if chapter.id not in used_chapters and db.scalar(select(Mission.id).where(Mission.chapter_id == chapter.id).limit(1)) is None:
+        if chapter.id not in used_chapters and chapter.id not in protected_chapters and db.scalar(select(Mission.id).where(Mission.chapter_id == chapter.id).limit(1)) is None:
             db.delete(chapter)
     db.flush()
     for module in modules:
@@ -1240,25 +1284,27 @@ def import_compiled(db, owner, compiled: Compiled, *, publish: bool = False) -> 
     stale = [o for code, o in objectives.items() if code not in {x["code"] for x in compiled.objectives}]
     for objective in stale:
         db.delete(objective)
-    write_media(compiled)
-    write_downloads(compiled)
-    lab_note = load_lab_dataset(compiled)
-    db.add(AuditEvent(actor_id=owner.id, action="course.import_md", resource_type="course", resource_id=course.id,
-                      details={"files": compiled.files, "missions": len(placed), "removed_drafts": len(removed)}))
-    db.commit()
     result = {"course_id": course.id, "slug": course.slug, "created": created_course, "missions": len(placed),
-              "published": None, "assigned_to_class": False, "lab": lab_note}
+              "published": None, "assigned_to_class": False}
     if publish:
         auth = AuthContext(user=owner, session=None)  # type: ignore[arg-type]
-        published = publish_course(course.id, auth, db)
+        try:
+            published = stage_course_release(db, auth, course.id)
+        except HTTPException as exc:
+            db.rollback()
+            detail = exc.detail.get("message") if isinstance(exc.detail, dict) else exc.detail
+            raise ImportRefused(str(detail)) from exc
         result["published"] = {"release_id": published["id"], "version": published["version"]}
         if course.slug == get_settings().main_course_slug:
             cohort = main_cohort(db) or setup_class(db, owner)
-            from app.models import CourseRelease
-
             assign_to_class(db, auth, db.get(CourseRelease, published["id"]), cohort)
-            db.commit()
             result["assigned_to_class"] = True
+    write_media(compiled)
+    write_downloads(compiled)
+    result["lab"] = load_lab_dataset(compiled)
+    db.add(AuditEvent(actor_id=owner.id, action="course.import_md", resource_type="course", resource_id=course.id,
+                      details={"files": compiled.files, "missions": len(placed), "removed_drafts": len(removed)}))
+    db.commit()
     return result
 
 
@@ -1331,7 +1377,9 @@ def main() -> None:
     sub.add_parser("compile-bundle", help="compiler un lot JSON lu sur l'entrée standard")
     sub.add_parser("list-runs", help="lister les exécutions à faire sur le Mac (lot JSON sur l'entrée standard)")
     bundle = sub.add_parser("import-bundle", help="importer un lot JSON lu sur l'entrée standard (brouillon)")
-    bundle.add_argument("--publish", action="store_true", help="publier une nouvelle version pour la classe")
+    mode = bundle.add_mutually_exclusive_group()
+    mode.add_argument("--dry-run", action="store_true", help="simuler l’import sans écrire en base")
+    mode.add_argument("--publish", action="store_true", help="publier une nouvelle version pour la classe")
     args = parser.parse_args()
     if args.command == "compile":
         compiled = compile_dir(args.folder)
@@ -1368,7 +1416,15 @@ def main() -> None:
         with Session(get_engine(), expire_on_commit=False) as db:
             owner = owner_from(db, str(payload.get("owner") or ""))
             try:
-                output["import"] = import_compiled(db, owner, compiled, publish=args.publish)
+                if args.dry_run:
+                    from app.carryover import opening_message, report
+
+                    output["preview"] = preview = import_compiled(db, owner, compiled, dry_run=True)
+                    output["preview_message"] = report(preview)
+                    if preview["opening_conflicts"]:
+                        output["import_error"] = opening_message(preview)
+                else:
+                    output["import"] = import_compiled(db, owner, compiled, publish=args.publish)
             except ImportRefused as exc:
                 db.rollback()
                 output["import_error"] = str(exc)
@@ -1380,7 +1436,9 @@ def main() -> None:
             extra.append(done["lab"])
         if done["published"]:
             extra.append(f"version {done['published']['version']} publiée{' pour la classe (nouveaux blocs fermés)' if done['assigned_to_class'] else ''}")
-    if "import_error" in output:
+    if "preview_message" in output:
+        extra.append(output["preview_message"])
+    if "import_error" in output and "preview_message" not in output:
         extra.append(f"import refusé : {output['import_error']}")
     output["report"] = report_markdown(compiled, extra)
     print(json.dumps(output, ensure_ascii=False))
