@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-03 — Cours plus lisible (`fix/cours-lisible`)
+
+- Textes du cours : *italique* (`*texte*` ou `_texte_`) en plus du gras, des listes et des tableaux ; un astérisque isolé (2 * 3) reste littéral.
+- La description d'un média n'est plus affichée ni proposée en bouton : elle reste lue par les lecteurs d'écran (`aria-describedby`, texte masqué visuellement).
+- Aucun backend, aucune migration. Après fusion : redéploiement habituel, puis recharger la page.
+
 ## 2026-11-03 — Blocs de bonus facultatifs (`codex/blocs-bonus-explicites`)
 
 - Badge « Bonus facultatifs » pour les blocs non vides composés exclusivement de missions bonus ; visible dans la frise, la grille en direct et le tableau de bord étudiant.

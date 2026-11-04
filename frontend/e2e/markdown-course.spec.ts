@@ -172,7 +172,7 @@ test("every mission of the Markdown course passes axe in the dark theme", async 
 })
 
 for (const theme of ["light", "dark"] as const) {
-  test(`structured lesson (ADR-0022) in the ${theme} theme: reading order, media description on request, axe`, async ({ browser }) => {
+  test(`structured lesson (ADR-0022) in the ${theme} theme: reading order, media description for screen readers, axe`, async ({ browser }) => {
     const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 }, reducedMotion: "reduce" })
     await context.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
     const student = await context.newPage()
@@ -195,15 +195,14 @@ for (const theme of ["light", "dark"] as const) {
     expect(order.every((position) => position >= 0)).toBe(true)
     expect([...order].sort((a, b) => a - b)).toEqual(order)
 
-    // The media description is never in the lesson text; screen readers get it, sighted readers open it.
+    // The media description is never shown on screen; screen readers get it through aria-describedby.
     const media = student.getByRole("group", { name: "Média : Jointure orders et order_items : 70 DH deviennent 100 DH" })
     await expect(media).toHaveAccessibleDescription(/Animation en quatre étapes/)
-    await expect(student.getByText(/Animation en quatre étapes/)).toBeHidden()
+    const description = student.getByText(/Animation en quatre étapes/)
+    expect(await description.evaluate((node) => { const box = node.closest("[id]")!.getBoundingClientRect(); return box.width * box.height })).toBeLessThanOrEqual(1)
+    await expect(student.getByRole("button", { name: "Description du média" })).toHaveCount(0)
     expect(await serious(student)).toEqual([])
     await student.screenshot({ path: `${shots}/10-lecon-structuree-${theme === "light" ? "clair" : "sombre"}.png`, fullPage: true, animations: "disabled" })
-    await student.getByRole("button", { name: "Description du média" }).click()
-    await expect(student.getByText(/Animation en quatre étapes/)).toBeVisible()
-    expect(await serious(student)).toEqual([])
     await context.close()
   })
 }
