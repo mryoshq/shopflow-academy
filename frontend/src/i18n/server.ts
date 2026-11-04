@@ -24,6 +24,8 @@ const EN: Rule[] = [
     `It’s today: “${title}” is due at ${time}. You’re almost there!`],
   [/^Le bloc « (.+) » vous attend : il reste des missions à terminer\. On continue \?$/, (title) =>
     `Block “${title}” is waiting for you: some missions are still to finish. Shall we carry on?`],
+  [/^Il vous reste (\d+) missions? dans les blocs ouverts\.$/, (n) => `You have ${n} mission${n === "1" ? "" : "s"} left in the open blocks.`],
+  [/^Bravo, vous avez terminé le bloc « (.+) »\.$/, (title) => `Well done, you finished block “${title}”.`],
   [/^Nouveau badge : (.+)$/, (label) => `New badge: ${rewardText(label)}`],
   [/^Objectif de classe atteint : (.+)\. Bravo à toutes et à tous !$/, (text) => `Class goal reached: ${lowerFirst(rewardText(capitalFirst(text)))}. Well done, everyone!`],
   [/^Objectif de classe : (\d+) % ! (.+)\. Continuez ensemble\.$/, (percent, text) => `Class goal: ${percent} %! ${rewardText(text)}. Keep going together.`],

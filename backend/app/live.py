@@ -19,7 +19,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -28,7 +28,7 @@ from app.auth import AuthContext, aware, display_name, require_member, require_m
 from app.curriculum_schema import HTML_TAG
 from app.database import get_db
 from app.models import (
-    Assignment, BlockState, BlockUnlock, Course, CourseRelease, HelpRequest, MissionAttempt, Notification, NotificationSetting,
+    Assignment, BlockState, BlockUnlock, Course, CourseRelease, Enrollment, HelpRequest, MissionAttempt, Notification, NotificationSetting,
     Presence, PushSubscription, User,
 )
 
@@ -94,22 +94,35 @@ def notification_out(item: Notification, names: dict[int, str] | None = None) ->
             "created_at": aware(item.created_at).isoformat(), "read_at": aware(item.read_at).isoformat() if item.read_at else None}
 
 
+def notification_access(auth: AuthContext):
+    recipient = Notification.recipient_id == auth.user.id
+    if auth.user.role != "student":
+        return recipient
+    from app.announcements import SCOPED_RAFI_KINDS, active_classes
+
+    assignments = (active_classes().with_only_columns(Assignment.id)
+                   .join(Enrollment, Enrollment.cohort_id == Assignment.cohort_id)
+                   .where(Enrollment.user_id == auth.user.id))
+    return recipient & or_(Notification.kind.not_in(SCOPED_RAFI_KINDS),
+                           Notification.data["assignment_id"].as_integer().in_(assignments))
+
+
 @router.get("/notifications")
 def my_notifications(response: Response, after: int = Query(0, ge=0), limit: int = Query(50, ge=1, le=100),
                      auth: AuthContext = Depends(require_member), db: Session = Depends(get_db)) -> dict:
     """The current user's notifications, newest first (``after``: only newer than this id)."""
     response.headers["Cache-Control"] = "no-store"
-    query = select(Notification).where(Notification.recipient_id == auth.user.id, Notification.id > after)
+    query = select(Notification).where(notification_access(auth), Notification.id > after)
     items = db.scalars(query.order_by(Notification.id.desc()).limit(limit)).all()
-    unread = db.scalar(select(func.count(Notification.id)).where(Notification.recipient_id == auth.user.id, Notification.read_at.is_(None))) or 0
+    unread = db.scalar(select(func.count(Notification.id)).where(notification_access(auth), Notification.read_at.is_(None))) or 0
     senders = {u.id: display_name(u.username) for u in db.scalars(select(User).where(User.id.in_({i.sender_id for i in items if i.sender_id})))}
     return {"unread": unread, "items": [notification_out(item, senders) for item in items]}
 
 
 @router.post("/notifications/{notification_id}/read")
 def read_notification(notification_id: int, auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
-    item = db.get(Notification, notification_id)
-    if item is None or item.recipient_id != auth.user.id:
+    item = db.scalar(select(Notification).where(Notification.id == notification_id, notification_access(auth)))
+    if item is None:
         raise HTTPException(status_code=404, detail="notification not found")
     if item.read_at is None:
         item.read_at = utcnow()
@@ -121,7 +134,7 @@ def read_notification(notification_id: int, auth: AuthContext = Depends(require_
 def read_all(auth: AuthContext = Depends(require_member_csrf), db: Session = Depends(get_db)) -> dict:
     now = utcnow()
     count = 0
-    for item in db.scalars(select(Notification).where(Notification.recipient_id == auth.user.id, Notification.read_at.is_(None))):
+    for item in db.scalars(select(Notification).where(notification_access(auth), Notification.read_at.is_(None))):
         item.read_at, count = now, count + 1
     db.commit()
     return {"read": count}
@@ -146,7 +159,7 @@ def heartbeat(payload: HeartbeatInput, auth: AuthContext = Depends(require_membe
             row.online_since = now
         row.seen_at, row.mission_version_id = now, payload.mission_version_id
     db.commit()
-    unread = db.scalar(select(func.count(Notification.id)).where(Notification.recipient_id == auth.user.id, Notification.read_at.is_(None))) or 0
+    unread = db.scalar(select(func.count(Notification.id)).where(notification_access(auth), Notification.read_at.is_(None))) or 0
     return {"interval_seconds": HEARTBEAT_SECONDS, "unread": unread}
 
 
@@ -231,21 +244,22 @@ def get_settings_route(response: Response, auth: AuthContext = Depends(require_t
 
 
 def public_settings(data: dict) -> dict:
-    from app.announcements import RAFI_MUTED
+    from app.announcements import RAFI_SETTING_KEYS
 
-    return {k: v for k, v in data.items() if k != RAFI_MUTED}
+    return {k: v for k, v in data.items() if k not in RAFI_SETTING_KEYS}
 
 
 @router.put("/teacher/notification-settings")
 def put_settings(payload: SettingsInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
-    from app.announcements import RAFI_MUTED
+    from app.announcements import RAFI_SETTING_KEYS
 
+    db.execute(select(User.id).where(User.id == auth.user.id).with_for_update())
     row = db.get(NotificationSetting, auth.user.id)
     if row is None:
         db.add(NotificationSetting(user_id=auth.user.id, data=payload.model_dump()))
     else:
         # ADR-0047: the class-wide switch of Rafi's sounds lives here too; it is kept.
-        kept = {k: v for k, v in (row.data or {}).items() if k == RAFI_MUTED}
+        kept = {k: v for k, v in (row.data or {}).items() if k in RAFI_SETTING_KEYS}
         row.data = {**payload.model_dump(), **kept}
     db.commit()
     return public_settings(teacher_settings(db, auth.user.id))

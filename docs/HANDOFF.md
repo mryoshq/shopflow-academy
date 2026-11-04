@@ -1,5 +1,17 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Rafi — silence et récapitulatif de séance (04/11/2026)
+
+Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Le lot étend l’ADR-0050. Il ajoute le silence de la classe, un accès direct à l’aide manuelle, le récapitulatif quotidien à heure choisie au Maroc et la félicitation lors d’un vrai passage à l’état terminé. Il réutilise les réglages et les notifications existants. Le mode silencieux concerne les bulles de Rafi dans la page. Web Push reste un canal distinct.
+
+API dans `announcements.py`, boucle `autoplan.py`, événements dans les routes de tentatives et lecture filtrée dans `live.py`. Interface dans `Rafi.tsx` et `RafiClassSettings.tsx`. En test local, 100 pytest réussis et 5 cas labo conditionnels ignorés, 28 Vitest réussis, build et kit réussis, 7 Playwright sur 3203 avec API simulée. Les commandes exactes sont dans PROGRESS. Captures de données fictives inspectées avant et après, clair/sombre à 390/1366 px. Aucune migration.
+
+### À faire en local après revue et fusion autorisées
+
+Le lot attend sa mise en service. Après redémarrage autorisé via le runbook, vérifier Réglages → Notifications sur une classe de démonstration, l’heure Casablanca, puis la pastille et le bouton d’aide côté étudiant. Le récapitulatif reste désactivé tant qu’aucune heure n’est enregistrée.
+
+Prochaine action unique, suivre la CI de la PR vers `main` et transmettre son résultat pour revue. Le studio et la plateforme restent prioritaires avant les contenus P2. Le déploiement de l’Academy suit le runbook Cloudflare sur Mac.
+
 ## Incident : un import en brouillon a fermé les blocs de la classe (04/11/2026)
 
 **Règle : un import en brouillon ne doit jamais toucher aux ouvertures de la classe.** Seul l'enseignant ouvre ou ferme un bloc.

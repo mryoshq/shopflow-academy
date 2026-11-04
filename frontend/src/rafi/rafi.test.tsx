@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from "vitest"
 import { system } from "../theme"
 import { setLanguage } from "../i18n"
 import { serverText } from "../i18n/server"
-import { NotificationProvider } from "../live/notifications"
+import { NOTIFICATION_POLL_MS, NotificationProvider } from "../live/notifications"
 import { dueText, timeLeft } from "../student/NextDeadline"
 import { Rafi } from "./Rafi"
 
@@ -139,4 +139,24 @@ it("next step texts cover a started mission, a bonus, a deadline and nothing to 
   expect(nextStepText({ kind: "bonus", title: "B", link: "#/mission/2", started: false })).toContain("Un bonus vous tente ? « B »")
   expect(nextStepText({ kind: "deadline", title: "Conception", due_local: "2026-11-21T23:59", link: "#/projet" })).toContain("le 21/11 à 23:59")
   expect(nextStepText({ kind: "done" })).toBe("Tout est à jour. Revoyez vos cartes ou profitez de la pause.")
+})
+
+it("closes an automatic bubble when class silence changes and keeps help and the queue available", async () => {
+  vi.useFakeTimers({ shouldAdvanceTime: true })
+  let silent = false
+  const items = [note(1, "session_recap", "Il vous reste 2 missions dans les blocs ouverts.")]
+  vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
+    if (url.includes("/notifications?")) return json({ unread: 1, items: url.endsWith("after=0") ? items : [] })
+    if (url.includes("/student/rafi")) return json({ sounds: true, silent, scope: "fictif", next: { kind: "done" } })
+    return json({ ok: true })
+  }))
+  wrap()
+  expect(await screen.findByTestId("rafi-bubble")).toHaveTextContent("Récapitulatif de séance")
+  silent = true
+  await act(async () => { await vi.advanceTimersByTimeAsync(NOTIFICATION_POLL_MS) })
+  expect(screen.queryByTestId("rafi-bubble")).not.toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Que faire maintenant ?" }))
+  expect(await screen.findByText(/Tout est à jour/)).toBeInTheDocument()
+  fireEvent.click(screen.getByRole("button", { name: "Rafi : 1 annonce" }))
+  expect(screen.getByTestId("rafi-bubble")).toHaveTextContent("Il vous reste 2 missions")
 })
