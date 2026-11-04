@@ -6,12 +6,12 @@ import subprocess
 import sys
 
 import pytest
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.config import get_settings
 from app.course_md import ImportRefused, compile_dir, compile_files, document, import_compiled, report_markdown, summary
-from app.models import Course, MissionVersion, User
+from app.models import BlockState, Course, MissionVersion, User
 from test_student import env, post  # noqa: F401  (fixture reuse)
 
 EXAMPLE = Path(__file__).resolve().parents[2] / "docs" / "examples" / "demo-course"
@@ -279,3 +279,38 @@ def test_command_line_bundle_reports_errors_with_file_and_line():
     output = json.loads(run.stdout)
     assert any(i["file"] == "10-m.md" and i["line"] == 11 for i in output["issues"])
     assert "`10-m.md` ligne 11 : objectif non déclaré" in output["report"]
+
+
+def test_renamed_or_merged_modules_and_blocks_keep_their_class_openings(env, monkeypatch):
+    """Incident of 04/11/2026: renaming modules made the import recreate the chapters, and the class openings
+    (block_states) were deleted in cascade. A block is now found again through the missions it holds."""
+    clients, engine = env
+    monkeypatch.setattr(get_settings(), "main_course_slug", "cours-test")
+    monkeypatch.setattr(get_settings(), "class_label", "Classe principale")
+    teacher, a = clients["teacher"], clients["a"]
+    two = (module(mission("m1"), block="Bloc 1")
+           + "\n\n# Module : Module deux\nSecond module.\n\n## Bloc : Bloc 2\n\n" + mission("m2"))
+    with Session(engine, expire_on_commit=False) as db:
+        owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
+        import_compiled(db, owner, compile_files({"00-cours.md": HEADER, "10-m.md": two}), publish=True)
+    main = teacher.get("/api/v1/teacher/main").json()
+    post(teacher, f"/api/v1/teacher/classes/{main['assignment_id']}/blocks/open-next")
+    post(teacher, f"/api/v1/teacher/classes/{main['assignment_id']}/blocks/open-next")
+
+    def opened() -> list[tuple[str, str, bool]]:
+        course = next(c for c in a.get("/api/v1/student/dashboard").json()["courses"] if c["title"] == "Cours de test")
+        return [(m["title"], b["title"], b["open"]) for m in course["modules"] for b in m["blocks"]]
+
+    assert opened() == [("Module test", "Bloc 1", True), ("Module deux", "Bloc 2", True)]
+    count = select(func.count()).select_from(BlockState).where(BlockState.opened_at.is_not(None))
+    with Session(engine) as db:
+        before = db.scalar(count)
+    # Renamed modules and blocks, then the two modules merged into one: both blocks stay open.
+    renamed = (module(mission("m1"), block="Partie 1").replace("Module test", "Axe 4 — Module renommé")
+               + "\n## Bloc : Partie 2\n\n" + mission("m2"))
+    for draft_only in (True, False):
+        with Session(engine, expire_on_commit=False) as db:
+            owner = db.scalar(select(User).where(User.username == "demo.enseignant"))
+            import_compiled(db, owner, compile_files({"00-cours.md": HEADER, "10-m.md": renamed}), publish=not draft_only)
+            assert db.scalar(count) == before
+    assert opened() == [("Axe 4 — Module renommé", "Partie 1", True), ("Axe 4 — Module renommé", "Partie 2", True)]

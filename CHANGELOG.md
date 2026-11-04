@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-04 — Import : les blocs ouverts restent ouverts (`fix/import-garde-ouvertures`)
+
+- Un module ou un bloc renommé, déplacé ou fusionné garde son chapitre, retrouvé par les missions qu'il contient : les ouvertures de la classe (`block_states`) ne sont plus supprimées en cascade (incident du 04/11/2026).
+- Test qui reproduit l'incident (échoue sans le correctif), en brouillon puis en publication.
+- Aucune migration. Après fusion : redéploiement habituel.
+
 ## 2026-11-03 — Rafi : « Que faire maintenant ? » (`feat/rafi-que-faire`, ADR-0050)
 
 - Un clic sur Rafi donne la prochaine action : mission notée d'un bloc ouvert, sinon bonus, sinon prochaine échéance du projet, sinon « Tout est à jour ». Calcul serveur, titres visibles seulement.
