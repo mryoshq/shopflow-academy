@@ -396,6 +396,12 @@
 - Préférence de navigateur indépendante du mode clair/sombre/système : Latte/Mocha, thème actuel conservé par défaut.
 - Bootstrap cohérent avant React, stockage indisponible pris en charge et vérification des contrastes/clavier dans le harness CSP existant.
 
+## Fiche étudiant pour le propriétaire du cours
+
+- Synthèse des points conservés, bonus séparés, états des missions et demandes d’aide.
+- Accès individuel et versions équivalentes conservés, historique synthétique distinct des cent derniers essais.
+- Date de demande conservée après traitement et réponses UI tardives ignorées lors des changements de fiche.
+- Aucun changement de calcul de note ou de schéma.
 ## Intégration des aperçus et de la palette vers main
 
 - Réunir les lots 3–5 déjà validés dans une PR visant main, après leurs revues fusionnées dans des branches intermédiaires. Aucun nouveau comportement ou lot supplémentaire.
