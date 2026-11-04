@@ -352,9 +352,11 @@ def find_block(release: CourseRelease, chapter_id: int) -> dict:
 def unlock_block_for(assignment_id: int, chapter_id: int, user_id: int, auth: AuthContext = Depends(require_teacher_csrf),
                      db: Session = Depends(get_db)) -> dict:
     """Open one block for one student only. Idempotent, audited, the student is notified."""
+    from app.classroom import lock_class_release
     from app.teacher_dashboard import audit
 
     assignment, release, cohort, students = class_of(db, auth, assignment_id)
+    release = lock_class_release(db, assignment, release)
     student = next((s for s in students if s.id == user_id and s.enabled), None)
     if student is None:
         raise HTTPException(status_code=404, detail="student not found")
@@ -375,9 +377,11 @@ def unlock_block_for(assignment_id: int, chapter_id: int, user_id: int, auth: Au
 def relock_block_for(assignment_id: int, chapter_id: int, user_id: int, auth: AuthContext = Depends(require_teacher_csrf),
                      db: Session = Depends(get_db)) -> dict:
     """Withdraw a per-student opening (the block stays open if the whole class has it). Audited."""
+    from app.classroom import lock_class_release
     from app.teacher_dashboard import audit
 
     assignment, release, cohort, students = class_of(db, auth, assignment_id)
+    release = lock_class_release(db, assignment, release)
     student = next((s for s in students if s.id == user_id), None)
     if student is None:
         raise HTTPException(status_code=404, detail="student not found")

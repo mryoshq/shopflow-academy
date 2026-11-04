@@ -142,13 +142,13 @@ def assign_to_class(db: Session, auth: AuthContext, release: CourseRelease, coho
 @router.post("/main/publish", status_code=201)
 def publish_main(auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     """Publish the main course and give the new version to the class. New blocks arrive closed."""
-    from app.curriculum import publish_course
+    from app.curriculum import stage_course_release
 
     course = main_course(db)
     cohort = main_cohort(db)
     if course is None or cohort is None or course.created_by != auth.user.id:
         raise HTTPException(status_code=409, detail="run setup first")
-    published = publish_course(course.id, auth, db)
+    published = stage_course_release(db, auth, course.id)
     release = db.get(CourseRelease, published["id"])
     assignment = assign_to_class(db, auth, release, cohort)
     db.commit()
@@ -173,7 +173,21 @@ def notify_block_open(db: Session, assignment: Assignment, title: str, chapter_i
                   dedup=f"open:{assignment.cohort_id}:{chapter_id}:{now.isoformat()}")
 
 
+def lock_class_release(db: Session, assignment: Assignment, release: CourseRelease) -> CourseRelease:
+    """Share the import/publish lock before reading the class's current release."""
+    db.execute(select(Course.id).where(Course.id == release.course_id).with_for_update())
+    current = db.scalar(select(CourseRelease).join(Assignment, Assignment.course_release_id == CourseRelease.id)
+                        .where(Assignment.id == assignment.id, CourseRelease.course_id == release.course_id,
+                               CourseRelease.status == "published"))
+    if current is None:
+        raise HTTPException(status_code=404, detail="class not found")
+    if assignment.course_release_id != current.id:
+        db.refresh(assignment, attribute_names=["course_release_id"])
+    return current
+
+
 def set_block(db: Session, auth: AuthContext, assignment: Assignment, release: CourseRelease, chapter_id: int, is_open: bool) -> dict:
+    release = lock_class_release(db, assignment, release)
     block = next((item for item in blocks_of(release.student_snapshot) if item["chapter_id"] == chapter_id), None)
     if block is None:
         raise HTTPException(status_code=404, detail="block not found")
@@ -217,6 +231,7 @@ def close_block(assignment_id: int, chapter_id: int, auth: AuthContext = Depends
 def open_next_block(assignment_id: int, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
     """Open the first closed block in course order (409 when every block is already open)."""
     assignment, release, _ = owned_class(db, auth, assignment_id)
+    release = lock_class_release(db, assignment, release)
     states = block_states(db, assignment.cohort_id)
     for block in blocks_of(release.student_snapshot):
         state = states.get(block["chapter_id"])
