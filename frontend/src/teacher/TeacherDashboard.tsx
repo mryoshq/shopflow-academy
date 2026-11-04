@@ -1,3 +1,4 @@
+import { StudentSummary, type StudentSummaryData } from "./StudentSummary"
 import { ActivityTime, activityRelative } from "../shared/ActivityTime"
 import { msg, t, tn } from "../i18n"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -23,9 +24,9 @@ export type Overview = {
   missions: { mission_version_id: number; title: string }[]; students: OverviewStudent[]
 }
 type StudentDetail = {
-  id: number; display_name: string
+  id: number; display_name: string; summary?: StudentSummaryData
   rewards?: Rewards
-  missions: { mission_version_id: number; title: string; status: MissionStatus; locked_by: string[]; unlocked_by_teacher: boolean; best_points: number; possible: number; bonus: boolean; attempts: number; hints: number; fast_attempts?: number }[]
+  missions: { mission_version_id: number; title: string; status: MissionStatus; locked_by: string[]; unlocked_by_teacher: boolean; best_points: number; possible: number; bonus: boolean; lesson?: boolean; block_open?: boolean; attempts: number; hints: number; fast_attempts?: number }[]
   attempts: { id: number; mission: string; created_at: string; correct: boolean; points: number; fast?: boolean; percent?: number | null }[]
 }
 type Intervention = { id: number; action: string; actor: string; created_at: string; details: Record<string, string> }
@@ -57,6 +58,8 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
   const [notice, setNotice] = useState("")
   const [now, setNow] = useState(() => Date.now())
   const detailId = useRef<number | null>(null)
+  const selectedRef = useRef(selected)
+  selectedRef.current = selected
   const [reset, setReset] = useState<{ student: string; password: string; sessions_revoked: number } | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -76,12 +79,17 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
       const [data, events] = await Promise.all([
         api<Overview>(`/teacher/classes/${id}/overview`), api<Intervention[]>(`/teacher/classes/${id}/interventions`),
       ])
+      if (selectedRef.current !== id) return
       setOverview(data)
       setLog(events)
       setStale(false)
-      if (detailId.current) setDetail(await api<StudentDetail>(`/teacher/classes/${id}/students/${detailId.current}`))
+      const requestedStudent = detailId.current
+      if (requestedStudent) {
+        const student = await api<StudentDetail>(`/teacher/classes/${id}/students/${requestedStudent}`)
+        if (selectedRef.current === id && detailId.current === requestedStudent) setDetail(student)
+      }
     } catch (reason) {
-      if (!(reason instanceof ApiError && reason.status === 401)) setStale(true)
+      if (selectedRef.current === id && !(reason instanceof ApiError && reason.status === 401)) setStale(true)
     }
   }, [])
 
@@ -148,7 +156,12 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
     if (!selected) return
     if (notify) onStudent?.(id)
     detailId.current = id
-    try { setDetail(await api<StudentDetail>(`/teacher/classes/${selected}/students/${id}`)) }
+    setDetail(null)
+    const requestedClass = selected
+    try {
+      const student = await api<StudentDetail>(`/teacher/classes/${requestedClass}/students/${id}`)
+      if (selectedRef.current === requestedClass && detailId.current === id) setDetail(student)
+    }
     catch { setNotice(t("Impossible de charger le détail de cet étudiant.")) }
   }
 
@@ -234,10 +247,13 @@ export function TeacherDashboard({ assignmentId = null, studentId = null, onStud
             </Flex>
             <Text fontSize="sm" mt="2">{t("Il ne sera plus affiché.")}{" "}{reset.sessions_revoked ? t("Les sessions ouvertes de l’étudiant ont été fermées.") : ""} {t("Transmettez-le en personne.")}</Text>
           </Box>}
+          {detail.summary && <StudentSummary data={detail.summary} now={now} />}
           <Stack gap="2" as="ul" listStyleType="none" p="0" m="0">
             {detail.missions.map((mission) => <Flex as="li" key={mission.mission_version_id} gap="3" align="center" wrap="wrap" p="3" borderWidth="1px" borderColor="app.border" rounded="lg">
               <Text flex="1" fontWeight="medium">{mission.title}</Text>
               <StatusBadge status={mission.status} />
+              {mission.lesson ? <Badge variant="outline">{t("Leçon")}</Badge> : mission.bonus ? <Badge variant="outline">{t("Bonus")}</Badge> : null}
+              {mission.block_open === false && <Badge variant="outline">{t("Bloc fermé")}</Badge>}
               {mission.unlocked_by_teacher && <Badge variant="outline" rounded="full">{t("Débloquée par l’enseignant")}</Badge>}
               <FastBadge count={mission.fast_attempts} />
               <Text fontSize="sm" color="app.muted" css={{ fontVariantNumeric: "tabular-nums" }}>{formatPoints(mission.best_points)} / {mission.possible} {t("pts ·")}{" "}{tn("{{count}} essai", mission.attempts)} · {tn("{{count}} indice", mission.hints)}</Text>

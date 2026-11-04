@@ -5,6 +5,11 @@
 - Un clic sur Rafi donne la prochaine action : mission notée d'un bloc ouvert, sinon bonus, sinon prochaine échéance du projet, sinon « Tout est à jour ». Calcul serveur, titres visibles seulement.
 - Les annonces n'ouvrent la bulle d'elles-mêmes qu'une fois toutes les 10 minutes au plus.
 - Aucune migration. Après fusion : redéploiement habituel.
+## 2026-11-03 — Cours plus lisible (`fix/cours-lisible`)
+
+- Textes du cours : *italique* (`*texte*` ou `_texte_`) en plus du gras, des listes et des tableaux ; un astérisque isolé (2 * 3) reste littéral.
+- La description d'un média n'est plus affichée ni proposée en bouton : elle reste lue par les lecteurs d'écran (`aria-describedby`, texte masqué visuellement).
+- Aucun backend, aucune migration. Après fusion : redéploiement habituel, puis recharger la page.
 
 ## 2026-11-03 — Blocs de bonus facultatifs (`codex/blocs-bonus-explicites`)
 
@@ -402,6 +407,12 @@
 - Préférence de navigateur indépendante du mode clair/sombre/système : Latte/Mocha, thème actuel conservé par défaut.
 - Bootstrap cohérent avant React, stockage indisponible pris en charge et vérification des contrastes/clavier dans le harness CSP existant.
 
+## Fiche étudiant pour le propriétaire du cours
+
+- Synthèse des points conservés, bonus séparés, états des missions et demandes d’aide.
+- Accès individuel et versions équivalentes conservés, historique synthétique distinct des cent derniers essais.
+- Date de demande conservée après traitement et réponses UI tardives ignorées lors des changements de fiche.
+- Aucun changement de calcul de note ou de schéma.
 ## Intégration des aperçus et de la palette vers main
 
 - Réunir les lots 3–5 déjà validés dans une PR visant main, après leurs revues fusionnées dans des branches intermédiaires. Aucun nouveau comportement ou lot supplémentaire.

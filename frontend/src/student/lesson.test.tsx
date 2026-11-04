@@ -107,20 +107,17 @@ it("an old lesson with only body renders its text and nothing else", () => {
   expect(container).not.toHaveTextContent(/Objectif|Vocabulaire|Exemple résolu|À vous/)
 })
 
-it("a media description is read through aria-describedby and shown only on request", () => {
+it("a media description is read through aria-describedby and never shown on screen", () => {
   wrap(<DataView data={{ kind: "code", language: "sql", title: "La jointure", code: "SELECT 1",
     description: "Une requête qui **joint** orders et order_items." }} />)
   const group = screen.getByRole("group", { name: "Média : La jointure" })
-  const description = document.getElementById(group.getAttribute("aria-describedby") ?? "")!
-  expect(description).toHaveTextContent("Une requête qui joint orders et order_items.")
-  expect(description).not.toBeVisible()
   expect(group).toHaveAccessibleDescription("Une requête qui joint orders et order_items.")
-  const toggle = screen.getByRole("button", { name: "Description du média" })
-  expect(toggle).toHaveAttribute("aria-expanded", "false")
-  fireEvent.click(toggle)
-  expect(toggle).toHaveAttribute("aria-expanded", "true")
-  expect(description).toBeVisible()
-  cleanup()
-  wrap(<DataView data={{ kind: "code", language: "sql", title: "Sans description", code: "SELECT 1" }} />)
   expect(screen.queryByRole("button", { name: "Description du média" })).toBeNull()
+})
+
+it("lesson text renders *italic* next to **bold** without touching 2 * 3", () => {
+  const { container } = wrap(<RichText text={"Un *grain* clair, **très net**, _vraiment_, et 2 * 3 = 6."} />)
+  expect(container.querySelectorAll("em")).toHaveLength(2)
+  expect(container.querySelector("strong")).toHaveTextContent("très net")
+  expect(container).toHaveTextContent("Un grain clair, très net, vraiment, et 2 * 3 = 6.")
 })
