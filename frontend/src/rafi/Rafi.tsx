@@ -89,7 +89,9 @@ export function Rafi() {
       const fresh = announcements.find((note) => note.id > previous.lastSeen)
       if (!fresh) return
       const now = Date.now()
-      const auto = !silent && panel === null && now - previous.lastAt >= AUTO_OPEN_GAP_MS
+      // A message from the teacher opens the queue at once, outside the 10-minute spacing (oldest first, as usual).
+      const message = announcements.find((note) => note.id > previous.lastSeen && note.kind === "message")
+      const auto = !silent && panel === null && (message !== undefined || now - previous.lastAt >= AUTO_OPEN_GAP_MS)
       const claimed = { lastAt: auto ? now : previous.lastAt, lastSeen: Math.max(...announcements.map((note) => note.id)) }
       history.current[storageKey] = claimed
       try { localStorage.setItem(storageKey, JSON.stringify(claimed)) } catch { /* storage unavailable */ }
