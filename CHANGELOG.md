@@ -8,6 +8,12 @@
 - Test : un cours archivé n'apparaît sur aucune route étudiante.
 - Aucune migration. Après fusion : rebuild frontend, `up -d --wait`, recharger la page.
 
+## 2026-11-05 — Équipes de 2 ou 3 (`feat/trinomes`)
+
+- Les étudiants peuvent former une équipe de 3 par invitation (décision du propriétaire) ; une 4e invitation est refusée. Le dépôt reste interdit à un étudiant seul (ADR-0041) : 2 membres au moins.
+- Une paire, y compris issue du binôme surprise, peut encore accueillir un troisième membre. L'enseignant peut composer une équipe de 3.
+- Texte de l'espace projet mis à jour (FR/EN). Aucune migration ; la grille garde un point individuel par membre.
+
 ## 2026-11-05 — E-mails : variables SMTP transmises au backend (`fix/smtp-env`)
 
 - `compose.yaml` ne transmettait pas `SMTP_*` au conteneur : les lignes de `.env` (Resend) étaient ignorées et aucun e-mail ne partait. Elles sont maintenant passées au backend (vides par défaut = pas d'envoi).

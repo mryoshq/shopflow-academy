@@ -1242,7 +1242,6 @@
   "À découvrir : {{hint}}": "To discover: {{hint}}",
   "Binôme surprise": "Surprise team",
   "En attente d’un camarade : invitez-le ci-dessous. Seul, vous ne pouvez pas déposer.": "Waiting for a classmate: invite them below. On your own, you cannot submit.",
-  "Le projet se fait à deux. Formez votre binôme en invitant un camarade, qui devra accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.": "The project is done in pairs. Form your team by inviting a classmate, who will have to accept, or try the surprise team: the teacher will draw lots among the students still without a team.",
   "Vous êtes inscrit au binôme surprise.": "You have signed up for the surprise team.",
   "Vous êtes sorti du tirage.": "You have left the draw.",
   "Me retirer du tirage": "Leave the draw",
@@ -1630,5 +1629,7 @@
   "{{count}} jalon passé_other": "{{count}} past milestones",
   "Plus que {{count}} jour_one": "{{count}} day left",
   "Plus que {{count}} jour_other": "{{count}} days left",
-  "Prochaine échéance : « {{title}} », {{left}}.": "Next deadline: “{{title}}”, {{left}}."
+  "Prochaine échéance : « {{title}} », {{left}}.": "Next deadline: “{{title}}”, {{left}}.",
+  "Le projet se fait à deux ou à trois. Formez votre équipe en invitant un ou deux camarades, qui devront accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.": "The project is done in pairs or trios. Form your team by inviting one or two classmates, who must accept, or try the surprise pair: the teacher will draw lots among the students still without a team.",
+  "Vous pouvez encore inviter un troisième camarade (facultatif).": "You can still invite a third classmate (optional)."
 }

@@ -34,7 +34,9 @@ from app.teacher_dashboard import class_students, csv_cell, csv_number, owned_cl
 router = APIRouter(prefix="/api/v1", tags=["project"])
 MAX_FILE = 20 * 1024 * 1024
 MAX_TEXT = 50_000
-TEAM_SIZE = 2
+# A team is a pair or a trio (owner decision, 05/11/2026); one student alone never submits (ADR-0041).
+TEAM_SIZE = 3
+MIN_TEAM = 2
 FILE_TYPES = {"pdf": "application/pdf", "png": "image/png", "jpg": "image/jpeg", "md": "text/markdown; charset=utf-8", "zip": "application/zip"}
 
 
@@ -232,7 +234,7 @@ class InviteInput(BaseModel):
 def invite(payload: InviteInput, auth: AuthContext = Depends(require_student_csrf), db: Session = Depends(get_db)) -> dict:
     team, cohort_id = my_team(db, auth)
     if len(team_members(db, team.id)) >= TEAM_SIZE:
-        raise HTTPException(status_code=409, detail="le binôme est complet")
+        raise HTTPException(status_code=409, detail="l’équipe est complète (3 étudiants au plus)")
     if payload.user_id == auth.user.id or payload.user_id not in {s.id for s in class_students(db, cohort_id)}:
         raise HTTPException(status_code=404, detail="student not found")
     if membership(db, cohort_id, payload.user_id):
@@ -263,7 +265,7 @@ def accept(invitation_id: int, auth: AuthContext = Depends(require_student_csrf)
     if len(team_members(db, team.id)) >= TEAM_SIZE:
         invitation.status = "expired"
         db.commit()
-        raise HTTPException(status_code=409, detail="le binôme est déjà complet")
+        raise HTTPException(status_code=409, detail="l’équipe est déjà complète (3 étudiants au plus)")
     db.add(ProjectMember(cohort_id=team.cohort_id, team_id=team.id, user_id=auth.user.id))
     invitation.status = "accepted"
     drop_draw_entry(db, team.cohort_id, auth.user.id)
@@ -357,7 +359,7 @@ def submit(milestone_id: int, payload: SubmissionInput, auth: AuthContext = Depe
     if milestone is None:
         raise HTTPException(status_code=404, detail="milestone not found")
     team, cohort_id = my_team(db, auth, milestone.cohort_id)
-    if len(team_members(db, team.id)) < TEAM_SIZE:  # ADR-0041: no individual work
+    if len(team_members(db, team.id)) < MIN_TEAM:  # ADR-0041: no individual work
         raise HTTPException(status_code=409, detail="le travail individuel n'est plus permis : formez un binôme ou tentez le binôme surprise")
     link = (payload.link or "").strip() or None
     if link:

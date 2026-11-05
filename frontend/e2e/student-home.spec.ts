@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test"
+import { test, expect, type APIRequestContext, type Page } from "@playwright/test"
 import AxeBuilder from "@axe-core/playwright"
 import { readFileSync } from "node:fs"
 
@@ -9,12 +9,22 @@ const account = (name: string) => accounts.find((item) => item.username === name
 const shots = process.env.SHOPFLOW_SCREENSHOT_DIR
 const STUDENT = "demo.etudiant04"
 
-async function signIn(page: Page) {
+async function signIn(page: Page, name = STUDENT) {
   await page.goto("/")
-  await page.getByRole("textbox", { name: "Identifiant" }).fill(STUDENT)
-  await page.getByLabel("Mot de passe").fill(account(STUDENT).password)
+  await page.getByRole("textbox", { name: "Identifiant" }).fill(name)
+  await page.getByLabel("Mot de passe").fill(account(name).password)
   await page.getByRole("button", { name: "Se connecter" }).click()
-  await expect(page.getByRole("heading", { name: `Bonjour, ${STUDENT}` })).toBeVisible()
+  await expect(page.getByRole("heading", { name: `Bonjour, ${name}` })).toBeVisible()
+}
+
+type Member = { id: number; name: string }
+
+async function teacherApi(request: APIRequestContext) {
+  expect((await request.post("/api/v1/auth/login", { data: { username: "demo.enseignant", password: account("demo.enseignant").password } })).status()).toBe(200)
+  const csrf = (await request.storageState()).cookies.find((cookie) => cookie.name === "academy_csrf")!.value
+  const assignment = (await (await request.get("/api/v1/teacher/classes")).json())[0].id as number
+  const view = await (await request.get(`/api/v1/teacher/classes/${assignment}/project`)).json() as { teams: { id: number; members: Member[] }[]; alone: Member[] }
+  return { csrf, assignment, view }
 }
 
 async function serious(page: Page) {
@@ -70,3 +80,28 @@ for (const theme of ["light", "dark"] as const) {
     })
   }
 }
+
+test("a team of two can still invite a third classmate (teams of 2 or 3)", async ({ browser, request }) => {
+  const { csrf, assignment, view } = await teacherApi(request)
+  const demo = (member: Member) => accounts.some((item) => item.username === member.name)
+  // A pair of demo students: an existing one, or one formed by the teacher (removed afterwards).
+  let pair = view.teams.find((team) => team.members.length === 2 && team.members.every(demo))
+  let created = 0
+  if (!pair) {
+    const two = view.alone.filter(demo).slice(0, 2)
+    expect(two).toHaveLength(2)
+    const response = await request.post(`/api/v1/teacher/classes/${assignment}/project/teams`, { data: { user_ids: two.map((item) => item.id) }, headers: { "X-CSRF-Token": csrf } })
+    expect(response.status()).toBe(201)
+    created = (await response.json()).id
+    pair = { id: created, members: two }
+  }
+  const context = await browser.newContext({ locale: "fr-FR" })
+  const page = await context.newPage()
+  await signIn(page, pair.members[0].name)
+  await expect(page.getByText("Vous pouvez encore inviter un troisième camarade (facultatif).")).toBeVisible()
+  await expect(page.getByText("Inviter un camarade", { exact: true })).toBeVisible()
+  // A complete pair hands in: the milestones come first, the team (with its invitation form) after.
+  await expect(page.getByRole("heading", { name: "Jalons" })).toBeVisible()
+  await context.close()
+  if (created) await request.delete(`/api/v1/teacher/project/teams/${created}`, { headers: { "X-CSRF-Token": csrf } })
+})
