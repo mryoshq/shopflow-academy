@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Plan jusqu'à la remise du projet (`claude/lucid-brahmagupta-htwgun-plan`)
+
+- `docs/PLAN.md` : une page, avec l'état, la date limite, qui le fait et la prochaine action de chaque point. Les points sont groupés par échéance : avant le 21/11, avant le 23/11, plateforme, contenu, exploitation.
+- Documentation seulement.
+
 ## 2026-11-05 — Cache du service worker renouvelé (`fix/sw-cache-v4`)
 
 - `shopflow-static-v3` → `v4` : un worker PDF.js mis en cache avec l'ancien type (`application/octet-stream`) avant la #94 est supprimé chez chaque utilisateur au prochain chargement.

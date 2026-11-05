@@ -1,5 +1,14 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Plan jusqu'à la remise du projet (05/11/2026)
+
+Branche `claude/lucid-brahmagupta-htwgun-plan` depuis `main` 73c4cc0. Fichier unique : `docs/PLAN.md`, le point de départ de chaque session jusqu'au 23/11.
+
+### Plan — À faire en local après fusion
+Rien à déployer. Le propriétaire relit le plan et corrige les dates ou les responsables si besoin.
+
+Prochaine action unique : revue et fusion de la PR du plan, puis la PR « Vue étudiant pour la période du projet ».
+
 ## Rafi — silence et récapitulatif de séance (04/11/2026)
 
 Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Le lot étend l’ADR-0050. Il ajoute le silence de la classe, un accès direct à l’aide manuelle, le récapitulatif quotidien à heure choisie au Maroc et la félicitation lors d’un vrai passage à l’état terminé. Il réutilise les réglages et les notifications existants. Le mode silencieux concerne les bulles de Rafi dans la page. Web Push reste un canal distinct.

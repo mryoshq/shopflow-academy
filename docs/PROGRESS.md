@@ -1,5 +1,12 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-05 — Plan jusqu'à la remise (`claude/lucid-brahmagupta-htwgun-plan`)
+
+Documentation seulement : `docs/PLAN.md`, à partir de HANDOFF, PROGRESS, du CHANGELOG et des PR #86 à #96.
+
+- PASS `python3 scripts/verify_kit.py`.
+- NOT RUN : pytest, Vitest, e2e et build (aucun code modifié).
+
 ## 2026-11-04 — Rafi, silence et fin de séance
 
 Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Suite de l’ADR-0050. Silence distinct des sons, bouton manuel disponible pendant le silence et la cadence, récapitulatif facultatif à l’heure de Casablanca et félicitation à la transition réelle. Les notifications restent dédupliquées en base et la lecture contrôle l’affectation active.
