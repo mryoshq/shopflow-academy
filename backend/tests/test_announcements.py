@@ -80,9 +80,9 @@ def test_countdown_and_class_wide_sounds(project):
 
     # Rafi's sounds: the teacher switches them off for the whole class; their other settings are kept.
     url = f"/api/v1/teacher/classes/{assignment}/rafi"
-    assert teacher.get(url).json() == {"sounds": True}
+    assert teacher.get(url).json() == {"sounds": True, "silent": False, "recap_at": None}
     assert put(a, url, {"sounds": False}).status_code == 403
-    assert put(teacher, url, {"sounds": False}).json() == {"sounds": False}
+    assert put(teacher, url, {"sounds": False}).json()["sounds"] is False
     assert a.get("/api/v1/student/dashboard").json()["rafi"] == {"sounds": False}
     assert a.get("/api/v1/student/rafi").json()["sounds"] is False
     assert teacher.get("/api/v1/student/rafi").status_code == 403
@@ -90,7 +90,7 @@ def test_countdown_and_class_wide_sounds(project):
     assert "rafi_muted_assignments" not in settings
     assert put(teacher, "/api/v1/teacher/notification-settings", settings).status_code == 200
     assert a.get("/api/v1/student/dashboard").json()["rafi"] == {"sounds": False}  # kept by the other settings
-    assert put(teacher, url, {"sounds": True}).json() == {"sounds": True}
+    assert put(teacher, url, {"sounds": True}).json()["sounds"] is True
     assert a.get("/api/v1/student/dashboard").json()["rafi"] == {"sounds": True}
     with Session(engine) as db:
         assert db.scalar(select(User.id).where(User.username == "demo.etudiant01"))

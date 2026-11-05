@@ -11,6 +11,12 @@
 - `smoke_public.py` vérifie le type du worker PDF (local et public).
 - Aucune migration. Après fusion : `docker compose build frontend` puis `up -d --wait`, recharger la page.
 
+## 2026-11-04 — Rafi en mode silencieux et récapitulatif de séance
+
+- Réglages par classe pour le silence de Rafi et l’heure facultative du récapitulatif au Maroc. Le bouton « Que faire maintenant ? » reste accessible avec des annonces en attente.
+- Le récapitulatif compte les missions principales encore à finir dans les blocs ouverts. Rafi félicite l’élève au moment où il termine un bloc.
+- Toutes les bulles automatiques partagent une cadence d’au moins dix minutes par compte. Les ouvertures manuelles restent accessibles. Aucune migration.
+
 ## 2026-11-04 — Import : les blocs ouverts restent ouverts (`fix/import-garde-ouvertures`)
 
 - Un module ou un bloc renommé, déplacé ou fusionné garde son chapitre, retrouvé par les missions qu'il contient : les ouvertures de la classe (`block_states`) ne sont plus supprimées en cascade (incident du 04/11/2026).

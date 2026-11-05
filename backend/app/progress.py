@@ -103,12 +103,14 @@ def attempts_for(db: Session, user_ids: list[int], version_ids: list[int]) -> li
     return [(attempt, target) for attempt in rows for target in owners[attempt.mission_version_id]]
 
 
-def mission_scores(db: Session, user_id: int, version_ids: list[int]) -> dict[int, MissionScore]:
+def mission_scores(db: Session, user_id: int, version_ids: list[int], *, without: int | None = None) -> dict[int, MissionScore]:
     defs = definitions(db, version_ids)
     result = {vid: MissionScore(0.0, d.max_points, d.bonus, 0, False, d.kind in UNGRADED_KINDS) for vid, d in defs.items()}
     if not defs:
         return result
     for attempt, vid in attempts_for(db, [user_id], list(defs)):
+        if attempt.id == without:
+            continue
         item = result[vid]
         item.attempts += 1
         # A lesson never earns points, whatever its earlier versions were.

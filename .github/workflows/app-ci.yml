@@ -94,6 +94,9 @@ jobs:
       - name: Optional bonus blocks (isolated component fixture on 3201)
         run: npx playwright test --config playwright.bonus.config.ts
         working-directory: frontend
+      - name: Rafi quiet mode and recap on an isolated browser fixture
+        run: npx playwright test --config playwright.rafi-recap.config.ts
+        working-directory: frontend
       - name: Load test, 10 simultaneous demo students + teacher
         run: python3 scripts/load_test.py
       - name: Persistence after restart and container re-creation

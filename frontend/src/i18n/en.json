@@ -1610,5 +1610,15 @@
   "Prochaine étape : « {{title}} ».": "Next step: “{{title}}”.",
   "Le socle des blocs ouverts est terminé, bravo. Un bonus vous tente ? « {{title}} ».": "The core of the open blocks is done, well done. Fancy a bonus? “{{title}}”.",
   "Rien d’ouvert à finir. Prochaine échéance du projet : « {{title}} », le {{day}}/{{month}} à {{time}}.": "Nothing open left to finish. Next project deadline: “{{title}}”, on {{day}}/{{month}} at {{time}}.",
-  "Tout est à jour. Revoyez vos cartes ou profitez de la pause.": "You are all caught up. Review your cards or enjoy the break."
+  "Tout est à jour. Revoyez vos cartes ou profitez de la pause.": "You are all caught up. Review your cards or enjoy the break.",
+  "Étape indisponible. Réessayez.": "Next step unavailable. Try again.",
+  "Recherche de la prochaine étape…": "Finding the next step…",
+  "Récapitulatif de séance": "Session recap",
+  "Félicitations": "Congratulations",
+  "Mode silencieux pour la classe": "Quiet mode for the class",
+  "Les annonces restent dans le centre de notifications. Les étudiants peuvent demander une étape à Rafi.": "Announcements stay in the notification centre. Students can ask Rafi for their next step.",
+  "Heure du récapitulatif (heure du Maroc)": "Recap time (Morocco time)",
+  "Laissez l’heure vide pour désactiver le récapitulatif.": "Leave the time blank to turn off the recap.",
+  "Enregistrer l’heure": "Save time",
+  "Réglages de Rafi enregistrés.": "Rafi settings saved."
 }

@@ -309,9 +309,10 @@ def tick(db: Session, now: datetime | None = None) -> dict:
 
     pushes += project_reminders(db, now)
     # ADR-0047: « bloc ouvert pas encore terminé », once per student and block, from 9:00 the day after the opening.
-    from app.announcements import open_blocks
+    from app.announcements import open_blocks, session_recaps
 
     pushes += open_blocks(db, now)
+    pushes += session_recaps(db, now)
     if pushes:
         push_after_commit(db, pushes)
     return {"opened": opened_count}

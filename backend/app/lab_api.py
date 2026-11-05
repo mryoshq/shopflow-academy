@@ -134,8 +134,11 @@ def sql_challenge(version_id: int, payload: SqlAnswer, response: Response, auth:
     raw = {"sql": payload.sql, "result_matches": matches}
     attempt = MissionAttempt(user_id=auth.user.id, mission_version_id=version_id, course_release_id=release.id,
                              idempotency_key=payload.idempotency_key, answer=raw, is_correct=matches, points=score(definition, raw))
-    db.add(attempt)
+    from app.announcements import record_attempt
+    from app.live import push_after_commit
+
     try:
+        announcements = record_attempt(db, release, attempt)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -145,4 +148,6 @@ def sql_challenge(version_id: int, payload: SqlAnswer, response: Response, auth:
             raise HTTPException(status_code=409, detail="idempotency key already used") from None
         response.status_code = 200
         return {**attempt_response(db, existing, definition, replayed=True), "result": None}
+    if announcements:
+        push_after_commit(db, announcements)
     return {**attempt_response(db, attempt, definition, replayed=False), "result": mine.payload()}

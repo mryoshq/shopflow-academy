@@ -438,8 +438,11 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
                              fast=is_fast(db, rules, auth.user.id, version_id, now),
                              # Set here (not by the database) so the rank is exact even within one second.
                              created_at=now)
-    db.add(attempt)
+    from app.announcements import record_attempt
+    from app.live import push_after_commit
+
     try:
+        announcements = record_attempt(db, release, attempt)
         db.commit()
     except IntegrityError:
         db.rollback()
@@ -449,6 +452,8 @@ def submit_attempt(version_id: int, payload: AttemptInput, response: Response,
             raise HTTPException(status_code=409, detail="idempotency key already used")
         response.status_code = 200
         return attempt_response(db, existing, definition, replayed=True)
+    if announcements:
+        push_after_commit(db, announcements)
     if not attempt.is_correct and definition.kind not in UNGRADED_KINDS:
         blocked_signal(db, auth, release, version_id)
     rewards = after_attempt(db, release, auth.user.id, version_id, attempt.id, attempt.is_correct)
