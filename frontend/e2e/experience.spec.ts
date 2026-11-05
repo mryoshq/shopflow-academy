@@ -31,6 +31,8 @@ async function serious(page: Page) {
 }
 
 async function openMission(page: Page, title: string) {
+  const tab = page.getByRole("tab", { name: "Cours" })  // ADR-0051: from the home page, the course is in the Cours tab
+  if (await tab.count()) await tab.click()
   await page.getByRole("region", { name: COURSE }).getByRole("button", { name: `Ouvrir : ${title}` }).click()
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible()
 }

@@ -99,12 +99,12 @@ it("the dashboard shows the teacher's announcement until the student acknowledge
     rules_notice: { text: "Nouvelle règle : chaque essai compte.", since: "2026-10-28T12:00:00+00:00" },
   }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(dashboard)))
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   expect(await screen.findByText("Nouvelle règle : chaque essai compte.")).toBeInTheDocument()
   fireEvent.click(screen.getByRole("button", { name: "J’ai compris" }))
   expect(screen.queryByText("Nouvelle règle : chaque essai compte.")).toBeNull()
   cleanup()
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   await screen.findByRole("heading", { name: "Démonstration" })
   expect(screen.queryByText("Nouvelle règle : chaque essai compte.")).toBeNull()
 })

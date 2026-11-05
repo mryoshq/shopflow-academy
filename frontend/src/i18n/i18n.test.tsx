@@ -92,7 +92,7 @@ it("in English: the student dashboard, course content kept in French", async () 
       { mission_version_id: 13, title: "Ordre", module: "M", chapter: "C", kind: "reorder", estimated_duration_minutes: 8, status: "locked", locked_by: ["Frais"], best_points: 0, possible: 5, bonus: false },
     ] }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(data)))
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   expect(await screen.findByRole("heading", { name: "Hello, salma" })).toBeInTheDocument()
   expect(screen.getByText("Your score")).toBeInTheDocument()
   expect(screen.getByText(/1 mission passed out of 3\. Your best attempt counts\./)).toBeInTheDocument()

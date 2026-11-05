@@ -1,5 +1,17 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Vue étudiant pendant le projet (05/11/2026, ADR-0051)
+
+Branche `claude/lucid-brahmagupta-htwgun-vue-projet`, PR vers `main`, sans fusion. Accueil étudiant en onglets Projet, Cours, Ressources ; cartes de jalons ; anciennes adresses conservées. Résultats exacts dans PROGRESS. Aucune migration.
+
+### À faire en local après revue et fusion autorisées
+
+- `docker compose build frontend` puis `docker compose up -d --wait` ; recharger la page (le service worker sert la nouvelle version au chargement suivant).
+- Vérifier avec un compte de démonstration : onglet Projet par défaut, jalons à jour, « Voir l'animation » en fin de page ; onglet Cours avec les modules terminés repliés ; un lien de Rafi vers une mission ouvre bien la mission.
+- Relancer `npx playwright test e2e/live.spec.ts` sur la stack locale : le test de notification d'aide échouait déjà sur `main` dans la stack jetable de cette session.
+
+Prochaine action unique : suivre la CI de la PR et laisser la revue au propriétaire.
+
 ## Rafi — silence et récapitulatif de séance (04/11/2026)
 
 Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Le lot étend l’ADR-0050. Il ajoute le silence de la classe, un accès direct à l’aide manuelle, le récapitulatif quotidien à heure choisie au Maroc et la félicitation lors d’un vrai passage à l’état terminé. Il réutilise les réglages et les notifications existants. Le mode silencieux concerne les bulles de Rafi dans la page. Web Push reste un canal distinct.

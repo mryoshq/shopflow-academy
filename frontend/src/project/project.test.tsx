@@ -56,9 +56,10 @@ it("student: create a team, accept an invitation, submit a version with a table"
   expect(screen.queryByRole("button", { name: "Déposer" })).toBeNull()
   fireEvent.change(screen.getByRole("combobox", { name: "Inviter un camarade" }), { target: { value: "12" } })
   fireEvent.click(screen.getByRole("button", { name: "Inviter" }))
-  expect(await screen.findByRole("button", { name: "Déposer" })).toBeInTheDocument()
+  // ADR-0051: the form opens behind « Déposer ».
+  fireEvent.click(await screen.findByRole("button", { name: "Déposer" }))
   fireEvent.click(screen.getByRole("button", { name: "Insérer un tableau" }))
-  fireEvent.click(screen.getByRole("button", { name: "Déposer" }))
+  fireEvent.click(screen.getByRole("button", { name: "Envoyer le dépôt" }))
   await vi.waitFor(() => expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/milestones/1/submissions"))).toBe(true))
   const body = JSON.parse(String(fetchMock.mock.calls.find(([url]) => String(url).includes("/submissions"))![1].body))
   expect(body.text).toContain("| Colonne 1 | Colonne 2 | Colonne 3 |")

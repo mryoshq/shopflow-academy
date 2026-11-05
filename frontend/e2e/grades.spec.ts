@@ -139,6 +139,7 @@ async function captures(browser: Browser, request: APIRequestContext, theme: "li
   await student.addInitScript((value) => window.localStorage.setItem("shopflow:theme", value), theme)
   const page2 = await student.newPage()
   await signIn(page2, STUDENTS[0])
+  await page2.getByRole("tab", { name: "Cours" }).click()  // ADR-0051
   await expect(page2.getByRole("region", { name: /^Note finale : / })).toBeVisible()
   await expect(page2.getByTestId("block-points").first()).toHaveText(/pts|Leçons/)
   await expect(page2.getByText(/\d+ \/ \d+ missions?$/)).toHaveCount(0)

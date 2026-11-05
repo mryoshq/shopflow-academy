@@ -43,6 +43,7 @@ test("the teacher closes and reopens a block; a closed block exposes nothing", a
   const learnerContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learner = await learnerContext.newPage()
   await login(learner, "demo.etudiant04")
+  await learner.goto("/#/cours")  // ADR-0051: the course is in the Cours tab
   const before = await (await learner.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number }[] }[] }
   const ids = before.courses.find((item) => item.title === COURSE)!.missions.map((item) => item.mission_version_id)
   expect(ids.length).toBe(3)

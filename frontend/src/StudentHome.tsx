@@ -3,7 +3,6 @@ import { Suspense } from "react"
 import { LoadingState } from "./student/ui"
 import { VoyagePage } from "./voyage"
 import { CampusEquipPage } from "./campusequip"
-import { StudentProject } from "./project/StudentProject"
 import { MissionPlayer } from "./student/MissionPlayer"
 import { StudentDashboard } from "./student/StudentDashboard"
 import { useHashRoute } from "./useHashRoute"
@@ -20,8 +19,7 @@ function StudentPage() {
     <VoyagePage scene={route.scene} onScene={(scene) => navigate(`/voyage/${scene}`)} /></Suspense>
   if (route.name === "campusequip") return <Suspense fallback={<LoadingState label={t("Chargement de l’expérience…")} />}>
     <CampusEquipPage step={route.step} onStep={(step) => navigate(`/campusequip/${step}`)} /></Suspense>
-  if (route.name === "projet") return <StudentProject />
-  return route.name === "mission"
-    ? <MissionPlayer key={route.id} missionId={route.id} navigate={navigate} />
-    : <StudentDashboard navigate={navigate} />
+  if (route.name === "mission") return <MissionPlayer key={route.id} missionId={route.id} navigate={navigate} />
+  // ADR-0051: one home page in three tabs, Projet first.
+  return <StudentDashboard navigate={navigate} tab={route.name === "home" ? "projet" : route.name} />
 }

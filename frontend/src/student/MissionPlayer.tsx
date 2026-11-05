@@ -226,7 +226,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
       <Stack gap="3" align="start">
         <Flex gap="2" align="center" fontWeight="semibold"><Icon name="lock" />{t("Mission verrouillée")}</Flex>
         <Text>{t("Terminez d’abord :")}{" "}{mission.locked_by.join(", ")}.</Text>
-        <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>
+        <Button colorPalette="brand" variant="outline" onClick={() => navigate("/cours")}>{t("Retour au tableau de bord")}</Button>
       </Stack>
     </Panel> : <Stack gap="5">
       <Stack gap="5" minW="0">
@@ -244,7 +244,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
                 ? <Flex gap="2" align="center" color="green.fg" fontWeight="semibold" role="status"><Icon name="check" />{definition.kind === "review" ? t("Révision faite") : t("Leçon comprise")}</Flex>
                 : <Button colorPalette="brand" size="lg" loading={busy} disabled={mission.paused || readingLeft > 0} onClick={() => void markUnderstood()}>{t("J’ai compris")}</Button>}
               {mission.status === "completed" && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>{t("Mission suivante")}<Icon name="arrow-right" /></Button>}
-              {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>}
+              {mission.status === "completed" && !mission.next_id && <Button colorPalette="brand" variant="outline" onClick={() => navigate("/cours")}>{t("Retour au tableau de bord")}</Button>}
             </Flex>
             <Text fontSize="sm" color="app.muted">{definition.kind === "review" ? t("Une révision") : t("Une leçon")} {t("ne compte pas dans la note : elle aide à réussir les missions suivantes.")}</Text>
           </Stack>
@@ -317,7 +317,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
               <Flex gap="3" wrap="wrap">
                 {!result.correct && <Button variant="outline" colorPalette="brand" onClick={retry} disabled={pauseLeft > 0}><Icon name="retry" />{pauseLeft > 0 ? t("Réessayer dans {{pauseLeft}} s", { pauseLeft }) : t("Réessayer")}</Button>}
                 {result.correct && mission.next_id && <Button colorPalette="brand" onClick={() => navigate(`/mission/${mission.next_id}`)}>{t("Mission suivante")}<Icon name="arrow-right" /></Button>}
-                {result.correct && !mission.next_id && <Button colorPalette="brand" onClick={() => navigate("/")}>{t("Retour au tableau de bord")}</Button>}
+                {result.correct && !mission.next_id && <Button colorPalette="brand" onClick={() => navigate("/cours")}>{t("Retour au tableau de bord")}</Button>}
               </Flex>
             </Stack>
           </Panel>}
@@ -378,7 +378,7 @@ export function MissionPlayer({ missionId, navigate }: Props) {
 }
 
 function BackLink({ navigate }: { navigate: (path: string) => void }) {
-  return <Button variant="ghost" size="sm" alignSelf="start" px="2" onClick={() => navigate("/")}><Icon name="arrow-left" size={16} />{t("Tableau de bord")}</Button>
+  return <Button variant="ghost" size="sm" alignSelf="start" px="2" onClick={() => navigate("/cours")}><Icon name="arrow-left" size={16} />{t("Tableau de bord")}</Button>
 }
 
 /** ADR-0027: countdown after a wrong answer, with the hint button put forward. */

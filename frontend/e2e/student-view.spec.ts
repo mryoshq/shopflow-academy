@@ -48,6 +48,7 @@ test("« Vue étudiant »: the student's application, answers checked, nothing r
   await expect(page.getByRole("navigation", { name: "Navigation enseignant" })).toHaveCount(0)
   // Every block, so that a mission is there even if the class has none open.
   await page.getByText("Afficher aussi les blocs fermés").click()
+  await page.getByRole("tab", { name: "Cours" }).click()  // ADR-0051
   const open = page.getByRole("button", { name: /^Ouvrir : / }).first()
   await expect(open).toBeVisible()
   expect(await serious(page)).toEqual([])
