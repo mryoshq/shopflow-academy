@@ -70,7 +70,7 @@ def test_teams_of_one_or_two_by_invitation_one_team_per_person(project):
     assert post(out, f"/api/v1/student/project/invitations/{invitation}/accept").status_code == 404  # not theirs
     assert post(b, f"/api/v1/student/project/invitations/{invitation}/accept").status_code == 200
     team = a.get("/api/v1/student/project").json()["team"]
-    assert [m["name"] for m in team["members"]] == ["demo.etudiant01", "demo.etudiant02"] and team["full"] is True
+    assert [m["name"] for m in team["members"]] == ["demo.etudiant01", "demo.etudiant02"] and team["full"] is False  # a trio is allowed
     view = clients["teacher"].get(f"/api/v1/teacher/classes/{assignment}/project").json()
     assert [[m["name"] for m in t["members"]] for t in view["teams"]] == [["demo.etudiant01", "demo.etudiant02"]]
 
@@ -175,3 +175,21 @@ def test_grid_on_20_csv_slots_teacher_composition_and_observer(project):
     seen = observer.get(f"/api/v1/observer/classes/{assignment}/project").json()
     assert [m["name"] for m in seen["teams"][0]["members"]] == ["demo.etudiant01", "demo.etudiant02"]
     assert TestClient(app).get(f"/api/v1/teacher/classes/{assignment}/project").status_code == 401
+
+
+def test_trio_by_invitation_then_full_and_two_can_submit(project):
+    """Owner decision 05/11/2026: teams of two or three; a fourth is refused, one alone never submits."""
+    clients, engine, assignment = project
+    a, b = clients["a"], clients["b"]
+    page = a.get("/api/v1/student/project").json()
+    cohort = page["cohort_id"]
+    extra = add_students(engine, cohort, ["demo.trio03", "demo.trio04"])
+    ids = {c["name"]: c["id"] for c in a.get("/api/v1/student/project").json()["classmates"]}
+    assert post(a, "/api/v1/student/project/team", {"cohort_id": cohort}).status_code == 201
+    for name, client in (("demo.etudiant02", b), ("demo.trio03", extra["demo.trio03"])):
+        invitation = post(a, "/api/v1/student/project/invitations", {"user_id": ids[name]}).json()["id"]
+        assert post(client, f"/api/v1/student/project/invitations/{invitation}/accept").status_code == 200
+    team = a.get("/api/v1/student/project").json()["team"]
+    assert len(team["members"]) == 3 and team["full"] is True
+    refused = post(a, "/api/v1/student/project/invitations", {"user_id": ids["demo.trio04"]})
+    assert refused.status_code == 409 and "3 étudiants" in refused.json()["detail"]
