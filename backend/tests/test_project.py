@@ -193,3 +193,20 @@ def test_trio_by_invitation_then_full_and_two_can_submit(project):
     assert len(team["members"]) == 3 and team["full"] is True
     refused = post(a, "/api/v1/student/project/invitations", {"user_id": ids["demo.trio04"]})
     assert refused.status_code == 409 and "3 étudiants" in refused.json()["detail"]
+
+
+def test_teacher_forms_a_trio_and_adds_a_third_to_a_pair(project):
+    clients, engine, assignment = project
+    teacher, a = clients["teacher"], clients["a"]
+    cohort = a.get("/api/v1/student/project").json()["cohort_id"]
+    add_students(engine, cohort, ["demo.trio05", "demo.trio06", "demo.trio07"])
+    ids = {c["name"]: c["id"] for c in a.get("/api/v1/student/project").json()["classmates"]}
+    me = a.get("/api/v1/auth/me").json()["id"]
+    base = f"/api/v1/teacher/classes/{assignment}/project/teams"
+    assert post(teacher, base, {"user_ids": [me, ids["demo.etudiant02"], ids["demo.trio05"]]}).status_code == 201
+    pair = post(teacher, base, {"user_ids": [ids["demo.trio06"], ids["demo.trio07"]]})
+    assert pair.status_code == 201
+    four = [ids["demo.trio06"], ids["demo.trio07"], me, ids["demo.trio05"]]
+    assert post(teacher, base, {"user_ids": four}).status_code == 422  # four is too many
+    sizes = sorted(len(t["members"]) for t in teacher.get(f"/api/v1/teacher/classes/{assignment}/project").json()["teams"])
+    assert sizes == [2, 3]
