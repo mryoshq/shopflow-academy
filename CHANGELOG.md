@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Équipes de 3 côté enseignant (`feat/trinomes-enseignant`)
+
+- Projet > Binômes : « Former une équipe à la main (2 ou 3) » avec un troisième étudiant facultatif, et « Ajouter un étudiant » sur une paire existante.
+- Test : l'enseignant compose une équipe de 3 ; 4 est refusé. Aucune migration.
+
 ## 2026-11-05 — Équipes de 2 ou 3 (`feat/trinomes`)
 
 - Les étudiants peuvent former une équipe de 3 par invitation (décision du propriétaire) ; une 4e invitation est refusée. Le dépôt reste interdit à un étudiant seul (ADR-0041) : 2 membres au moins.

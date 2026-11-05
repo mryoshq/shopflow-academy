@@ -61,26 +61,37 @@ const teamName = (data: TeacherProjectData, id: number | null) => data.teams.fin
 function Teams({ data, readOnly, act, onDrawn }: Part & { onDrawn: () => Promise<void> }) {
   const [first, setFirst] = useState("")
   const [second, setSecond] = useState("")
-  const ids = [first, second].filter(Boolean).map(Number)
+  const [third, setThird] = useState("")
+  const [adding, setAdding] = useState<Record<number, string>>({})
+  const ids = [first, second, third].filter(Boolean).map(Number)
   return <Stack gap="4">
     {data.teams.length === 0 && <Text color="app.muted">{t("Aucun binôme pour le moment.")}</Text>}
     <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">{data.teams.map((team) => <Flex as="li" key={team.id} gap="3" align="center" wrap="wrap" p="3" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
       <Text fontWeight="semibold" flex="1">{team.members.map((member) => member.name).join(" + ") || "(vide)"}</Text>
       {team.members.length === 1 && <Badge variant="subtle" colorPalette="saffron">{t("Une seule personne")}</Badge>}
       {team.members.length === 3 && <Badge variant="subtle">{t("Trinôme")}</Badge>}
+      {!readOnly && team.members.length < 3 && data.alone.length > 0 && <Flex gap="1" align="center">
+        <NativeSelect.Root size="xs" maxW="48"><NativeSelect.Field aria-label={t("Ajouter un étudiant à cette équipe")} value={adding[team.id] ?? ""}
+          onChange={(event) => setAdding({ ...adding, [team.id]: event.target.value })}>
+          <option value="">{t("Ajouter un étudiant")}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+        </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
+        <Button size="xs" variant="outline" disabled={!adding[team.id]}
+          onClick={() => void act("PUT", `/teacher/project/teams/${team.id}`, { user_ids: [...team.members.map((member) => member.id), Number(adding[team.id])] }, t("Composition corrigée."))
+            .then((ok) => { if (ok) setAdding({ ...adding, [team.id]: "" }) })}>{t("Ajouter")}</Button>
+      </Flex>}
       {!readOnly && team.members.length >= 2 && <Button size="xs" variant="outline" onClick={() => void act("PUT", `/teacher/project/teams/${team.id}`, { user_ids: team.members.slice(0, -1).map((member) => member.id) }, t("Composition corrigée."))}>
         {t("Retirer")}{" "}{team.members[team.members.length - 1].name}</Button>}
     </Flex>)}</Stack>
     {readOnly && <Box><Text fontWeight="semibold">{t("Sans binôme (")}{data.alone.length})</Text><Text fontSize="sm" color="app.muted">{data.alone.map((item) => item.name).join(", ") || t("Tout le monde a un binôme.")}</Text></Box>}
     {!readOnly && <TeacherDraw assignmentId={data.assignment_id} onDrawn={onDrawn} />}
     {!readOnly && data.alone.length > 1 && <Panel><Stack gap="2">
-      <Text fontWeight="semibold">{t("Former un binôme à la main")}</Text>
-      <Flex gap="2" wrap="wrap">{[[first, setFirst], [second, setSecond]].map(([value, set], index) => <NativeSelect.Root key={index} maxW="xs">
-        <NativeSelect.Field aria-label={index ? t("Second étudiant") : t("Premier étudiant")} value={value as string} onChange={(event) => (set as (v: string) => void)(event.target.value)}>
-          <option value="">{index ? t("Second étudiant") : t("Premier étudiant")}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+      <Text fontWeight="semibold">{t("Former une équipe à la main (2 ou 3)")}</Text>
+      <Flex gap="2" wrap="wrap">{([[first, setFirst, t("Premier étudiant")], [second, setSecond, t("Second étudiant")], [third, setThird, t("Troisième étudiant (facultatif)")]] as const).map(([value, set, label], index) => <NativeSelect.Root key={index} maxW="xs">
+        <NativeSelect.Field aria-label={label} value={value} onChange={(event) => set(event.target.value)}>
+          <option value="">{label}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
         </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>)}</Flex>
-      <Button alignSelf="start" colorPalette="brand" disabled={!first || !second || first === second}
-        onClick={() => void act("POST", `/teacher/classes/${data.assignment_id}/project/teams`, { user_ids: ids }, t("Binôme créé.")).then((ok) => { if (ok) { setFirst(""); setSecond("") } })}>{t("Créer")}</Button>
+      <Button alignSelf="start" colorPalette="brand" disabled={!first || !second || new Set(ids).size !== ids.length}
+        onClick={() => void act("POST", `/teacher/classes/${data.assignment_id}/project/teams`, { user_ids: ids }, t("Binôme créé.")).then((ok) => { if (ok) { setFirst(""); setSecond(""); setThird("") } })}>{t("Créer")}</Button>
     </Stack></Panel>}
   </Stack>
 }
