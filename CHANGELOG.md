@@ -5,6 +5,11 @@
 - `docs/PLAN.md` : une page, avec l'état, la date limite, qui le fait et la prochaine action de chaque point. Les points sont groupés par échéance : avant le 21/11, avant le 23/11, plateforme, contenu, exploitation.
 - Documentation seulement.
 
+## 2026-11-05 — E-mails : variables SMTP transmises au backend (`fix/smtp-env`)
+
+- `compose.yaml` ne transmettait pas `SMTP_*` au conteneur : les lignes de `.env` (Resend) étaient ignorées et aucun e-mail ne partait. Elles sont maintenant passées au backend (vides par défaut = pas d'envoi).
+- Après fusion : `docker compose up -d --wait` (recrée le backend pour relire `.env`), puis une invitation observateur de test.
+
 ## 2026-11-05 — Cache du service worker renouvelé (`fix/sw-cache-v4`)
 
 - `shopflow-static-v3` → `v4` : un worker PDF.js mis en cache avec l'ancien type (`application/octet-stream`) avant la #94 est supprimé chez chaque utilisateur au prochain chargement.

@@ -1,6 +1,6 @@
 # Plan jusqu'à la fin du projet CampusEquip
 
-Mis à jour le 05/11/2026, sur `main` 73c4cc0 (après #95 et #93). Les séances sont terminées ; la remise du projet est le 23/11.
+Mis à jour le 05/11/2026, sur `main` 73c4cc0 (après #93, #95 et #96). Les séances sont terminées ; la remise du projet est le 23/11.
 
 **Qui :**
 - **Propriétaire** : l'enseignant, dans l'interface ou sur son Mac ;
@@ -31,7 +31,7 @@ Aucun agent ne fusionne, ne déploie ni ne modifie Cloudflare sans accord écrit
 |---|---|---|---|---|
 | e2e `project-draw` instable | En CI, le second essai ne repart pas d'un état propre : le tirage a déjà eu lieu et les inscriptions sont consommées | Avant la prochaine PR qui touche le projet | Cloud | PR : remise à zéro complète dans `beforeEach` (équipes, inscriptions, historique de tirage), ou spec en série sans relance |
 | Refus d'un import qui fermerait un bloc ouvert | #91 fusionnée (un renommage garde les ouvertures) ; #92 fermée sans fusion | Avant le prochain import du cours réel | Codex | Nouvelle PR courte depuis `main` : simulation et refus avant toute écriture, avec le test de la scission ; reprendre l'idée de #92, pas son diff |
-| E-mails Resend | #96 ouverte : les variables `SMTP_*` n'atteignaient pas le backend | Avant la prochaine invitation d'observateur | Propriétaire, puis agent Mac | Revue et fusion de #96 ; redéployer ; Réglages > Observateurs > « Envoyer un e-mail de test » |
+| E-mails Resend | #96 fusionnée : les variables `SMTP_*` atteignent maintenant le backend ; redéploiement à faire | Avant la prochaine invitation d'observateur | Propriétaire, puis agent Mac | Redéployer (`up -d --wait`) ; Réglages > Observateurs > « Envoyer un e-mail de test » |
 
 ## Contenu (après le projet)
 
