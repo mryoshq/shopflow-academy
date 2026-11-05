@@ -122,7 +122,7 @@ def test_preview_then_draw_trio_existing_teams_untouched_replay_confirmation_not
     assert all(item["kind"] != "project_draw" for item in a.get("/api/v1/notifications").json()["items"])
     page = c.get("/api/v1/student/project").json()
     assert page["surprise"]["draw_id"] == drawn["id"] and len(page["surprise"]["partners"]) == 1 and page["draw"]["done"] is True
-    assert page["team"]["full"] is True
+    assert len(page["team"]["members"]) == 2 and page["team"]["full"] is False  # a pair may still welcome a third
     assert post(c, "/api/v1/student/project/surprise/seen", {"cohort_id": cohort}).status_code == 200
     assert c.get("/api/v1/student/project").json()["surprise"] is None
     assert post(c, "/api/v1/student/project/draw/leave", {"cohort_id": cohort}).status_code == 409  # the draw took place

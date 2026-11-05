@@ -65,7 +65,8 @@ export function StudentProject() {
       <Heading as="h2" size="md" id="team-title">{t("Mon binôme")}</Heading>
       {team ? <>
         <Flex gap="2" wrap="wrap">{team.members.map((member) => <Badge key={member.id} colorPalette="brand" variant="subtle" rounded="full" px="3" py="1">{member.name}</Badge>)}
-          {team.members.length === 1 && <Text fontSize="sm" color="app.muted">{t("En attente d’un camarade : invitez-le ci-dessous. Seul, vous ne pouvez pas déposer.")}</Text>}</Flex>
+          {team.members.length === 1 && <Text fontSize="sm" color="app.muted">{t("En attente d’un camarade : invitez-le ci-dessous. Seul, vous ne pouvez pas déposer.")}</Text>}
+          {team.members.length === 2 && !team.full && <Text fontSize="sm" color="app.muted">{t("Vous pouvez encore inviter un troisième camarade (facultatif).")}</Text>}</Flex>
         {team.invitations.length > 0 && <Text fontSize="sm">{t("Invitation envoyée à")}{" "}{team.invitations.map((item) => item.name).join(", ")} {t(": en attente.")}</Text>}
         {!team.full && <Flex gap="2" wrap="wrap" align="end">
           <Field.Root maxW="sm"><Field.Label>{t("Inviter un camarade")}</Field.Label>
@@ -77,7 +78,7 @@ export function StudentProject() {
         </Flex>}
         <Button alignSelf="start" size="sm" variant="ghost" colorPalette="red" onClick={() => void act("/student/project/leave", undefined, t("Vous avez quitté le binôme."))}>{t("Quitter le binôme")}</Button>
       </> : <>
-        <Text>{t("Le projet se fait à deux. Formez votre binôme en invitant un camarade, qui devra accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.")}</Text>
+        <Text>{t("Le projet se fait à deux ou à trois. Formez votre équipe en invitant un ou deux camarades, qui devront accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.")}</Text>
         {data.draw?.registered ? <Stack gap="2" p="3" rounded="lg" bg="brand.subtle" data-testid="draw-status">
           <Text fontWeight="semibold">{t("Vous êtes inscrit au binôme surprise.")}</Text>
           <Text fontSize="sm">{tn("{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage.", data.draw.registered_count)}</Text>
