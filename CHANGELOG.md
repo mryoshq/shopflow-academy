@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — E-mails : variables SMTP transmises au backend (`fix/smtp-env`)
+
+- `compose.yaml` ne transmettait pas `SMTP_*` au conteneur : les lignes de `.env` (Resend) étaient ignorées et aucun e-mail ne partait. Elles sont maintenant passées au backend (vides par défaut = pas d'envoi).
+- Après fusion : `docker compose up -d --wait` (recrée le backend pour relire `.env`), puis une invitation observateur de test.
+
 ## 2026-11-05 — Aperçu PDF réparé (`fix/apercu-pdf-mjs`)
 
 - nginx 1.27 ne connaît pas l'extension `.mjs` : le moteur PDF.js (`pdf.worker.min-*.mjs`) partait en `application/octet-stream` et le navigateur refusait de le lancer, d'où un aperçu PDF vide. Le frontal le sert maintenant en `text/javascript`.

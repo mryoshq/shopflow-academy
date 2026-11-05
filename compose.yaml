@@ -41,6 +41,13 @@ services:
       VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY:-}
       MAIN_COURSE_SLUG: ${MAIN_COURSE_SLUG:-python-data-engineering-sql}
       CLASS_LABEL: ${CLASS_LABEL:-Classe B3 IA/Data}
+      # Observer invitations by e-mail (ADR-0042, Resend). Empty SMTP_HOST = no sending. Secrets stay in .env.
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-0}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SECURITY: ${SMTP_SECURITY:-starttls}
       # Laboratory database (ADR-0017): read-only role for students, owner role for the dataset.
       LAB_READER_URL: postgresql://lab_reader:${LAB_READER_PASSWORD:?set LAB_READER_PASSWORD in .env (python3 scripts/init_lab_env.py)}@labdb:5432/shopflow_lab
       LAB_OWNER_URL: postgresql://lab_owner:${LAB_OWNER_PASSWORD:?set LAB_OWNER_PASSWORD in .env (python3 scripts/init_lab_env.py)}@labdb:5432/shopflow_lab
