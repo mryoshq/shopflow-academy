@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-05 — Cache du service worker renouvelé (`fix/sw-cache-v4`)
+
+- `shopflow-static-v3` → `v4` : un worker PDF.js mis en cache avec l'ancien type (`application/octet-stream`) avant la #94 est supprimé chez chaque utilisateur au prochain chargement.
+- Aucune migration. Après fusion : rebuild frontend, `up -d --wait`, recharger la page.
+
 ## 2026-11-05 — Aperçu PDF réparé (`fix/apercu-pdf-mjs`)
 
 - nginx 1.27 ne connaît pas l'extension `.mjs` : le moteur PDF.js (`pdf.worker.min-*.mjs`) partait en `application/octet-stream` et le navigateur refusait de le lancer, d'où un aperçu PDF vide. Le frontal le sert maintenant en `text/javascript`.
