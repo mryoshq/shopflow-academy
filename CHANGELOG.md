@@ -5,6 +5,7 @@
 - Cause : `backup_once` est appelée en `backup_once || …`, ce qui désactive `set -e` dans la fonction. Au redémarrage de Docker, `pg_dump` échouait (PostgreSQL pas encore prêt) et le script écrivait quand même « backup ok » avec 0 octet (29/10 et 05/11).
 - Chaque étape est vérifiée explicitement (fichier non vide, `pg_restore --list`), le fichier partiel est supprimé, `last-backup.json` n'est pas mis à jour en cas d'échec. Attente de `pg_isready` avant chaque sauvegarde ; nouvel essai 5 min après un échec.
 - `ops_status.py` signale une dernière sauvegarde de 0 octet.
+- Seconde copie : chaque sauvegarde automatique vérifiée est aussi copiée dans le volume Docker `backup_mirror` (contrôle SHA-256, même rotation) ; voir RUNBOOK.
 - Après fusion : `docker compose up -d --wait backup` (le script est monté), puis vérifier les journaux du service.
 
 ## 2026-11-05 — Vue étudiant : Projet, Cours, Ressources (`claude/lucid-brahmagupta-htwgun-vue-projet`, ADR-0051)

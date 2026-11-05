@@ -6,6 +6,7 @@
 # files are rotated (BACKUP_KEEP newest kept); manual backups are never deleted.
 set -eu
 DIR=/backups
+MIRROR=/backups-mirror  # second copy (Docker volume backup_mirror); skipped when not mounted
 KEEP="${BACKUP_KEEP:-28}"
 INTERVAL="${BACKUP_INTERVAL_HOURS:-6}"
 umask 077
@@ -25,7 +26,22 @@ backup_once() {
   ls -1t "$DIR"/academy-*-auto.dump 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
     rm -f "$old" "$old.sha256"
   done
+  mirror "$final"
   echo "backup ok: $(basename "$final") ($bytes bytes)"
+}
+
+# Copies a verified dump (and its checksum) to the mirror, checks the copy, rotates the mirror like the main folder.
+mirror() {
+  [ -d "$MIRROR" ] || return 0
+  name="$(basename "$1")"
+  if cp "$1" "$MIRROR/.$name.part" && cp "$1.sha256" "$MIRROR/$name.sha256" && mv "$MIRROR/.$name.part" "$MIRROR/$name" \
+     && (cd "$MIRROR" && sha256sum -c "$name.sha256" > /dev/null); then
+    ls -1t "$MIRROR"/academy-*-auto.dump 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do rm -f "$old" "$old.sha256"; done
+    echo "mirror ok: $name"
+  else
+    rm -f "$MIRROR/.$name.part"
+    echo "mirror FAILED: $name (the main backup is kept)" >&2
+  fi
 }
 
 wait_for_postgres() {

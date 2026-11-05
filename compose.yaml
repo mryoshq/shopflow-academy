@@ -121,6 +121,8 @@ services:
     volumes:
       - ./scripts/ops/backup.sh:/ops/backup.sh:ro
       - ${BACKUP_DIR:-./.backups}:/backups
+      # Second copy of every verified backup, inside Docker (survives the loss of the host folder, not of the Mac).
+      - backup_mirror:/backups-mirror
     depends_on:
       postgres:
         condition: service_healthy
@@ -194,6 +196,7 @@ networks:
     internal: true
 volumes:
   pg_data:
+  backup_mirror:
   mysql_data:
   media_data:
   lab_data:
