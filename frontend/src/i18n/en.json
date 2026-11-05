@@ -1288,7 +1288,6 @@
   "Votre binôme surprise : {{names}}": "Your surprise team: {{names}}",
   "Le tirage a eu lieu !": "The draw has taken place!",
   "Une seule personne": "One person",
-  "Former un binôme à la main": "Form a team by hand",
   "Second étudiant": "Second student",
   "{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage._one": "{{count}} student signed up so far. You will be notified after the draw.",
   "{{count}} étudiant inscrit pour l’instant. Vous serez prévenu après le tirage._other": "{{count}} students signed up so far. You will be notified after the draw.",
@@ -1621,5 +1620,10 @@
   "Enregistrer l’heure": "Save time",
   "Réglages de Rafi enregistrés.": "Rafi settings saved.",
   "Le projet se fait à deux ou à trois. Formez votre équipe en invitant un ou deux camarades, qui devront accepter, ou tentez le binôme surprise : l’enseignant tirera au sort les étudiants encore sans équipe.": "The project is done in pairs or trios. Form your team by inviting one or two classmates, who must accept, or try the surprise pair: the teacher will draw lots among the students still without a team.",
-  "Vous pouvez encore inviter un troisième camarade (facultatif).": "You can still invite a third classmate (optional)."
+  "Vous pouvez encore inviter un troisième camarade (facultatif).": "You can still invite a third classmate (optional).",
+  "Former une équipe à la main (2 ou 3)": "Form a team by hand (2 or 3)",
+  "Troisième étudiant (facultatif)": "Third student (optional)",
+  "Ajouter un étudiant à cette équipe": "Add a student to this team",
+  "Ajouter un étudiant": "Add a student",
+  "Ajouter": "Add"
 }
