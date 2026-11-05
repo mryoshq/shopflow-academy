@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Aperçu PDF réparé (`fix/apercu-pdf-mjs`)
+
+- nginx 1.27 ne connaît pas l'extension `.mjs` : le moteur PDF.js (`pdf.worker.min-*.mjs`) partait en `application/octet-stream` et le navigateur refusait de le lancer, d'où un aperçu PDF vide. Le frontal le sert maintenant en `text/javascript`.
+- `smoke_public.py` vérifie le type du worker PDF (local et public).
+- Aucune migration. Après fusion : `docker compose build frontend` puis `up -d --wait`, recharger la page.
+
 ## 2026-11-04 — Rafi en mode silencieux et récapitulatif de séance
 
 - Réglages par classe pour le silence de Rafi et l’heure facultative du récapitulatif au Maroc. Le bouton « Que faire maintenant ? » reste accessible avec des annonces en attente.
