@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-05 — Aperçu PDF réparé (`fix/apercu-pdf-mjs`)
+
+- nginx 1.27 ne connaît pas l'extension `.mjs` : le moteur PDF.js (`pdf.worker.min-*.mjs`) partait en `application/octet-stream` et le navigateur refusait de le lancer, d'où un aperçu PDF vide. Le frontal le sert maintenant en `text/javascript`.
+- `smoke_public.py` vérifie le type du worker PDF (local et public).
+- Aucune migration. Après fusion : `docker compose build frontend` puis `up -d --wait`, recharger la page.
+
 ## 2026-11-04 — Import : les blocs ouverts restent ouverts (`fix/import-garde-ouvertures`)
 
 - Un module ou un bloc renommé, déplacé ou fusionné garde son chapitre, retrouvé par les missions qu'il contient : les ouvertures de la classe (`block_states`) ne sont plus supprimées en cascade (incident du 04/11/2026).
