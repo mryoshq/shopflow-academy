@@ -69,7 +69,7 @@ def main() -> int:
         last = json.loads(subprocess.run(["docker", "compose", "exec", "-T", "backup", "cat", "/backups/last-backup.json"],
                                          cwd=ROOT, capture_output=True, text=True, check=True).stdout)
         age = (datetime.now(timezone.utc) - datetime.fromisoformat(last["at"].replace("Z", "+00:00"))).total_seconds() / 3600
-        good &= line(age <= BACKUP_MAX_AGE_HOURS, "Dernière sauvegarde automatique", f"il y a {age:.1f} h ({last['bytes']} octets)")
+        good &= line(age <= BACKUP_MAX_AGE_HOURS and int(last.get("bytes") or 0) > 0, "Dernière sauvegarde automatique", f"il y a {age:.1f} h ({last['bytes']} octets)")
     except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError, ValueError):
         good &= line(False, "Dernière sauvegarde automatique", "introuvable")
     free_gb = shutil.disk_usage(Path.home()).free / 1e9
