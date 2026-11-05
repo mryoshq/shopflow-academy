@@ -5,11 +5,22 @@
 - `compose.yaml` ne transmettait pas `SMTP_*` au conteneur : les lignes de `.env` (Resend) étaient ignorées et aucun e-mail ne partait. Elles sont maintenant passées au backend (vides par défaut = pas d'envoi).
 - Après fusion : `docker compose up -d --wait` (recrée le backend pour relire `.env`), puis une invitation observateur de test.
 
+## 2026-11-05 — Cache du service worker renouvelé (`fix/sw-cache-v4`)
+
+- `shopflow-static-v3` → `v4` : un worker PDF.js mis en cache avec l'ancien type (`application/octet-stream`) avant la #94 est supprimé chez chaque utilisateur au prochain chargement.
+- Aucune migration. Après fusion : rebuild frontend, `up -d --wait`, recharger la page.
+
 ## 2026-11-05 — Aperçu PDF réparé (`fix/apercu-pdf-mjs`)
 
 - nginx 1.27 ne connaît pas l'extension `.mjs` : le moteur PDF.js (`pdf.worker.min-*.mjs`) partait en `application/octet-stream` et le navigateur refusait de le lancer, d'où un aperçu PDF vide. Le frontal le sert maintenant en `text/javascript`.
 - `smoke_public.py` vérifie le type du worker PDF (local et public).
 - Aucune migration. Après fusion : `docker compose build frontend` puis `up -d --wait`, recharger la page.
+
+## 2026-11-04 — Rafi en mode silencieux et récapitulatif de séance
+
+- Réglages par classe pour le silence de Rafi et l’heure facultative du récapitulatif au Maroc. Le bouton « Que faire maintenant ? » reste accessible avec des annonces en attente.
+- Le récapitulatif compte les missions principales encore à finir dans les blocs ouverts. Rafi félicite l’élève au moment où il termine un bloc.
+- Toutes les bulles automatiques partagent une cadence d’au moins dix minutes par compte. Les ouvertures manuelles restent accessibles. Aucune migration.
 
 ## 2026-11-04 — Import : les blocs ouverts restent ouverts (`fix/import-garde-ouvertures`)
 

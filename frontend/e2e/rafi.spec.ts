@@ -45,7 +45,13 @@ async function teacherApi(request: APIRequestContext) {
 async function reach(page: Page, text: string) {
   const bubble = page.getByTestId("rafi-bubble")
   for (let i = 0; i < 15; i++) {
-    await expect(bubble).toBeVisible({ timeout: 15_000 })
+    // Announcements waiting during Rafi's cooldown stay behind the avatar badge.
+    await expect(async () => {
+      if (!(await bubble.isVisible())) {
+        await page.getByRole("button", { name: /^Rafi : \d+ annonce/ }).click({ timeout: 1_000 })
+      }
+      await expect(bubble).toBeVisible({ timeout: 1_000 })
+    }).toPass({ timeout: 15_000 })
     if ((await bubble.textContent())?.includes(text)) return bubble
     await bubble.getByRole("button", { name: /^J’ai lu/ }).click()
     await page.waitForTimeout(150)

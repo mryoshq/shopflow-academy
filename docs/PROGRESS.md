@@ -1,5 +1,15 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-04 — Rafi, silence et fin de séance
+
+Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Suite de l’ADR-0050. Silence distinct des sons, bouton manuel disponible pendant le silence et la cadence, récapitulatif facultatif à l’heure de Casablanca et félicitation à la transition réelle. Les notifications restent dédupliquées en base et la lecture contrôle l’affectation active.
+
+- Backend, depuis `backend`, Python 3.12 avec l’environnement local de test existant. `python -m pytest -q --disable-warnings tests/test_rafi_recap.py tests/test_announcements.py tests/test_live.py tests/test_ownership.py tests/test_security_matrix.py tests/test_student.py tests/test_project_reminders.py tests/test_bonus_blocks.py tests/test_carryover.py tests/test_lab.py` donne 100 réussites et 5 cas labo conditionnels ignorés. Droits, changements de réglages, horaires Casablanca, pause, activité, archivage, concurrence et report après republication sont couverts.
+- Frontend, `npm run test -- src/rafi/rafi.test.tsx src/live/live.test.tsx src/i18n/keys.test.ts src/App.test.tsx --maxWorkers=1` donne 28 réussites. `npm run build` et `python3 scripts/verify_kit.py` passent. Le build signale la taille de certains bundles.
+- `SHOPFLOW_CHROME_PATH='/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' npm exec playwright -- test --config playwright.rafi-recap.config.ts` donne 7 réussites sur le port 3203 avec API simulée. Captures étudiant avant et après inspectées en clair/sombre à 390 et 1366 px, ainsi que réglages enseignant, clavier, axe et cadence entre onglets/rechargements. Deux ajustements du harnais ont été nécessaires pour reconnaître les cases Chakra puis mesurer le contraste hors transition d’enregistrement.
+
+Les données utilisées sont fictives. Le lot est destiné à une PR vers `main`. Prochaine action unique après ouverture, vérifier les contrôles CI du commit publié et laisser la revue au propriétaire.
+
 ## 2026-11-03 — Marqueur des bonus facultatifs (`codex/blocs-bonus-explicites`)
 
 [PR #86](https://github.com/mryoshq/shopflow-academy/pull/86), base `main`. Petit correctif de présentation : un bloc exclusivement bonus affichait « 0 terminé », même après réussite de ses activités facultatives. Il porte maintenant le badge « Bonus facultatifs » et un compteur nommé « ont réussi tous les bonus ». La grille et le survol indiquent les bonus réussis individuellement ; le tableau de bord étudiant porte le même badge. Les blocs mixtes gardent leur compteur principal. Les leçons et blocs vides ne reçoivent pas le badge. Les règles de complétion obligatoire et la notation restent inchangées.
