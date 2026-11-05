@@ -1,8 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 
-/** Minimal hash router: "#/", "#/mission/<id>", "#/projet" (ADR-0034), "#/voyage[/<scene>]" (ADR-0033) and "#/campusequip[/<step>]" (ADR-0044). Survives reloads and re-login. */
-export function parseRoute(hash: string): { name: "home" } | { name: "mission"; id: number } | { name: "projet" } | { name: "voyage"; scene: number } | { name: "campusequip"; step: number } {
-  if (hash === "#/projet") return { name: "projet" }
+/**
+ * Minimal hash router: "#/" (the Projet tab), "#/projet", "#/cours", "#/ressources" (the three tabs of the home page, ADR-0051),
+ * "#/mission/<id>", "#/voyage[/<scene>]" (ADR-0033) and "#/campusequip[/<step>]" (ADR-0044). Survives reloads and re-login.
+ */
+export type HomeTab = "projet" | "cours" | "ressources"
+export function parseRoute(hash: string): { name: "home" } | { name: "mission"; id: number } | { name: HomeTab } | { name: "voyage"; scene: number } | { name: "campusequip"; step: number } {
+  if (hash === "#/projet" || hash === "#/cours" || hash === "#/ressources") return { name: hash.slice(2) as HomeTab }
   const campusequip = /^#\/campusequip(?:\/([1-7]))?$/.exec(hash)  // ADR-0044
   if (campusequip) return { name: "campusequip", step: campusequip[1] ? Number(campusequip[1]) : 1 }
   const voyage = /^#\/voyage(?:\/([1-7]))?$/.exec(hash)

@@ -128,6 +128,7 @@ test("a closed block opened for one student only, within 10 s (« ouvert pour vo
   const student = await studentCtx.newPage()
   try {
     await login(student, STUDENT)
+    await student.getByRole("tab", { name: "Cours" }).click()  // ADR-0051
     const card = student.getByRole("group", { name: `Bloc : ${BLOCK}` })
     await expect(card.getByText("Bientôt disponible")).toBeVisible()
     await teacherView(teacher, "Ma classe", "Étudiants")

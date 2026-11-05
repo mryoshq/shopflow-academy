@@ -10,7 +10,7 @@ import { msg } from "../i18n"
  *   #/projet                (ADR-0034)
  *   #/voyage[/<scène>]      (ADR-0033, in the menu once the application is integrated)
  *   #/campusequip[/<étape>] (ADR-0044)
- *   #/etudiant[/mission/<id> | /projet | /voyage/<scène> | /campusequip/<étape>]   (ADR-0043: « Vue étudiant », the student's own routes inside)
+ *   #/etudiant[/mission/<id> | /projet | /cours | /ressources | /voyage/<scène> | /campusequip/<étape>]   (ADR-0043: « Vue étudiant », the student's own routes inside)
  *   #/classement            #/classement/<assignment id>
  *   #/reglages/notifications | observateurs | classes | objectif
  */
@@ -48,7 +48,7 @@ export function viewInfo(view: ViewKey): ViewInfo {
 /** Parses a hash such as "#/cours/apercu" or "#/classe/etudiants?eleve=12"; null when it is not a teacher route. */
 export function parseRoute(hash: string): TeacherRoute | null {
   // ADR-0043: inside « Vue étudiant », the rest of the address is the student's own route.
-  const student = /^#\/etudiant(?:\/(mission\/\d{1,9}|projet|voyage(?:\/[1-7])?|campusequip(?:\/[1-7])?))?$/.exec(hash)
+  const student = /^#\/etudiant(?:\/(mission\/\d{1,9}|projet|cours|ressources|voyage(?:\/[1-7])?|campusequip(?:\/[1-7])?))?$/.exec(hash)
   if (student) return { view: "etudiant", sub: student[1] ?? "", params: {} }
   const match = /^#\/([a-z]+)(?:\/([a-z0-9]+))?(?:\?(.*))?$/.exec(hash)
   if (!match) return null

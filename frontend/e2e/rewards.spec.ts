@@ -31,6 +31,7 @@ type Rewards = { streak: number; badges: { label: string; earned: boolean }[]; l
 
 test("student: a success shows the streak and the badge; the dashboard shows level, streak and collection", async ({ page }) => {
   await login(page, STUDENT)
+  await page.getByRole("tab", { name: "Cours" }).click()  // ADR-0051
   await page.getByRole("button", { name: `Ouvrir : ${MISSION}` }).first().click()
   await expect(page.getByRole("heading", { level: 1, name: MISSION })).toBeVisible()
   await page.getByRole("radio", { name: /La jointure passe au grain article/ }).check()
@@ -42,7 +43,7 @@ test("student: a success shows the streak and the badge; the dashboard shows lev
   for (const badge of body.rewards?.new_badges ?? []) await expect(page.getByText(badge.label).first()).toBeVisible()
   expect(await serious(page)).toEqual([])
 
-  await page.goto("/")
+  await page.goto("/#/cours")  // ADR-0051: progression and class goal are in the Cours tab
   const panel = page.getByRole("region", { name: "Votre progression" })
   await expect(panel).toBeVisible()
   // Same course as the panel: the main course (not a demonstration), else the first one (StudentDashboard.rewardsCourse).

@@ -70,6 +70,7 @@ for (const [theme, width, height] of [["light", 1366, 768], ["dark", 1366, 768],
     const page = await context.newPage()
     const size = `${suffix(theme)}-${width}`
     await login(page, STUDENT)
+    await page.getByRole("tab", { name: "Cours" }).click()  // ADR-0051: the course is in the Cours tab
     await expect(page.getByText(/Nouvelle règle : chaque essai compte/).first()).toBeVisible()
     expect(await serious(page)).toEqual([])
     await page.screenshot({ path: `${shots}/41-annonce-${size}.png`, fullPage: false, animations: "disabled" })

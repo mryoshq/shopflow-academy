@@ -31,7 +31,7 @@ const fullWidth = (page: Page) => page.evaluate(() => {
 
 test("student: the dashboard opens CampusEquip, the step follows the address, the files are the delivered ones", async ({ page, request }) => {
   await signIn(page, "demo.etudiant07")
-  await page.getByRole("button", { name: "Ouvrir l’expérience CampusEquip" }).click()
+  await page.getByRole("button", { name: /Voir l’animation/ }).click()  // ADR-0051: behind the Projet tab's last button
   await expect(page).toHaveURL(/#\/campusequip\/1$/)
   const steps = page.getByRole("navigation", { name: "Étapes du voyage" })
   await expect(steps).toBeVisible()

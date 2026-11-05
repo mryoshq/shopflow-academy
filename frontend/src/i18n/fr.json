@@ -62,5 +62,9 @@
   "{{count}} envoi_one": "{{count}} envoi",
   "{{count}} envoi_other": "{{count}} envois",
   "Rafi : {{count}} annonce_one": "Rafi : {{count}} annonce",
-  "Rafi : {{count}} annonce_other": "Rafi : {{count}} annonces"
+  "Rafi : {{count}} annonce_other": "Rafi : {{count}} annonces",
+  "{{count}} jalon passé_one": "{{count}} jalon passé",
+  "{{count}} jalon passé_other": "{{count}} jalons passés",
+  "Plus que {{count}} jour_one": "Plus que {{count}} jour",
+  "Plus que {{count}} jour_other": "Plus que {{count}} jours"
 }

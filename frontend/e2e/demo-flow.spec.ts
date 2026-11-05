@@ -45,6 +45,7 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   const studentContext = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const student = await studentContext.newPage()
   await login(student, "demo.etudiant07")
+  await student.getByRole("tab", { name: "Cours" }).click()  // ADR-0051: the course is in the Cours tab
   const course = student.getByRole("region", { name: title })
   await course.getByRole("button", { name: "Ouvrir : Frais de livraison après une jointure" }).click()
   await student.getByRole("radio", { name: /La jointure passe au grain article/ }).check()
@@ -71,12 +72,13 @@ test("teacher publishes the demo, a student completes it, the grade persists and
   await expect(student.getByText("Bonne décision")).toBeVisible()
 
   // Grade persists across a full reload and a new session.
-  await student.goto("/")
+  await student.goto("/#/cours")  // ADR-0051
   await expect(course.getByText("Réussie")).toHaveCount(3)
   await studentContext.close()
   const again = await browser.newContext({ locale: "fr-FR" })
   const reloaded = await again.newPage()
   await login(reloaded, "demo.etudiant07")
+  await reloaded.goto("/#/cours")
   await expect(reloaded.getByRole("img", { name: "30 points sur 30" }).first()).toBeVisible()
   const dashboard = await (await reloaded.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number }[] }[] }
   const ids = dashboard.courses.find((item) => item.title === title)!.missions.map((item) => item.mission_version_id)

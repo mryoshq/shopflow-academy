@@ -75,9 +75,8 @@ test.describe.serial("Rafi", () => {
     const rafi = page.getByTestId("rafi")
     await expect(rafi.getByRole("button", { name: /^Rafi/ })).toBeVisible()
     // Countdown to the next deadline.
-    const next = page.getByRole("region", { name: "Prochaine échéance" })
-    await expect(next).toContainText("Rendu Rafi")
-    await expect(next).toContainText(/dans 3 j \d+ h/)
+    // ADR-0051: the countdown is in the header; the milestone card gives the days left.
+    await expect(page.getByText(/Prochaine échéance : «\sRendu Rafi\s», dans 3 j \d+ h/)).toBeVisible()
 
     // A teacher's message takes the same channel: Rafi presents it.
     const text = `Bonjour, pensez à la pause (${Date.now() % 1000}).`

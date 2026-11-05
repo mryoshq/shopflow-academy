@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-05 — Vue étudiant : Projet, Cours, Ressources (`claude/lucid-brahmagupta-htwgun-vue-projet`, ADR-0051)
+
+- Accueil étudiant en trois onglets : Projet (par défaut), Cours, Ressources. `#/projet` et `#/mission/…` fonctionnent toujours (liens de Rafi et des notifications) ; nouvelles adresses `#/cours` et `#/ressources`.
+- Projet : une carte par jalon (ce qu'il faut rendre, date, jours restants, statut, bouton « Déposer »), jalons passés repliés, binôme d'abord s'il est incomplet. L'animation CampusEquip passe derrière « Voir l'animation », en fin de page.
+- Cours : modules terminés repliés sous « Terminé · à revoir » ; le retour d'une mission ramène à l'onglet Cours. Textes destinés à l'enseignant retirés (version du cours, assistant IA, « pendant la séance »).
+- Test : un cours archivé n'apparaît sur aucune route étudiante.
+- Aucune migration. Après fusion : rebuild frontend, `up -d --wait`, recharger la page.
+
 ## 2026-11-05 — E-mails : variables SMTP transmises au backend (`fix/smtp-env`)
 
 - `compose.yaml` ne transmettait pas `SMTP_*` au conteneur : les lignes de `.env` (Resend) étaient ignorées et aucun e-mail ne partait. Elles sont maintenant passées au backend (vides par défaut = pas d'envoi).

@@ -61,7 +61,9 @@ test("sign up for the surprise team, the teacher draws, the reveal is shown once
   // Student: two choices, no « work alone »; signed up, they see their status and can leave.
   const student = await signIn(browser, SIGNED_UP)
   await student.goto("/#/projet")
-  await expect(student.getByRole("heading", { level: 1, name: "Projet CampusEquip" })).toBeVisible()
+  // ADR-0051: the project is the first tab of the home page (its title is an h2 under « Bonjour »).
+  await expect(student.getByRole("tab", { name: "Projet", selected: true })).toBeVisible()
+  await expect(student.getByRole("heading", { level: 2, name: "Projet CampusEquip" })).toBeAttached()
   await expect(student.getByRole("button", { name: "Former mon binôme" })).toBeVisible()
   await expect(student.getByText(/travailler seul/)).toHaveCount(0)
   await student.getByRole("button", { name: "Je tente le binôme surprise" }).click()
@@ -110,7 +112,8 @@ test("sign up for the surprise team, the teacher draws, the reveal is shown once
   await expect(revealed.locator(".surprise-card")).toHaveCount(1)
   expect(await serious(revealed)).toEqual([])
   await revealed.reload()
-  await expect(revealed.getByRole("heading", { level: 1, name: "Projet CampusEquip" })).toBeVisible()
+  await expect(revealed.getByRole("heading", { level: 2, name: "Projet CampusEquip" })).toBeAttached()
+  await expect(revealed.getByRole("heading", { name: "Jalons" })).toBeVisible()
   await expect(revealed.getByTestId("surprise-reveal")).toHaveCount(0)
   await expect(revealed.getByRole("button", { name: "Je tente le binôme surprise" })).toHaveCount(0)
 

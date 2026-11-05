@@ -126,11 +126,17 @@ it("greets a student by the local part of the identifier and shows the empty sta
   vi.stubGlobal("fetch", vi.fn().mockImplementation(async (url: string) => {
     if (url.endsWith("/auth/me")) return json({ id: 2, username: "prenom.nom@example.com", role: "student" })
     if (url.endsWith("/student/dashboard")) return json({ display_name: "prenom.nom", ai_enabled: false, courses: [] })
+    if (url.endsWith("/student/project")) return json({ cohort_id: null, cohorts: [] })
+    if (url.endsWith("/student/rafi")) return json({ sounds: false, next: { kind: "done" } })
+    if (url.includes("/notifications")) return json({ unread: 0, items: [] })
     throw new Error(`Unexpected path ${url}`)
   }))
   show()
   expect(await screen.findByRole("heading", { name: "Bonjour, prenom.nom" })).toBeInTheDocument()
-  expect(screen.getByText("Aucun cours pour le moment")).toBeInTheDocument()
+  // ADR-0051: the Projet tab comes first; the Cours tab says there is no course yet.
+  expect(screen.getByRole("tab", { name: "Projet" })).toHaveAttribute("aria-selected", "true")
+  fireEvent.click(screen.getByRole("tab", { name: "Cours" }))
+  expect(await screen.findByText("Aucun cours pour le moment")).toBeInTheDocument()
   expect(screen.queryByText(/@example.com/)).not.toBeInTheDocument()
   expect(screen.queryByRole("button", { name: /Continuer/ })).not.toBeInTheDocument()
 })

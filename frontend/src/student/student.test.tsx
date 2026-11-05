@@ -97,7 +97,7 @@ it("dashboard shows courses, locked missions and a Continue target", async () =>
     ] }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(data)))
   const navigate = vi.fn()
-  wrap(<StudentDashboard navigate={navigate} />)
+  wrap(<StudentDashboard navigate={navigate} tab="cours" />)
   expect(await screen.findByRole("heading", { name: "Bonjour, demo.etudiant01" })).toBeInTheDocument()
   expect(screen.getByText("Démonstration")).toBeInTheDocument()
   expect(screen.getByRole("button", { name: "Verrouillée : Ordre" })).toBeDisabled()
@@ -113,7 +113,7 @@ it("dashboard shows courses, locked missions and a Continue target", async () =>
 it("dashboard error of the application offers a retry", async () => {
   const fetchMock = vi.fn().mockResolvedValueOnce(json({ detail: "boom" }, 500)).mockResolvedValue(json({ display_name: "x", ai_enabled: false, courses: [] }))
   vi.stubGlobal("fetch", fetchMock)
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   expect(await screen.findByRole("alert")).toHaveTextContent("Impossible de charger")
   fireEvent.click(screen.getByRole("button", { name: "Réessayer" }))
   expect(await screen.findByText("Aucun cours pour le moment")).toBeInTheDocument()
@@ -227,7 +227,7 @@ it("dashboard groups missions in blocks: open blocks list them, closed blocks ar
     missions: [row(22, "Défi bonus", true), row(21, "Pourquoi 70 DH deviennent 100 DH")],
   }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(dashboard)))
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   const open = await screen.findByRole("group", { name: "Bloc : Bloc 1 : le grain" })
   expect(within(open).getByText("Ouvert")).toBeInTheDocument()
   expect(within(open).getByText("Bonus")).toBeInTheDocument()
@@ -379,7 +379,7 @@ it("marks bonus-only blocks optional and keeps their required done state unchang
     modules: [{ title: "Module fictif", blocks: [{ id: 1, title: "Bonus A", open: true, mission_count: 0, bonus_count: 2, bonus_only: true, bonus_points: 10, bonus_possible: 10, completed_count: 0, done: false, mission_ids: [] }] }], missions: [],
   }] }
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue(json(dashboard)))
-  wrap(<StudentDashboard navigate={vi.fn()} />)
+  wrap(<StudentDashboard navigate={vi.fn()} tab="cours" />)
   const block = await screen.findByRole("group", { name: "Bloc : Bonus A" })
   expect(within(block).getByText("Bonus facultatifs")).toBeInTheDocument()
   expect(within(block).getByText("10 / 10 pts bonus")).toBeInTheDocument()

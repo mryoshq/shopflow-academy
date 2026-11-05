@@ -37,9 +37,21 @@ async function press(page: Page, locator: ReturnType<Page["getByRole"]>, key = "
   await page.keyboard.press(key)
 }
 
+/** ADR-0051: the course is in the Cours tab, reached with the keyboard (selected tab, then the right arrow). */
+async function toCourse(page: Page) {
+  const tab = page.getByRole("tab", { name: "Cours" })
+  if (!(await tab.count()) || (await tab.getAttribute("aria-selected")) === "true") return
+  await press(page, page.getByRole("tab", { name: "Projet" }), "ArrowRight")
+  await expect(tab).toHaveAttribute("aria-selected", "true")
+}
+
 async function openMission(page: Page, title: string) {
+  await toCourse(page)
   const course = page.getByRole("region", { name: COURSE })
-  await press(page, course.getByRole("button", { name: `Ouvrir : ${title}` }))
+  const open = course.getByRole("button", { name: `Ouvrir : ${title}` })
+  // A finished module is folded under « à revoir »: unfold it with the keyboard first.
+  if (!(await open.isVisible())) await press(page, course.getByTestId("module-done").filter({ has: page.getByRole("button", { name: `Ouvrir : ${title}`, includeHidden: true }) }).locator("summary"))
+  await press(page, open)
   await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible()
 }
 
@@ -57,6 +69,7 @@ async function csrf(context: BrowserContext): Promise<string> {
 
 test("a student completes the three demonstrations with the keyboard only", async ({ page, context }) => {
   await keyboardLogin(page, "demo.etudiant03")
+  await toCourse(page)
   const course = page.getByRole("region", { name: COURSE })
   await expect(course.getByText("Démonstration", { exact: true })).toBeVisible()
   expect(await seriousA11yViolations(page)).toEqual([])
@@ -141,6 +154,7 @@ test("a student completes the three demonstrations with the keyboard only", asyn
 
 test("a second student is isolated, sees the locked state and survives a network failure", async ({ page, context }) => {
   await keyboardLogin(page, "demo.etudiant05")
+  await toCourse(page)
   const course = page.getByRole("region", { name: COURSE })
   const lockedButton = course.getByRole("button", { name: "Verrouillée : Ordonner un pipeline d'ingestion" })
   await expect(lockedButton).toBeDisabled()
@@ -194,6 +208,7 @@ test("a second student is isolated, sees the locked state and survives a network
 test("a student without courses sees the empty state", async ({ page }) => {
   await page.route("**/api/v1/student/dashboard", (route) => route.fulfill({ json: { display_name: "demo.etudiant09", ai_enabled: false, courses: [] } }))
   await keyboardLogin(page, "demo.etudiant09")
+  await toCourse(page)
   await expect(page.getByText("Aucun cours pour le moment")).toBeVisible()
   expect(await seriousA11yViolations(page)).toEqual([])
   await page.screenshot({ path: `${shots}/08-vide.png`, fullPage: true, animations: "disabled" })

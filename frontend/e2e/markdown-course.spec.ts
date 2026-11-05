@@ -49,6 +49,7 @@ test("a student plays the Markdown demonstration course", async ({ page, browser
   const context = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const student = await context.newPage()
   await login(student, "demo.etudiant10")
+  await student.getByRole("tab", { name: "Cours" }).click()  // ADR-0051: the course is in the Cours tab
   const course = student.getByRole("region", { name: TITLE })
   await expect(course.getByText(/Une journée courte pour découvrir chaque type/)).toBeVisible()
   await course.getByRole("button", { name: "Ouvrir : Qu'est-ce que le grain d'une table ?" }).click()

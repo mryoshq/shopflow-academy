@@ -1,5 +1,17 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-05 — Vue étudiant pendant le projet (ADR-0051)
+
+Branche `claude/lucid-brahmagupta-htwgun-vue-projet`, depuis `origin/main`. Onglets Projet, Cours, Ressources ; cartes de jalons ; jalons passés et modules terminés repliés ; animation derrière « Voir l'animation » ; textes enseignant retirés ; test du cours archivé. Rafi et l'import de cours inchangés. Stack jetable locale (PostgreSQL 16, uvicorn, `vite preview`), comptes de démonstration fictifs.
+
+- PASS : `cd backend && ../.venv/bin/python -m pytest -q tests/test_archived_course.py tests/test_student.py tests/test_security_matrix.py tests/test_project.py` : 23 tests.
+- PASS : `cd frontend && npx tsc -b` ; `npm run test -- --maxWorkers=1` : 43 fichiers, 251 tests ; `npm run build` (avertissement habituel de taille de bundle).
+- PASS : `npx playwright test e2e/student-home.spec.ts` (5 : onglets, anciennes adresses, axe AA clair/sombre à 1366 et 390 px, pas de débordement), `e2e/player.spec.ts e2e/demo-flow.spec.ts` (6), `e2e/voyage.spec.ts` (6).
+- Suite e2e complète : 97 tests sur 102 exécutés avant la limite de temps de la commande, les 5 restants (voyage) relancés à part et réussis. Deux échecs :
+  - `project-draw` : échec réel dû au lot (le titre h1 « Projet CampusEquip » est devenu un h2 sous « Bonjour »). Assertion adaptée (onglet Projet sélectionné, titre h2), puis relance : PASS. Une relance intermédiaire a échoué sur des binômes laissés dans la base locale par une exécution précédente (autre classe que celle nettoyée par le test) ; base locale nettoyée, PASS.
+  - `live` « help request reaches the teacher's notification centre » : FAIL côté enseignant (toast), sans lien avec la vue étudiant ; échouait déjà sur `main` dans cette stack locale.
+- Captures avant/après en clair et sombre, 1366 et 390 px : `docs/captures/vue-etudiant-projet/` (avant : accueil, projet, cours, ressources ; après : projet, cours, ressources).
+
 ## 2026-11-04 — Rafi, silence et fin de séance
 
 Branche `codex/rafi-silence-recap`, depuis `github/main` ffb2e92. Suite de l’ADR-0050. Silence distinct des sons, bouton manuel disponible pendant le silence et la cadence, récapitulatif facultatif à l’heure de Casablanca et félicitation à la transition réelle. Les notifications restent dédupliquées en base et la lecture contrôle l’affectation active.

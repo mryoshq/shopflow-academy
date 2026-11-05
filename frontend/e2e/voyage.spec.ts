@@ -29,6 +29,7 @@ const sceneButton = (page: Page, scene: number) =>
 
 test("student: menu entry, the 7 scenes by address and buttons, back button, player", async ({ page }) => {
   await login(page, "demo.etudiant03")
+  await page.getByRole("tab", { name: "Ressources" }).click()  // ADR-0051: the voyage is in Ressources
   await page.getByRole("navigation", { name: "Expérience interactive" }).getByRole("button", { name: "Ouvrir l’expérience" }).click()
   await expect(page).toHaveURL(/#\/voyage\/1$/)
   await expect(page.getByRole("heading", { level: 1, name: "Le voyage d’une donnée." })).toBeVisible()

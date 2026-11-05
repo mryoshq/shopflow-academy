@@ -82,6 +82,7 @@ test("studio: create, validate, preview, publish, assign and read without leakin
   const learner = await browser.newContext({ locale: "fr-FR", viewport: { width: 1366, height: 768 } })
   const learnerPage = await learner.newPage()
   await login(learnerPage, student)
+  await learnerPage.getByRole("tab", { name: "Cours" }).click()  // ADR-0051: the course is in the Cours tab
   const learnerCourse = learnerPage.getByRole("region", { name: courseTitle })
   await expect(learnerCourse).toBeVisible()
   const courseList = await learnerPage.request.get("/api/v1/student/courses")

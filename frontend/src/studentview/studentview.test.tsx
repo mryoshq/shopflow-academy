@@ -67,7 +67,7 @@ it("« Vue étudiant » in the sidebar and Ctrl+K: banner, the student's dashboa
   wrap(<NotificationProvider><TeacherApp username="demo.enseignant" onLogout={vi.fn()} busy={false} resumed={false} /></NotificationProvider>)
   const entry = await screen.findByRole("link", { name: "Vue étudiant" })
   expect(entry).toHaveAttribute("href", "#/etudiant")
-  window.location.hash = "#/etudiant"
+  window.location.hash = "#/etudiant/cours"  // ADR-0051: the course is in the Cours tab
   window.dispatchEvent(new HashChangeEvent("hashchange"))
   expect(await screen.findByTestId("student-view-banner")).toHaveTextContent("Vue étudiant, rien n’est enregistré")
   expect(await screen.findByText("Pourquoi 70 DH")).toBeInTheDocument()

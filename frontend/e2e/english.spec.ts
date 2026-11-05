@@ -33,6 +33,7 @@ test("English: sign in, dashboard and mission; the choice is remembered and Fren
   await expect(page.getByRole("heading", { level: 1, name: "Learn data by making real decisions." })).toBeVisible()
   expect(await serious(page)).toEqual([])
   await login(page, "demo.etudiant09")
+  await page.getByRole("tab", { name: "Course" }).click()  // ADR-0051
   await expect(page.getByText("Your score")).toBeVisible()
   await expect(page.getByText(/missions? passed out of \d+\. Your best attempt counts\./)).toBeVisible()
   expect(await serious(page)).toEqual([])
