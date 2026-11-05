@@ -64,16 +64,19 @@ function Teams({ data, readOnly, act, onDrawn }: Part & { onDrawn: () => Promise
   const [third, setThird] = useState("")
   const [adding, setAdding] = useState<Record<number, string>>({})
   const ids = [first, second, third].filter(Boolean).map(Number)
+  // Students without a team, then those alone in a one-person team (moved when added elsewhere).
+  const movable = [...data.alone.map((item) => ({ ...item, solo: false })),
+    ...data.teams.filter((team) => team.members.length === 1).map((team) => ({ ...team.members[0], solo: true }))]
   return <Stack gap="4">
     {data.teams.length === 0 && <Text color="app.muted">{t("Aucun binôme pour le moment.")}</Text>}
     <Stack as="ul" listStyleType="none" p="0" m="0" gap="2">{data.teams.map((team) => <Flex as="li" key={team.id} gap="3" align="center" wrap="wrap" p="3" borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
       <Text fontWeight="semibold" flex="1">{team.members.map((member) => member.name).join(" + ") || "(vide)"}</Text>
       {team.members.length === 1 && <Badge variant="subtle" colorPalette="saffron">{t("Une seule personne")}</Badge>}
       {team.members.length === 3 && <Badge variant="subtle">{t("Trinôme")}</Badge>}
-      {!readOnly && team.members.length < 3 && data.alone.length > 0 && <Flex gap="1" align="center">
+      {!readOnly && team.members.length < 3 && team.members.length >= 2 && movable.length > 0 && <Flex gap="1" align="center">
         <NativeSelect.Root size="xs" maxW="48"><NativeSelect.Field aria-label={t("Ajouter un étudiant à cette équipe")} value={adding[team.id] ?? ""}
           onChange={(event) => setAdding({ ...adding, [team.id]: event.target.value })}>
-          <option value="">{t("Ajouter un étudiant")}</option>{data.alone.map((item) => <option key={item.id} value={item.id}>{item.name}</option>)}
+          <option value="">{t("Ajouter un étudiant")}</option>{movable.filter((item) => !team.members.some((member) => member.id === item.id)).map((item) => <option key={item.id} value={item.id}>{item.name}{item.solo ? ` ${t("(seul, déplacé)")}` : ""}</option>)}
         </NativeSelect.Field><NativeSelect.Indicator /></NativeSelect.Root>
         <Button size="xs" variant="outline" disabled={!adding[team.id]}
           onClick={() => void act("PUT", `/teacher/project/teams/${team.id}`, { user_ids: [...team.members.map((member) => member.id), Number(adding[team.id])] }, t("Composition corrigée."))

@@ -460,7 +460,15 @@ def set_members(db: Session, cohort_id: int, team: ProjectTeam, user_ids: list[i
     for uid in user_ids:
         current = membership(db, cohort_id, uid)
         if current and current.team_id != team.id:
-            raise HTTPException(status_code=409, detail=f"{display_name(db.get(User, uid).username)} fait déjà partie d'un autre binôme")
+            # A student alone in a team without any submission is moved: that one-person team is dissolved (05/11/2026).
+            solo = team_members(db, current.team_id) == [uid] and not db.scalar(
+                select(ProjectSubmission.id).where(ProjectSubmission.team_id == current.team_id).limit(1))
+            if not solo:
+                raise HTTPException(status_code=409, detail=f"{display_name(db.get(User, uid).username)} fait déjà partie d'un autre binôme")
+            old = db.get(ProjectTeam, current.team_id)
+            db.execute(delete(ProjectMember).where(ProjectMember.team_id == old.id))
+            db.delete(old)
+            db.flush()
     db.execute(delete(ProjectMember).where(ProjectMember.team_id == team.id, ProjectMember.user_id.not_in(user_ids)))
     present = set(team_members(db, team.id))
     for uid in user_ids:

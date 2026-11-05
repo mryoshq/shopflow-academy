@@ -210,3 +210,22 @@ def test_teacher_forms_a_trio_and_adds_a_third_to_a_pair(project):
     assert post(teacher, base, {"user_ids": four}).status_code == 422  # four is too many
     sizes = sorted(len(t["members"]) for t in teacher.get(f"/api/v1/teacher/classes/{assignment}/project").json()["teams"])
     assert sizes == [2, 3]
+
+
+def test_teacher_moves_a_student_alone_into_a_pair_and_his_team_disappears(project):
+    clients, engine, assignment = project
+    teacher, a, b = clients["teacher"], clients["a"], clients["b"]
+    cohort = a.get("/api/v1/student/project").json()["cohort_id"]
+    extra = add_students(engine, cohort, ["demo.seul08"])
+    ids = {c["name"]: c["id"] for c in a.get("/api/v1/student/project").json()["classmates"]}
+    me = a.get("/api/v1/auth/me").json()["id"]
+    assert post(extra["demo.seul08"], "/api/v1/student/project/team", {"cohort_id": cohort}).status_code == 201  # alone
+    base = f"/api/v1/teacher/classes/{assignment}/project"
+    pair = post(teacher, f"{base}/teams", {"user_ids": [me, ids["demo.etudiant02"]]}).json()["id"]
+    moved = put(teacher, f"/api/v1/teacher/project/teams/{pair}", {"user_ids": [me, ids["demo.etudiant02"], ids["demo.seul08"]]})
+    assert moved.status_code == 200, moved.text
+    teams = teacher.get(base).json()["teams"]
+    assert [len(t["members"]) for t in teams] == [3]  # the one-person team is gone
+    # A student already in a real pair is never taken away.
+    other = post(teacher, f"{base}/teams", {"user_ids": [me]})
+    assert other.status_code == 409
