@@ -115,6 +115,7 @@ for (const theme of ["light", "dark"] as const) {
     const dashboard = await (await page.request.get("/api/v1/student/dashboard")).json() as { courses: { title: string; missions: { mission_version_id: number; title: string }[] }[] }
     const course = dashboard.courses.find((item) => item.title === TITLE)
     test.skip(!course, "course not given to demo.etudiant10 (markdown-course.spec.ts runs first)")
+    await page.goto("/#/cours")  // ADR-0051: the course is in the Cours tab
     const region = page.getByRole("region", { name: TITLE })
     await expect(region.getByText(/Objectif : Expliquer pourquoi un total change après une jointure/)).toBeVisible()
     await expect(page.locator("main")).not.toContainText(/BLOC-GRAIN|DEMO-GRAIN/)
