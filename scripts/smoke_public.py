@@ -15,6 +15,7 @@ credential, cookie value or token.
 from __future__ import annotations
 
 import json
+import re
 import socket
 import sys
 from pathlib import Path
@@ -78,8 +79,18 @@ def main() -> int:
             check("DNS", False, type(error).__name__)
             return report()
 
-    status, headers, _ = call("GET", f"{base}/")
+    status, headers, page = call("GET", f"{base}/")
     check("Page d'accueil", status == 200, f"HTTP {status}")
+    # The PDF.js module worker must be served as JavaScript, or the browser refuses it (PDF preview empty).
+    entry = re.search(rb'src="(/assets/index-[^"]+\.js)"', page or b"")
+    chunk = re.search(rb"PdfPreview-[\w-]+\.js", call("GET", f"{base}{entry.group(1).decode()}")[2]) if entry else None
+    worker = re.search(rb"pdf\.worker\.min-[\w-]+\.mjs", call("GET", f"{base}/assets/{chunk.group(0).decode()}")[2]) if chunk else None
+    if worker:
+        _, worker_headers, _ = call("GET", f"{base}/assets/{worker.group(0).decode()}")
+        kind = worker_headers.get("Content-Type") or ""
+        check("Worker PDF servi en JavaScript", "javascript" in kind, kind or "absent")
+    else:
+        check("Worker PDF trouvé dans le build", False, "PdfPreview ou pdf.worker introuvable")
     check("Pas de redirection Cloudflare Access", "cloudflareaccess" not in (headers.get("Location") or ""), headers.get("Location") or "aucune")
     check("En-tête CSP", bool(headers.get("Content-Security-Policy")))
     media = next((part.split()[1:] for part in (headers.get("Content-Security-Policy") or "").split(";") if part.split()[:1] == ["media-src"]), [])
