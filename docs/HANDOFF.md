@@ -2,15 +2,14 @@
 
 ## « Le voyage d'une donnée » : animation améliorée (07/11/2026, ADR-0033)
 
-Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle expérience dans `frontend/src/voyage/`, thème de l'Academy, dépendance `motion`, `scripts/voyage-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration.
+PR #102 fusionnée (`1dfca25`) et en service depuis le 07/11/2026 : smoke 16/16 local et 18/18 public, n8n 302, blocs inchangés (85). Résultats exacts dans PROGRESS. Aucune migration.
 
-### À faire en local après revue et fusion autorisées
-
-- Mise en service : `docker compose build frontend` (son `npm ci` installe `motion`), `docker compose up -d --wait`, recharger la page.
-- Lancer `cd frontend && npm run test:e2e -- e2e/voyage.spec.ts` sur la stack locale (non lancé dans cette session).
+Restent ouverts :
+- Rafi gêne l'expérience : bulle « Bloc à terminer » sur le canevas ou « À la loupe », pastille « Que faire maintenant ? » sur le compteur du lecteur à 390 px ; DAG tassé à 375x667 dans la Vue étudiant.
+- Contrôle manuel complet non lancé (Catppuccin, 1024 et 375 px, animations réduites, mode présentation).
 - Point toujours ouvert : MAD ou DH.
 
-Prochaine action unique : suivre la CI de la PR et laisser la revue au propriétaire.
+Prochaine action unique : masquer Rafi sur `#/voyage` (étudiant et Vue étudiant) dans une PR, puis refaire le contrôle manuel complet.
 
 ## Vue étudiant pendant le projet (05/11/2026, ADR-0051)
 
