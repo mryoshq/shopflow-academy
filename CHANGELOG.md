@@ -9,6 +9,7 @@
 - Corrigé : décalage entre scène et adresse avec le bouton retour ; deux boutons « Glossaire » ; contraste du scénario sélectionné.
 - Nouvelle dépendance `motion` (chargée seulement avec l'expérience). Test unitaire adapté à la nouvelle interface.
 - Aucune migration. Après fusion : `docker compose build frontend` (son `npm ci` installe `motion`), `up -d --wait`, recharger la page.
+- En service depuis le 07/11/2026 (PR #102, `1dfca25`) : smoke 16/16 local, 18/18 public.
 
 ## 2026-11-05 — Sauvegardes : une sauvegarde vide n'est plus jamais « ok » (`fix/backup-vide`)
 
