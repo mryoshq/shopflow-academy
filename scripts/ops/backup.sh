@@ -6,31 +6,64 @@
 # files are rotated (BACKUP_KEEP newest kept); manual backups are never deleted.
 set -eu
 DIR=/backups
+MIRROR=/backups-mirror  # second copy (Docker volume backup_mirror); skipped when not mounted
 KEEP="${BACKUP_KEEP:-28}"
 INTERVAL="${BACKUP_INTERVAL_HOURS:-6}"
 umask 077
 
 backup_once() {
+  # Every step is checked explicitly: `set -e` does not apply inside a function called as `backup_once || …`,
+  # and an empty dump was once recorded as « backup ok » (29/10 and 05/11/2026, PostgreSQL not ready yet).
   ts="$(date -u +%Y%m%d-%H%M%S)"
   part="$DIR/.academy-$ts.part"
   final="$DIR/academy-$ts-auto.dump"
-  pg_dump -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "$part"
-  pg_restore --list "$part" > /dev/null
-  mv "$part" "$final"
-  (cd "$DIR" && sha256sum "$(basename "$final")" > "$(basename "$final").sha256")
+  if ! pg_dump -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "$part"; then rm -f "$part"; return 1; fi
+  if [ ! -s "$part" ] || ! pg_restore --list "$part" > /dev/null; then rm -f "$part"; return 1; fi
+  mv "$part" "$final" || return 1
+  (cd "$DIR" && sha256sum "$(basename "$final")" > "$(basename "$final").sha256") || return 1
   bytes="$(wc -c < "$final" | tr -d ' ')"
   printf '{"at":"%s","file":"%s","bytes":%s}\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(basename "$final")" "$bytes" > "$DIR/last-backup.json"
   ls -1t "$DIR"/academy-*-auto.dump 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do
     rm -f "$old" "$old.sha256"
   done
+  mirror "$final"
   echo "backup ok: $(basename "$final") ($bytes bytes)"
 }
 
+# Copies a verified dump (and its checksum) to the mirror, checks the copy, rotates the mirror like the main folder.
+mirror() {
+  [ -d "$MIRROR" ] || return 0
+  name="$(basename "$1")"
+  if cp "$1" "$MIRROR/.$name.part" && cp "$1.sha256" "$MIRROR/$name.sha256" && mv "$MIRROR/.$name.part" "$MIRROR/$name" \
+     && (cd "$MIRROR" && sha256sum -c "$name.sha256" > /dev/null); then
+    ls -1t "$MIRROR"/academy-*-auto.dump 2>/dev/null | tail -n +"$((KEEP + 1))" | while read -r old; do rm -f "$old" "$old.sha256"; done
+    echo "mirror ok: $name"
+  else
+    rm -f "$MIRROR/.$name.part"
+    echo "mirror FAILED: $name (the main backup is kept)" >&2
+  fi
+}
+
+wait_for_postgres() {
+  i=0
+  until pg_isready -q -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do
+    i=$((i + 1))
+    [ "$i" -ge 60 ] && return 1
+    sleep 5
+  done
+}
+
 if [ "${1:-loop}" = "once" ]; then
-  backup_once
+  wait_for_postgres || { echo "backup FAILED: PostgreSQL unreachable" >&2; exit 1; }
+  backup_once || { echo "backup FAILED at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2; exit 1; }
   exit 0
 fi
 while true; do
-  backup_once || echo "backup FAILED at $(date -u +%Y-%m-%dT%H:%M:%SZ)" >&2
-  sleep "$((INTERVAL * 3600))"
+  if wait_for_postgres && backup_once; then
+    sleep "$((INTERVAL * 3600))"
+  else
+    # A failed backup is retried 5 minutes later instead of waiting for the next interval.
+    echo "backup FAILED at $(date -u +%Y-%m-%dT%H:%M:%SZ), retry in 5 min" >&2
+    sleep 300
+  fi
 done
