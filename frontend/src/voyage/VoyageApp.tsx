@@ -1,115 +1,688 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Badge, Box, Button, CloseButton, Dialog, Portal } from '@chakra-ui/react';
-import { Icon } from './icons';
-import { BASE,BATCH,TASKS,EDGES,columns,contexts,files,glossary,makeFrames,money,scenes,services,snapshot,type Scenario,type Task,type TaskStatus } from './model';
-import './voyage.css';
-const statusLabels:Record<TaskStatus,string>={waiting:'En attente',running:'En cours',success:'Réussie',error:'Échec',retry:'Nouvelle tentative'};
-const taskIcons:Record<Task,string>={wait_source:'clock',preflight:'shield',load_orders:'database',load_events:'layers',refresh_cache:'stack',rebuild_queue:'route',verify_result:'check'};
-const taskTitles:Record<Task,string>={wait_source:'Attendre les sources',preflight:'Vérifier le lot',load_orders:'Charger les commandes',load_events:'Charger les événements',refresh_cache:'Rafraîchir le cache',rebuild_queue:'Reconstruire la file',verify_result:'Vérifier les résultats'};
-const positions:Record<Task,[number,number]>={wait_source:[24,38],preflight:[228,38],load_orders:[432,38],load_events:[432,183],refresh_cache:[228,328],rebuild_queue:[636,183],verify_result:[636,328]};
-const connectors:Record<string,string>={
- 'wait_source-preflight':'M184 80H228', 'preflight-load_orders':'M388 80H432', 'load_orders-load_events':'M512 122V183',
- 'load_orders-refresh_cache':'M512 142H308V328', 'load_events-rebuild_queue':'M592 225H636',
- 'rebuild_queue-verify_result':'M716 267V328', 'refresh_cache-verify_result':'M388 370H636'
-};
-type Modal = 'glossary'|'architecture'|'about'|'question'|'file'|null;
-/**
- * « Le voyage d'une donnée », the owner's application (ShopFlow-voyage.zip), integrated in the Academy (ADR-0033).
- * Changes from the source: scoped root (.voyage-root, see scripts/voyage-css.mjs), dialogs and presentation mode
- * kept inside the experience, and the current scene follows the address (#/voyage/<1-7>) both ways.
- */
-const prefersReduced=()=>typeof window!=='undefined'&&typeof window.matchMedia==='function'&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-export default function VoyageApp({initialScene=1,onScene}:{initialScene?:number;onScene?:(scene:number)=>void}){
- const rootRef=useRef<HTMLDivElement>(null);
- const [scenario,setScenario]=useState<Scenario>('normal');
- const [cacheFirst,setCacheFirst]=useState(false);
- const frames=useMemo(()=>makeFrames(scenario,cacheFirst),[scenario,cacheFirst]);
- const [index,setIndex]=useState(0),[playing,setPlaying]=useState(false),[speed,setSpeed]=useState(1);
- const [mode,setMode]=useState('guided'),[selected,setSelected]=useState<Task>('load_orders'),[tab,setTab]=useState('Données');
- const [recovered,setRecovered]=useState(false),[ttl,setTtl]=useState(60),[fastTime,setFastTime]=useState(false);
- const [reduced,setReduced]=useState(prefersReduced);
- const [modal,setModal]=useState<Modal>(null),[fileIndex,setFileIndex]=useState(0),[query,setQuery]=useState(''),[question,setQuestion]=useState(0),[showAnswer,setShowAnswer]=useState(false),[follow,setFollow]=useState(false),[full,setFull]=useState(false),[fullError,setFullError]=useState('');
- const state=useMemo(()=>snapshot(frames,index,scenario),[frames,index,scenario]);
- const frame=frames[index];const ctx=contexts[selected]; const blocked=!!frame.gate&&!recovered;
- const cacheToken=frames.slice(0,index+1).filter(f=>f.effect==='cache').length;
- useEffect(()=>{setTtl(60)},[cacheToken,scenario]);
- useEffect(()=>{if(!state.cache||ttl<=0)return;const timer=setInterval(()=>setTtl(t=>Math.max(0,t-1)),fastTime?100:1000);return()=>clearInterval(timer)},[state.cache,ttl,fastTime]);
- useEffect(()=>{if(!playing||blocked||index===frames.length-1){if(blocked||index===frames.length-1)setPlaying(false);return;}const t=setTimeout(()=>setIndex(i=>Math.min(i+1,frames.length-1)),3500/speed);return()=>clearTimeout(t)},[playing,index,speed,frames.length,blocked]);
- useEffect(()=>{if(frame.task&&mode==='guided')setSelected(frame.task)},[frame,mode]);
- useEffect(()=>{const fn=()=>setFull(!!document.fullscreenElement);document.addEventListener('fullscreenchange',fn);return()=>document.removeEventListener('fullscreenchange',fn)},[]);
- function go(n:number){setPlaying(false);setIndex(Math.max(0,Math.min(n,frames.length-1)))}
- function restart(s:Scenario=scenario){setPlaying(false);setScenario(s);setIndex(0);setRecovered(false);setTtl(60)}
- function jumpIndex(scene:number){const target=frames.findIndex(f=>f.scene===scene);const gate=frames.findIndex(f=>f.gate);return scenario==='redis'&&!recovered&&target>gate?gate:target}
- function jump(scene:number){go(jumpIndex(scene))}
- // ADR-0033: the address gives the starting scene and follows the browser back button; the scene reached is reported back.
- const pendingScene=useRef<number|null>(Math.min(7,Math.max(1,initialScene))-1);
- useEffect(()=>{const wanted=Math.min(7,Math.max(1,initialScene))-1;if(wanted===frames[index].scene)return;const target=jumpIndex(wanted);pendingScene.current=frames[target].scene;go(target)
- // eslint-disable-next-line react-hooks/exhaustive-deps
- },[initialScene]);
- useEffect(()=>{if(pendingScene.current!==null){if(frame.scene===pendingScene.current)pendingScene.current=null;return}onScene?.(frame.scene+1)
- // eslint-disable-next-line react-hooks/exhaustive-deps
- },[frame.scene]);
- function ask(n:number){setQuestion(n);setShowAnswer(false);setPlaying(false);setModal('question')}
- async function fullscreen(){try{if(document.fullscreenElement)await document.exitFullscreen();else await (rootRef.current??document.documentElement).requestFullscreen();setFullError('')}catch{setFullError('Le plein écran est indisponible dans ce navigateur.')}}
- function open(m:Modal){setPlaying(false);setModal(m)}
- const questions=[{q:'Pourquoi 7 lignes acceptées donnent-elles 6 commandes ?',a:'Le grain du CSV est la ligne de commande. Les 7 lignes se répartissent entre 6 clés order_id : 1001, 1002, 1003, 1004, 1005 et 1012. Une commande possède donc plusieurs lignes. Le kit ne permet pas ici d’identifier laquelle.',scene:3}, {q:'Une tâche échouée signifie-t-elle que rien n’a été enregistré ?',a:'Non. Dans la panne après commit, les écritures sont déjà validées. Le retry reconnaît le lot et renvoie SKIPPED_ALREADY_LOADED : les compteurs restent à 16 commandes et 20 lignes.',scene:3},{q:'Que perd-on lorsque le cache expire ?',a:'La copie temporaire dans Redis disparaît. Les commandes et les agrégats persistants restent dans PostgreSQL ; le CA reste à 5 425,00 MAD. La file des exceptions est un espace distinct.',scene:5}];
- function illustrate(){setModal(null);if(question===1){setScenario('after-commit');setRecovered(false);setIndex(makeFrames('after-commit',cacheFirst).findIndex(f=>f.id==='after-fail'));}else if(question===0){go(frames.findIndex(f=>f.id==='split'));}else {const n=frames.findIndex(f=>f.effect==='cache');if(scenario==='redis'){setRecovered(true)}go(n);setTimeout(()=>setTtl(0),50)} }
- const toggleButton=(label:string,active:boolean,fn:()=>void)=><button className={'segment '+(active?'active':'')} onClick={fn} aria-pressed={active}>{label}</button>;
- return <div className="voyage-root" ref={rootRef}><Box className={'app '+(reduced?'reduce-motion':'')}>
-  <header className="topbar"><a className="brand" href="#" onClick={e=>{e.preventDefault();restart('normal')}} aria-label="ShopFlow, recommencer"><span className="brand-icon"><Icon name="workflow" size={24}/></span><span>ShopFlow<span className="brand-dot">.</span></span></a><span className="header-divider"/><span className="header-caption">LE LABORATOIRE DE LA DONNÉE</span><nav className="top-nav" aria-label="Navigation principale"><button className="nav-active" onClick={()=>setModal(null)}>L’expérience</button><button onClick={()=>open('architecture')}>Architecture <span>5</span></button></nav><div className="header-actions"><button onClick={()=>open('glossary')} aria-label="Glossaire"><Icon name="book"/> <span>Glossaire</span></button><button className="square-button" onClick={fullscreen} aria-label={full?'Quitter le plein écran':'Mode présentation plein écran'} title="Mode présentation"><Icon name="expand"/></button></div></header>
-  <div className="workspace">
-   <aside className="sidebar"><div className="sidebar-heading">LE PARCOURS <span>07 SCÈNES</span></div><nav aria-label="Scènes du parcours">{scenes.map((s,i)=><button key={s.title} className={'scene-link '+(frame.scene===i?'current':'')+(frame.scene>i?' complete':'')} onClick={()=>jump(i)} aria-label={String(i+1).padStart(2,'0')+' '+s.title} aria-current={frame.scene===i?'step':undefined}><span className="scene-number">{frame.scene>i?<Icon name="check" size={13}/>:String(i+1).padStart(2,'0')}</span><span>{s.title}{frame.scene===i&&<small>{s.short}</small>}</span>{frame.scene===i&&<i/>}</button>)}</nav>
-   <div className="sidebar-bottom"><div className="learn-card"><span className="tiny-label">UN FIL ROUGE</span><Icon name="route" size={24}/><h3>Suivez une commande.</h3><p>Retrouvez la commande 1001, de sa source à sa livraison.</p><button onClick={()=>{setFollow(!follow);setSelected('load_orders');setTab('Données')}}>{follow?'Arrêter le suivi':'Suivre #1001'} <Icon name="arrow" size={15}/></button></div><button className="about-link" onClick={()=>open('about')}><Icon name="info" size={16}/> À propos de la simulation</button><span className="sidebar-foot">APPRENDRE EN OBSERVANT.</span></div></aside>
-   <main className="main-content"><div className="intro"><div className="eyebrow"><span className="eyebrow-line"/> COMPRENDRE LES PIPELINES DE DONNÉES <Badge className="simulation-badge" variant="outline">Simulation pédagogique</Badge></div><h1>Le voyage d’une <span>donnée.</span></h1><p>Des commandes brutes à une information fiable, traçable et exploitable.</p></div>
-   <div className="experience-grid"><section className="stage-area" aria-label="Simulation du pipeline">
-    <div className="stage-toolbar"><div className="mode-switch">{toggleButton('Visite guidée',mode==='guided',()=>setMode('guided'))}{toggleButton('Exploration libre',mode==='free',()=>{setMode('free');setPlaying(false)})}</div><button className={'motion-toggle '+(reduced?'on':'')} aria-pressed={reduced} aria-label="Animations réduites" onClick={()=>setReduced(!reduced)}><Icon name="eye" size={15}/><span>Animations réduites</span><span className="mini-switch"/></button></div>
-    <div className="pipeline-panel"><div className="panel-topline"><span><Icon name="workflow" size={16}/><b>shopflow_pipeline</b><span className="tag-outline">DAG</span></span><span className={'pipeline-status '+(state.verified?'done':'')}>{state.verified?<Icon name="check" size={13}/>:<Icon name="clock" size={13}/>} {state.verified?'Exécution réussie':blocked?'En attente de reprise':playing?'Exécution en cours':'Prêt à explorer'}</span></div>
-    <div className="diagram-scroll"><div className="diagram"><svg className="connectors" viewBox="0 0 900 440" aria-label="Dépendances du DAG"><defs><marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0 10 5 0 10Z" fill="currentColor"/></marker></defs>{EDGES.map(([a,b])=><path key={a+b} d={connectors[a+'-'+b]} className={(state.tasks[a]==='success'?'edge-passed ':'')+(playing&&state.tasks[a]==='success'&&state.tasks[b]!=='success'?'edge-flow':'')} markerEnd="url(#arrowhead)"/>)}<circle cx="512" cy="142" r="4" className="junction"/></svg>
-    <div className="diagram-note"><span className="tiny-label">UN ORCHESTRATEUR,</span><strong>deux branches<br/>indépendantes.</strong><p>Airflow donne le rythme.<br/>Les données restent dans<br/>leurs stockages.</p><button onClick={()=>{setCacheFirst(!cacheFirst);restart()}}><Icon name="workflow" size={14}/> {cacheFirst?'Cache en premier':'Événements en premier'}</button></div>
-    {TASKS.map(task=>{const s=state.tasks[task];const [x,y]=positions[task];return <button key={task} className={'dag-node '+s+(selected===task?' selected':'')+(follow&&['load_orders','load_events','verify_result'].includes(task)?' following':'')} style={{left:x/9+'%',top:y/4.4+'%',width:160/9+'%',height:84/4.4+'%'}} onClick={()=>{setSelected(task);if(mode==='free')setPlaying(false)}} aria-pressed={selected===task} aria-label={task+' : '+statusLabels[s]}><div className="node-top"><span className="node-icon"><Icon name={taskIcons[task]} size={17}/></span><Icon name={s==='success'?'check':s==='error'?'alert':s==='retry'?'reset':'clock'} size={12}/></div><strong>{task}</strong><span className="node-status">{statusLabels[s]}</span>{selected===task&&<span className="node-corner"/>}</button>})}
-    <div className="parallel-label">APRÈS LE CHARGEMENT</div><div className="join-label">ATTEND LES DEUX BRANCHES</div></div></div>
-    <div className="diagram-mobile-hint">Faites glisser le graphe pour explorer les deux branches.</div><div className="diagram-legend"><span><i className="legend-line"/> Flux de contrôle</span><span><i className="legend-dash"/> Flux de données · destinations</span><span><Icon name="clock" size={13}/> Traces des tentatives</span></div><DataMovement frameId={frame.id} scene={frame.scene} committed={state.committed} events={state.events} cache={state.cache} queue={state.queue} ttl={ttl} replay={scenario==='replay'}/></div>
-    <div className="narration" key={frame.id} aria-live="polite"><div className="narration-number">{String(frame.scene+1).padStart(2,'0')}<span>/ 07</span></div><div><div className="tiny-label">{scenes[frame.scene].short.toUpperCase()}</div><h2>{frame.title}</h2><p>{frame.detail}</p>{blocked&&<Button size="sm" className="primary-button" onClick={()=>{setRecovered(true);setIndex(i=>i+1);setPlaying(true)}}><Icon name="reset" size={15}/> Rétablir Redis et reprendre</Button>}{scenario==='after-commit'&&frame.id==='after-fail'&&<span className="inline-alert"><Icon name="alert" size={15}/> Commit conservé · 16 commandes · 20 lignes</span>}</div></div>
-    <div className="stats-row"><Metric label="COMMANDES" value={String(state.orders)} initial="10" changed={state.committed} detail={state.committed?'+6 commandes':'Avant le nouveau lot'}/><Metric label="LIGNES DE COMMANDE" value={String(state.lines)} initial="13" changed={state.committed} detail={state.committed?'+7 lignes acceptées':'Un grain plus fin'}/><Metric label="CHIFFRE D’AFFAIRES" value={money(state.revenue)} unit="MAD" initial={money(BASE.revenue)} changed={state.committed} detail={state.committed?'+2 025,00 MAD pour ce lot':'Hors frais de livraison'}/></div>
-    {state.committed&&<div className="persistent-quality" role="status"><Icon name="alert" size={14}/><span><b>HIGH_REJECT_RATE</b> · 10 lignes rejetées sur 18. Le chargement peut réussir avec des rejets métier.</span></div>}<div className="destinations"><div className="section-heading"><h2>La bonne donnée, au bon endroit.</h2><button onClick={()=>open('architecture')}>Les 5 services <Icon name="arrow" size={14}/></button></div><div className="service-row">{services.map((s,i)=><button key={i} className={'service service-'+i} onClick={()=>{if(i===3)setSelected('load_events');else if(i===4)setSelected('refresh_cache');else if(i===1)setSelected('load_orders');else open('architecture')}}><Icon name={s.icon} size={23}/><span><strong>{s.name}</strong><small>{s.label}</small></span><Icon name="arrow" size={13}/></button>)}</div></div>
-   </section>
-   <aside className="context-panel" aria-label="Panneau contextuel"><div className="context-head"><div className="tiny-label">À LA LOUPE <span>CLIQUEZ SUR UNE TÂCHE</span></div><div className="context-title"><span className="context-icon"><Icon name={taskIcons[selected]} size={22}/></span><div><h2>{selected}</h2><p>{taskTitles[selected]}</p></div></div><span className={'context-status '+state.tasks[selected]}><Icon name={state.tasks[selected]==='success'?'check':state.tasks[selected]==='error'?'alert':'clock'} size={13}/>{statusLabels[state.tasks[selected]]}</span></div>
-   <div className="context-tabs" role="tablist" aria-label="Informations sur la tâche">{['Données','Avant / après','Définitions','Journal'].map(t=><button key={t} role="tab" id={'tab-'+['Données','Avant / après','Définitions','Journal'].indexOf(t)} aria-controls="context-content" tabIndex={tab===t?0:-1} onKeyDown={e=>{const tabs=['Données','Avant / après','Définitions','Journal'];const current=tabs.indexOf(t);let target=current;if(e.key==='ArrowRight')target=(current+1)%4;else if(e.key==='ArrowLeft')target=(current+3)%4;else if(e.key==='Home')target=0;else if(e.key==='End')target=3;else return;e.preventDefault();setTab(tabs[target]);document.getElementById('tab-'+target)?.focus()}} aria-selected={tab===t} onClick={()=>setTab(t)}>{t}</button>)}</div>
-   <div className="context-body" role="tabpanel" id="context-content" aria-labelledby={'tab-'+['Données','Avant / après','Définitions','Journal'].indexOf(tab)}>
-   {tab==='Données'&&<>
-    {follow&&<div className="follow-banner"><Icon name="route" size={15}/><b>Suivi de #1001</b><button onClick={()=>setFollow(false)} aria-label="Arrêter le suivi"><Icon name="close" size={14}/></button></div>}
-    {follow&&<div className="tracking-detail"><span className="tiny-label">UNE COMMANDE, PLUSIEURS GRAINS</span><p><b>CSV :</b> order_id 1001 · line_no 1 · produit 101 · quantité 2 · prix unitaire 100,00 MAD.</p><p><b>PostgreSQL :</b> une commande et ses lignes, {state.committed?'chargées':'en attente de chargement'}.</p><p><b>MongoDB :</b> des événements distincts. État dérivé attendu : <code>delivered</code>{state.events?' (événements chargés).':' (événements en attente).'}</p></div>}<ContextItem title="Objectif" text={ctx.objective}/><ContextItem title="Entrée" text={ctx.input}/>
-    {selected==='load_orders'&&<><div className="data-card"><div className="data-card-header"><Icon name="file" size={14}/> lot_octobre.csv <span>CSV</span></div><div className="source-columns"><span>order_id</span><span>status</span><span>quantity</span></div><div className="source-values"><b>1001</b><code>{index>=frames.findIndex(f=>f.id==='normalize')?'paid':' PAID '}</code><b>2</b></div><button className="data-open" onClick={()=>{setFileIndex(0);open('file')}}>Voir les 9 colonnes et la valeur brute <Icon name="arrow" size={13}/></button></div><div className="triage"><span><b>{BATCH.accepted}</b> acceptées</span><span><b>{BATCH.rejected}</b> rejetées</span><span><b>{BATCH.duplicates}</b> doublon</span></div><div className="warning"><Icon name="alert" size={15}/><span><b>HIGH_REJECT_RATE</b><small>10 rejets sur 18 lignes · résultat attendu</small></span></div><details className="rejects"><summary>Consulter les motifs de rejet</summary><p>Contrôles : références client/produit, dates, quantités et cohérence des commandes. Les 10 lignes et leurs motifs exacts ne figurent pas dans les sources disponibles ; ils ne sont pas inventés ici.</p></details></>}
-    {selected==='load_events'&&<><div className="triage"><span><b>{scenario==='replay'?0:9}</b> insertions</span><span><b>{scenario==='replay'?10:1}</b> doublons</span><span><b>4</b> rejets</span></div><p className="small-note">Résultat {state.events?'observé dans la simulation':'attendu'} · {state.eventCount} événements actuellement stockés.</p><div className="delivery-list">{[[1001,'delivered'],[1002,'exception'],[1003,'in_transit'],[1005,'exception']].map(([id,s])=><div key={id}><code>#{id}</code><span className={s==='exception'?'exception':''}>{s}</span></div>)}</div><p className="small-note">États attendus dérivés des événements. Documents exacts et horodatages indisponibles.</p></>}
-    {selected==='refresh_cache'&&<><div className="cache-preview">{BATCH.cache.map(c=><div key={c.date}><span>{c.date}</span><b>{state.cache&&ttl>0?money(c.amount)+' MAD':'Clé absente'}</b></div>)}<div className="ttl"><Icon name="clock" size={15}/><b>TTL {state.cache?ttl:60} s</b><span>{state.cache&&ttl===0?'Expiré':'Durée de vie'}</span></div><div className="ttl-track"><i style={{width:(state.cache?ttl:60)/60*100+'%'}}/></div></div><label className="inline-checkbox"><input type="checkbox" checked={fastTime} onChange={e=>setFastTime(e.target.checked)}/> Accélérer le temps ×10</label>{fastTime&&<p className="small-note">Démonstration : 1 seconde réelle = 10 secondes de TTL.</p>}<p className="small-note">À expiration, seules les clés du cache disparaissent. PostgreSQL conserve {state.orders} commandes et {money(state.revenue)} MAD.</p><button className="text-button" disabled={!state.cache} onClick={()=>setTtl(60)}>Rafraîchir le cache de démonstration</button></>}
-    {selected==='rebuild_queue'&&<div className="queue-preview"><span className="tiny-label">FILE DES EXCEPTIONS {state.queue?'RECONSTRUITE':'ATTENDUE'}</span><div><b>1005</b><Icon name="arrow"/><b>1002</b></div><p>L’ordre est conservé. Espace distinct du cache et du moteur d’exécution Airflow.</p></div>}
-    {selected==='verify_result'&&<div className="verification-list">{[['Commandes',state.orders,16],['Lignes',state.lines,20],['CA (MAD)',state.revenue,5425],['Événements',state.eventCount,9],['File',state.queue?'1005, 1002':'En attente','1005, 1002']].map(([label,current,expected])=><div key={label}><Icon name={current===expected?'check':'clock'} size={14}/><span>{label}</span><b>{current}</b><small>/ {expected}</small></div>)}</div>}
-    <ContextItem title="Transformation" text={ctx.transformation}/><ContextItem title="Sortie" text={ctx.output}/><ContextItem title="Contrôle" text={ctx.control}/><div className="concept-box"><span className="tiny-label">LE CONCEPT · {ctx.concept.toUpperCase()}</span><p>{glossary[ctx.concept]}</p><button onClick={()=>{setQuery(ctx.concept);open('glossary')}}>Explorer le glossaire <Icon name="arrow" size={13}/></button></div>
-   </>}
-   {tab==='Avant / après'&&<><h3 className="body-title">Voir ce qui change.</h3>{selected==='load_orders'?<><div className={'normalization '+(frame.id==='normalize'?'animate-normalization':'')}><span className="tiny-label">VALEUR BRUTE</span><code>" PAID "</code><Icon name="arrow"/><span className="tiny-label">NORMALISÉE</span><code>"paid"</code></div><div className="comparison-row"><code>"10,00"</code><Icon name="arrow" size={15}/><code>10.00</code></div><div className="comparison-row"><code>"100,00"</code><Icon name="arrow" size={15}/><code>100.00</code></div><p className="small-note">La normalisation interprète les décimales ; elle ne modifie pas le sens du montant.</p><div className="before-after-numbers"><p>Commandes <b>10 → {state.orders}</b></p><p>Lignes <b>13 → {state.lines}</b></p><p>CA <b>3 400,00 → {money(state.revenue)}</b></p></div><p className="small-note">CA = somme des montants des lignes des commandes paid, shipped et delivered. Les frais de livraison et les commandes pending / cancelled sont exclus. Ce montant n’est pas une preuve d’encaissement bancaire.</p></>:<><div className="before-after-numbers"><p>Avant <b>{selected==='load_events'?'0 événement (lot initial)':selected==='refresh_cache'?'Clé absente':selected==='rebuild_queue'?'File non reconstruite':'Précondition en attente'}</b></p><p>Maintenant <b>{selected==='load_events'?state.eventCount+' événements':selected==='refresh_cache'?(state.cache&&ttl>0?ttl+' s de TTL':'Clé absente'):selected==='rebuild_queue'?(state.queue?'[1005, 1002]':'En attente'):statusLabels[state.tasks[selected]]}</b></p></div><p>{ctx.transformation}</p><p className="small-note">La simulation distingue l’état courant des résultats attendus.</p></>}</>}
-   {tab==='Définitions'&&<><h3 className="body-title">Les mots derrière le parcours.</h3>{[ctx.concept,...(selected==='load_orders'?['Grain','Clé métier','Validation','Commit','Rollback','Idempotence','Retry']:selected==='refresh_cache'?['TTL']:selected==='verify_result'?['Hypertable','time_bucket']:['Pipeline','DAG'])].map(k=><div className="definition" key={k}><h3>{k}</h3><p>{glossary[k]}</p></div>)}</>}
-   {tab==='Journal'&&<><div className="tiny-label">monitoring.task_attempts</div><p className="small-note">Traces simulées · durées illustratives, sans horodatage réel. Les dates métier d’octobre ne sont pas les heures d’exécution.</p>{state.logs.length===0?<div className="empty-state"><Icon name="clock" size={30}/><h3>Le parcours commence ici.</h3><p>Lancez la lecture pour voir les tentatives apparaître.</p></div>:state.logs.map((l,i)=><div className={'log-entry '+l.status} key={i}><Icon name={l.status==='success'?'check':'alert'} size={14}/><div><strong>{l.task}</strong><p>{statusLabels[l.status]} · tentative {l.attempt} · {l.duration.toFixed(1)} s</p><small>{l.message}</small></div></div>)}<div className="concept-box"><span className="tiny-label">UNE MESURE DANS LE TEMPS</span><p>{glossary.Hypertable}</p><code>time_bucket('1 minute', …)</code><p>Regrouper les tentatives par minute pour calculer une durée moyenne.</p></div></>}
-   </div><div className="context-foot"><Icon name="info" size={14}/> {follow?'#1001 : ligne source connue, livraison attendue « delivered ».':'Sélectionnez une tâche pour explorer son rôle.'}</div></aside></div>
-   <section className="below-stage"><div className="section-heading"><div><span className="tiny-label">EXPÉRIMENTER POUR COMPRENDRE</span><h2>Et si tout ne se passait pas comme prévu ?</h2></div><span className="scenario-caption">Choisir un scénario recommence le parcours.</span></div><div className="scenario-grid">{([{id:'normal',title:'Le parcours nominal',text:'Du lot source au contrôle final.',icon:'check'},{id:'after-commit',title:'Panne après commit',text:'Un échec, des données conservées.',icon:'alert'},{id:'replay',title:'Rejouer le même lot',text:'Deux exécutions, un seul chargement.',icon:'reset'},{id:'redis',title:'Panne Redis et reprise',text:'Deux branches attendent leur reprise.',icon:'stack'}] as const).map(s=><button aria-pressed={scenario===s.id} className={'scenario-card '+(scenario===s.id?'chosen':'')} key={s.id} onClick={()=>restart(s.id)}><Icon name={s.icon} size={20}/><span><b>{s.title}</b><small>{s.text}</small></span><span className="radio-dot"/></button>)}</div></section>
-   {frame.scene===1&&<section className="source-section"><div className="section-heading"><h2>Le contenu du lot</h2><span>Ouvrez un fichier pour comprendre son rôle.</span></div><div className="file-grid">{files.map((f,i)=><button key={f.name} className="file-card" onClick={()=>{setFileIndex(i);open('file')}}><Icon name="file" size={22}/><span><b>{f.name}</b><small>{f.count}</small></span><span>{f.type}</span></button>)}</div></section>}
-   {frame.scene===3&&<div className="line-sorter"><div className="section-heading"><h2>Une ligne source, une décision.</h2><span>18 lignes représentées · identifiants visuels illustratifs</span></div><div className={'sorter-grid '+(index>=frames.findIndex(f=>f.id==='split')?'sorted':'')}>{Array.from({length:18},(_,i)=><span key={i} className={i<7?'accepted':i<17?'rejected':'duplicate'} style={{animationDelay:i*35+'ms'}}><Icon name={i<7?'check':i<17?'close':'layers'} size={14}/>L{String(i+1).padStart(2,'0')}</span>)}</div><p>7 acceptées + 10 rejetées + 1 doublon = 18 lignes sources. Les identifiants L01–L18 illustrent le tri ; ils ne sont pas les numéros réels des lignes du kit.</p></div>}
-   <div className="question-strip"><Icon name="book" size={19}/><span>UNE PAUSE POUR RÉFLÉCHIR</span><button onClick={()=>ask(frame.scene>=5?2:frame.id==='after-fail'||frame.id==='retry'?1:0)}>{questions[frame.scene>=5?2:frame.id==='after-fail'||frame.id==='retry'?1:0].q}<Icon name="arrow" size={17}/></button></div>
-   <footer className="content-footer"><span>ShopFlow — Le voyage d’une donnée</span><span>Un environnement fictif. Des concepts bien réels.</span></footer>
-   </main></div>
-   <div className="player"><div className="player-progress" style={{width:(index/(frames.length-1))*100+'%'}}/><div className="player-left"><button className="square-button" onClick={()=>restart()} aria-label="Recommencer" title="Recommencer"><Icon name="reset" size={18}/></button><span className="player-divider"/><button className="square-button" onClick={()=>go(index-1)} disabled={index===0} aria-label="Étape précédente"><Icon name="back" size={18}/></button><Button className="play-button" onClick={()=>{if(index===frames.length-1){setIndex(0);setRecovered(false)}setPlaying(!playing)}} disabled={blocked}><Icon name={playing?'pause':'play'} size={16}/>{playing?'Pause':'Lecture'}</Button><button className="square-button" disabled={index===frames.length-1||blocked} onClick={()=>go(index+1)} aria-label="Étape suivante"><Icon name="chevron" size={18}/></button></div><div className="player-middle"><span className="player-step">{String(index+1).padStart(2,'0')} <span>/ {String(frames.length).padStart(2,'0')}</span></span><div><b>{scenes[frame.scene].title}</b><span>{playing?'Le voyage est en cours':blocked?'Une action est nécessaire':index===frames.length-1?'Parcours terminé':'À votre rythme, étape par étape'}</span></div></div><div className="player-right"><label>Vitesse <select aria-label="Vitesse de lecture" value={speed} onChange={e=>setSpeed(Number(e.target.value))}>{[.5,1,1.5,2].map(s=><option key={s} value={s}>{s}×</option>)}</select></label><button className="presentation-button" onClick={fullscreen} aria-label={full?'Quitter la présentation':'Mode présentation'}><Icon name="expand" size={16}/><span>{full?'Quitter la présentation':'Mode présentation'}</span></button></div></div>
-   {fullError&&<div className="fullscreen-error" role="status">{fullError}<button onClick={()=>setFullError('')} aria-label="Fermer"><Icon name="close" size={14}/></button></div>}
-   <Dialog.Root open={modal!==null} onOpenChange={e=>{if(!e.open)setModal(null)}} size={modal==='architecture'?'xl':'lg'} scrollBehavior="inside" placement="center"><Portal container={rootRef}><Dialog.Backdrop bg="blackAlpha.500" backdropFilter="blur(4px)"/><Dialog.Positioner><Dialog.Content className="modal-content"><Dialog.Header><div className="tiny-label">SHOPFLOW · SIMULATION PÉDAGOGIQUE</div><Dialog.Title>{modal==='glossary'?'Le glossaire du voyage.':modal==='architecture'?'Cinq services. Des rôles distincts.':modal==='file'?files[fileIndex].name:modal==='question'?'Prenez un instant pour réfléchir.':'Une simulation, en toute transparence.'}</Dialog.Title></Dialog.Header><Dialog.CloseTrigger asChild><CloseButton size="sm" position="absolute" top="4" right="4" aria-label="Fermer la fenêtre"/></Dialog.CloseTrigger><Dialog.Body pb="8">
-    {modal==='glossary'&&<><div className="search-input"><Icon name="search"/><input aria-label="Rechercher dans le glossaire" placeholder="Rechercher un concept…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{Object.entries(glossary).filter(([k,v])=>(k+' '+v).toLowerCase().includes(query.toLowerCase())).map(([k,v])=><div className="definition" key={k}><h3>{k}</h3><p>{v}</p></div>)}{!Object.entries(glossary).some(([k,v])=>(k+' '+v).toLowerCase().includes(query.toLowerCase()))&&<p>Aucun concept ne correspond à cette recherche.</p>}</>}
-    {modal==='architecture'&&<><p className="modal-intro">Airflow orchestre les traitements ; chaque stockage conserve une responsabilité précise. TimescaleDB est une extension du PostgreSQL métier.</p>{services.map((s,i)=><div key={i} className="architecture-service"><span className="context-icon"><Icon name={s.icon} size={24}/></span><div><span className="tiny-label">{s.label}</span><h3>{s.name}</h3><p>{s.role}</p></div></div>)}<div className="concept-box"><b>Trois lectures du même système</b><p><strong>Contrôle :</strong> les flèches du DAG représentent les dépendances Airflow.</p><p><strong>Données :</strong> CSV → load_orders → PostgreSQL métier ; JSONL → load_events → MongoDB ; PostgreSQL → refresh_cache → Redis ; MongoDB → rebuild_queue → Redis.</p><p><strong>Observabilité :</strong> les tentatives et durées sont consultables dans le journal, via monitoring.task_attempts du PostgreSQL métier avec TimescaleDB.</p></div></>}
-    {modal==='file'&&<><Badge variant="outline" mb="4">{files[fileIndex].type} · {files[fileIndex].count}</Badge><p className="modal-intro">{files[fileIndex].description}</p><pre className="file-content">{files[fileIndex].content}</pre>{fileIndex===0&&<><div className="column-chips">{columns.map(c=><code key={c}>{c}</code>)}</div><p className="small-note">La clé métier d’une ligne est (order_id, line_no). Pour #1001, l’exemple fourni correspond à la ligne 1, au produit 101 et à une quantité de 2.</p></>}<div className="concept-box"><b>CSV, JSON et JSONL</b><p>CSV : un tableau en lignes et colonnes. JSON : un document structuré pouvant contenir des listes et objets imbriqués. JSONL : un objet JSON complet par ligne, adapté à la lecture d’événements successifs.</p></div></>}
-    {modal==='question'&&<><h3 className="question-title">{questions[question].q}</h3>{showAnswer?<div className="concept-box"><p>{questions[question].a}</p><Button className="primary-button" size="sm" onClick={illustrate}>Voir dans le pipeline <Icon name="arrow" size={15}/></Button></div>:<Button className="primary-button" onClick={()=>setShowAnswer(true)}>Découvrir la réponse <Icon name="arrow" size={16}/></Button>}<div className="other-questions">{questions.map((q,i)=><button key={i} onClick={()=>{setQuestion(i);setShowAnswer(false)}}>{q.q}<Icon name="chevron" size={14}/></button>)}</div></>}
-    {modal==='about'&&<><p className="modal-intro">Une expérience autonome pour comprendre le pipeline Docker ShopFlow, sans connexion aux services.</p><div className="definition"><h3>Sources et limites</h3><p>Les valeurs, dépendances et résultats attendus proviennent du cahier des charges fourni. Le kit Docker (dags/, src/, data/, sql/) n’est pas disponible dans le dossier de travail. Les documents de livraison, empreintes et motifs exacts de rejet ne sont donc pas reproduits.</p></div><div className="definition"><h3>Les données illustratives sont signalées</h3><p>Les durées du journal et les identifiants visuels L01–L18 servent uniquement à expliquer les concepts. Aucun indicateur ne prétend à une connexion réelle. Les horodatages d’événements ne sont pas inventés.</p></div><div className="definition"><h3>Un seul laboratoire</h3><p>Cette simulation représente le lot Docker de 18 lignes et un CA final de 5 425,00 MAD. Elle est distincte du laboratoire Python de 12 lignes et 1 850,00 DH.</p></div><div className="definition"><h3>Pour enseigner ou explorer</h3><p>La visite guidée sélectionne la tâche en cours. L’exploration libre conserve la tâche que vous choisissez. La vitesse agit sur le récit ; l’accélération du TTL est un réglage distinct, signalé à l’écran.</p></div></>}
-   </Dialog.Body></Dialog.Content></Dialog.Positioner></Portal></Dialog.Root>
- </Box></div>
-}
-function Metric({label,value,unit,initial,changed,detail}:{label:string;value:string;unit?:string;initial:string;changed:boolean;detail:string}){return <div className="metric"><div className="tiny-label">{label}</div><div className="metric-value">{changed&&<span className="old-value">{initial}<Icon name="arrow" size={15}/></span>}<strong>{value}</strong>{unit&&<span className="metric-unit">{unit}</span>}</div><span className={changed?'metric-detail changed':'metric-detail'}>{changed&&<Icon name="check" size={12}/>} {detail}</span></div>}
-function ContextItem({title,text}:{title:string;text:string}){return <div className="context-item"><h3>{title}</h3><p>{text}</p></div>}
+import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { Box, Button, CloseButton, Drawer, Flex, HStack, Heading, IconButton, NativeSelect, Portal, SegmentGroup, Text, Tooltip, VisuallyHidden } from "@chakra-ui/react";
+import { Icon } from "./icons";
+import { BATCH, makeFrames, scenes, snapshot, type Scenario, type Task } from "./model";
+import { STEP_MS, questions, scenarios, type Modal, type Mode, type Tab } from "./content";
+import { PipelineCanvas } from "./PipelineCanvas";
+import { Inspector } from "./Inspector";
+import { Player } from "./Player";
+import { Dialogs } from "./Dialogs";
+import "./voyage.css";
 
-function DataMovement({frameId,scene,committed,events,cache,queue,ttl,replay}:{frameId:string;scene:number;committed:boolean;events:boolean;cache:boolean;queue:boolean;ttl:number;replay:boolean}){
- return <div className="data-movement" key={frameId}><span className="data-movement-label"><Icon name="file" size={14}/> FLUX DE DONNÉES</span>{scene<2?<div className="movement-route"><code>Fichiers sources</code><Icon name="arrow" size={14}/><span>En attente du lot</span></div>:scene===2?<div className="movement-route"><code>{frameId==='preflight'?'SHA-256 × 4':'READY'}</code><Icon name={frameId==='wait'?'clock':'check'} size={14}/><span>{frameId==='wait'?'Attente du témoin':'Préconditions satisfaites'}</span></div>:scene===3?<div className="movement-route"><code>{frameId==='normalize'?'" PAID "':frameId==='split'?'18 lignes':'lot_octobre.csv'}</code><Icon name="arrow" size={14}/>{frameId==='normalize'?<span className="transformed-value">paid · 10.00 · 100.00</span>:frameId==='split'?<span className="split-values"><b>7 acceptées</b><b>10 rejets</b><b>1 doublon</b></span>:<span>{committed?'PostgreSQL · commit conservé':'Lecture et contrôles'}</span>}</div>:scene===4?<div className="movement-route"><code>14 entrées JSONL</code><Icon name="arrow" size={14}/><span>MongoDB · {replay?'0 insertion · 10 doublons':events?'9 insertions · 1 doublon':'en attente'}</span></div>:scene===5?<div className="movement-route"><code>{frameId.includes('queue')?'MongoDB':'PostgreSQL'}</code><Icon name="arrow" size={14}/><span>{frameId.includes('queue')?(queue?'Redis · [1005, 1002]':'Redis · file en attente'):(cache?(ttl>0?'Redis · cache · TTL '+ttl+' s':'Cache expiré · PostgreSQL conservé'):'Redis · cache indisponible')}</span></div>:<div className="movement-route"><code>PostgreSQL + MongoDB + Redis</code><Icon name="check" size={14}/><span>Résultats rapprochés</span></div>}</div>
+/** Below this height the host page scrolls instead of squeezing the experience. */
+const MIN_HEIGHT = 480;
+
+/**
+ * Size of the experience: its own width (the host may add a sidebar) and the height left in the
+ * window below the host's header, so the whole experience fits without page scroll.
+ */
+function useFrameBox(ref: RefObject<HTMLDivElement | null>) {
+  const [box, setBox] = useState({ w: 1200, h: 720, full: false });
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      const full = document.fullscreenElement === el;
+      const top = r.top + window.scrollY;
+      const h = full ? window.innerHeight : Math.max(MIN_HEIGHT, Math.floor(window.innerHeight - top));
+      setBox((b) => (Math.abs(b.w - r.width) < 1 && b.h === h && b.full === full ? b : { w: r.width, h, full }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    window.addEventListener("resize", measure);
+    document.addEventListener("fullscreenchange", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+      document.removeEventListener("fullscreenchange", measure);
+    };
+  }, [ref]);
+  return box;
+}
+
+function useMedia(query: string) {
+  const [match, setMatch] = useState(() => typeof window !== "undefined" && typeof window.matchMedia === "function" && window.matchMedia(query).matches);
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const m = window.matchMedia(query);
+    const on = () => setMatch(m.matches);
+    on();
+    m.addEventListener("change", on);
+    return () => m.removeEventListener("change", on);
+  }, [query]);
+  return match;
+}
+
+/** The Academy's « Réduire les animations » setting (html.reduce-motion), on top of the system setting. */
+function useAcademyReducedMotion() {
+  const system = useMedia("(prefers-reduced-motion: reduce)");
+  const [setting, setSetting] = useState(() => typeof document !== "undefined" && document.documentElement.classList.contains("reduce-motion"));
+  useEffect(() => {
+    const html = document.documentElement;
+    const mo = new MutationObserver(() => setSetting(html.classList.contains("reduce-motion")));
+    mo.observe(html, { attributes: true, attributeFilter: ["class"] });
+    return () => mo.disconnect();
+  }, []);
+  return system || setting;
+}
+
+function Tip({ label, container, children }: { label: string; container: RefObject<HTMLDivElement | null>; children: ReactNode }) {
+  return (
+    <Tooltip.Root openDelay={250} closeDelay={50} positioning={{ placement: "bottom" }}>
+      <Tooltip.Trigger asChild>{children}</Tooltip.Trigger>
+      <Portal container={container}>
+        <Tooltip.Positioner>
+          <Tooltip.Content fontSize="xs" px="2" py="1">
+            {label}
+          </Tooltip.Content>
+        </Tooltip.Positioner>
+      </Portal>
+    </Tooltip.Root>
+  );
+}
+
+const Kicker = ({ children }: { children: ReactNode }) => (
+  <Text textStyle="overline" fontSize="2xs" color="brand.fg" truncate>
+    {children}
+  </Text>
+);
+
+/**
+ * « Le voyage d'une donnée », the owner's application integrated in the Academy (ADR-0033).
+ * It fills the space its host gives it (below the header, beside the sidebar) without page scroll,
+ * follows the Academy theme (light, dark, Catppuccin), keeps its dialogs inside itself (presentation
+ * mode) and reports the current scene so the address follows it (#/voyage/<1-7>), both ways.
+ */
+export default function VoyageApp({ initialScene = 1, onScene }: { initialScene?: number; onScene?: (scene: number) => void }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const box = useFrameBox(rootRef);
+  // The Academy enlarges every control to 44 px on phones and touch screens (ADR-0029).
+  const touch = useMedia("(max-width: 47.99em), (pointer: coarse)");
+  const systemReduced = useAcademyReducedMotion();
+  const w = box.w;
+  const tier = { sm: w >= 480, md: w >= 768, lg: w >= 1024, xl: w >= 1180, xxl: w >= 1440, wideHeader: w >= 1280, oneRow: w >= 900 };
+
+  const [scenario, setScenario] = useState<Scenario>("normal");
+  const [cacheFirst, setCacheFirst] = useState(false);
+  const frames = useMemo(() => makeFrames(scenario, cacheFirst), [scenario, cacheFirst]);
+  const [index, setIndex] = useState(() => Math.max(0, makeFrames("normal").findIndex((f) => f.scene === initialScene - 1)));
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [mode, setMode] = useState<Mode>("guided");
+  const [selected, setSelected] = useState<Task>("load_orders");
+  const [tab, setTab] = useState<Tab>("Données");
+  const [recovered, setRecovered] = useState(false);
+  const [ttl, setTtl] = useState(BATCH.ttl);
+  const [fastTime, setFastTime] = useState(false);
+  const [reducedChoice, setReducedChoice] = useState<boolean | null>(null);
+  const [modal, setModal] = useState<Modal>(null);
+  const [fileIndex, setFileIndex] = useState(0);
+  const [query, setQuery] = useState("");
+  const [question, setQuestion] = useState(0);
+  const [showAnswer, setShowAnswer] = useState(false);
+  const [follow, setFollow] = useState(false);
+  const [drawer, setDrawer] = useState(false);
+  const [fullError, setFullError] = useState("");
+  const [docked, setDocked] = useState(false);
+  const reduced = reducedChoice ?? systemReduced;
+  const inlineInspector = tier.xl;
+  // Phone browsers leave little height once their bars and the Academy header are drawn: the header then
+  // keeps only the scenes, and the title row and the canvas toolbar move into the player menu, so the canvas
+  // keeps room for its 44 px controls.
+  const compact = touch && !tier.md && box.h < 740;
+  // Seven 44 px scene buttons need about 324 px (a teacher page on a small phone has less).
+  const stepsFit = !touch || w - (tier.md ? 32 : 16) >= scenes.length * 44;
+
+  const i = Math.min(index, frames.length - 1);
+  const frame = frames[i];
+  const state = useMemo(() => snapshot(frames, i, scenario), [frames, i, scenario]);
+  const prevTasks = useMemo(() => snapshot(frames, Math.max(0, i - 1), scenario).tasks, [frames, i, scenario]);
+  const blocked = !!frame.gate && !recovered;
+  const cacheToken = frames.slice(0, i + 1).filter((f) => f.effect === "cache").length;
+  const normalized = i >= frames.findIndex((f) => f.id === "normalize");
+  const seen = frames.slice(0, i + 1).map((f) => f.id);
+  const redisDown = scenario === "redis" && seen.includes("cache-fail") && !seen.includes("cache-retry");
+  const dwell = STEP_MS / speed;
+  const last = i === frames.length - 1;
+  const sceneNumber = frame.scene + 1;
+
+  // The address follows the scene, and a new address (back button, lesson link) opens its scene.
+  const reported = useRef(initialScene);
+  useEffect(() => {
+    if (initialScene === reported.current) return;
+    reported.current = initialScene;
+    go(frames.findIndex((f) => f.scene === initialScene - 1));
+    // go() reads the current frames; only a new address should trigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialScene]);
+  // The host may pass a new callback on every render (an inline arrow): keep the latest one aside, so
+  // only a scene change reports, never a re-render that would race with a new address.
+  const onSceneRef = useRef(onScene);
+  useEffect(() => {
+    onSceneRef.current = onScene;
+  });
+  useEffect(() => {
+    if (sceneNumber === reported.current) return;
+    reported.current = sceneNumber;
+    onSceneRef.current?.(sceneNumber);
+  }, [sceneNumber]);
+
+  // Rafi, the floating assistant of the student pages, sits over the bottom-right corner.
+  useEffect(() => {
+    setDocked(!!document.querySelector('[data-testid="rafi"]'));
+  }, []);
+
+  useEffect(() => {
+    setTtl(BATCH.ttl);
+  }, [cacheToken, scenario]);
+  useEffect(() => {
+    if (!state.cache || ttl <= 0) return;
+    const t = setTimeout(() => setTtl((v) => Math.max(0, v - 1)), fastTime ? 100 : 1000);
+    return () => clearTimeout(t);
+  }, [state.cache, ttl, fastTime]);
+  useEffect(() => {
+    if (!playing) return;
+    if (blocked || last) {
+      setPlaying(false);
+      return;
+    }
+    const t = setTimeout(() => setIndex((n) => Math.min(n + 1, frames.length - 1)), dwell);
+    return () => clearTimeout(t);
+  }, [playing, i, dwell, frames.length, blocked, last]);
+  useEffect(() => {
+    if (frame.task && mode === "guided") setSelected(frame.task);
+  }, [frame, mode]);
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      const el = e.target as HTMLElement | null;
+      if (modal || drawer || e.metaKey || e.ctrlKey || e.altKey) return;
+      // Only when the experience has the focus (or nothing has): the Academy keeps its own keys.
+      const inside = !el || el === document.body || el === document.documentElement || !!rootRef.current?.contains(el);
+      if (!inside) return;
+      // Leave keys to fields and to widgets that use arrows themselves.
+      if (el?.closest("input, select, textarea, [contenteditable], [role=tablist], [role=radiogroup], [role=menu]")) return;
+      if (e.key === " " && el?.closest("button")) return;
+      if (e.key === " " || e.key === "k") {
+        e.preventDefault();
+        if (!blocked) setPlaying((v) => !v);
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        setPlaying(false);
+        if (!blocked) setIndex((n) => Math.min(n + 1, frames.length - 1));
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setPlaying(false);
+        setIndex((n) => Math.max(0, n - 1));
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [blocked, frames.length, modal, drawer]);
+
+  function go(n: number) {
+    setPlaying(false);
+    const gate = frames.findIndex((f) => f.gate);
+    const target = Math.max(0, Math.min(n, frames.length - 1));
+    setIndex(scenario === "redis" && !recovered && gate >= 0 && target > gate ? gate : target);
+  }
+  function restart(s: Scenario = scenario, nextCache = cacheFirst) {
+    setPlaying(false);
+    setScenario(s);
+    setCacheFirst(nextCache);
+    setIndex(0);
+    setRecovered(false);
+    setTtl(BATCH.ttl);
+  }
+  function jump(scene: number) {
+    go(frames.findIndex((f) => f.scene === scene));
+  }
+  function open(m: Modal) {
+    setPlaying(false);
+    setModal(m);
+  }
+  function openFile(n: number) {
+    setFileIndex(n);
+    open("file");
+  }
+  function ask(n: number) {
+    setQuestion(n);
+    setShowAnswer(false);
+    open("question");
+  }
+  function select(t: Task) {
+    setSelected(t);
+    if (mode === "free") setPlaying(false);
+    if (!inlineInspector) setDrawer(true);
+  }
+  function toggleFollow() {
+    setFollow((v) => !v);
+    setSelected("load_orders");
+    setTab("Données");
+  }
+  function recover() {
+    setRecovered(true);
+    setIndex((n) => n + 1);
+    setPlaying(true);
+  }
+  function togglePlay() {
+    if (last) {
+      setIndex(0);
+      setRecovered(false);
+      setPlaying(true);
+      return;
+    }
+    setPlaying((v) => !v);
+  }
+  function illustrate() {
+    setModal(null);
+    if (question === 1) {
+      setScenario("after-commit");
+      setRecovered(false);
+      setPlaying(false);
+      setIndex(makeFrames("after-commit", cacheFirst).findIndex((f) => f.id === "after-fail"));
+    } else if (question === 0) {
+      go(frames.findIndex((f) => f.id === "split"));
+    } else {
+      const n = frames.findIndex((f) => f.effect === "cache");
+      if (scenario === "redis") setRecovered(true);
+      setPlaying(false);
+      setIndex(n);
+      setTimeout(() => setTtl(0), 60);
+    }
+  }
+  // Presentation mode: the experience alone goes full screen (its dialogs render inside it).
+  async function fullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await rootRef.current?.requestFullscreen();
+      setFullError("");
+    } catch {
+      setFullError("Le plein écran est indisponible dans ce navigateur.");
+    }
+  }
+
+  const qIndex = frame.scene >= 5 ? 2 : frame.id === "after-fail" || frame.id === "retry" ? 1 : 0;
+  const statusText = state.verified ? "Exécution réussie" : blocked ? "En attente de reprise" : playing ? "Exécution en cours" : "Prêt à explorer";
+  const pad = (n: number) => String(n).padStart(2, "0");
+
+  const inspector = (
+    <Inspector
+      selected={selected}
+      state={state}
+      scenario={scenario}
+      ttl={ttl}
+      fastTime={fastTime}
+      follow={follow}
+      normalized={normalized}
+      tab={tab}
+      onTab={setTab}
+      onFastTime={setFastTime}
+      onRefreshCache={() => setTtl(BATCH.ttl)}
+      onOpenFile={openFile}
+      onGlossary={(c) => {
+        setQuery(c);
+        open("glossary");
+      }}
+    />
+  );
+
+  const brand = (
+    <Button variant="plain" px="1" gap="2" onClick={() => restart("normal")} aria-label="ShopFlow, recommencer" flexShrink={0} color="app.ink">
+      <Flex w="8" h="8" rounded="lg" bg="brand.solid" color="brand.contrast" align="center" justify="center">
+        <Icon name="workflow" size={17} />
+      </Flex>
+      {tier.md && (
+        <Text as="span" fontFamily="heading" fontWeight="semibold" fontSize="lg" letterSpacing="-0.03em">
+          ShopFlow
+        </Text>
+      )}
+    </Button>
+  );
+  const title = (
+    <Heading as="h1" fontFamily="heading" fontWeight="medium" fontSize={tier.md ? "md" : "sm"} color="app.muted" whiteSpace="nowrap" truncate minW="0" flexShrink={tier.oneRow ? 0 : 1}>
+      Le voyage d’une donnée.
+    </Heading>
+  );
+  const steps = !stepsFit ? (
+    <nav className="steps stacked" aria-label="Scènes du parcours">
+      <NativeSelect.Root size="sm" flex="1">
+        <NativeSelect.Field aria-label="Scène" value={frame.scene} onChange={(e) => jump(Number(e.currentTarget.value))}>
+          {scenes.map((s, n) => (
+            <option key={s.title} value={n}>
+              {pad(n + 1)} · {s.title}
+            </option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+    </nav>
+  ) : (
+    <nav className={"steps" + (tier.oneRow ? "" : " stacked") + (touch ? " touch" : "")} aria-label="Scènes du parcours">
+      {scenes.map((s, n) => {
+        const now = frame.scene === n;
+        const done = frame.scene > n;
+        return (
+          <Fragment key={s.title}>
+            {n > 0 && <span className={"step-link" + (frame.scene >= n ? " on" : "")} />}
+            <Tip label={`${pad(n + 1)} · ${s.title}`} container={rootRef}>
+              <button type="button" className={"step" + (now ? " now" : done ? " done" : "") + (now && tier.xl ? " with-label" : "")} onClick={() => jump(n)} aria-current={now ? "step" : undefined} aria-label={`${pad(n + 1)} ${s.title}`}>
+                <span className="n">{done ? <Icon name="check" size={11} /> : n + 1}</span>
+                {now && tier.xl && (
+                  <motion.span className="lbl" initial={{ opacity: 0, maxWidth: 0 }} animate={{ opacity: 1, maxWidth: 220 }} transition={{ duration: 0.35 }}>
+                    {s.title}
+                  </motion.span>
+                )}
+              </button>
+            </Tip>
+          </Fragment>
+        );
+      })}
+    </nav>
+  );
+  const actions = (
+    <HStack gap="1.5" flexShrink={0}>
+      {tier.wideHeader ? (
+        <>
+          <Button size="sm" variant="outline" rounded="full" onClick={() => open("architecture")}>
+            <Icon name="layers" size={15} /> Architecture
+          </Button>
+          <Button size="sm" variant="outline" rounded="full" onClick={() => open("glossary")}>
+            <Icon name="book" size={15} /> Glossaire
+          </Button>
+        </>
+      ) : (
+        <>
+          <IconButton size="sm" variant="outline" aria-label="Architecture" onClick={() => open("architecture")}>
+            <Icon name="layers" size={15} />
+          </IconButton>
+          <IconButton size="sm" variant="outline" aria-label="Glossaire" onClick={() => open("glossary")}>
+            <Icon name="book" size={15} />
+          </IconButton>
+        </>
+      )}
+      {tier.sm && (
+        <IconButton size="sm" variant="outline" aria-label="À propos de la simulation" onClick={() => open("about")}>
+          <Icon name="info" size={15} />
+        </IconButton>
+      )}
+      {tier.md && (
+        <IconButton size="sm" variant="outline" aria-label={box.full ? "Quitter le mode présentation" : "Mode présentation"} onClick={fullscreen}>
+          <Icon name="expand" size={15} />
+        </IconButton>
+      )}
+    </HStack>
+  );
+
+  return (
+    <MotionConfig reducedMotion={reduced ? "always" : "never"}>
+      <div ref={rootRef} className="voyage-root" data-reduced={reduced ? "" : undefined} data-touch={touch ? "" : undefined} style={{ height: box.h }}>
+        <Flex direction="column" h="full" minH="0">
+          {/* Header: brand, title, the 7 scenes, reference dialogs (one row, or two on narrow widths). */}
+          <Box as="header" className="voyage-header" flexShrink={0} px={tier.md ? "4" : "2"} borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
+            {compact ? (
+              <Flex align="center" py="1">
+                <VisuallyHidden asChild>{title}</VisuallyHidden>
+                {steps}
+              </Flex>
+            ) : tier.oneRow ? (
+              <Flex align="center" gap="3" h="14">
+                {brand}
+                {title}
+                {steps}
+                {actions}
+              </Flex>
+            ) : (
+              <>
+                <Flex align="center" gap="2" minH="12" py="1">
+                  {brand}
+                  {title}
+                  <Box flex="1" />
+                  {actions}
+                </Flex>
+                <Flex pb="1.5">{steps}</Flex>
+              </>
+            )}
+          </Box>
+
+          <Flex flex="1" minH="0" gap="3" p={tier.md ? "3" : "2"}>
+            <Flex direction="column" flex="1" minW="0" minH="0" gap={tier.md ? "2.5" : "2"}>
+              {/* Narration: fixed height so the canvas never jumps between steps */}
+              <Flex gap={tier.md ? "4" : "2.5"} align="flex-start" h={tier.md ? "86px" : compact ? "80px" : "96px"} flexShrink={0} px="1">
+                <Box textAlign="center" flexShrink={0} pt="0.5" aria-hidden="true">
+                  <Text fontFamily="heading" fontSize={tier.md ? "4xl" : "2xl"} color="brand.fg" lineHeight="1" fontWeight="semibold">
+                    {pad(sceneNumber)}
+                  </Text>
+                  <Text fontSize="2xs" color="app.muted" fontWeight="bold" letterSpacing="0.1em">
+                    / {pad(scenes.length)}
+                  </Text>
+                </Box>
+                <Box flex="1" minW="0" position="relative" h="full" aria-live="polite">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div
+                      key={scenario + frame.id}
+                      initial={{ opacity: 0, y: 10, filter: "blur(4px)" }}
+                      animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                      exit={{ opacity: 0, y: -8, filter: "blur(2px)" }}
+                      transition={{ duration: 0.28, ease: [0.2, 0.7, 0.2, 1] }}
+                    >
+                      {!compact && (
+                        <Kicker>
+                          {scenes[frame.scene].short} · {scenarios.find((s) => s.id === scenario)?.title}
+                        </Kicker>
+                      )}
+                      <Heading as="h2" fontFamily="heading" fontWeight="semibold" letterSpacing="-0.025em" fontSize={tier.xxl ? "2xl" : tier.md ? "xl" : "md"} lineHeight="1.2" mt="0.5" lineClamp={tier.md ? 1 : 2}>
+                        {frame.title}
+                      </Heading>
+                      <Text color="app.muted" fontSize={tier.md ? "sm" : "xs"} lineHeight="1.45" mt="1" lineClamp={2}>
+                        {frame.detail}
+                      </Text>
+                    </motion.div>
+                  </AnimatePresence>
+                </Box>
+                {tier.lg && (
+                  <Button
+                    variant="outline"
+                    w="260px"
+                    h="full"
+                    flexShrink={0}
+                    whiteSpace="normal"
+                    textAlign="left"
+                    justifyContent="flex-start"
+                    alignItems="flex-start"
+                    flexDirection="column"
+                    gap="1"
+                    px="3"
+                    py="2"
+                    rounded="xl"
+                    bg="app.surface"
+                    onClick={() => ask(qIndex)}
+                  >
+                    <Text textStyle="overline" fontSize="2xs" color="brand.fg">
+                      Prenez un instant
+                    </Text>
+                    <Text fontSize="sm" fontWeight="semibold" color="app.ink" lineHeight="1.3" lineClamp={2}>
+                      {questions[qIndex].q}
+                    </Text>
+                  </Button>
+                )}
+              </Flex>
+
+              {/* The pipeline */}
+              <Flex as="section" aria-label="Simulation du pipeline" direction="column" flex="1" minH="0" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="2xl" overflow="hidden">
+                {!compact && (
+                <Flex align="center" gap="2" px={tier.md ? "3" : "2"} minH="46px" flexShrink={0} borderBottomWidth="1px" borderColor="app.border">
+                  {tier.xxl && (
+                    <Text fontFamily="mono" fontSize="xs" whiteSpace="nowrap" color="app.muted">
+                      shopflow_pipeline{" "}
+                      <Text as="span" color="brand.fg" fontWeight="bold" letterSpacing="0.12em" fontSize="2xs">
+                        DAG
+                      </Text>
+                    </Text>
+                  )}
+                  {tier.md ? (
+                    <SegmentGroup.Root size="xs" value={scenario} onValueChange={(e) => e.value && restart(e.value as Scenario)} aria-label="Scénario">
+                      {/* The chosen item carries its own background (not only the sliding indicator), so contrast checks read it. */}
+                      {scenarios.map((s) => (
+                        <SegmentGroup.Item key={s.id} value={s.id} _checked={{ bg: "brand.solid", color: "brand.contrast" }}>
+                          <SegmentGroup.ItemText>{s.short}</SegmentGroup.ItemText>
+                          <SegmentGroup.ItemHiddenInput />
+                        </SegmentGroup.Item>
+                      ))}
+                    </SegmentGroup.Root>
+                  ) : (
+                    <NativeSelect.Root size="xs" flex="1" minW="0">
+                      <NativeSelect.Field aria-label="Scénario" value={scenario} onChange={(e) => restart(e.currentTarget.value as Scenario)}>
+                        {scenarios.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.title}
+                          </option>
+                        ))}
+                      </NativeSelect.Field>
+                      <NativeSelect.Indicator />
+                    </NativeSelect.Root>
+                  )}
+                  {tier.md && <Box flex="1" />}
+                  {tier.sm && (
+                    <HStack gap="1.5" fontSize="xs" fontWeight="bold" color={blocked ? "red.fg" : "brand.fg"} whiteSpace="nowrap" role="status">
+                      <span className={"live-dot" + (playing ? " on" : "") + (blocked ? " bad" : "")} />
+                      {statusText}
+                    </HStack>
+                  )}
+                  {tier.lg && (
+                    <Tip label="Deux branches indépendantes : l’ordre ne change pas le résultat." container={rootRef}>
+                      <Button size="xs" variant="ghost" colorPalette="brand" onClick={() => restart(scenario, !cacheFirst)}>
+                        <Icon name="route" size={13} /> {cacheFirst ? "Cache d’abord" : "Événements d’abord"}
+                      </Button>
+                    </Tip>
+                  )}
+                  {!inlineInspector && (
+                    <Button size="xs" variant="outline" onClick={() => setDrawer(true)} aria-label={tier.sm ? undefined : "À la loupe"}>
+                      <Icon name="search" size={13} />
+                      {tier.sm && " À la loupe"}
+                    </Button>
+                  )}
+                  {!tier.lg && (
+                    <IconButton size="xs" variant="outline" aria-label={questions[qIndex].q} onClick={() => ask(qIndex)}>
+                      <Icon name="book" size={13} />
+                    </IconButton>
+                  )}
+                </Flex>
+                )}
+
+                <PipelineCanvas
+                  frame={frame}
+                  index={i}
+                  scenario={scenario}
+                  state={state}
+                  prevTasks={prevTasks}
+                  selected={selected}
+                  follow={follow}
+                  reduced={reduced}
+                  touch={touch}
+                  speed={speed}
+                  ttl={ttl}
+                  redisDown={redisDown}
+                  blocked={blocked}
+                  lotReady={frame.scene >= 1}
+                  onSelect={select}
+                  onOpenFile={openFile}
+                  onRecover={recover}
+                />
+              </Flex>
+            </Flex>
+
+            {inlineInspector && (
+              <Box as="aside" aria-label="Panneau contextuel" w="340px" flexShrink={0} minH="0" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="2xl" overflow="hidden">
+                {inspector}
+              </Box>
+            )}
+          </Flex>
+
+          <Player
+            frames={frames}
+            index={i}
+            playing={playing}
+            blocked={blocked}
+            speed={speed}
+            dwell={dwell}
+            reduced={reduced}
+            mode={mode}
+            follow={follow}
+            width={w}
+            touch={touch}
+            docked={docked && !box.full}
+            container={rootRef}
+            onRestart={() => restart()}
+            onPrev={() => go(i - 1)}
+            onNext={() => go(i + 1)}
+            onToggle={togglePlay}
+            onGo={go}
+            onSpeed={setSpeed}
+            onMode={(m) => {
+              setMode(m);
+              if (m === "free") setPlaying(false);
+            }}
+            onFollow={toggleFollow}
+            onReduced={() => setReducedChoice(!reduced)}
+            more={
+              compact
+                ? {
+                    scenario,
+                    onScenario: (s) => restart(s),
+                    onInspect: () => setDrawer(true),
+                    onQuestion: () => ask(qIndex),
+                    onOpen: open,
+                  }
+                : undefined
+            }
+          />
+        </Flex>
+
+        {!inlineInspector && (
+          <Drawer.Root open={drawer} onOpenChange={(e) => setDrawer(e.open)} placement={tier.md ? "end" : "bottom"} size={tier.md ? "sm" : "full"}>
+            <Portal container={rootRef}>
+              <Drawer.Backdrop />
+              <Drawer.Positioner>
+                <Drawer.Content bg="app.surface" color="app.ink" h={tier.md ? "full" : "78dvh"} roundedTop={tier.md ? "none" : "2xl"}>
+                  <Drawer.CloseTrigger asChild>
+                    <CloseButton size="sm" aria-label="Fermer le panneau" />
+                  </Drawer.CloseTrigger>
+                  <Drawer.Body p="0" display="flex" flexDirection="column" minH="0">
+                    {inspector}
+                  </Drawer.Body>
+                </Drawer.Content>
+              </Drawer.Positioner>
+            </Portal>
+          </Drawer.Root>
+        )}
+
+        <Dialogs
+          container={rootRef}
+          modal={modal}
+          onClose={() => setModal(null)}
+          fileIndex={fileIndex}
+          query={query}
+          onQuery={setQuery}
+          question={question}
+          onQuestion={(n) => {
+            setQuestion(n);
+            setShowAnswer(false);
+          }}
+          showAnswer={showAnswer}
+          onShowAnswer={() => setShowAnswer(true)}
+          onIllustrate={illustrate}
+        />
+
+        {fullError && (
+          <Flex position="absolute" right="4" bottom="20" zIndex="toast" gap="2" align="center" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.border" color="saffron.fg" rounded="lg" px="3" py="2" fontSize="sm" role="alert">
+            {fullError}
+            <CloseButton size="2xs" onClick={() => setFullError("")} aria-label="Fermer" />
+          </Flex>
+        )}
+      </div>
+    </MotionConfig>
+  );
 }

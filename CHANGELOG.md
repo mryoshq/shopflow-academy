@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (`feat/voyage-motion`, ADR-0033)
+
+- Nouvelle version de l'expérience : DAG animé, trois stockages, « laboratoire » qui zoome sur chaque étape, scénarios de panne, lecteur pas à pas.
+- Couleurs, polices, clair, sombre et Catppuccin repris du thème de l'Academy ; aucune police web. `scripts/voyage-css.mjs` retiré.
+- L'expérience tient dans l'espace de la page (étudiant et enseignant), sans défilement ; mode compact sur téléphone, boutons de 44 px, place laissée à Rafi.
+- Les valeurs du cours (`experiences/voyage.json`) atteignent les étiquettes, les comptes et les valeurs attendues.
+- Corrigé : décalage entre scène et adresse avec le bouton retour ; deux boutons « Glossaire » ; contraste du scénario sélectionné.
+- Nouvelle dépendance `motion` (chargée seulement avec l'expérience). Test unitaire adapté à la nouvelle interface.
+- Aucune migration. Après fusion : `docker compose build frontend` (son `npm ci` installe `motion`), `up -d --wait`, recharger la page.
+
 ## 2026-11-05 — Sauvegardes : une sauvegarde vide n'est plus jamais « ok » (`fix/backup-vide`)
 
 - Cause : `backup_once` est appelée en `backup_once || …`, ce qui désactive `set -e` dans la fonction. Au redémarrage de Docker, `pg_dump` échouait (PostgreSQL pas encore prêt) et le script écrivait quand même « backup ok » avec 0 octet (29/10 et 05/11).
