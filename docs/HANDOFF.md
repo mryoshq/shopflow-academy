@@ -1,5 +1,17 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## « Le voyage d'une donnée » : animation améliorée (07/11/2026, ADR-0033)
+
+Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle expérience dans `frontend/src/voyage/`, thème de l'Academy, dépendance `motion`, `scripts/voyage-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration.
+
+### À faire en local après revue et fusion autorisées
+
+- Mise en service : `docker compose build frontend` (son `npm ci` installe `motion`), `docker compose up -d --wait`, recharger la page.
+- Lancer `cd frontend && npm run test:e2e -- e2e/voyage.spec.ts` sur la stack locale (non lancé dans cette session).
+- Point toujours ouvert : MAD ou DH.
+
+Prochaine action unique : suivre la CI de la PR et laisser la revue au propriétaire.
+
 ## Vue étudiant pendant le projet (05/11/2026, ADR-0051)
 
 Branche `claude/lucid-brahmagupta-htwgun-vue-projet`, PR vers `main`, sans fusion. Accueil étudiant en onglets Projet, Cours, Ressources ; cartes de jalons ; anciennes adresses conservées. Résultats exacts dans PROGRESS. Aucune migration.

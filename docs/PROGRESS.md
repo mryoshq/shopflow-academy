@@ -1,5 +1,19 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (ADR-0033)
+
+Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle version de l'expérience dans `frontend/src/voyage/`, thème de l'Academy (clair, sombre, Catppuccin), dépendance `motion` 14.10.1, `scripts/voyage-css.mjs` retiré. Données fictives uniquement.
+
+- PASS : `cd frontend && npm run test -- --maxWorkers=1` : 43 fichiers, 251 tests (dont `voyage.test.tsx`, une assertion adaptée : la carte PostgreSQL remplace l'ancien compteur « COMMANDES »).
+- PASS : `npm run build` (`tsc -b` puis `vite build`, avertissement habituel de taille) : `VoyagePage` 266,2 Ko JS (88,5 gzip) et 27,2 Ko CSS (5,3 gzip), contre 57,9 et 71,8 Ko ; `index` inchangé (~1 270 Ko).
+- PASS, hors dépôt (banc d'essai Vite qui reproduit les pages étudiant et enseignant avec `theme.ts`, Rafi et `html.reduce-motion`) :
+  - 15 étapes × 18 combinaisons (étudiant, enseignant, enseignant replié × 1440, 1366, 1280, 1024, 390×844, 375×667) : pas de défilement de page, rien qui se chevauche ou sorte du canevas, laboratoire non coupé, Rafi ne couvre aucun bouton, cibles de 44 px au tactile ;
+  - axe A/AA (serious, critical) en clair, sombre, Catppuccin clair et sombre à 1366, 390 et 375 px, glossaire ouvert compris : aucun ;
+  - séquence de `e2e/voyage.spec.ts` rejouée (boutons des scènes, adresse dans les deux sens, retour arrière, étape précédente, glossaire, Échap) sur les deux pages : PASS ;
+  - animations réduites : toutes ponctuelles, arrêtées en 1,5 s environ.
+- NOT RUN : `npm run test:e2e` (stack et comptes de démonstration nécessaires, non lancés dans cette session) ; mode présentation réel (plein écran non pilotable sans écran ; les fenêtres sont vérifiées dans l'expérience).
+- Captures (banc d'essai, données fictives) : `docs/captures/voyage-anime/themes-1366-375.png`.
+
 ## 2026-11-05 — Vue étudiant pendant le projet (ADR-0051)
 
 Branche `claude/lucid-brahmagupta-htwgun-vue-projet`, depuis `origin/main`. Onglets Projet, Cours, Ressources ; cartes de jalons ; jalons passés et modules terminés repliés ; animation derrière « Voir l'animation » ; textes enseignant retirés ; test du cours archivé. Rafi et l'import de cours inchangés. Stack jetable locale (PostgreSQL 16, uvicorn, `vite preview`), comptes de démonstration fictifs.

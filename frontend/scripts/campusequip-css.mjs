@@ -1,5 +1,5 @@
 // ADR-0044: turns the owner's stylesheet of the CampusEquip experience (src/campusequip/source/style.css, kept as
-// delivered) into src/campusequip/campusequip.css for the Academy, like scripts/voyage-css.mjs (ADR-0033):
+// delivered) into src/campusequip/campusequip.css for the Academy, like the former scripts/voyage-css.mjs (ADR-0033):
 //   - one theme with the Academy: the experience's accent (teal, deep, mint) becomes the Academy accent
 //     (green in light, terracotta in dark), through the brand tokens;
 //   - every rule is scoped under .campusequip-root (no class of the experience leaks into the rest of the site);

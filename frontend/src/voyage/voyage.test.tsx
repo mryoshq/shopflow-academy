@@ -8,7 +8,7 @@ import { DEFAULT_VOYAGE, applyVoyageData, mergeVoyageData, sceneFrom } from "./d
 import { BASE, BATCH } from "./model"
 import VoyagePage from "./VoyagePage"
 
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); applyVoyageData(DEFAULT_VOYAGE) })
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); applyVoyageData(DEFAULT_VOYAGE) })
 
 it("merges the course values over the defaults: objects by key, arrays replaced", () => {
   const defaults = { csv: { lines: ["a"], separator: ";" }, rejects: [{ line: 1 }], title: "Défaut" }
@@ -43,10 +43,13 @@ it("the page applies the course values, opens the scene of the address and repor
 
 it("without course values the experience runs on the owner's defaults", async () => {
   vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ status: 200, ok: true, json: async () => ({ data: null }) }))
+  // jsdom has no layout: give the experience a desktop size so the pipeline draws its cards.
+  vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, top: 0, left: 0, right: 1280, bottom: 720, width: 1280, height: 720, toJSON: () => ({}) })
   render(<ChakraProvider value={system}><VoyagePage /></ChakraProvider>)
   expect(await screen.findByRole("navigation", { name: "Scènes du parcours" })).toBeInTheDocument()
   expect(BASE.orders).toBe(10)
-  expect(screen.getByText("COMMANDES", { selector: ".tiny-label" }).closest(".metric")?.querySelector("strong")).toHaveTextContent("10")
+  // The PostgreSQL card of the pipeline shows the orders before the batch.
+  expect(screen.getByRole("group", { name: "PostgreSQL" })).toHaveTextContent(/(?<!\d)10 cmd/)
 })
 
 it("a lesson links to the experience at its scene", () => {
