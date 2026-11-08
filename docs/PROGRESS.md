@@ -1,5 +1,21 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-08 — CampusEquip : animation améliorée et accent vert (ADR-0044)
+
+Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle version de l'expérience dans `frontend/src/campusequip/` (`motion`, déjà présent), accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Modèle, données et fichiers servis inchangés. Données fictives uniquement.
+
+- PASS : `cd frontend && npm run test -- --maxWorkers=1` : 43 fichiers, 251 tests (dont `campusequip.test.tsx`, une assertion adaptée : les liens `FILES` sont cherchés dans tout le dossier, ils sont maintenant dans `Sources.tsx` et `Dialogs.tsx`).
+- PASS : `npm run build` (`tsc -b` puis `vite build`, avertissement habituel de taille) : `CampusEquipPage` 260,4 Ko JS (48,6 gzip) et 33,4 Ko CSS (6,2 gzip), contre 226,9 et 74,7 Ko ; `index` inchangé (~1 270 Ko).
+- PASS : les deux fonctions de `backend/tests/test_campusequip_files.py` appelées directement avec Python 3 (pytest absent de cette machine) : empreintes des fichiers servis et des fichiers livrés inchangées.
+- PASS, hors dépôt (banc d'essai Vite qui reproduit les pages étudiant, Vue étudiant et enseignant avec `theme.ts`, Rafi et `html.reduce-motion`) :
+  - 7 étapes sans défilement de page ni contenu coupé : étudiant à 1440, 1366, 1280, 1024, 768×1024, 390×844 et 375×667 ; enseignant (barre ouverte ou repliée) à 1440, 1366, 1280, 1024 et 768×1024. Repli sur un défilement interne à la scène seulement pour l'enseignant sur téléphone (étapes 4 et 6) et la Vue étudiant à 375×667 ;
+  - Rafi affiché : aucun bouton dessous, aux mêmes tailles étudiant ;
+  - axe WCAG 2.1 A/AA (toutes règles) en clair, sombre, Catppuccin clair et sombre à 1366 et 390 px : toutes les étapes, chaque séquence des scénarios aux étapes 3 et 4, onglets du panneau et question, onglets et tableau des indicateurs, flux mené à son terme, démo GPS, glossaire, sources, menu et tiroir sur téléphone, animations réduites ou non : aucune violation ;
+  - cibles de 44 px au tactile sur les 7 étapes à 390 px ;
+  - parcours : bouton d'étape et adresse, retour arrière, lien direct, flèches, lecture automatique, recommencer, `html.reduce-motion` : PASS.
+- NOT RUN : `npm run test:e2e` (stack et comptes de démonstration nécessaires) ; mode présentation réel (plein écran).
+- Captures (banc d'essai, données fictives) : `docs/captures/campusequip-anime/themes-1366.png`, `telephone-390.png`.
+
 ## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (ADR-0033)
 
 Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle version de l'expérience dans `frontend/src/voyage/`, thème de l'Academy (clair, sombre, Catppuccin), dépendance `motion` 14.10.1, `scripts/voyage-css.mjs` retiré. Données fictives uniquement.

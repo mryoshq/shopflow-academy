@@ -1,7 +1,7 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { ChakraProvider } from "@chakra-ui/react"
 import { afterEach, expect, it, vi } from "vitest"
-import { readFileSync } from "node:fs"
+import { readdirSync, readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { system } from "../theme"
 import { isExperience, parseRoute } from "../useHashRoute"
@@ -31,7 +31,9 @@ it("opens the step of the address, reports the step reached, and serves its file
   await waitFor(() => expect(onStep).toHaveBeenLastCalledWith(5))
   expect(document.querySelector(".campusequip-root .app")).not.toBeNull()
   // Every file link goes through the experience's static folder (never a relative address under the hash router).
-  const source = readFileSync(resolve(process.cwd(), "src/campusequip/CampusEquipApp.tsx"), "utf8")
+  // The links live in several components of the folder (Sources, Dialogs…): read all of them.
+  const folder = resolve(process.cwd(), "src/campusequip")
+  const source = readdirSync(folder).filter((f) => /\.tsx?$/.test(f) && !/\.test\./.test(f)).map((f) => readFileSync(resolve(folder, f), "utf8")).join("\n")
   expect(source).not.toMatch(/href=["`{]+(data|documents)\//)
   expect(source.match(/FILES\+?["`]?\$?\{?/g)?.length).toBeGreaterThanOrEqual(3)
 })

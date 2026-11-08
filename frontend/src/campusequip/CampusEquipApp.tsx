@@ -1,119 +1,570 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { motionAllowed } from '../rewards/celebrate';
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { Badge, Box, Button, CloseButton, Drawer, Flex, HStack, Heading, IconButton, NativeSelect, Portal, SegmentGroup, Text, VisuallyHidden } from "@chakra-ui/react";
+import { batches, commit, emptyDB, money, analyze, scenarios, snapshot, totals, type DB, type Scenario } from "./model";
+import { FLOW_MS, STEP_MS, chapters, failed, modified, pad, scenarioOf, scenarioOrigin, scenarioShort, timeline, type Modal, type Tab } from "./content";
+import { Icon } from "./icons";
+import { Count, Kicker, Tip } from "./ui";
+import { EASE, useAcademyReducedMotion, useFrameBox, useMedia } from "./hooks";
+import { Territory } from "./Territory";
+import { Sources } from "./Sources";
+import { Quality } from "./Quality";
+import { Transaction } from "./Transaction";
+import { Indicators } from "./Indicators";
+import { Flow, type FlowEntry } from "./Flow";
+import { Future } from "./Future";
+import { Inspector } from "./Inspector";
+import { Player } from "./Player";
+import { Dialogs } from "./Dialogs";
 
-// ADR-0044: the owner's application (CampusEquip-experience.zip), kept as delivered except for the marked lines
-// (« Academy: »): starting step and address, « Réduire les animations », skip link, file addresses.
-const FILES = '/experiences/campusequip/';
-import { Badge, Box, Button, CloseButton, Dialog, Portal, Tabs } from '@chakra-ui/react';
-import { Icon } from './icons';
-import { analyze, amount, batches, campusOf, columnInfo, columns, commit, daily, emptyDB, frames, glossary, included, money, number, ranking, refs, scenarios, snapshot, source, totals, units, type Batch, type DB, type Line, type Scenario } from './model';
+const clampStep = (n: number) => Math.min(7, Math.max(1, Math.round(n) || 1));
 
-const chapters=[['Le territoire','Des campus aux guichets','route'],['Les sources','Un lot, quatre fichiers','file'],['La qualité','Décider au bon niveau','shield'],['Le chargement','Une seule transaction','database'],['Les indicateurs','Répondre avec les données','layers'],['Le flux continu','Un lot après l’autre','workflow'],['La suite du projet','Des bonus, puis deux axes','book']];
-const labels={accepted:'Validée',rejected:'Quarantaine',duplicate:'Doublon'};
-const questions=[
- {q:'Une location à l’heure doit-elle être convertie en jours ?',answers:['Oui, avant le calcul.','Non, la durée et le tarif ont déjà la même unité.'],correct:1,why:'Vous multipliez la quantité, la durée et le tarif de la ligne. Aucune conversion hour/day n’est nécessaire.'},
- {q:'Le marqueur READY garantit-il que les données sont valides ?',answers:['Oui, tous les contrôles ont réussi.','Non, il signale que le lot complet peut être lu.'],correct:1,why:'Le surveilleur vérifie les empreintes. Les contrôles métier doivent encore être exécutés.'},
- {q:'Une ligne a une quantité négative. Que faut-il isoler ?',answers:['Cette ligne uniquement.','Toutes les lignes reçues de ce contrat.'],correct:1,why:'La quarantaine protège la cohérence du contrat entier. Les autres contrats valides du lot peuvent être chargés.'},
- {q:'Une panne après commit signifie-t-elle que rien n’est chargé ?',answers:['Non, les données et le journal sont déjà conservés.','Oui, toute panne annule le commit.'],correct:0,why:'Une reprise reconnaît la signature du lot et renvoie DEJA_CHARGE. Elle n’ajoute aucune ligne.'},
- {q:'Un contrat draft valide doit-il disparaître de la base ?',answers:['Oui, car son montant est exclu.','Non, il est stocké mais ne contribue pas aux montants.'],correct:1,why:'Stockage et calcul d’indicateur sont distincts. Seuls paid et closed contribuent au montant retenu.'},
- {q:'Après trois lots, faut-il redémarrer le traitement ?',answers:['Non, le surveilleur peut attendre les suivants.','Oui, pour chaque nouveau fichier.'],correct:0,why:'Le script réel tourne jusqu’à son arrêt. Cette séquence visuelle est volontairement limitée à trois lots.'},
- {q:'MongoDB et Airflow sont-ils à réaliser maintenant ?',answers:['Non, le sujet actuel porte sur SQL et Python.','Oui, pour obtenir les points du socle.'],correct:0,why:'Les axes 3 et 4 sont un aperçu. Le socle actuel vaut 10 points, avec 5 points bonus facultatifs.'}
-];
+/**
+ * « Le voyage d'une location », the CampusEquip experience of the final project (ADR-0044).
+ * It fills the space its host leaves (below the header, beside the sidebar) without page scroll, follows the
+ * Academy theme with its own green accent (light, dark, Catppuccin), keeps its dialogs inside itself
+ * (presentation mode), and reports the current step so the address follows it (#/campusequip/<1-7>), both ways.
+ */
+export default function CampusEquipApp({ initialStep = 1, onStep }: { initialStep?: number; onStep?: (step: number) => void }) {
+  const rootRef = useRef<HTMLDivElement>(null);
+  const box = useFrameBox(rootRef);
+  const touch = useMedia("(max-width: 47.99em), (pointer: coarse)");
+  const systemReduced = useAcademyReducedMotion();
+  const [reducedChoice, setReducedChoice] = useState<boolean | null>(null);
+  const reduced = reducedChoice ?? systemReduced;
+  const w = box.w;
+  const tier = { sm: w >= 480, md: w >= 768, lg: w >= 1024, xl: w >= 1180, xxl: w >= 1440, wideHeader: w >= 1280, oneRow: w >= 980 };
+  // Phone browsers leave little height once their bars and the Academy header are drawn: the header keeps
+  // only the steps, and the stage toolbar and the figures move into the player menu.
+  const compact = touch && !tier.md && box.h < 700;
+  // Seven 44 px step buttons need about 324 px (a teacher page on a small phone has less).
+  const stepsFit = !touch || w - (tier.md ? 32 : 16) >= chapters.length * 44;
+  const inlineInspector = tier.xl;
 
-export default function CampusEquipApp({initialStep=1,onStep}:{initialStep?:number;onStep?:(step:number)=>void}){
- const rootRef=useRef<HTMLDivElement>(null);
- const [scenario,setScenario]=useState<Scenario>('normal'),[index,setIndex]=useState(0),[playing,setPlaying]=useState(false),[extra,setExtra]=useState<number|null>(null),[speed,setSpeed]=useState(1);
- const [campus,setCampus]=useState(1),[selectedRow,setSelectedRow]=useState(2),[filter,setFilter]=useState('all');
- const [modal,setModal]=useState<'sources'|'glossary'|null>(null),[query,setQuery]=useState(''),[answer,setAnswer]=useState<number|null>(null);
- const [reduced,setReduced]=useState(()=>!motionAllowed()) /* Academy: system preference or « Réduire les animations » */,[fullError,setFullError]=useState('');
- const timeline=useMemo(()=>frames(scenario),[scenario]);const frame=timeline[index];const scene=extra??frame.scene;
- const state=useMemo(()=>snapshot(scenario,index),[scenario,index]);
- const currentLine=state.report.lines.find(l=>l.sourceRow===selectedRow)??state.report.lines[0];
- const [flowDB,setFlowDB]=useState<DB>(emptyDB),[flowN,setFlowN]=useState(0),[flowStep,setFlowStep]=useState(0),[flowPlaying,setFlowPlaying]=useState(false),[profile,setProfile]=useState('mixte');
- const [flowHistory,setFlowHistory]=useState<{batch:string;added:number;rejected:number;status:string}[]>([]);
- useEffect(()=>{if(!playing)return;if(index>=timeline.length-1||frame.action){setPlaying(false);return;}const t=setTimeout(()=>setIndex(i=>i+1),3200/speed);return()=>clearTimeout(t)},[playing,index,scenario,speed,timeline.length,frame.action]);
- useEffect(()=>{setAnswer(null)},[scene]);
- useEffect(()=>{if(!flowPlaying||scene!==5)return;if(flowN>=3){setFlowPlaying(false);return;}const t=setTimeout(()=>{if(flowStep<3)setFlowStep(s=>s+1);else{const batch=batches[`${profile}-${flowN+1}`];const result=commit(flowDB,batch);setFlowDB(result.db);setFlowHistory(h=>[...h,{batch:batch.id,added:result.added,rejected:analyze(batch).rejected,status:result.status}]);setFlowN(n=>n+1);setFlowStep(0)}},900/speed);return()=>clearTimeout(t)},[flowPlaying,flowN,flowStep,flowDB,profile,scene,speed]);
- function jump(chapter:number){setPlaying(false);setFlowPlaying(false);setAnswer(null);if(chapter>4)setExtra(chapter);else{setExtra(null);const i=timeline.findIndex(f=>f.scene===chapter);if(i>=0)setIndex(i);else setIndex(timeline.length-1)}}
- function reset(s:Scenario=scenario){setScenario(s);setIndex(0);setExtra(null);setPlaying(false);setFlowPlaying(false);setSelectedRow(2);setFilter('all')}
- function go(i:number){setPlaying(false);setExtra(null);setIndex(Math.max(0,Math.min(i,timeline.length-1)))}
- function open(m:'sources'|'glossary'){setPlaying(false);setFlowPlaying(false);setModal(m)}
- function flowReset(p=profile){setFlowPlaying(false);setFlowDB(emptyDB());setFlowN(0);setFlowStep(0);setFlowHistory([]);setProfile(p)}
- async function full(){try{if(document.fullscreenElement)await document.exitFullscreen();else await (rootRef.current??document.documentElement).requestFullscreen() /* Academy: the experience only */;setFullError('')}catch{setFullError('Utilisez le mode plein écran de votre navigateur.')}}
- // Academy: the address follows the step (#/campusequip/<1-7>), and the address (back button, lesson link) moves the step.
- const pendingStep=useRef<number|null>(Math.min(7,Math.max(1,initialStep))-1);
- useEffect(()=>{const wanted=Math.min(7,Math.max(1,initialStep))-1;if(wanted===scene){pendingStep.current=null;return}pendingStep.current=wanted;jump(wanted)},[initialStep]);
- useEffect(()=>{if(pendingStep.current!==null){if(scene===pendingStep.current)pendingStep.current=null;return}onStep?.(scene+1)},[scene]);
- const displayDB=scene===5?flowDB:state.db,stats=totals(displayDB);
- const q=questions[scene];
- return <div ref={rootRef} className="campusequip-frame"><Box className={`app ${reduced?'reduced':''}`}>
-  <a href="#experience" className="skip-link" onClick={e=>{e.preventDefault();document.getElementById('experience')?.focus()}}>Aller à l’expérience</a>
-  <header className="topbar"><button className="brand" onClick={()=>reset()} aria-label="CampusEquip, revenir au début"><span className="brand-mark"><Icon name="layers" size={23}/></span>Campus<span>Equip</span><span className="brand-period">.</span></button><span className="top-divider"/><span className="top-caption">LE VOYAGE D’UNE LOCATION</span><div className="header-actions"><button aria-label="Glossaire" onClick={()=>open('glossary')}><Icon name="book"/> <span>Glossaire</span></button><button aria-label="Sources et sujet" onClick={()=>open('sources')}><Icon name="file"/> <span>Sources et sujet</span></button><button className="icon-button" title="Réduire les animations" aria-label="Réduire les animations" aria-pressed={reduced} onClick={()=>setReduced(v=>!v)}><Icon name="eye"/></button></div></header>
-  <div className="workspace"><aside className="sidebar"><div className="eyebrow sidebar-title">EXPLORER LE PROJET <span>07</span></div><nav aria-label="Étapes du voyage">{chapters.map(([title,sub,icon],i)=><button key={title} className={`chapter ${scene===i?'active':''}`} aria-current={scene===i?'step':undefined} onClick={()=>jump(i)}><span className="chapter-number">{String(i+1).padStart(2,'0')}</span><span><b>{title}</b><small>{sub}</small></span>{scene===i&&<Icon name="chevron" size={14}/>}</button>)}</nav><div className="side-project"><div className="eyebrow">VOTRE TERRAIN DE JEU</div><div className="side-art"><Building x={12} y={8} color="#176c67" scale={.8}/><Building x={87} y={39} color="#c06946" scale={.6}/></div><strong>Un projet. Six campus.</strong><p>Vous devez transformer des locations en données fiables et explicables.</p><div className="side-tags"><span>SQL</span><span>Python</span></div></div><div className="side-footer"><span className="live-dot"/> Simulation locale<span>Aucun service connecté</span></div></aside>
-  <section id="experience" className="main" tabIndex={-1} aria-label="Expérience CampusEquip">{/* Academy: a section, the page already has its main */}
-   <div className="heading-line"><div className="eyebrow">CAMPUS EQUIP <span>/</span> AXES 1 & 2</div><Badge className="version-badge" variant="outline">Sujet du 29 octobre 2026</Badge></div>
-   <div className="hero-heading"><div><h1>{scene===0?<>D’un guichet à une<br/><em>donnée fiable.</em></>:['','Tout commence par un lot.','Chaque ligne a son histoire.','Charger une fois. Reprendre sans doubler.','Les données prennent du sens.','Le prochain lot arrive déjà.','Un socle simple. Des horizons ouverts.'][scene]}</h1><p>{['Suivez une location à travers les campus, les contrôles Python et les résultats SQL. Observez, expérimentez, puis expliquez.','Avant les calculs, vous devez savoir ce que vous recevez et à quel moment vous pouvez le lire.','Une copie, une erreur, une anomalie : ces situations ne déclenchent pas la même décision.','Le journal et les données métier avancent ensemble. C’est la base d’un rejeu sans doublons.','Choisissez un campus. Comparez les dates, les équipements et les unités de location.','Le générateur publie. Le surveilleur attend. Votre traitement prend en charge chaque nouveau lot.','Le travail actuel concerne SQL et Python. Les bonus sont facultatifs ; les axes suivants viendront plus tard.'][scene]}</p></div><div className="chapter-stamp" aria-hidden="true">{/* Academy: decorative watermark (the step is in the navigation) */}<span data-step={String(scene+1).padStart(2,'0')}/><small>SUR 07 ÉTAPES</small></div></div>
-   <div className="stats-strip"><Metric label="CAMPUS CONNECTÉS" value="06" detail="12 guichets de location"/><Metric label="CONTRATS EN BASE" value={number(stats.contracts)} detail={`${stats.lines} lignes conservées`} live/><Metric label="LIGNES AJOUTÉES" value={number(scene===5?flowHistory.at(-1)?.added??0:state.added)} detail="Pendant cette tentative" live/><Metric label="MONTANT RETENU" value={money(stats.cents)} detail="paid + closed · date de début" live/></div>
-   <div className={`stage-layout ${scene===5||scene===6?'wide':''}`}>
-    <section className="stage">
-     <div className="stage-bar"><span><span className="dot"/>{scene===0?'LE RÉSEAU CAMPUSEQUIP':scene===5?'LA SÉQUENCE AUTOMATIQUE':scene===6?'LA FEUILLE DE ROUTE':'LE PARCOURS DU LOT'}</span><span>{scene<5?`${index+1} / ${timeline.length} séquences`:'À explorer'}</span></div>
-     {scene===0&&<CampusMap campus={campus} setCampus={setCampus}/>}
-     {scene===1&&<Sources batch={state.batch}/>}
-     {(scene===2||scene===3)&&<><Pipeline active={frame.node} playing={playing} failed={state.report.structure||state.status==='CONFLIT'||state.status==='ECHEC_APRES_COMMIT'}/>{scene===2?<Quality report={state.report} filter={filter} setFilter={setFilter} selectedRow={selectedRow} onSelect={setSelectedRow} ready={index>=4||state.report.structure}/>:<Transaction state={state} index={index} scenario={scenario}/>}</>}
-     {scene===4&&<Analytics db={state.db} campus={campus} setCampus={setCampus}/>}
-     {scene===5&&<Continuous db={flowDB} n={flowN} step={flowStep} profile={profile} playing={flowPlaying} history={flowHistory} reset={flowReset} start={()=>setFlowPlaying(v=>!v)}/>}
-     {scene===6&&<Future/>}
-     {scene<5&&<div className={`narration ${state.status==='CONFLIT'||state.status==='ECHEC_APRES_COMMIT'||state.report.structure&&index>1?'warning':''}`} aria-live="polite"><span className="narration-icon"><Icon name={frame.action?'alert':scene===4?'check':'info'} size={22}/></span><div><div className="eyebrow">CE QUI SE PASSE</div><h2>{frame.title}</h2><p>{frame.text}</p>{frame.action&&<Button className="primary" size="sm" onClick={()=>go(index+1)}>{frame.action}<Icon name="arrow" size={15}/></Button>}</div></div>}
-    </section>
-    {scene<5&&<aside className="inspector"><div className="inspector-head"><span className="eyebrow">COMPRENDRE LE DÉTAIL</span><h2>{scene===0?'Une location, concrètement.':scene===2?`Contrat ${currentLine?.row.contract_id??'—'}`:scene===3?'Avant et après le commit.':scene===4?'Lire le résultat.':'Le contrat des sources.'}</h2></div><Tabs.Root defaultValue="focus" variant="line" size="sm"><Tabs.List className="inspector-tabs"><Tabs.Trigger value="focus">{scene===0?'Calcul':'Détail'}</Tabs.Trigger><Tabs.Trigger value="rules">Les règles</Tabs.Trigger></Tabs.List><Tabs.Content value="focus" className="inspector-body">
-      {scene===0?<Calculator campus={campus}/>:scene===2?<LineDetail line={currentLine} structure={state.report.structure} ready={index>=4}/>:scene===3?<><span className={`status-tag ${state.status==='CONFLIT'||state.status==='ECHEC_APRES_COMMIT'?'red':'green'}`}>{state.status}</span><h3>Ce que la base conserve</h3><dl className="definition-list"><dt>Contrats</dt><dd>{state.contracts}</dd><dt>Lignes</dt><dd>{state.lines}</dd><dt>Lots reconnus</dt><dd>{state.batches}</dd><dt>Ajout de cette tentative</dt><dd>{state.added}</dd></dl><p>Un rapport de validation peut compter des lignes valides alors que la tentative n’ajoute rien en base.</p><div className="rule-note"><b>Deux fichiers + une version de règles</b><p>La signature du lot ne dépend pas seulement du nom du dossier.</p></div></>:scene===4?<><h3>Trois questions, trois lectures</h3><p>Quel montant est retenu chaque jour ? Quels équipements contribuent le plus ? Quelle part revient à chaque unité ?</p><div className="rule-note"><b>Un jour sans montant vaut zéro.</b><p>Le calendrier va du 1er au 21 novembre. Le cumul conserve le montant des jours précédents.</p></div><p>Un équipement est un type de matériel. La quantité représente le nombre d’exemplaires loués.</p></>:<><h3>Une ligne n’est pas un contrat.</h3><p>Le CSV contient {state.batch.rows.length} lignes pour {new Set(state.batch.rows.map(r=>r.contract_id)).size} contrats sources. Plusieurs lignes peuvent partager contract_id.</p><div className="key-visual"><code>contract_id</code><span>+</span><code>line_no</code></div><p>Ensemble, ces deux colonnes identifient une ligne.</p><div className="rule-note"><b>READY ne valide pas les données.</b><p>Il signale que les fichiers peuvent être lus. Les contrôles de qualité viennent ensuite.</p></div></>}
-     </Tabs.Content><Tabs.Content value="rules" className="inspector-body"><Rules scene={scene}/></Tabs.Content></Tabs.Root><div className="inspector-foot"><Icon name="book" size={14}/>Sujet corrigé · pages {scene===0?'3–5':scene===1?'3–4':scene===2?'4–6':scene===3?'8':'7'}</div></aside>}
-   </div>
-   {scene<5&&<section className="experiments"><div className="section-title"><div><span className="eyebrow">ET SI LES CHOSES CHANGEAIENT ?</span><h2>Une situation. Une décision à comprendre.</h2></div><span>Chaque scénario repart de son état initial.</span></div><div className="scenario-list">{scenarios.map(s=><button key={s.id} className={`scenario ${scenario===s.id?'chosen':''}`} aria-pressed={scenario===s.id} onClick={()=>reset(s.id)}><span className="selection-dot"/><b>{s.label}</b><small>{s.hint}</small></button>)}</div><p className="data-origin">{scenario==='conflit'||scenario==='structure'?'Cas illustratif modifié à partir du générateur.':`Données produites par le générateur du kit · profil ${state.batch.profile} · 20 contrats.`} Les règles sont celles du sujet actuel.</p></section>}
-   <section className="question-panel"><div><span className="eyebrow">À VOUS DE JOUER</span><h2>{q.q}</h2></div><div className="answer-options">{q.answers.map((a,i)=><button key={a} onClick={()=>setAnswer(i)} aria-pressed={answer===i} className={answer===i?(i===q.correct?'correct':'incorrect'):''}><span>{String.fromCharCode(65+i)}</span>{a}{answer===i&&<Icon name={i===q.correct?'check':'reset'} size={16}/>}</button>)}</div>{answer!==null&&<p className="answer-explanation" role="status"><b>{answer===q.correct?'Exact.':'Essayez de suivre la règle.'}</b> {q.why}</p>}</section>
-   <footer className="main-footer"><span>CampusEquip · Comprendre avant de construire.</span><span>Simulation pédagogique · Données fictives · Sans connexion aux bases</span></footer>
-  </section></div>
-  <div className="player"><div className="player-progress" style={{width:scene>4?'100%':`${index/(timeline.length-1)*100}%`}}/><div className="player-controls"><button className="icon-button" aria-label="Recommencer le scénario" onClick={()=>reset()}><Icon name="reset"/></button><button className="icon-button" aria-label="Étape précédente" disabled={extra===null&&index===0} onClick={()=>extra!==null?jump(extra-1):go(index-1)}><Icon name="back"/></button><Button className="primary play" disabled={scene>4||!!frame.action} onClick={()=>{if(index===timeline.length-1)setIndex(0);setPlaying(v=>!v)}}><Icon name={playing?'pause':'play'} size={16}/>{playing?'Pause':'Lecture'}</Button><button className="icon-button" aria-label="Étape suivante" disabled={!!frame.action&&scene<5||scene===6} onClick={()=>scene===5?jump(6):index===timeline.length-1?jump(5):go(index+1)}><Icon name="chevron"/></button></div><div className="player-title"><span>{String(scene+1).padStart(2,'0')}</span><div><b>{chapters[scene][0]}</b><small>{frame.action&&scene<5?'Reprenez le traitement pour continuer':scene>4?'Explorez les interactions de cette étape':playing?'Le voyage est en cours':'À votre rythme, étape par étape'}</small></div></div><div className="player-end"><label>Vitesse <select aria-label="Vitesse de lecture" value={speed} onChange={e=>setSpeed(Number(e.target.value))}>{[.5,1,1.5,2].map(s=><option key={s} value={s}>{s}×</option>)}</select></label><button onClick={full} aria-label="Mode présentation (plein écran)">{/* Academy: named on a phone too */}<Icon name="expand"/><span>Présentation</span></button></div></div>
-  {fullError&&<p className="fullscreen-message" role="status">{fullError}<button onClick={()=>setFullError('')} aria-label="Fermer le message"><Icon name="close"/></button></p>}
-  <Dialog.Root open={modal!==null} onOpenChange={e=>{if(!e.open)setModal(null)}} size="lg" placement="center" scrollBehavior="inside"><Portal container={rootRef}>{/* Academy: the dialogs stay inside .campusequip-root (theme, styles) */}<Dialog.Backdrop bg="blackAlpha.500" backdropFilter="blur(4px)"/><Dialog.Positioner><Dialog.Content className="dialog"><Dialog.Header><span className="eyebrow">CAMPUSEQUIP · LES REPÈRES</span><Dialog.Title>{modal==='sources'?'Le même sujet. Les mêmes règles.':'Les mots du voyage.'}</Dialog.Title></Dialog.Header><Dialog.CloseTrigger asChild><CloseButton aria-label="Fermer la fenêtre" position="absolute" top="3" right="3"/></Dialog.CloseTrigger><Dialog.Body pb="8">{modal==='glossary'?<><label className="search"><Icon name="search"/><input aria-label="Rechercher un concept" placeholder="Rechercher un concept…" value={query} onChange={e=>setQuery(e.target.value)}/></label>{Object.entries(glossary).filter(([k,v])=>(k+' '+v).toLowerCase().includes(query.toLowerCase())).map(([k,v])=><div className="glossary-entry" key={k}><h3>{k}</h3><p>{v}</p></div>)}{!Object.entries(glossary).some(([k,v])=>(k+' '+v).toLowerCase().includes(query.toLowerCase()))&&<p>Aucun concept ne correspond.</p>}</>:<><p>Cette expérience suit le sujet corrigé du 29 octobre 2026, vérifié le 31 octobre. Seuls SQL et Python sont à réaliser maintenant.</p><a className="download-link" href={FILES+"documents/Sujet_CampusEquip_axes_1_2.pdf"} target="_blank" rel="noreferrer"><Icon name="file"/>Ouvrir le sujet étudiant corrigé<Icon name="arrow"/></a><h3>Des données traçables</h3><p>Les lots sont produits par le générateur étudiant : graine 42, 20 contrats, profils propre et mixte. Les défauts de structure et le conflit inter-lots sont des modifications pédagogiques signalées.</p><a className="text-link" href={FILES+"data/provenance.json"} download>Consulter les empreintes des sources</a><h3>Une simulation, pas une preuve d’intégration</h3><p>Les contrôles et compteurs sont calculés dans le navigateur. Les états PostgreSQL sont simulés. Il n’y a ni connexion à une base, ni exécution Python, ni validation du corrigé complet.</p><h3>Votre cadre de travail</h3><p>Remise le 21 novembre 2026. Travail en binôme. Socle : 10 points ; bonus : jusqu’à 5 points. Cadre global des quatre axes : 20 + 10 bonus.</p><p className="small">Les interactions expliquent les règles du sujet à partir des seules sources étudiantes.</p><details><summary>Empreinte du PDF de référence</summary><code className="hash">{source.subjectSha256}</code></details></>}</Dialog.Body></Dialog.Content></Dialog.Positioner></Portal></Dialog.Root>
- </Box></div>
+  const [scenario, setScenario] = useState<Scenario>("normal");
+  const steps = useMemo(() => timeline(scenario), [scenario]);
+  const [index, setIndex] = useState(() => Math.max(0, timeline("normal").findIndex((s) => s.scene === clampStep(initialStep) - 1)));
+  const [playing, setPlaying] = useState(false);
+  const [speed, setSpeed] = useState(1);
+  const [campus, setCampus] = useState(1);
+  const [row, setRow] = useState(2);
+  const [filter, setFilter] = useState("all");
+  const [file, setFile] = useState("locations.csv");
+  const [tab, setTab] = useState<Tab>("detail");
+  const [answer, setAnswer] = useState<number | null>(null);
+  const [modal, setModal] = useState<Modal>(null);
+  const [query, setQuery] = useState("");
+  const [drawer, setDrawer] = useState(false);
+  // Rafi, the floating assistant of the student pages, sits over the bottom-right corner.
+  const [docked, setDocked] = useState(false);
+  useEffect(() => {
+    setDocked(!!document.querySelector('[data-testid="rafi"]'));
+  }, []);
+  const [fullError, setFullError] = useState("");
+  // The continuous flow (step 6): three batches of one profile, one station at a time.
+  const [flowDB, setFlowDB] = useState<DB>(emptyDB);
+  const [flowN, setFlowN] = useState(0);
+  const [station, setStation] = useState(0);
+  const [flowPlaying, setFlowPlaying] = useState(false);
+  const [profile, setProfile] = useState("mixte");
+  const [history, setHistory] = useState<FlowEntry[]>([]);
+
+  const i = Math.min(index, steps.length - 1);
+  const step = steps[i];
+  const scene = step.scene;
+  const state = useMemo(() => snapshot(scenario, step.at), [scenario, step.at]);
+  const blocked = !!step.action;
+  const endOfPlay = !steps[i + 1] || !!steps[i + 1].explore;
+  const firstOfScene = steps.findIndex((s) => s.scene === scene);
+  const inScene = steps.filter((s) => s.scene === scene).length;
+  const phase = scene === 2 ? i - firstOfScene : 2;
+  const line = state.report.lines.find((l) => l.sourceRow === row) ?? state.report.lines[0];
+  const bad = failed(state.status) && scene >= 2 && scene <= 3;
+  const dwell = STEP_MS / speed;
+
+  // Autoplay: one step after the other, stopping before the exploration steps and at an action.
+  useEffect(() => {
+    if (!playing) return;
+    if (blocked || endOfPlay) {
+      setPlaying(false);
+      return;
+    }
+    const t = setTimeout(() => setIndex((n) => n + 1), dwell);
+    return () => clearTimeout(t);
+  }, [playing, i, dwell, blocked, endOfPlay]);
+
+  useEffect(() => setAnswer(null), [scene]);
+
+  useEffect(() => {
+    if (!flowPlaying || scene !== 5) return;
+    if (flowN >= 3) {
+      setFlowPlaying(false);
+      return;
+    }
+    const t = setTimeout(() => {
+      if (station < 3) setStation((s) => s + 1);
+      else {
+        const batch = batches[`${profile}-${flowN + 1}`];
+        const result = commit(flowDB, batch);
+        setFlowDB(result.db);
+        setHistory((h) => [...h, { batch: batch.id, added: result.added, rejected: analyze(batch).rejected, status: result.status }]);
+        setFlowN((n) => n + 1);
+        setStation(0);
+      }
+    }, FLOW_MS / speed);
+    return () => clearTimeout(t);
+  }, [flowPlaying, flowN, station, flowDB, profile, scene, speed]);
+
+  function go(n: number) {
+    setPlaying(false);
+    setIndex(Math.max(0, Math.min(n, steps.length - 1)));
+  }
+  function jump(chapter: number) {
+    setFlowPlaying(false);
+    go(steps.findIndex((s) => s.scene === chapter));
+  }
+  /** Another scenario keeps the current step; each scenario starts from its own initial state. */
+  function choose(s: Scenario) {
+    setScenario(s);
+    setPlaying(false);
+    setFilter("all");
+    setRow(2);
+    setIndex(Math.max(0, timeline(s).findIndex((x) => x.scene === scene)));
+  }
+  function restart() {
+    setPlaying(false);
+    setFlowPlaying(false);
+    setFilter("all");
+    setRow(2);
+    setIndex(0);
+  }
+  function togglePlay() {
+    if (step.explore) return;
+    if (!playing && endOfPlay) {
+      setIndex(0);
+      setPlaying(true);
+      return;
+    }
+    setPlaying((v) => !v);
+  }
+  function flowReset(p = profile) {
+    setFlowPlaying(false);
+    setFlowDB(emptyDB());
+    setFlowN(0);
+    setStation(0);
+    setHistory([]);
+    setProfile(p);
+  }
+  function open(m: Exclude<Modal, null>) {
+    setPlaying(false);
+    setFlowPlaying(false);
+    setDrawer(false);
+    setModal(m);
+  }
+  // Presentation mode: the experience alone goes full screen (its dialogs render inside it).
+  async function fullscreen() {
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await rootRef.current?.requestFullscreen();
+      setFullError("");
+    } catch {
+      setFullError("Utilisez le mode plein écran de votre navigateur.");
+    }
+  }
+
+  // The address follows the step, and a new address (back button, lesson link) opens its step.
+  const reported = useRef(clampStep(initialStep));
+  useEffect(() => {
+    const wanted = clampStep(initialStep);
+    if (wanted === reported.current) return;
+    reported.current = wanted;
+    jump(wanted - 1);
+    // only a new address should move the step
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialStep]);
+  // The host may pass a new callback on every render (an inline arrow): only a step change reports.
+  const onStepRef = useRef(onStep);
+  useEffect(() => {
+    onStepRef.current = onStep;
+  });
+  useEffect(() => {
+    const n = scene + 1;
+    if (n === reported.current) return;
+    reported.current = n;
+    onStepRef.current?.(n);
+  }, [scene]);
+
+  // Keyboard: arrows move, Space plays, when the focus is not on a control.
+  const keys = useRef({ next: () => {}, prev: () => {}, play: () => {} });
+  keys.current = { next: () => !blocked && go(i + 1), prev: () => go(i - 1), play: togglePlay };
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+      const el = e.target as HTMLElement | null;
+      const root = rootRef.current;
+      if (!root || !el || (el !== document.body && !root.contains(el))) return;
+      if (el.closest("input, select, textarea, button, a, summary, [role=tab], [role=dialog], [role=menu], [contenteditable=true], .table-scroll")) return;
+      if (e.key === "ArrowRight") keys.current.next();
+      else if (e.key === "ArrowLeft") keys.current.prev();
+      else if (e.key === " ") keys.current.play();
+      else return;
+      e.preventDefault();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const c = chapters[scene];
+  const displayDB = scene === 5 ? flowDB : state.db;
+  const stats = totals(displayDB);
+  const added = scene === 5 ? (history.at(-1)?.added ?? 0) : state.added;
+  const scenarioLabel = scenarioOf(scenario).label;
+
+  const inspector = (
+    <Inspector
+      scene={scene}
+      state={state}
+      campus={campus}
+      line={line}
+      ready={phase >= 2}
+      tab={tab}
+      onTab={setTab}
+      answer={answer}
+      onAnswer={setAnswer}
+      onSources={() => open("sources")}
+    />
+  );
+
+  const brand = (
+    <Button variant="plain" px="1" gap="2" onClick={restart} aria-label="CampusEquip, revenir au début du scénario" flexShrink={0} color="app.ink">
+      <Flex w="8" h="8" rounded="lg" bg="brand.solid" color="brand.contrast" align="center" justify="center">
+        <Icon name="layers" size={17} />
+      </Flex>
+      {tier.md && (
+        <Text as="span" fontFamily="heading" fontWeight="semibold" fontSize="lg" letterSpacing="-0.03em">
+          Campus
+          <Text as="span" color="brand.fg">
+            Equip
+          </Text>
+          .
+        </Text>
+      )}
+    </Button>
+  );
+  const title = (
+    <Heading as="h1" fontFamily="heading" fontWeight="medium" fontSize={tier.md ? "md" : "sm"} color="app.muted" whiteSpace="nowrap" truncate minW="0" flexShrink={tier.oneRow ? 0 : 1}>
+      Le voyage d’une location.
+    </Heading>
+  );
+  const stepsNav = !stepsFit ? (
+    <nav className="steps stacked" aria-label="Étapes du voyage">
+      <NativeSelect.Root size="sm" flex="1">
+        <NativeSelect.Field aria-label="Étape" value={scene} onChange={(e) => jump(Number(e.currentTarget.value))}>
+          {chapters.map((s, n) => (
+            <option key={s.title} value={n}>
+              {pad(n + 1)} · {s.title}
+            </option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+    </nav>
+  ) : (
+    <nav className={"steps" + (tier.oneRow ? "" : " stacked") + (touch ? " touch" : "")} aria-label="Étapes du voyage">
+      {chapters.map((s, n) => {
+        const now = scene === n;
+        const done = scene > n;
+        const label = now && tier.xl;
+        return (
+          <Fragment key={s.title}>
+            {n > 0 && <span className={"step-link" + (scene >= n ? " on" : "")} />}
+            <Tip label={`${pad(n + 1)} · ${s.title} — ${s.sub}`} container={rootRef}>
+              <button type="button" className={"step" + (now ? " now" : done ? " done" : "") + (label ? " with-label" : "") + (n >= 5 ? " explore" : "")} onClick={() => jump(n)} aria-current={now ? "step" : undefined}>
+                <span className="n" aria-hidden="true">
+                  {done ? <Icon name="check" size={11} /> : n + 1}
+                </span>
+                {label ? (
+                  <motion.span className="lbl" initial={{ opacity: 0, maxWidth: 0 }} animate={{ opacity: 1, maxWidth: 220 }} transition={{ duration: 0.35 }}>
+                    <VisuallyHidden>{pad(n + 1)} </VisuallyHidden>
+                    {s.title}
+                  </motion.span>
+                ) : (
+                  <VisuallyHidden>
+                    {pad(n + 1)} {s.title}
+                  </VisuallyHidden>
+                )}
+              </button>
+            </Tip>
+          </Fragment>
+        );
+      })}
+    </nav>
+  );
+  const actions = (
+    <HStack gap="1.5" flexShrink={0}>
+      {tier.wideHeader ? (
+        <>
+          <Button size="sm" variant="outline" rounded="full" onClick={() => open("glossary")}>
+            <Icon name="book" size={15} /> Glossaire
+          </Button>
+          <Button size="sm" variant="outline" rounded="full" onClick={() => open("sources")}>
+            <Icon name="file" size={15} /> Sources et sujet
+          </Button>
+        </>
+      ) : (
+        <>
+          <IconButton size="sm" variant="outline" aria-label="Glossaire" onClick={() => open("glossary")}>
+            <Icon name="book" size={15} />
+          </IconButton>
+          <IconButton size="sm" variant="outline" aria-label="Sources et sujet" onClick={() => open("sources")}>
+            <Icon name="file" size={15} />
+          </IconButton>
+        </>
+      )}
+    </HStack>
+  );
+
+  const scenarioControl =
+    scene > 4 ? null : tier.xxl ? (
+      <SegmentGroup.Root size="xs" value={scenario} onValueChange={(e) => e.value && choose(e.value as Scenario)} aria-label="Scénario">
+        {scenarios.map((s) => (
+          <SegmentGroup.Item key={s.id} value={s.id} _checked={{ bg: "brand.solid", color: "brand.contrast" }}>
+            <SegmentGroup.ItemText>{scenarioShort[s.id]}</SegmentGroup.ItemText>
+            <SegmentGroup.ItemHiddenInput />
+          </SegmentGroup.Item>
+        ))}
+      </SegmentGroup.Root>
+    ) : (
+      <NativeSelect.Root size="xs" w={tier.sm ? "13rem" : "auto"} flex={tier.sm ? "none" : "1"} minW="0">
+        <NativeSelect.Field aria-label="Scénario" value={scenario} onChange={(e) => choose(e.currentTarget.value as Scenario)}>
+          {scenarios.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+            </option>
+          ))}
+        </NativeSelect.Field>
+        <NativeSelect.Indicator />
+      </NativeSelect.Root>
+    );
+
+  const stage =
+    scene === 0 ? (
+      <Territory campus={campus} onCampus={setCampus} reduced={reduced} touch={touch} speed={speed} />
+    ) : scene === 1 ? (
+      <Sources batch={state.batch} file={file} onFile={setFile} reduced={reduced} touch={touch} />
+    ) : scene === 2 ? (
+      <Quality report={state.report} phase={phase} node={step.node} failed={state.report.structure} filter={filter} onFilter={setFilter} row={row} onRow={setRow} reduced={reduced} touch={touch} />
+    ) : scene === 3 ? (
+      <Transaction state={state} scenario={scenario} at={step.at} action={step.action} onAction={() => go(i + 1)} reduced={reduced} />
+    ) : scene === 4 ? (
+      <Indicators db={state.db} campus={campus} onCampus={setCampus} reduced={reduced} touch={touch} />
+    ) : scene === 5 ? (
+      <Flow db={flowDB} n={flowN} station={station} playing={flowPlaying} profile={profile} history={history} onStart={() => setFlowPlaying((v) => !v)} onReset={flowReset} reduced={reduced} />
+    ) : (
+      <Future reduced={reduced} touch={touch} />
+    );
+
+  const metrics = [
+    { label: "Campus connectés", short: "Campus", value: 6, detail: "12 guichets de location", format: (n: number) => pad(n) },
+    { label: "Contrats en base", short: "Contrats", value: stats.contracts, detail: `${stats.lines} lignes conservées`, id: "contracts" },
+    { label: "Lignes ajoutées", short: "Ajoutées", value: added, detail: "Pendant cette tentative", id: "added" },
+    { label: "Montant retenu", short: "Montant", value: stats.cents, detail: "paid + closed · date de début", format: money, id: "money" },
+  ];
+  const shown = tier.sm ? metrics : metrics.slice(1);
+
+  return (
+    <MotionConfig reducedMotion={reduced ? "always" : "never"}>
+      <div ref={rootRef} className="campusequip-frame" style={{ height: box.h }} data-reduced={reduced ? "" : undefined} data-touch={touch ? "" : undefined}>
+        <Box className={"app" + (reduced ? " reduced" : "")} h="full">
+          <a
+            href="#ce-stage"
+            className="skip-link"
+            onClick={(e) => {
+              e.preventDefault();
+              document.getElementById("ce-stage")?.focus();
+            }}
+          >
+            Aller à l’expérience
+          </a>
+          <Flex direction="column" h="full" minH="0">
+            {/* Header: brand, title, the 7 steps, reference dialogs (one row, or two on narrow widths). */}
+            <Box as="header" className="ce-header" flexShrink={0} px={tier.md ? "4" : "2"} borderBottomWidth="1px" borderColor="app.border" bg="app.surface">
+              {compact ? (
+                <Flex align="center" py="1">
+                  <VisuallyHidden asChild>{title}</VisuallyHidden>
+                  {stepsNav}
+                </Flex>
+              ) : tier.oneRow ? (
+                <Flex align="center" gap="3" h="14">
+                  {brand}
+                  {title}
+                  {stepsNav}
+                  {actions}
+                </Flex>
+              ) : (
+                <>
+                  <Flex align="center" gap="2" minH="12" py="1">
+                    {brand}
+                    {title}
+                    <Box flex="1" />
+                    {actions}
+                  </Flex>
+                  <Flex pb="1.5">{stepsNav}</Flex>
+                </>
+              )}
+            </Box>
+
+            <Flex flex="1" minH="0" gap="3" p={tier.md ? "3" : "2"}>
+              <Flex direction="column" flex="1" minW="0" minH="0" gap={tier.md ? "2.5" : "2"}>
+                {/* Narration: fixed height, so the stage never jumps between steps. */}
+                <Flex gap={tier.md ? "4" : "2.5"} align="flex-start" h={compact ? "62px" : tier.md ? "84px" : "92px"} flexShrink={0} px="1">
+                  <Box textAlign="center" flexShrink={0} pt="0.5" aria-hidden="true">
+                    <Text fontFamily="heading" fontSize={compact ? "xl" : tier.md ? "4xl" : "2xl"} color={bad ? "red.fg" : "brand.fg"} lineHeight="1" fontWeight="semibold">
+                      {pad(scene + 1)}
+                    </Text>
+                    <Text fontSize="2xs" color="app.muted" fontWeight="bold" letterSpacing="0.1em">
+                      / 07
+                    </Text>
+                  </Box>
+                  <Box flex="1" minW="0" position="relative" h="full" aria-live="polite">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div key={step.key} initial={{ opacity: 0, y: 10, filter: "blur(4px)" }} animate={{ opacity: 1, y: 0, filter: "blur(0px)" }} exit={{ opacity: 0, y: -8, filter: "blur(2px)" }} transition={{ duration: 0.28, ease: EASE }}>
+                        {!compact && <Kicker color={bad ? "red.fg" : "brand.fg"}>{scene <= 4 ? `${c.title} · ${scenarioLabel}` : `${c.title} · ${c.sub}`}</Kicker>}
+                        <Heading as="h2" fontFamily="heading" fontWeight="semibold" letterSpacing="-0.025em" fontSize={tier.xxl ? "2xl" : tier.md ? "xl" : "md"} lineHeight="1.2" mt="0.5" lineClamp={tier.md || compact ? 1 : 2}>
+                          {step.title}
+                        </Heading>
+                        <Text color="app.muted" fontSize={tier.md ? "sm" : "xs"} lineHeight="1.45" mt="1" lineClamp={compact ? 1 : 2}>
+                          {step.text}
+                        </Text>
+                      </motion.div>
+                    </AnimatePresence>
+                  </Box>
+                </Flex>
+
+                {/* The stage */}
+                <Flex as="section" id="ce-stage" tabIndex={-1} aria-label="Expérience CampusEquip" direction="column" flex="1" minH="0" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="2xl" overflow="hidden" className="stage" outline="none">
+                  {/* On the explore steps the bar only repeats the title: hidden when the inspector sits beside the stage. */}
+                  {!compact && !(scene > 4 && inlineInspector) && (
+                    <Flex align="center" gap="2" px={tier.md ? "3" : "2"} minH="46px" flexShrink={0} borderBottomWidth="1px" borderColor="app.border" className="stage-bar">
+                      {tier.lg ? (
+                        <Text fontFamily="heading" fontWeight="semibold" fontSize="sm" letterSpacing="-0.01em" truncate minW="0" flex="1">
+                          <span className={"live-dot" + (playing || flowPlaying ? " on" : "") + (bad ? " bad" : "")} /> {c.headline}
+                        </Text>
+                      ) : scene > 4 ? (
+                        <Box flex="1" minW="0">
+                          <Kicker>{c.stage}</Kicker>
+                        </Box>
+                      ) : null}
+                      {scenarioControl}
+                      {scene <= 4 && !tier.lg && tier.sm && <Box flex="1" />}
+                      {scene <= 4 && tier.lg && (
+                        <Tip label={scenarioOrigin(scenario, state.batch.profile)} container={rootRef}>
+                          <Badge variant="outline" colorPalette={modified(scenario) ? "saffron" : "gray"} tabIndex={0} cursor="help" flexShrink={0}>
+                            {modified(scenario) ? "Cas modifié" : "Générateur du kit"}
+                          </Badge>
+                        </Tip>
+                      )}
+                      {tier.sm && (
+                        <Text fontSize="xs" color="app.muted" whiteSpace="nowrap" flexShrink={0}>
+                          {scene <= 4 ? `${i - firstOfScene + 1} / ${inScene} séquence${inScene > 1 ? "s" : ""}` : "À explorer"}
+                        </Text>
+                      )}
+                      {!inlineInspector && (
+                        <Button size="xs" variant="outline" onClick={() => setDrawer(true)} aria-label={tier.sm ? undefined : "Comprendre le détail"} flexShrink={0}>
+                          <Icon name="search" size={13} />
+                          {tier.sm && " Comprendre"}
+                        </Button>
+                      )}
+                    </Flex>
+                  )}
+                  <Box flex="1" minH="0" position="relative" className="stage-body" p={tier.md ? "3" : "2"} overflowY="auto" overflowX="hidden">
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.div key={scene} style={{ height: "100%" }} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.25, ease: EASE }}>
+                        {stage}
+                      </motion.div>
+                    </AnimatePresence>
+                  </Box>
+                  {!compact && (
+                    <Box className="ledger-strip" data-count={shown.length} aria-label="La base simulée" role="group">
+                      {shown.map((m) => (
+                        <div key={m.label} className="metric">
+                          <span className="m-label">{tier.md ? m.label : m.short}</span>
+                          <strong data-testid={m.id}>
+                            <Count value={m.value} format={m.format} reduced={reduced} delay={scene === 3 ? 0.35 : 0} />
+                          </strong>
+                          {tier.lg && (
+                            <small>
+                              {m.id && <span className="metric-dot" />}
+                              {m.detail}
+                            </small>
+                          )}
+                        </div>
+                      ))}
+                    </Box>
+                  )}
+                </Flex>
+              </Flex>
+
+              {inlineInspector && (
+                <Box as="aside" aria-label="Comprendre le détail" w="340px" flexShrink={0} minH="0" bg="app.surface" borderWidth="1px" borderColor="app.border" rounded="2xl" overflow="hidden">
+                  {inspector}
+                </Box>
+              )}
+            </Flex>
+
+            <Player
+              steps={steps}
+              index={i}
+              playing={playing}
+              blocked={blocked}
+              speed={speed}
+              dwell={dwell}
+              reduced={reduced}
+              width={w}
+              touch={touch}
+              full={box.full}
+              docked={docked && !box.full}
+              container={rootRef}
+              onRestart={restart}
+              onPrev={() => go(i - 1)}
+              onNext={() => go(i + 1)}
+              onToggle={togglePlay}
+              onGo={go}
+              onSpeed={setSpeed}
+              onReduced={() => setReducedChoice(!reduced)}
+              onFullscreen={fullscreen}
+              more={compact || !tier.lg ? { scenario: compact && scene <= 4 ? scenario : null, onScenario: choose, onInspect: () => setDrawer(true), onOpen: open } : undefined}
+            />
+          </Flex>
+
+          {!inlineInspector && (
+            <Drawer.Root open={drawer} onOpenChange={(e) => setDrawer(e.open)} placement={tier.md ? "end" : "bottom"} size={tier.md ? "sm" : "full"}>
+              <Portal container={rootRef}>
+                <Drawer.Backdrop />
+                <Drawer.Positioner>
+                  <Drawer.Content bg="app.surface" color="app.ink" h={tier.md ? "full" : "82dvh"} roundedTop={tier.md ? "none" : "2xl"}>
+                    <Drawer.CloseTrigger asChild>
+                      <CloseButton size="sm" aria-label="Fermer le panneau" />
+                    </Drawer.CloseTrigger>
+                    <Drawer.Body p="0" display="flex" flexDirection="column" minH="0">
+                      {inspector}
+                    </Drawer.Body>
+                  </Drawer.Content>
+                </Drawer.Positioner>
+              </Portal>
+            </Drawer.Root>
+          )}
+
+          <Dialogs container={rootRef} modal={modal} onClose={() => setModal(null)} query={query} onQuery={setQuery} />
+
+          {fullError && (
+            <Flex position="absolute" right="4" bottom="20" zIndex="toast" gap="2" align="center" bg="saffron.subtle" borderWidth="1px" borderColor="saffron.border" color="saffron.fg" rounded="lg" px="3" py="2" fontSize="sm" role="alert">
+              {fullError}
+              <CloseButton size="2xs" aria-label="Fermer le message" onClick={() => setFullError("")} />
+            </Flex>
+          )}
+        </Box>
+      </div>
+    </MotionConfig>
+  );
 }
-
-function Metric({label,value,detail,live=false}:{label:string;value:string;detail:string;live?:boolean}){return <div className="metric"><span className="eyebrow">{label}</span><strong data-testid={label==='CONTRATS EN BASE'?'contracts':label==='LIGNES AJOUTÉES'?'added':label==='MONTANT RETENU'?'money':undefined}>{value}</strong><small>{live&&<span className="metric-dot"/>}{detail}</small></div>}
-
-function Building({x=0,y=0,scale=1,color='#2a6d64'}:{x?:number;y?:number;scale?:number;color?:string}){return <svg x={x} y={y} width={110*scale} height={100*scale} viewBox="0 0 110 100" aria-hidden="true"><path d="M5 72 54 46 107 73 57 99Z" fill="#e6e4da"/><path d="M18 35 54 16 91 35 55 55Z" fill={color}/><path d="M18 35v39l37 19V55Z" fill={color} opacity=".82"/><path d="M55 55v38l36-19V35Z" fill={color} opacity=".6"/><path d="M17 34 54 13 94 34 57 54Z" fill="#f8f5e9" stroke={color} strokeWidth="2"/><path d="M24 32 54 17 85 32 55 48Z" fill={color}/>{[0,1,2].map(i=><g key={i}><path d={`M${24+i*10} ${48+i*5}v10l5 3V${51+i*5}Z`} fill="#fcf6de"/><path d={`M${62+i*9} ${58-i*5}v9l5-3v-9Z`} fill="#fcf6de"/></g>)}<path d="M36 65v18l11 6V71Z" fill="#183e39"/></svg>}
-function CampusMap({campus,setCampus}:{campus:number;setCampus:(n:number)=>void}){
- const coords=[[100,150],[285,70],[480,145],[100,330],[310,300],[490,330]];
- return <div className="campus-map"><div className="map-top"><span className="map-tag">6 CAMPUS · 12 GUICHETS</span><span className="map-tag subtle">Réseau fictif · schéma non géographique</span></div><svg className="network" viewBox="0 0 690 480" role="img" aria-label="Six campus reliés au pipeline de données"><defs><pattern id="dots" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dadfd5"/></pattern></defs><rect width="690" height="480" fill="url(#dots)"/>{coords.map(([x,y],i)=><g key={i}><path d={`M${x+45} ${y+30} Q350 215 620 225`} stroke={campus===i+1?'#c7744c':'#d1dcd5'} strokeWidth={campus===i+1?2.5:1.5} strokeDasharray="5 6" fill="none" className={campus===i+1?'map-route':''}/><Building x={x} y={y-53} color={campus===i+1?'#c47750':'#4f8177'} scale={.82}/><text x={x+45} y={y+57} textAnchor="middle" fontSize="13" fontWeight="600" fill="#334a45">{refs.campuses[i].name.replace('Campus ','')}</text><text x={x+45} y={y+74} textAnchor="middle" fontSize="10" fill="#72847c">Guichets {i*2+1} et {i*2+2}</text></g>)}<g><rect x="582" y="192" width="76" height="68" rx="15" fill="#f6ead8" stroke="#d7b58c"/><path d="M603 209h22l12 12v23h-34Z M625 209v13h12 M610 229h18 M610 237h14" fill="none" stroke="#a9663f" strokeWidth="1.8"/><text x="620" y="281" textAnchor="middle" fontSize="11" fill="#78674f">Le lot source</text><circle className="signal-dot" cx="653" cy="196" r="6" fill="#c47750"/></g></svg><div className="campus-pills" aria-label="Choisir un campus">{refs.campuses.map(c=><button key={c.campus_id} onClick={()=>setCampus(c.campus_id)} aria-pressed={campus===c.campus_id} className={campus===c.campus_id?'selected':''}>{c.name.replace('Campus ','')}</button>)}</div><p className="map-caption"><Icon name="info" size={15}/>Sélectionnez un campus pour explorer ses deux guichets.</p></div>
-}
-
-function Calculator({campus}:{campus:number}){
- const [unit,setUnit]=useState('hour'),[qty,setQty]=useState(2),[duration,setDuration]=useState(3),[rate,setRate]=useState(25),[second,setSecond]=useState(false),[desk,setDesk]=useState(0);
- const valid=Number.isInteger(qty)&&qty>=1&&qty<=100&&Number.isInteger(duration)&&duration>=1&&duration<=(unit==='hour'?720:365)&&rate>=0&&Number.isFinite(rate)&&Math.abs(rate*100-Math.round(rate*100))<1e-7&&Number.isSafeInteger(qty*duration*Math.round(rate*100)+40000);
- const result=valid?qty*duration*Math.round(rate*100):0;
- function change(u:string){setUnit(u);setQty(u==='hour'?2:1);setDuration(u==='hour'?3:2);setRate(u==='hour'?25:200);setSecond(false)}
- return <><label className="field-label">Point de départ<select aria-label="Guichet de départ" value={desk} onChange={e=>setDesk(Number(e.target.value))}>{[0,1].map(n=><option key={n} value={n}>{refs.campuses[campus-1].name.replace('Campus ','')} · guichet {(campus-1)*2+n+1}</option>)}</select></label><div className="segmented"><button aria-pressed={unit==='hour'} className={unit==='hour'?'on':''} onClick={()=>change('hour')}>À l’heure</button><button aria-pressed={unit==='day'} className={unit==='day'?'on':''} onClick={()=>change('day')}>À la journée</button></div><div className="calculator-fields"><label>Quantité<input aria-label="Quantité" type="number" min="1" max="100" step="1" value={qty} onChange={e=>setQty(Number(e.target.value))}/></label><span>×</span><label>{unit==='hour'?'Heures':'Jours'}<input aria-label="Durée" type="number" min="1" max={unit==='hour'?720:365} step="1" value={duration} onChange={e=>setDuration(Number(e.target.value))}/></label><span>×</span><label>MAD / unité<input aria-label="Tarif par unité" type="number" min="0" step="0.01" value={rate} onChange={e=>setRate(Number(e.target.value))}/></label></div><div className="calculation-total"><span>MONTANT DE LA LIGNE</span><strong data-testid="calculation">{valid?money(result):'Valeur invalide'}</strong><small>Rattaché au 2 novembre · statut payé</small></div>{!valid&&<p className="form-error" role="alert">Respectez les bornes de quantité et de durée, et un tarif à deux décimales maximum.</p>}{qty>20&&valid&&<p className="anomaly-message">Quantité inhabituelle : signalement, sans rejet.</p>}<p>Le tarif est déjà exprimé par {unit==='hour'?'heure':'jour'}. Aucune conversion n’est nécessaire.</p>{unit==='hour'&&<><button className="text-link" onClick={()=>setSecond(v=>!v)}>{second?'Masquer':'Ajouter'} la deuxième ligne du sujet<Icon name="arrow" size={14}/></button>{second&&<div className="second-line"><span>1 exemplaire × 2 jours × 200 MAD</span><b>{valid?money(result+40000):'—'} pour le contrat</b></div>}</>}<small className="small">Exemple pédagogique du PDF, page 5. Les réglages sont exploratoires ; ils ne modifient pas les lots.</small></>
-}
-function Sources({batch}:{batch:Batch}){const [file,setFile]=useState('locations.csv');const items=[['locations.csv','Les lignes des contrats','CSV'],['referentiels.json','Les identités autorisées','JSON'],['manifest.json','Les empreintes des fichiers','JSON'],['READY','Le signal de publication','TÉMOIN']];return <div className="sources"><div className="files-grid">{items.map(([name,desc,type])=><button key={name} className={`file-card ${file===name?'selected':''}`} onClick={()=>setFile(name)}><span className="file-icon"><Icon name={name==='READY'?'check':'file'} size={22}/></span><b>{name}</b><small>{desc}</small><span className="file-type">{type}</span></button>)}</div><div className="file-preview"><div className="preview-title"><span>{file}</span><Badge variant="outline">{file==='locations.csv'?`${batch.rows.length} lignes sources`:'Aperçu explicatif'}</Badge></div>{file==='locations.csv'?<><div className="table-scroll" tabIndex={0} role="region" aria-label="Aperçu du fichier">{/* Academy: scrollable with the keyboard */}<table><thead><tr>{batch.columns.map(c=><th key={c}>{c}</th>)}</tr></thead><tbody>{batch.rows.slice(0,6).map((r,i)=><tr key={i}>{batch.columns.map(c=><td key={c}>{r[c as keyof typeof r]}</td>)}</tr>)}</tbody></table></div><p>Les 6 premières lignes sont affichées. <a href={`${FILES}data/${batch.id}.csv`} download>Télécharger les {batch.rows.length} lignes</a></p></>:file==='referentiels.json'?<div className="refs-grid">{[['Campus',6],['Guichets',12],['Associations',2000],['Types de matériel',120]].map(([n,v])=><div key={n}><b>{number(Number(v))}</b><span>{n}</span></div>)}<p>Un site référence un campus. Un équipement référence une catégorie.</p></div>:file==='manifest.json'?<div className="manifest"><p>Empreintes SHA-256 réelles des sources de cette démonstration.</p><b>locations.csv</b><code>{batch.hash}</code><b>referentiels.json</b><code>{batch.refsHash}</code><small>Le manifeste protège l’intégrité des fichiers. Il ne remplace pas les règles métier.</small></div>:<div className="ready-view"><span className="ready-check"><Icon name="check" size={30}/></span><h3>Le dossier est complet.</h3><p>Le générateur publie le lot en une seule opération. La surveillance peut le découvrir puis vérifier les empreintes.</p></div>}</div><details className="column-guide"><summary>Comprendre les 11 colonnes</summary>{columns.map(c=><div key={c}><code>{c}</code><p>{columnInfo[c]}</p></div>)}</details></div>}
-
-function Pipeline({active,playing,failed=false}:{active:number;playing:boolean;failed?:boolean}){const nodes=[['Les guichets','route'],['Le lot complet','file'],['Normaliser','settings'],['Contrôler','shield'],['Transaction','database'],['Analyser','layers']];return <div className="pipeline"><div className="pipeline-track">{nodes.map(([n,icon],i)=><div key={n} className={`pipeline-node ${i===active?'active':''} ${i<active?'done':''} ${i===active&&failed?'failed':''}`}><span><Icon name={icon} size={21}/></span><b>{n}</b>{i<5&&<i className={playing&&i===active-1?'moving':''}/>}</div>)}</div></div>}
-function Quality({report,filter,setFilter,selectedRow,onSelect,ready}:{report:ReturnType<typeof analyze>;filter:string;setFilter:(s:string)=>void;selectedRow:number;onSelect:(n:number)=>void;ready:boolean}){
- if(report.structure)return <div className="structure-error"><Icon name="alert" size={35}/><h3>La colonne unit est absente.</h3><p>Le lot entier est refusé avant les contrôles métier et les écritures.</p><code>REJETE_STRUCTURE</code></div>;
- const lines=report.lines.filter(l=>filter==='all'||l.decision===filter);
- return <div className="quality"><div className="quality-stats"><span><b>{report.received}</b> reçues</span><span className="green"><b>{ready?report.accepted:'—'}</b> validées</span><span className="red"><b>{ready?report.rejected:'—'}</b> en quarantaine</span><span><b>{ready?report.duplicates:'—'}</b> doublon</span></div>{ready&&<div className={`quality-alert ${report.alert?'alert-on':''}`}><Icon name={report.alert?'alert':'info'} size={16}/><span>Taux de rejet : <b>{number(report.rate)} %</b> · {report.rejected} ÷ {report.received-report.duplicates} après dédoublonnage. {report.alert?'Alerte > 20 %. Les contrats valides peuvent être chargés.':`${report.anomalies} anomalie(s) signalée(s).`}</span></div>}<div className="table-tools"><h3>{ready?'Une ligne, une décision.':'Des lignes à contrôler.'}</h3><select aria-label="Filtrer les décisions" value={filter} onChange={e=>setFilter(e.target.value)} disabled={!ready}><option value="all">Toutes les lignes</option><option value="accepted">Validées</option><option value="rejected">Quarantaine</option><option value="duplicate">Doublons</option></select></div><div className="table-scroll quality-table"><table><thead><tr><th>Ligne CSV</th><th>Contrat</th><th>Ligne</th><th>Qté</th><th>Unité</th><th>Durée</th><th>Décision</th></tr></thead><tbody>{lines.map(l=><tr key={l.sourceRow} className={selectedRow===l.sourceRow?'selected-row':''}><td><button aria-label={`Inspecter la ligne CSV ${l.sourceRow}`} className="row-link" onClick={()=>onSelect(l.sourceRow)}>#{l.sourceRow}</button></td><td>{l.row.contract_id}</td><td>{l.row.line_no}</td><td>{l.row.quantity}</td><td>{l.row.unit}</td><td>{l.row.duration}</td><td>{ready?<span className={`decision ${l.decision}`}>{labels[l.decision]}{l.anomaly?' · anomalie':''}</span>:<span className="pending">À contrôler</span>}</td></tr>)}</tbody></table></div><p className="table-note">Sélectionnez un numéro de ligne pour lire ses valeurs et sa décision. L’en-tête du CSV est la ligne 1.</p></div>
-}
-function LineDetail({line,structure,ready}:{line:Line|undefined;structure:boolean;ready:boolean}){if(structure||!line)return <p>La structure du lot est invalide. Aucune décision métier par ligne n’est calculée.</p>;return <><span className={`decision ${ready?line.decision:''}`}>{ready?labels[line.decision]:'À contrôler'} · ligne CSV {line.sourceRow}</span><dl className="line-fields">{columns.map(c=><div key={c}><dt>{c}</dt><dd>{line.raw[c]}</dd></div>)}</dl>{ready&&<div className={`rule-note ${line.decision==='rejected'?'danger-note':''}`}><b>{line.anomaly?'Anomalie conservée':line.decision==='accepted'?'La ligne est valide':'Pourquoi cette décision ?'}</b><p>{line.reasons.join(' ')|| (line.anomaly?'quantity dépasse 20, mais reste dans [1,100]. Le contrat est valide.':'Les contrôles de ligne et la cohérence du contrat sont satisfaits.')}</p></div>}</>}
-
-function Transaction({state,index,scenario}:{state:ReturnType<typeof snapshot>;index:number;scenario:Scenario}){const committed=index>=6&&state.status!=='CONFLIT'&&state.status!=='REJETE_STRUCTURE';return <div className="transaction"><div className="transaction-caption"><span className="eyebrow">BASE POSTGRESQL SIMULÉE</span><code>campusequip</code></div><div className={`transaction-boundary ${committed?'committed':''} ${state.status==='CONFLIT'?'rollback':''}`}><div className="boundary-label"><Icon name="shield" size={17}/>{index<6?'Une transaction en préparation':state.status==='CONFLIT'?'ROLLBACK · aucun nouvel ajout':scenario==='rejeu'||state.status==='DEJA_CHARGE'?'Signature déjà reconnue':'COMMIT · écritures conservées'}</div><div className="db-table"><span><Icon name="database"/>Données métier</span><div><strong>{state.contracts}</strong><small>contrats</small></div><div><strong>{state.lines}</strong><small>lignes</small></div></div><div className="atomic-link"><span/><Icon name="layers" size={22}/><span/></div><div className="db-table ledger"><span><Icon name="book"/>Journal des lots</span><div><strong>{state.batches}</strong><small>signature(s) conservée(s)</small></div><code>{state.batches?state.db.ledger[0].slice(0,8)+'…':'Aucune signature'}</code></div></div><div className="transaction-result"><span className={`status-tag ${state.status==='CONFLIT'||state.status==='ECHEC_APRES_COMMIT'?'red':'green'}`}>{state.status}</span><p>{state.status==='ECHEC_APRES_COMMIT'?'Le programme a échoué après la validation. Les écritures restent en base.':state.status==='CONFLIT'?'Un contrat existe déjà : aucun contrat du nouveau lot n’est ajouté.':index<6?'Le modèle montre l’état conservé avant toute nouvelle écriture.':`${state.added} ligne(s) ajoutée(s) pendant cette tentative.`}</p></div></div>}
-
-function Analytics({db,campus,setCampus}:{db:DB;campus:number;setCampus:(n:number)=>void}){
- const [view,setView]=useState('daily'),[cumulative,setCumulative]=useState(false),[table,setTable]=useState(false),[day,setDay]=useState(1);
- const values=daily(db,campus),max=Math.max(1,...values.map(d=>cumulative?d.cumulative:d.cents)),selected=values[day-1],ranks=ranking(db,campus),byUnit=units(db,campus);
- return <div className="analytics"><div className="analytics-toolbar"><select aria-label="Campus des indicateurs" value={campus} onChange={e=>setCampus(Number(e.target.value))}>{refs.campuses.map(c=><option key={c.campus_id} value={c.campus_id}>{c.name}</option>)}</select><button className="text-link" onClick={()=>setTable(v=>!v)}>{table?'Voir le graphique':'Voir le tableau'}</button></div><Tabs.Root value={view} onValueChange={e=>setView(e.value)} variant="line" size="sm"><Tabs.List><Tabs.Trigger value="daily">Par jour</Tabs.Trigger><Tabs.Trigger value="ranking">Équipements</Tabs.Trigger><Tabs.Trigger value="unit">Heure / journée</Tabs.Trigger></Tabs.List><Tabs.Content value="daily"><div className="chart-heading"><div><span className="eyebrow">{cumulative?'CUMUL':'MONTANT DU JOUR'} · {day} NOVEMBRE</span><strong>{money(cumulative?selected.cumulative:selected.cents)}</strong></div><label><input type="checkbox" checked={cumulative} onChange={e=>setCumulative(e.target.checked)}/>Afficher le cumul</label></div>{table?<div className="table-scroll calendar-table"><table><thead><tr><th>Date</th><th>Montant</th><th>Cumul</th></tr></thead><tbody>{values.map(v=><tr key={v.day}><td>{v.date}</td><td>{money(v.cents)}</td><td>{money(v.cumulative)}</td></tr>)}</tbody></table></div>:<><div className="bar-chart" aria-label="Montants du 1er au 21 novembre">{values.map(v=><button key={v.day} aria-label={`${v.day} novembre : ${money(cumulative?v.cumulative:v.cents)}`} aria-pressed={day===v.day} className={v.day===day?'selected':''} onClick={()=>setDay(v.day)}><span className="bar-space"><i style={{height:`${Math.max(1,(cumulative?v.cumulative:v.cents)/max*100)}%`}}/></span><small>{v.day}</small></button>)}</div><div className="chart-caption"><span>01 NOV.</span><span>Dates métier du scénario</span><span>21 NOV.</span></div></>}<p className="chart-note">Un jour sans montant apparaît à zéro. Les montants sont rattachés à start_date.</p></Tabs.Content><Tabs.Content value="ranking"><h3>Équipements les plus contributeurs</h3><div className="table-scroll ranking-table"><table><thead><tr><th>Rang</th><th>Type de matériel</th><th>Montant retenu</th></tr></thead><tbody>{ranks.map(r=><tr key={r.id}><td>{r.rank}</td><td>Équipement {r.id.padStart(3,'0')}</td><td>{money(r.cents)}</td></tr>)}</tbody></table></div>{!ranks.length&&<p>Aucun montant retenu pour ce campus.</p>}<p className="chart-note">Un même montant reçoit le même rang. Le classement porte sur ce campus uniquement.</p></Tabs.Content><Tabs.Content value="unit"><h3>Deux unités, une monnaie commune.</h3><div className="unit-comparison">{byUnit.map(u=><div key={u.unit}><Icon name={u.unit==='hour'?'clock':'file'} size={24}/><span>{u.unit==='hour'?'À l’heure':'À la journée'}</span><strong>{money(u.cents)}</strong><small>{u.lines} lignes retenues</small><i style={{width:`${Math.max(2,u.cents/Math.max(1,...byUnit.map(x=>x.cents))*100)}%`}}/></div>)}</div><p className="chart-note">Comparez les montants en MAD. N’additionnez pas les heures et les jours.</p></Tabs.Content></Tabs.Root><div className="analytics-foot"><span className="live-dot"/>Résultats calculés à partir des lignes conservées par la simulation.</div></div>
-}
-
-function Continuous({db,n,step,profile,playing,history,reset,start}:{db:DB;n:number;step:number;profile:string;playing:boolean;history:{batch:string;added:number;rejected:number;status:string}[];reset:(p?:string)=>void;start:()=>void}){const state=totals(db);return <div className="continuous"><div className="continuous-heading"><div><Badge variant="outline">3 lots · débit accéléré pour la démonstration</Badge><h2>Une même recette, à chaque arrivée.</h2><p>Les trois lots sont issus du générateur du kit. Le navigateur simule les contrôles et le chargement.</p></div><label>Profil<select aria-label="Profil du flux" value={profile} onChange={e=>reset(e.target.value)}><option value="mixte">Avec défauts de qualité</option><option value="propre">Sans défaut de qualité</option></select></label></div><div className="flow-lane">{['Publier le lot','Vérifier et contrôler','Préparer la transaction','Conserver les écritures'].map((t,i)=><div key={t} className={n<3&&i===step?'active':''}><span><Icon name={['file','shield','database','check'][i]} size={26}/></span><b>{t}</b><small>{n>=3?'Séquence terminée':i===step?(playing?'En cours':'En attente'):'Lot '+(n+1)}</small>{i<3&&<Icon name="arrow" size={20}/>}</div>)}</div><div className="flow-buttons"><Button className="primary" onClick={start} disabled={n>=3}><Icon name={playing?'pause':'play'} size={17}/>{playing?'Suspendre le flux':n>=3?'Trois lots traités':'Démarrer le flux'}</Button><Button variant="outline" onClick={()=>reset()}>Nouvelle démonstration</Button><span>{n} / 3 lots traités</span></div><div className="flow-bottom"><div><h3>Le journal de la démonstration</h3>{!history.length?<p className="empty-log">Aucun lot traité. Lancez le flux pour observer les arrivées.</p>:<div className="table-scroll" tabIndex={0} role="region" aria-label="Historique des lots">{/* Academy: scrollable with the keyboard */}<table><thead><tr><th>Lot</th><th>Ajoutées</th><th>Quarantaine</th><th>Résultat</th></tr></thead><tbody>{history.map(h=><tr key={h.batch}><td>{h.batch}</td><td>{h.added}</td><td>{h.rejected}</td><td><span className="decision accepted">{h.status}</span></td></tr>)}</tbody></table></div>}{n===3&&<p className="flow-done" role="status"><Icon name="check"/>Trois lots pris en charge sans relancer le traitement entre les lots.</p>}</div><div className="flow-summary"><span className="eyebrow">ÉTAT CONSERVÉ</span><strong>{state.contracts} contrats</strong><p>{state.lines} lignes · {state.batches} lots reconnus</p><b>{money(state.cents)}</b></div></div><details className="real-command"><summary>Et dans le vrai kit ?</summary><p>Le script tourne jusqu’à Ctrl+C. Cette animation s’arrête après trois lots pour faciliter l’observation.</p><code>python generer.py --sortie flux --contrats 1000 --intervalle 10</code><code>python surveiller.py --entree flux</code><p>Le traitement étudiant doit d’abord être complété et connecté à une base dédiée. Un volume plus faible est autorisé. Les fichiers sont conservés : arrêtez le générateur après la démonstration.</p></details></div>}
-
-function Rules({scene}:{scene:number}){const rules=scene===0?[['Le bon grain','Une ligne représente un équipement loué dans un contrat. La quantité désigne des exemplaires.'],['Deux unités','hour et day. Le tarif et la durée ont la même unité.'],['Le montant','quantity × duration × unit_rate. Un tarif historique, une représentation décimale exacte.']]:scene===2?[['Dédoublonner','Une seule occurrence des lignes exactement identiques après normalisation.'],['Isoler le contrat','Une erreur de ligne ou un conflit interne entraîne la quarantaine de tout le contrat.'],['Alerter sans rejeter','quantity > 20 déclenche une anomalie ; le taux de rejet > 20 % déclenche une alerte. Les contrats valides peuvent être chargés.']]:scene===3?[['Tout ou rien','Les données et la signature du lot sont dans la même transaction.'],['Reconnaître le rejeu','Le journal fait foi, même après un redémarrage.'],['Refuser le conflit','Un contenu nouveau ne peut pas écraser un contrat déjà chargé.']]:scene===4?[['Retenir les bons statuts','paid et closed contribuent. draft et cancelled restent stockés s’ils sont valides.'],['Une date de référence','Tout le montant est affecté à start_date. Il n’est pas réparti sur les journées.'],['Monnaie commune','Les montants sont comparables en MAD. Les durées de deux unités ne s’additionnent pas directement.']]:[['Quatre fichiers','locations.csv, referentiels.json, manifest.json et READY.'],['Intégrité puis qualité','Le marqueur et les empreintes préparent la lecture. Les contrôles métier viennent ensuite.'],['Une campagne','Une nouvelle campagne utilise une autre base de démonstration pour ne pas mélanger les identifiants.']];return <>{rules.map(([a,b])=><div className="rule-entry" key={a}><h3>{a}</h3><p>{b}</p></div>)}</>}
-
-function Future(){const [gps,setGps]=useState(false),[event,setEvent]=useState(0);return <div className="future"><div className="future-now"><span className="eyebrow">À RÉALISER MAINTENANT</span><h2>SQL + Python</h2><p>Un modèle cohérent, trois analyses, des contrôles explicables et un chargement automatique sans doublons.</p><div className="grade"><strong>10</strong><span>points de socle</span><b>+ 5</b><span>points bonus maximum</span></div><small>Remise le 21 novembre 2026 · en binôme · rapport de quatre pages maximum hors annexes</small></div><div className="bonus-grid">{[['1 pt','Un index utile','Comparez les plans et vérifiez des résultats identiques.'],['1 pt','Une analyse plus loin','Récursion des catégories ou résultat précalculé.'],['1 pt','Lire par morceaux','Préservez la cohérence des contrats et les décisions.']].map(([pts,title,text])=><div key={title}><Badge variant="outline">{pts}</Badge><h3>{title}</h3><p>{text}</p></div>)}</div><div className="iot-demo"><div><Badge variant="outline">BONUS · JUSQU’À 2 POINTS</Badge><h3>Et si le matériel envoyait un signal ?</h3><p>Un GPS simulé ou une API peut alimenter une table distincte. Ces observations ne modifient pas les montants de location.</p><Button className="primary" size="sm" onClick={()=>{setGps(true);setEvent(v=>v+1)}}><Icon name="route" size={16}/>Simuler un signal GPS</Button></div><div className="gps-board"><svg viewBox="0 0 310 150" role="img" aria-label="Trajet GPS fictif sur un schéma de campus"><path d="M20 120H80V45H155V100H220V35H290" fill="none" stroke="#d5e1da" strokeWidth="20"/><path d="M20 120H80V45H155V100H220V35H290" fill="none" stroke="#94b3a1" strokeWidth="2" strokeDasharray="4 5"/>{gps?<g key={event} className="gps-signal"><circle cx={event%2?155:220} cy={event%2?100:35} r="13" fill="#f5b46a" stroke="#c47843" strokeWidth="2"/><circle cx={event%2?155:220} cy={event%2?100:35} r="4" fill="#7b4b26"/></g>:<circle cx="20" cy="120" r="7" fill="#94b3a1"/>}</svg><code>{gps?`GPS_DEMO · événement ${event} · coordonnées fictives`:'Aucun signal reçu'}</code><p>{gps?'Une observation illustrée. Aucun capteur ni service réel connecté.':'Cliquez pour illustrer une arrivée de données IoT.'}</p></div></div><div className="next-axes"><div><span>PLUS TARD · AXE 3</span><h3>Historique et lecture rapide</h3><p>MongoDB et Redis. Un aperçu, sans travail demandé dans ce sujet.</p></div><div><span>PLUS TARD · AXE 4</span><h3>Orchestration et suivi</h3><p>Airflow et TimescaleDB. Des consignes séparées préciseront cette suite.</p></div></div><p className="overall-grade">Cadre global des quatre axes : 20 points de socle + 10 points bonus, soit 30/20 au maximum.</p></div>}
