@@ -1,6 +1,6 @@
 # ADR-0044 — Expérience CampusEquip (« Le voyage d'une location »)
 
-Date : 31 octobre 2026 · Statut : accepté (demande du propriétaire) · Suit le cadre de l'ADR-0033
+Date : 31 octobre 2026 · Statut : accepté (demande du propriétaire) ; animation améliorée et accent vert proposés le 08/11/2026 (branche `feat/campusequip-motion`, en attente de revue) · Suit le cadre de l'ADR-0033
 
 ## Contexte
 Le propriétaire a livré une seconde application interactive, `assets/CampusEquip-experience.zip` du dépôt privé `mryoshq/shopflow-courses` (commit `0fb639e`). Elle suit le sujet CampusEquip axes 1 et 2 en sept étapes : campus, sources, qualité, chargement, indicateurs, flux continu, suite du projet.
@@ -26,6 +26,17 @@ Le propriétaire a livré une seconde application interactive, `assets/CampusEqu
 - **Tests du modèle livrés** : `model.test.ts` est gardé, seul le chemin de `expected.json` change. Il tourne avec Vitest. L'empreinte d'origine est vérifiée par pytest.
 - **Langue** : les textes de l'Academy autour de l'expérience (entrées, carte, chargement) sont traduits en anglais ; l'expérience elle-même est du contenu de cours et reste en français, comme le voyage (ADR-0040).
 
+## Animation améliorée et accent vert (08/11/2026)
+Même traitement que le voyage (ADR-0033, 07/11/2026). Remplace les points « application du propriétaire […] gardés tels quels » (pour `CampusEquipApp.tsx` et les icônes), « retouches marquées Academy: » et « Un seul thème avec l'Academy » ci-dessus.
+- **Composants** : `CampusEquipApp.tsx` réécrit (mêmes props `initialStep` et `onStep`), une étape par fichier (`Territory.tsx`, `Sources.tsx`, `Quality.tsx`, `Transaction.tsx`, `Indicators.tsx`, `Flow.tsx`, `Future.tsx`), plus `Inspector.tsx`, `Player.tsx`, `Dialogs.tsx`, `content.ts` (textes du propriétaire et chronologie), `hooks.ts`, `ui.tsx` ; `icons.tsx` complété. `model.ts`, `dataset.json`, `expected.json`, `model.test.ts`, `empreintes.json`, `source/`, `CampusEquipPage.tsx`, `index.ts` et `public/experiences/campusequip/` inchangés (empreintes vérifiées par pytest).
+- **Animations** : `motion` (déjà ajouté pour le voyage) ; une seule barre de lecture pour toutes les séquences (vitesse, « Réduire les animations », présentation, flèches et Espace).
+- **Accent vert propre à l'expérience** (projet final) : `campusequip.css` redéfinit les jetons `brand` sous `.campusequip-root` ; l'en-tête de l'Academy, la barre latérale et Rafi gardent leur accent. Valeurs (toutes AA) : clair `#1E7B43` (texte blanc, 5,3:1), sombre `#5CC98A` (texte `#0F2418`, 7,9:1), Catppuccin clair `#2F7A22`, Catppuccin sombre `#A6E3A1` (vert Catppuccin). Les autres couleurs lisent `theme.ts` (`app.*`, `green/red/saffron.*`, polices). **À valider par le propriétaire.**
+- **Feuille de style** : `campusequip.css` est écrite à la main ; `scripts/campusequip-css.mjs` est retiré (il écraserait cette feuille). `source/style.css` reste comme trace de la livraison, il n'est plus importé. Règles sous `.campusequip-root`, animations préfixées `ce-`, aucune police web ni `@import`.
+- **Place dans la page** : l'expérience mesure l'espace laissé par la page (en-tête étudiant, barre latérale et barre du haut enseignant) ; plan du campus sur une, deux ou trois rangées ; à l'étape 7, quatre onglets quand la place manque. Mode compact sur téléphone (scénario, panneau et fenêtres de référence dans le menu du lecteur). Cibles de 44 px au tactile (ADR-0029).
+- **Rafi** : la barre de lecture lui laisse sa place sur les pages étudiant, comme le voyage.
+- **Textes** : ceux du propriétaire, sauf trois choix à valider : la ligne « Bonus facultatifs : jusqu'à 5 points au total, signal IoT compris. » dans l'onglet Bonus de l'étape 7 ; les indicateurs s'ouvrent sur le jour le plus chargé du campus (le 1er novembre auparavant) ; « Les règles » des étapes 6 et 7 reprennent les textes de ces étapes.
+- **Chargement différé** : `CampusEquipPage` passe à 260,4 Ko de JS (48,6 Ko gzip) et 33,4 Ko de CSS (6,2 Ko gzip), contre 226,9 Ko (38,7) et 74,7 Ko (14,8) ; le reste de l'application est inchangé.
+
 ## Conséquences
 - Pas de migration. Le PDF (410 Ko) et les données (environ 175 Ko) sont servis par le conteneur frontend comme les autres fichiers statiques.
-- Pour une nouvelle version de l'archive : copier les sources et `public/`, mettre à jour `empreintes.json`, puis lancer `node scripts/campusequip-css.mjs`.
+- Pour une nouvelle version de l'archive : copier `model.ts`, `dataset.json`, `source/style.css` et `public/`, mettre à jour `empreintes.json`, puis reporter à la main dans `campusequip.css` et les composants ce qui a changé (le générateur de feuille est retiré).

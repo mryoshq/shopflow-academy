@@ -1,5 +1,18 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## CampusEquip : animation améliorée et accent vert (08/11/2026, ADR-0044)
+
+Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle expérience dans `frontend/src/campusequip/`, accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration, aucune dépendance nouvelle.
+
+### À faire en local après revue et fusion autorisées
+
+- Décisions du propriétaire : accent vert et trois choix de texte (ADR-0044, « Animation améliorée et accent vert »).
+- Mise en service : `docker compose build frontend`, `docker compose up -d --wait`, recharger la page.
+- Lancer `cd frontend && npm run test:e2e -- e2e/campusequip.spec.ts` sur la stack locale (non lancé dans cette session).
+- Issue #104 (masquer Rafi dans le voyage) : à étendre à `#/campusequip` si le propriétaire le souhaite ; d'ici là, la barre de lecture laisse sa place à Rafi.
+
+Prochaine action unique : revue de la branche par le propriétaire.
+
 ## « Le voyage d'une donnée » : animation améliorée (07/11/2026, ADR-0033)
 
 Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle expérience dans `frontend/src/voyage/`, thème de l'Academy, dépendance `motion`, `scripts/voyage-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration.

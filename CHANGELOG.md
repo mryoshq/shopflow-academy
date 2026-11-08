@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-08 — CampusEquip : animation améliorée et accent vert (`feat/campusequip-motion`, ADR-0044)
+
+- Nouvelle version de l'expérience « Le voyage d'une location », même traitement que le voyage : sept étapes animées avec `motion`, une barre de lecture pour toutes les séquences, panneau « Comprendre le détail ».
+- Accent vert propre à l'expérience (projet final) en clair, sombre et Catppuccin ; le reste de la page garde l'accent de l'Academy. `scripts/campusequip-css.mjs` retiré.
+- L'expérience tient dans l'espace de la page (étudiant et enseignant), sans défilement ; mode compact sur téléphone, boutons de 44 px, place laissée à Rafi.
+- Modèle, données, fichiers servis et tests livrés inchangés. Test unitaire adapté : les liens vers les fichiers sont cherchés dans tout le dossier.
+- Aucune migration, aucune nouvelle dépendance. Après fusion : `docker compose build frontend`, `up -d --wait`, recharger la page.
+
 ## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (`feat/voyage-motion`, ADR-0033)
 
 - Nouvelle version de l'expérience : DAG animé, trois stockages, « laboratoire » qui zoome sur chaque étape, scénarios de panne, lecteur pas à pas.
