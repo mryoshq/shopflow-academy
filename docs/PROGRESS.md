@@ -29,6 +29,13 @@ Branche `feat/voyage-motion`, PR vers `main`, sans fusion. Nouvelle version de l
   - animations réduites : toutes ponctuelles, arrêtées en 1,5 s environ.
 - NOT RUN : `npm run test:e2e` (stack et comptes de démonstration nécessaires, non lancés dans cette session) ; mode présentation réel (plein écran non pilotable sans écran ; les fenêtres sont vérifiées dans l'expérience).
 - Captures (banc d'essai, données fictives) : `docs/captures/voyage-anime/themes-1366-375.png`.
+- Mise en service (07/11/2026, Mac) : PR #102 fusionnée (`1dfca25`) avec l'accord du propriétaire, CI verte (backend, frontend, studio-e2e, compose-config, verify-kit).
+  - PASS : stack de test jetable `python3 scripts/test_stack.py up` (127.0.0.1:3180, comptes fictifs) ; `npx playwright test e2e/voyage.spec.ts` (6) ; `e2e/student-home.spec.ts e2e/player.spec.ts` (11).
+  - PASS : sauvegarde `academy-20261107-145215-avant-voyage-102.dump` vérifiée ; aucun étudiant en ligne ni tentative depuis 30 min ; `docker compose build frontend` puis `up -d --wait` ; une seule tête Alembic `0019_final_grade` ; `smoke_public.py` 16/16 en local et 18/18 en public ; n8n 302 ; blocs ouverts 85 avant et après.
+  - PASS : site public, compte enseignant (Vue étudiant → Ressources → « Ouvrir l'expérience », et menu enseignant), clair et sombre à 1366, sombre 390x844, clair 375x667 : expérience chargée, aucune erreur CSP ni de chargement (seul le 401 attendu avant connexion).
+  - NOT RUN : contrôle manuel complet (7 scènes × Catppuccin × 1024 et 375 × animations réduites × mode présentation) : script refusé par le classificateur (lecture des identifiants de test), non contourné.
+  - Constats : la bulle de Rafi « Bloc à terminer » recouvre le bas du canevas (390) ou de « À la loupe » (1366) ; la pastille « Que faire maintenant ? » cache le compteur du lecteur à 390 ; à 375x667 dans la Vue étudiant enseignant (bandeau en plus), le DAG est tassé (cartes qui se chevauchent) et la page défile.
+  - Captures e2e : `docs/captures/voyage-anime/voyage-{clair,sombre}-{1366,390}.png`.
 
 ## 2026-11-05 — Vue étudiant pendant le projet (ADR-0051)
 
