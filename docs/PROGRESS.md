@@ -15,6 +15,12 @@ Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle 
   - parcours : bouton d'étape et adresse, retour arrière, lien direct, flèches, lecture automatique, recommencer, `html.reduce-motion` : PASS.
 - NOT RUN : `npm run test:e2e` (stack et comptes de démonstration nécessaires) ; mode présentation réel (plein écran).
 - Captures (banc d'essai, données fictives) : `docs/captures/campusequip-anime/themes-1366.png`, `telephone-390.png`.
+- Mise en service (08/11/2026, Mac) : PR #105 fusionnée par le propriétaire (`36bb758`), CI verte (backend, frontend, studio-e2e, compose-config, verify-kit).
+  - PASS : stack de test `python3 scripts/test_stack.py up` (127.0.0.1:3180, construite depuis `feat/campusequip-motion` 7e8737c, comptes fictifs) ; `npm ci` ; `npm run test:e2e -- e2e/campusequip.spec.ts e2e/voyage.spec.ts` : 8 PASS (deux exécutions).
+  - PASS : sauvegarde `academy-20261108-080719-avant-campusequip-105.dump` vérifiée ; aucun étudiant en ligne ni tentative depuis 30 min ; `docker compose build frontend` puis `up -d --wait` ; une seule tête Alembic `0019_final_grade` ; `smoke_public.py` 16/16 en local et 18/18 en public ; n8n 302 ; blocs ouverts 85 avant et après.
+  - PASS : site public, compte enseignant (Vue étudiant → Projet → « Voir l'animation », et menu « Expérience CampusEquip »), clair et sombre à 1366, sombre 390x844, clair 375x667 : expérience chargée, pas de défilement de page, accent vert dans l'expérience et orange de l'Academy autour en sombre, aucune erreur CSP ni de chargement (seul le 401 attendu avant connexion).
+  - NOT RUN : contrôle manuel des 7 étapes sur la stack de test (390, sombre, clic sur les liens des sources) : il demande les identifiants de `.local`, hors des tests e2e.
+  - Constats : la bulle de Rafi « Bloc à terminer » couvre le bas du panneau de droite (sources) à 1366 ; à 390, la pastille « Que faire maintenant ? » cache le compteur du lecteur (même constat que le voyage, issue #104).
 
 ## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (ADR-0033)
 
