@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-21 — Statistiques pour la direction et la projection (#110)
+
+- Nouvelle vue enseignant « Statistiques » (`#/statistiques`) et onglet « Statistiques » de l'espace observateur : soutenances (passées, en cours, à venir, équipes notées), projet (équipes de 2 et 3, dépôts par jalon, versions, équipes sans dépôt), cours (progression, réussite, temps de travail, réussite par module).
+- Mode projection : plein écran, gros caractères, aucun nom, actualisé toutes les 30 s ; Échap pour sortir. La moyenne du projet reste hors projection ; l'invité ne la voit pas.
+- Aucune migration.
+
 ## 2026-11-08 — CampusEquip : animation améliorée et accent vert (`feat/campusequip-motion`, ADR-0044)
 
 - Nouvelle version de l'expérience « Le voyage d'une location », même traitement que le voyage : sept étapes animées avec `motion`, une barre de lecture pour toutes les séquences, panneau « Comprendre le détail ».

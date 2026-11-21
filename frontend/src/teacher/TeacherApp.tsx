@@ -18,6 +18,7 @@ import { CommandPalette } from "./CommandPalette"
 import { AutoPlanPanel, LivePanel, NotificationSettingsPanel, type Live } from "./LivePanel"
 import { ObserversPanel } from "./ObserversPanel"
 import { Results } from "./Results"
+import { ClassStats } from "../stats/ClassStats"
 import { TeacherDashboard } from "./TeacherDashboard"
 import { Today } from "./Today"
 import { TeacherProject } from "../project/TeacherProject"
@@ -294,6 +295,8 @@ function ViewContent({ route, main, username, go, navigate, reload, helpPending 
       return <TeacherStudio mainCourseId={main.course!.id} onPublished={() => void reload()} tab={route.sub} onTab={(sub) => go("cours", sub)} />
     case "resultats":
       return assignmentId ? <Stack gap="0">{context}<Results assignmentId={assignmentId} /></Stack> : <NoClass />
+    case "statistiques":
+      return assignmentId ? <Stack gap="0">{context}<ClassStats path={`/teacher/classes/${assignmentId}/stats`} /></Stack> : <NoClass />
     case "projet":
       return assignmentId ? <Stack gap="0">{context}<TeacherProject assignmentId={assignmentId} /></Stack> : <NoClass />
     case "voyage":

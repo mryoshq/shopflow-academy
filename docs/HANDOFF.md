@@ -1,5 +1,15 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Statistiques pour la direction et la projection (21/11/2026, issue #110)
+
+Branche `claude/lucid-brahmagupta-htwgun-stats`, PR vers `main`, sans fusion ni déploiement tant que le propriétaire n'a pas tout validé. Indépendante de #107 (aucune migration).
+
+### À faire en local après accord du propriétaire
+- `docker compose build backend frontend` puis `docker compose up -d --wait` ; vérifier `#/statistiques` et l'onglet « Statistiques » d'un compte Administration.
+- Lundi : ouvrir « Statistiques », puis « Mode projection » sur le vidéoprojecteur.
+
+Prochaine action unique : revue de la PR par le propriétaire.
+
 ## CampusEquip : animation améliorée et accent vert (08/11/2026, ADR-0044)
 
 Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle expérience dans `frontend/src/campusequip/`, accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration, aucune dépendance nouvelle.

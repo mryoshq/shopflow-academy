@@ -27,6 +27,7 @@ from app.project import router as project_router
 from app.project_draw import router as project_draw_router
 from app.student_view import router as student_view_router
 from app.rewards import router as rewards_router
+from app.class_stats import router as class_stats_router
 
 
 class Health(BaseModel):
@@ -74,6 +75,7 @@ app.include_router(announcements_router)
 app.include_router(rafi_router)
 app.include_router(final_grade_router)
 app.include_router(comfort_router)
+app.include_router(class_stats_router)
 app.include_router(observer_router)
 app.include_router(downloads_router)
 app.include_router(experiences_router)

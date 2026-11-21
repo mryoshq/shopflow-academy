@@ -1,5 +1,13 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-21 — Statistiques, direction et projection (issue #110)
+
+Branche `claude/lucid-brahmagupta-htwgun-stats`, depuis `main` dc1dfa7. Non déployé (accord du propriétaire attendu).
+
+- PASS : `cd backend && ../.venv/bin/python -m pytest -q` : 387 réussis, 8 ignorés (dont `tests/test_class_stats.py` : chiffres, moyenne pour l'enseignant et l'administration seulement, aucun nom, droits).
+- PASS : `cd frontend && npx tsc -b` ; `npm run test -- --maxWorkers=1` : 44 fichiers, 253 tests ; `npm run build`.
+- PASS : `npx playwright test e2e/stats.spec.ts e2e/teacher-shell.spec.ts e2e/observer.spec.ts` sur la stack jetable : 9 (axe AA clair et sombre, 1366 et 390 px, page et projection). Captures : `docs/captures/statistiques/`.
+
 ## 2026-11-08 — CampusEquip : animation améliorée et accent vert (ADR-0044)
 
 Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle version de l'expérience dans `frontend/src/campusequip/` (`motion`, déjà présent), accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Modèle, données et fichiers servis inchangés. Données fictives uniquement.

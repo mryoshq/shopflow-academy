@@ -5,6 +5,7 @@ import { api, ApiError } from "../api"
 import { CoursePreview, type PreviewTree } from "../CoursePreview"
 import type { MissionDefinition } from "../studioTypes"
 import { TeacherProject } from "../project/TeacherProject"
+import { ClassStats } from "../stats/ClassStats"
 import { FinalBreakdown, FinalValue, type FinalGrade, type GradingConfig } from "../grading/FinalGrade"
 import { ErrorState, LoadingState, Panel, ScoreBar } from "../student/ui"
 import { DataView } from "../student/activities"
@@ -75,12 +76,14 @@ export function ObserverHome() {
         <Tabs.List aria-label={t("Espace observateur")} overflowX="auto">
           <Tabs.Trigger value="tableau">{t("Tableau de bord")}</Tabs.Trigger>
           <Tabs.Trigger value="graphiques">{t("Graphiques")}</Tabs.Trigger>
+          <Tabs.Trigger value="statistiques">{t("Statistiques")}</Tabs.Trigger>
           {rights.grades && <Tabs.Trigger value="notes">{t("Notes")}</Tabs.Trigger>}
           <Tabs.Trigger value="cours">{t("Cours")}</Tabs.Trigger>
           {rights.project && <Tabs.Trigger value="projet">{t("Projet")}</Tabs.Trigger>}
         </Tabs.List>
         <Tabs.Content value="tableau" pt="6"><DashboardPanel assignmentId={current.id} /></Tabs.Content>
         <Tabs.Content value="graphiques" pt="6"><ChartsPanel assignmentId={current.id} /></Tabs.Content>
+        <Tabs.Content value="statistiques" pt="6"><ClassStats path={`/observer/classes/${current.id}/stats`} /></Tabs.Content>
         {rights.grades && <Tabs.Content value="notes" pt="6"><GradesPanel assignmentId={current.id} /></Tabs.Content>}
         <Tabs.Content value="cours" pt="6"><ObservedCoursePanel assignmentId={current.id} /></Tabs.Content>
         {rights.project && <Tabs.Content value="projet" pt="6"><TeacherProject assignmentId={current.id} readOnly /></Tabs.Content>}
