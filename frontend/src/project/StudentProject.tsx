@@ -70,6 +70,9 @@ export function StudentProject({ navigate }: { navigate?: (path: string) => void
   const available = (data.classmates ?? []).filter((item) => item.available)
 
   const complete = Boolean(team && team.members.length >= 2)
+  // Issue #107: no more dates; deposits stay open until the team's defence starts.
+  const deposits = team?.deposits
+  const closed = deposits ? !deposits.open : false
   const { current, past } = splitMilestones(data.milestones ?? [])
   const teamPanel = <Panel as="section" aria-labelledby="team-title" key="team"><Stack gap="3">
       <Heading as="h2" size="md" id="team-title">{t("Mon binôme")}</Heading>
@@ -110,12 +113,16 @@ export function StudentProject({ navigate }: { navigate?: (path: string) => void
 
   const milestonesSection = <Stack as="section" gap="4" aria-labelledby="milestones-title" key="milestones">
     <Heading as="h2" size="lg" id="milestones-title">{t("Jalons")}</Heading>
+    {complete && deposits && <Text data-testid="deposit-window" fontWeight="medium" color={closed ? "saffron.fg" : "brand.fg"}>
+      {closed ? t("Les dépôts sont fermés : votre soutenance a commencé.")
+        : deposits.reason === "class" || deposits.reason === "teacher" ? t("Dépôts ouverts jusqu’au {{p0}}.", { p0: when(deposits.closes_at) })
+          : t("Dépôts ouverts jusqu’au début de votre soutenance.")}</Text>}
     {current.length === 0 && past.length === 0 && <Text color="app.muted">{t("Aucun jalon pour le moment.")}</Text>}
     {current.length === 0 && past.length > 0 && <Text color="app.muted">{t("Tous les jalons sont passés.")}</Text>}
-    {current.map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={complete} onSubmitted={load} />)}
+    {current.map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={complete} closed={closed} onSubmitted={load} />)}
     {past.length > 0 && <Box as="details" data-testid="past-milestones">
       <Box as="summary" cursor="pointer" fontWeight="semibold" color="brand.fg" py="2">{tn("{{count}} jalon passé", past.length)}</Box>
-      <Stack gap="4" mt="3">{past.map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={complete} onSubmitted={load} />)}</Stack>
+      <Stack gap="4" mt="3">{past.map((milestone) => <MilestoneCard key={milestone.id} milestone={milestone} canSubmit={complete} closed={closed} onSubmitted={load} />)}</Stack>
     </Box>}
   </Stack>
 
@@ -146,7 +153,7 @@ export function StudentProject({ navigate }: { navigate?: (path: string) => void
   </Stack>
 }
 
-function MilestoneCard({ milestone, canSubmit, onSubmitted }: { milestone: Milestone; canSubmit: boolean; onSubmitted: () => Promise<void> }) {
+function MilestoneCard({ milestone, canSubmit, closed = false, onSubmitted }: { milestone: Milestone; canSubmit: boolean; closed?: boolean; onSubmitted: () => Promise<void> }) {
   const [text, setText] = useState("")
   const [link, setLink] = useState("")
   const [files, setFiles] = useState<ProjectFileRef[]>([])
@@ -160,7 +167,7 @@ function MilestoneCard({ milestone, canSubmit, onSubmitted }: { milestone: Miles
   const left = milestone.due_at ? daysLeft(milestone.due_at) : null
   const status = latest ? { label: t("Déposé (version {{version}})", { version: latest.version }), palette: "green" }
     : overdue ? { label: t("Non déposé"), palette: "saffron" } : { label: t("À rendre"), palette: "brand" }
-  const remaining = left === null ? t("Sans date limite") : overdue ? t("Échéance passée") : left === 0 ? t("Dernier jour") : tn("Plus que {{count}} jour", left)
+  const remaining = left === null ? t("Jusqu’à votre soutenance") : overdue ? t("Échéance passée") : left === 0 ? t("Dernier jour") : tn("Plus que {{count}} jour", left)
 
   async function onFiles(list: FileList | null) {
     if (!list) return
@@ -219,12 +226,13 @@ function MilestoneCard({ milestone, canSubmit, onSubmitted }: { milestone: Miles
       {latest.files.map((file) => <Box key={file.id}><Link href={`/api/v1/student/project/files/${file.id}`} color="brand.fg">{file.name}</Link> <Text as="span" fontSize="sm" color="app.muted">({fileSize(file.size)})</Text></Box>)}
       {versions.length > 1 && <Text fontSize="xs" color="app.muted" mt="2">{t("Versions précédentes :")}{" "}{versions.slice(1).map((v) => `v${v.version} (${when(v.created_at)})`).join(", ")}</Text>}
     </Box>}
-    {canSubmit && !open && <Flex gap="3" align="center" wrap="wrap">
+    {canSubmit && closed && <Text fontSize="sm" color="app.muted">{t("Les dépôts sont fermés.")}</Text>}
+    {canSubmit && !closed && !open && <Flex gap="3" align="center" wrap="wrap">
       <Button colorPalette="brand" variant={latest ? "outline" : "solid"} onClick={() => setOpen(true)}>
         {latest ? t("Déposer une nouvelle version") : t("Déposer")}</Button>
       {message && <Text role="status" fontSize="sm" color="brand.fg">{message}</Text>}
     </Flex>}
-    {canSubmit ? open && <Stack gap="2" as="form" onSubmit={(event) => { event.preventDefault(); void submit() }}>
+    {canSubmit ? !closed && open && <Stack gap="2" as="form" onSubmit={(event) => { event.preventDefault(); void submit() }}>
       <Field.Root><Field.Label>{t("Texte")}{" "}{preview ? t("(aperçu)") : ""}</Field.Label>
         {preview ? <Box p="3" borderWidth="1px" borderColor="app.border" rounded="md" w="full" minH="24"><ProjectText text={text} /></Box>
           : <Textarea value={text} onChange={(event) => setText(event.target.value)} rows={6} maxLength={50000} placeholder={t("Votre texte. Les tableaux s’écrivent | col 1 | col 2 |")} />}</Field.Root>

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-21 — Dépôts ouverts jusqu'à la soutenance (#107)
+
+- Plus de date par jalon : l'enseignant retire la date d'un jalon (« Retirer la date ») ou de tous (« Retirer toutes les dates ») ; rappels, compte à rebours et badge « En retard » disparaissent avec elle.
+- Les dépôts d'une équipe ferment au début de son créneau de soutenance ; sans créneau, à l'heure fixée pour la classe (Projet > Jalons) ; l'enseignant peut rouvrir une équipe 1 h (Projet > Dépôts).
+- Côté étudiant : « Dépôts ouverts jusqu'au début de votre soutenance. », puis « Les dépôts sont fermés » une fois la soutenance commencée.
+- Migration `0020_deposit_close` (table `project_settings`, colonne `project_teams.deposits_until`). Sauvegarde avant mise en service.
+
 ## 2026-11-08 — CampusEquip : animation améliorée et accent vert (`feat/campusequip-motion`, ADR-0044)
 
 - Nouvelle version de l'expérience « Le voyage d'une location », même traitement que le voyage : sept étapes animées avec `motion`, une barre de lecture pour toutes les séquences, panneau « Comprendre le détail ».

@@ -101,10 +101,18 @@ function Milestones({ data, readOnly, act }: Part) {
   const [instructions, setInstructions] = useState("")
   const [due, setDue] = useState("")
   const [deliverables, setDeliverables] = useState("")
+  const dated = data.milestones.filter((milestone) => milestone.due_at)
+  async function clearAll() {
+    for (const milestone of dated) await act("PATCH", `/teacher/project/milestones/${milestone.id}`, { clear_due: true }, t("Dates retirées : les dépôts restent ouverts jusqu’à la soutenance."))
+  }
   return <Stack gap="4">
+    <DepositSettings data={data} readOnly={readOnly} act={act} />
+    {!readOnly && dated.length > 0 && <Button alignSelf="start" size="sm" variant="outline" onClick={() => void clearAll()}>{t("Retirer toutes les dates")}</Button>}
     {data.milestones.map((milestone) => <Panel key={milestone.id} as="article"><Stack gap="2">
       <Flex gap="2" align="center" wrap="wrap"><Heading as="h3" size="sm" flex="1">{milestone.title}</Heading>
-        <Badge variant="subtle">{milestone.due_at ? t("À rendre le {{p0}}", { p0: when(milestone.due_at) }) : t("Sans date limite")}</Badge>
+        <Badge variant="subtle">{milestone.due_at ? t("À rendre le {{p0}}", { p0: when(milestone.due_at) }) : t("Jusqu’à la soutenance")}</Badge>
+        {!readOnly && milestone.due_at && <Button size="xs" variant="ghost" onClick={() => void act("PATCH", `/teacher/project/milestones/${milestone.id}`, { clear_due: true },
+          t("Date retirée : les dépôts restent ouverts jusqu’à la soutenance."))}>{t("Retirer la date")}</Button>}
         {!readOnly && <Button size="xs" variant="ghost" colorPalette="red" onClick={() => void act("DELETE", `/teacher/project/milestones/${milestone.id}`, undefined, t("Jalon supprimé."))}>{t("Supprimer")}</Button>}</Flex>
       <ProjectText text={milestone.instructions} />
       {milestone.deliverables.length > 0 && <Text fontSize="sm">{t("Livrables :")}{" "}{milestone.deliverables.join(" · ")}</Text>}
@@ -137,6 +145,7 @@ function Submissions({ data, readOnly, act }: Part) {
   }, [open, readOnly])
   const milestone = data.milestones.find((item) => item.id === open?.milestone)
   return <Stack gap="5">
+    <TeamDeposits data={data} readOnly={readOnly} act={act} />
     {data.milestones.length === 0 && <Text color="app.muted">{t("Publiez d’abord un jalon.")}</Text>}
     {data.milestones.map((item) => <Stack key={item.id} gap="2">
       <Heading as="h3" size="sm">{item.title} <Text as="span" fontWeight="normal" color="app.muted">({item.submissions.length} / {data.teams.length} {t("binômes)")}</Text></Heading>
@@ -146,7 +155,7 @@ function Submissions({ data, readOnly, act }: Part) {
             const sub = item.submissions.find((entry) => entry.team_id === team.id)
             return <Table.Row key={team.id}><Table.Cell fontWeight="semibold">{team.members.map((m) => m.name).join(" + ")}</Table.Cell>
               <Table.Cell>{sub ? `v${sub.version}` : "—"}</Table.Cell><Table.Cell>{sub ? when(sub.created_at) : t("Pas encore déposé")}</Table.Cell>
-              <Table.Cell>{sub?.late && <Badge colorPalette="saffron">{t("En retard")}</Badge>}</Table.Cell>
+              <Table.Cell>{sub?.late && item.due_at && <Badge colorPalette="saffron">{t("En retard")}</Badge>}</Table.Cell>
               <Table.Cell>{sub && !readOnly && <Button size="xs" variant="outline" onClick={() => setOpen({ team: team.id, milestone: item.id })}
                 aria-label={t("Consulter le dépôt de {{p0}}", { p0: team.members.map((m) => m.name).join(" et ") })}>{t("Consulter")}</Button>}</Table.Cell></Table.Row>
           })}</Table.Body></Table.Root>
@@ -156,7 +165,7 @@ function Submissions({ data, readOnly, act }: Part) {
       {!detail ? <Text role="status" color="app.muted">{t("Chargement…")}</Text> : <Stack gap="4">
         {detail.submissions.map((sub) => <Box key={sub.id} borderWidth="1px" borderColor="app.border" rounded="lg" p="3">
           <Flex gap="2" align="center" wrap="wrap" mb="2"><Text fontWeight="semibold">{t("Version")}{" "}{sub.version}</Text><Text fontSize="sm" color="app.muted">{when(sub.created_at)} · {sub.submitted_by}</Text>
-            {sub.late && <Badge colorPalette="saffron">{t("Après la date limite")}</Badge>}</Flex>
+            {sub.late && milestone?.due_at && <Badge colorPalette="saffron">{t("Après la date limite")}</Badge>}</Flex>
           <ProjectText text={sub.text} />
           {sub.link && <Link href={sub.link} target="_blank" rel="noreferrer" color="brand.fg" display="block">{sub.link}</Link>}
           {sub.files.map((file) => <Link key={file.id} href={`/api/v1/teacher/project/files/${file.id}`} color="brand.fg" display="block">{file.name} ({fileSize(file.size)})</Link>)}
@@ -170,6 +179,49 @@ function Submissions({ data, readOnly, act }: Part) {
       </Stack>}
     </DetailPanel>
   </Stack>
+}
+
+/** Issue #107: a team's deposits close when its defence starts; without a slot, at the class time below. */
+function DepositSettings({ data, readOnly, act }: Part) {
+  const [close, setClose] = useState(data.deposits_close_at ? localInput(data.deposits_close_at) : "")
+  return <Panel as="section" aria-labelledby="deposits-title"><Stack gap="3">
+    <Heading as="h3" size="sm" id="deposits-title">{t("Fermeture des dépôts")}</Heading>
+    <Text fontSize="sm" color="app.muted">{t("Les dépôts d’une équipe restent ouverts jusqu’au début de sa soutenance. Une équipe sans créneau suit l’heure ci-dessous ; sans heure, ses dépôts restent ouverts.")}</Text>
+    {readOnly ? <Text>{data.deposits_close_at ? when(data.deposits_close_at) : t("Aucune heure de fermeture")}</Text>
+      : <Flex gap="2" wrap="wrap" align="end">
+        <Field.Root maxW="56"><Field.Label>{t("Fermeture pour les équipes sans créneau")}</Field.Label>
+          <Input type="datetime-local" value={close} onChange={(event) => setClose(event.target.value)} /></Field.Root>
+        <Button colorPalette="brand" disabled={!close} onClick={() => void act("PUT", `/teacher/classes/${data.assignment_id}/project/deposits`,
+          { close_at: new Date(close).toISOString() }, t("Heure de fermeture enregistrée."))}>{t("Enregistrer")}</Button>
+        {data.deposits_close_at && <Button variant="ghost" onClick={() => { setClose(""); void act("PUT", `/teacher/classes/${data.assignment_id}/project/deposits`,
+          { close_at: null }, t("Heure de fermeture retirée."))}}>{t("Retirer l’heure")}</Button>}
+      </Flex>}
+  </Stack></Panel>
+}
+
+const localInput = (value: string) => { const date = new Date(value); return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16) }
+
+function TeamDeposits({ data, readOnly, act }: Part) {
+  if (data.teams.length === 0 || data.teams.every((team) => !team.deposits)) return null
+  return <Box overflowX="auto" tabIndex={0} role="region" aria-label={t("Ouverture des dépôts par équipe")} borderWidth="1px" borderColor="app.border" rounded="lg" bg="app.surface">
+    <Table.Root size="sm"><Table.Header><Table.Row bg="app.sunken">{[t("Équipe"), t("Dépôts"), t("Jusqu’à"), ""].map((label, i) => <Table.ColumnHeader key={i}>{label}</Table.ColumnHeader>)}</Table.Row></Table.Header>
+      <Table.Body>{data.teams.map((team) => {
+        const window = team.deposits
+        if (!window) return null
+        const name = team.members.map((m) => m.name).join(" + ")
+        const until = window.reason === "slot" ? t("début de la soutenance ({{p0}})", { p0: when(window.closes_at) })
+          : window.closes_at ? when(window.closes_at) : t("pas de fermeture")
+        return <Table.Row key={team.id}><Table.Cell fontWeight="semibold">{name}</Table.Cell>
+          <Table.Cell><Badge colorPalette={window.open ? "green" : "saffron"}>{window.open ? t("Ouverts") : t("Fermés")}</Badge>{window.reason === "teacher" && <Text as="span" fontSize="xs" color="app.muted" ms="2">{t("rouverts par vous")}</Text>}</Table.Cell>
+          <Table.Cell>{until}</Table.Cell>
+          <Table.Cell>{!readOnly && <Flex gap="2" wrap="wrap">
+            {!window.open && <Button size="xs" variant="outline" aria-label={t("Rouvrir les dépôts de {{p0}} pendant 1 h", { p0: name })}
+              onClick={() => void act("PUT", `/teacher/project/teams/${team.id}/deposits`, { until: new Date(Date.now() + 3600000).toISOString() }, t("Dépôts rouverts pendant 1 h."))}>{t("Rouvrir 1 h")}</Button>}
+            {window.until && <Button size="xs" variant="ghost" aria-label={t("Revenir à la règle habituelle pour {{p0}}", { p0: name })}
+              onClick={() => void act("PUT", `/teacher/project/teams/${team.id}/deposits`, { until: null }, t("Règle habituelle rétablie."))}>{t("Règle habituelle")}</Button>}
+          </Flex>}</Table.Cell></Table.Row>
+      })}</Table.Body></Table.Root>
+  </Box>
 }
 
 function Grades({ data, readOnly, act }: Part) {
