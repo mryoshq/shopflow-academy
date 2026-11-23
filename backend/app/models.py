@@ -391,7 +391,17 @@ class ProjectTeam(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), nullable=False, index=True)
+    # Issue #107: the teacher reopens (or closes) this team's deposits until this time, instead of its defence slot.
+    deposits_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class ProjectSettings(Base):
+    """Issue #107: project settings of a class; deposits of the teams without a defence slot close at this time (none: open)."""
+    __tablename__ = "project_settings"
+
+    cohort_id: Mapped[int] = mapped_column(ForeignKey("cohorts.id", ondelete="CASCADE"), primary_key=True)
+    deposits_close_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
 
 class ProjectMember(Base):

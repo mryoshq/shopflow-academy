@@ -87,7 +87,7 @@ const teacherData: TeacherProjectData = {
       { id: 11, name: "demo.etudiant01", part1: null, part2: null, individual: null, base: null, bonus: null, total: null, complete: false },
       { id: 12, name: "demo.etudiant02", part1: null, part2: null, individual: null, base: null, bonus: null, total: null, complete: false }] } }],
   alone: [{ id: 13, name: "demo.etudiant03" }],
-  milestones: [{ id: 1, title: "Rendu final", instructions: "", due_at: null, deliverables: [], sort_order: 0,
+  milestones: [{ id: 1, title: "Rendu final", instructions: "", due_at: "2026-11-19T23:00:00Z", deliverables: [], sort_order: 0,
     submissions: [{ team_id: 2, version: 2, versions: 2, late: true, created_at: "2026-11-20T10:00:00Z" }] }],
   slots: [],
 }

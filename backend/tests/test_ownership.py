@@ -56,6 +56,8 @@ def body_for(path: str, method: str, ids: dict, extra: dict) -> dict | None:
         return {"weights": {"course": 30, "workshops": 20, "project": 50}, "cap": 20, "project_bonus_max": 1, "course_bonus_max": 1}
     if path.endswith("/comments"):
         return {"text": "Commentaire d’un autre enseignant"}
+    if path.endswith("/deposits"):  # issue #107: another teacher's closing time or team reopening
+        return {"until": None} if "/teams/" in path else {"close_at": None}
     if "/project/teams/" in path and method == "PUT":
         return {"user_ids": [extra["student_id"]]}
     if "/project/slots/" in path and method == "PATCH":

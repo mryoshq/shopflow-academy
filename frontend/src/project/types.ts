@@ -5,10 +5,13 @@ export type Milestone = { id: number; title: string; instructions: string; due_a
 /** ADR-0045: automatic reminders of a milestone (3 days then 1 day before, 9:00 Morocco time). */
 export type ReminderPlan = { enabled: boolean; pairing?: boolean
   items: { key: "j3" | "j1" | "j0"; days: number; send_at: string; local: string; status: "planned" | "sent" | "passed" | "off"; sent: number }[] }
+/** Issue #107: deposits stay open until the team's defence starts (or the teacher's time for the team, or the class time). */
+export type DepositWindow = { open: boolean; closes_at: string | null; reason: "slot" | "class" | "teacher" | null }
 export type Slot = { id: number; starts_at: string | null; ends_at: string | null; label: string; team_id: number | null; team: string[]; mine: boolean }
 export type StudentProjectData = {
   cohort_id: number | null; cohort?: string; cohorts: { id: number; label: string }[]
-  team?: { id: number; members: { id: number; name: string }[]; invitations: { id: number; user_id: number; name: string }[]; full: boolean } | null
+  team?: { id: number; members: { id: number; name: string }[]; invitations: { id: number; user_id: number; name: string }[]; full: boolean
+    deposits?: DepositWindow } | null
   invitations?: { id: number; team_id: number; from: string; members: string[] }[]
   classmates?: { id: number; name: string; available: boolean }[]
   milestones?: Milestone[]; slots?: Slot[]
@@ -38,7 +41,8 @@ export type ProjectGrid = { parts: { key: "part1" | "part2"; title: string; base
   base_max: number; bonus_max: number }
 export type TeacherProjectData = {
   assignment_id: number; cohort: string; cohort_id: number
-  teams: { id: number; members: { id: number; name: string }[]; grade: TeamGrade }[]
+  deposits_close_at?: string | null
+  teams: { id: number; members: { id: number; name: string }[]; grade: TeamGrade; deposits?: DepositWindow & { until: string | null } }[]
   alone: { id: number; name: string }[]
   milestones: (Omit<Milestone, "submissions" | "comments"> & { reminders?: ReminderPlan; submissions: { team_id: number; version: number; versions: number; late: boolean; created_at: string | null }[] })[]
   slots: Slot[]; grid: ProjectGrid

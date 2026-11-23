@@ -1,5 +1,16 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Soutenances du 23/11 : dépôts jusqu'à la soutenance (21/11/2026, issue #107)
+
+Branche `claude/lucid-brahmagupta-htwgun-depots`, PR vers `main`, **sans fusion ni déploiement** tant que le propriétaire n'a pas tout validé. Issues suivantes : #108 (parcours réduit), #109 (grille d'oral), #110 (statistiques), #111 (espace direction).
+
+### À faire en local après accord du propriétaire
+- Sauvegarde vérifiée, puis `docker compose build backend frontend` et `docker compose up -d --wait` (migration `0020_deposit_close` appliquée au démarrage) ; une seule tête Alembic `0020_deposit_close`.
+- Projet > Jalons : « Retirer toutes les dates », puis l'heure de fermeture des équipes sans créneau.
+- Attention : les créneaux créés dans Projet > Soutenances sont visibles des étudiants (heure comprise). Si les horaires sont annoncés lundi, créer les créneaux lundi matin.
+
+Prochaine action unique : revue de la PR par le propriétaire ; en parallèle, issue #108.
+
 ## CampusEquip : animation améliorée et accent vert (08/11/2026, ADR-0044)
 
 PR #105 fusionnée (`36bb758`) et en service depuis le 08/11/2026 : e2e campusequip + voyage 8/8 sur la stack de test, smoke 16/16 local et 18/18 public, n8n 302, blocs inchangés (85). Résultats exacts dans PROGRESS. Aucune migration.

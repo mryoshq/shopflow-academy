@@ -1,5 +1,14 @@
 # Progression vérifiée du projet — à mettre à jour à chaque session IA
 
+## 2026-11-21 — Dépôts ouverts jusqu'à la soutenance (issue #107)
+
+Branche `claude/lucid-brahmagupta-htwgun-depots`, depuis `main` dc1dfa7. Non déployé (accord du propriétaire attendu).
+
+- PASS : `cd backend && ../.venv/bin/python -m pytest -q` : 389 réussis, 8 ignorés (dont `tests/test_project_deposits.py`, 3 cas : créneau, heure de classe, réouverture, droits).
+- PASS : migration `0020_deposit_close` sur PostgreSQL 16 local : montée, retour, montée.
+- PASS : `cd frontend && npx tsc -b` ; `npm run test -- --maxWorkers=1` : 44 fichiers, 253 tests ; `npm run build`.
+- PASS : `npx playwright test e2e/project-deposits.spec.ts e2e/project-draw.spec.ts e2e/student-home.spec.ts` sur la stack jetable : 8 (axe AA compris). Un premier passage de `project-draw` a échoué sur des équipes laissées dans la base locale par d'anciennes exécutions ; base nettoyée, PASS.
+
 ## 2026-11-08 — CampusEquip : animation améliorée et accent vert (ADR-0044)
 
 Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle version de l'expérience dans `frontend/src/campusequip/` (`motion`, déjà présent), accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Modèle, données et fichiers servis inchangés. Données fictives uniquement.
