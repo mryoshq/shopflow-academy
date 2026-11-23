@@ -1,11 +1,11 @@
 ---
 name: charismatic-communication
-description: Communication charismatique pour tout texte destiné à des personnes (étudiants, direction, invités, propriétaire) — e-mails, consignes, scripts de soutenance, réponses aux questions, présentations. Ethos, logos, pathos ; conclusion d'abord ; recadrage des objections.
+description: Communication charismatique pour les communications extérieures seulement (étudiants, direction, invités) — e-mails, consignes, scripts de soutenance, réponses aux questions, présentations. Jamais pour les échanges avec le propriétaire. Ethos, logos, pathos ; conclusion d'abord ; recadrage des objections.
 ---
 
 # Communication charismatique
 
-Décision du propriétaire (23/11/2026) : ces principes s'appliquent à toutes nos communications. Source : vidéo « Comment réfléchir vite et parler intelligemment : Communication (2026) », Katana – Quentin Despas.
+Décision du propriétaire (23/11/2026) : ces principes s'appliquent aux **communications extérieures** (étudiants, direction, invités). Les échanges avec le propriétaire dans la conversation restent courts et factuels, sans ces techniques. Source : vidéo « Comment réfléchir vite et parler intelligemment : Communication (2026) », Katana – Quentin Despas.
 
 ## Principe de base
 - Une idée convainc parce qu'elle est bien communiquée, pas seulement parce qu'elle est juste. La précision technique ne suffit pas (« effet expert »).
@@ -42,4 +42,3 @@ Décision du propriétaire (23/11/2026) : ces principes s'appliquent à toutes n
 - **E-mails aux étudiants** : la consigne ou la décision en premier, puis trois points au plus, puis le détail ; ton chaleureux, une phrase humaine.
 - **Scripts de soutenance (enseignant)** : ouverture qui met l'équipe à l'aise, questions de plus en plus précises, recadrage en trois temps quand une réponse s'égare, retour final qui commence par ce qui est réussi.
 - **Messages à la direction** : pyramide de Minto, chiffres seulement en appui.
-- **Rapports au propriétaire** : le résultat d'abord, phrases courtes, aucune justification défensive.
