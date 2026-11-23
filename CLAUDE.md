@@ -28,6 +28,9 @@ Toute affirmation PASS cite la commande réellement exécutée ; sinon `NOT RUN`
 ## Fin de lot
 Lot · branche, commit, PR, issue · fichiers · critères couverts · commandes PASS/FAIL/NOT RUN · risques · accord humain nécessaire · prochaine action **unique** (dans `docs/HANDOFF.md`). Mettre à jour `docs/PROGRESS.md`, `docs/HANDOFF.md`, `CHANGELOG.md` et pousser avant de commencer le lot suivant.
 
+## Communication
+Toute communication destinée à des personnes (e-mails aux étudiants, scripts et questions de soutenance, messages à la direction, rapports au propriétaire) suit `.claude/skills/charismatic-communication/SKILL.md` : conclusion d'abord, ethos, logos, pathos, recadrage des objections.
+
 ## Économie de tokens
 - Ne jamais lire `package-lock.json`, `node_modules/`, `dist/`, `.venv/`, `playwright-report/`, `test-results/` ni de gros logs en entier : `rg` ciblé, `git diff --stat`, `gh pr diff --name-only`, plages de lignes.
 - Tests en sortie courte (`pytest -q`, `| tail`) ; ne relire que les échecs.
