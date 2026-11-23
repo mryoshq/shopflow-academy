@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-21 — Statistiques pour la direction et la projection (#110)
+
+- Nouvelle vue enseignant « Statistiques » (`#/statistiques`) et onglet « Statistiques » de l'espace observateur : soutenances (passées, en cours, à venir, équipes notées), projet (équipes de 2 et 3, dépôts par jalon, versions, équipes sans dépôt), cours (progression, réussite, temps de travail, réussite par module).
+- Mode projection : plein écran, gros caractères, aucun nom, actualisé toutes les 30 s ; Échap pour sortir. La moyenne du projet reste hors projection ; l'invité ne la voit pas.
+- Aucune migration.
+
 ## 2026-11-21 — Dépôts ouverts jusqu'à la soutenance (#107)
 
 - Plus de date par jalon : l'enseignant retire la date d'un jalon (« Retirer la date ») ou de tous (« Retirer toutes les dates ») ; rappels, compte à rebours et badge « En retard » disparaissent avec elle.

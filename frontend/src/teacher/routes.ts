@@ -7,6 +7,7 @@ import { msg } from "../i18n"
  *   #/classe/frise | etudiants | aide | difficultes      (?eleve=<id> opens a student panel)
  *   #/cours/plan | missions | apercu | import | regles | publication
  *   #/resultats
+ *   #/statistiques          (issue #110: also projected on the day of the defences)
  *   #/projet                (ADR-0034)
  *   #/voyage[/<scène>]      (ADR-0033, in the menu once the application is integrated)
  *   #/campusequip[/<étape>] (ADR-0044)
@@ -15,7 +16,7 @@ import { msg } from "../i18n"
  *   #/reglages/notifications | observateurs | classes | objectif
  */
 
-export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "projet" | "classement" | "voyage" | "campusequip" | "etudiant" | "reglages"
+export type ViewKey = "aujourdhui" | "classe" | "cours" | "resultats" | "statistiques" | "projet" | "classement" | "voyage" | "campusequip" | "etudiant" | "reglages"
 export type TeacherRoute = { view: ViewKey; sub: string; params: Record<string, string> }
 export type SubView = { key: string; label: string }
 export type ViewInfo = { key: ViewKey; label: string; title: string; icon: string; subs: SubView[] }
@@ -29,6 +30,7 @@ export const VIEWS: ViewInfo[] = [
     { key: "plan", label: "Plan" }, { key: "missions", label: "Missions" }, { key: "apercu", label: msg("Aperçu") },
     { key: "import", label: "Import" }, { key: "regles", label: msg("Règles") }, { key: "publication", label: "Publication" }] },
   { key: "resultats", label: msg("Résultats"), title: msg("Résultats"), icon: "chart", subs: [] },
+  { key: "statistiques", label: msg("Statistiques"), title: msg("Statistiques"), icon: "chart", subs: [] },
   { key: "projet", label: msg("Projet"), title: msg("Projet CampusEquip"), icon: "folder", subs: [] },
   { key: "classement", label: "Leaderboard", title: "Leaderboard", icon: "trophy", subs: [] },
   { key: "voyage", label: msg("Le voyage d’une donnée"), title: msg("Le voyage d’une donnée"), icon: "route", subs: [] },

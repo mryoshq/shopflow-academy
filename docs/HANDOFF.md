@@ -1,5 +1,15 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Statistiques pour la direction et la projection (21/11/2026, issue #110)
+
+Branche `claude/lucid-brahmagupta-htwgun-stats`, PR vers `main`, sans fusion ni déploiement tant que le propriétaire n'a pas tout validé. Indépendante de #107 (aucune migration).
+
+### À faire en local après accord du propriétaire
+- `docker compose build backend frontend` puis `docker compose up -d --wait` ; vérifier `#/statistiques` et l'onglet « Statistiques » d'un compte Administration.
+- Lundi : ouvrir « Statistiques », puis « Mode projection » sur le vidéoprojecteur.
+
+Prochaine action unique : revue de la PR par le propriétaire.
+
 ## Soutenances du 23/11 : dépôts jusqu'à la soutenance (21/11/2026, issue #107)
 
 Branche `claude/lucid-brahmagupta-htwgun-depots`, PR vers `main`, **sans fusion ni déploiement** tant que le propriétaire n'a pas tout validé. Issues suivantes : #108 (parcours réduit), #109 (grille d'oral), #110 (statistiques), #111 (espace direction).
