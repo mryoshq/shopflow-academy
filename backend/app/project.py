@@ -27,7 +27,7 @@ from app.auth import (AuthContext, aware, display_name, require_observer, requir
 from app.config import get_settings
 from app.database import get_db
 from app.models import (Assignment, AuditEvent, Cohort, Course, CourseRelease, Enrollment, Observer, ProjectComment, ProjectDrawEntry, ProjectFile,
-                        ProjectGrade, ProjectInvitation, ProjectMember, ProjectMilestone, ProjectSlot, ProjectSubmission, ProjectTeam, User)
+                        ProjectGrade, ProjectInvitation, ProjectMember, ProjectMilestone, ProjectSettings, ProjectSlot, ProjectSubmission, ProjectTeam, User)
 from app.project_grid import CRITERIA, PART1, PART1_BONUS, PART1_INDIVIDUAL, PART2, PART2_BONUS, grid_out, legacy_out, student_total
 from app.teacher_dashboard import class_students, csv_cell, csv_number, owned_class
 
@@ -153,6 +153,31 @@ def total(grade: ProjectGrade | None, user_id: int) -> dict:
     return {**out, "total": out["base"]}
 
 
+def deposit_window(db: Session, team: ProjectTeam, now: datetime | None = None) -> dict:
+    """Issue #107: deposits stay open until the team's defence starts.
+
+    Order: the teacher's time for this team, else the start of its defence slot, else the class closing time; none: open.
+    """
+    reason, closes = None, None
+    if team.deposits_until is not None:
+        reason, closes = "teacher", team.deposits_until
+    else:
+        slot = db.scalar(select(ProjectSlot.starts_at).where(ProjectSlot.team_id == team.id).order_by(ProjectSlot.starts_at).limit(1))
+        if slot is not None:
+            reason, closes = "slot", slot
+        else:
+            settings = db.get(ProjectSettings, team.cohort_id)
+            if settings is not None and settings.deposits_close_at is not None:
+                reason, closes = "class", settings.deposits_close_at
+    is_open = closes is None or (now or utcnow()) < aware(closes)
+    return {"open": is_open, "closes_at": iso(closes), "reason": reason}
+
+
+def require_open(db: Session, team: ProjectTeam) -> None:
+    if not deposit_window(db, team)["open"]:
+        raise HTTPException(status_code=409, detail="les dépôts sont fermés : votre soutenance a commencé")
+
+
 # Student -------------------------------------------------------------------------------------
 
 @router.get("/student/project")
@@ -180,7 +205,7 @@ def project_page(db: Session, cohort: Cohort, cohorts: list[Cohort], user_id: in
         pending = db.scalars(select(ProjectInvitation).where(ProjectInvitation.team_id == member.team_id, ProjectInvitation.status == "pending")).all()
         team = {"id": member.team_id, "members": [{"id": uid, "name": who.get(uid, "")} for uid in members],
                 "invitations": [{"id": item.id, "user_id": item.user_id, "name": who.get(item.user_id, "")} for item in pending],
-                "full": len(members) >= TEAM_SIZE}
+                "full": len(members) >= TEAM_SIZE, "deposits": deposit_window(db, db.get(ProjectTeam, member.team_id))}
     for item in milestones_of(db, cohort.id):
         entry = milestone_out(item)
         if member:
@@ -320,6 +345,7 @@ async def upload(request: Request, name: str = Query(min_length=1, max_length=16
                  db: Session = Depends(get_db)) -> dict:
     """Raw body upload (20 Mo at most), referenced afterwards by a submission."""
     team, cohort_id = my_team(db, auth)
+    require_open(db, team)
     chunks, size = [], 0
     async for chunk in request.stream():
         size += len(chunk)
@@ -361,6 +387,7 @@ def submit(milestone_id: int, payload: SubmissionInput, auth: AuthContext = Depe
     team, cohort_id = my_team(db, auth, milestone.cohort_id)
     if len(team_members(db, team.id)) < MIN_TEAM:  # ADR-0041: no individual work
         raise HTTPException(status_code=409, detail="le travail individuel n'est plus permis : formez un binôme ou tentez le binôme surprise")
+    require_open(db, team)
     link = (payload.link or "").strip() or None
     if link:
         parsed = urlparse(link)
@@ -417,9 +444,13 @@ def teacher_view(db: Session, cohort_id: int) -> dict:
     grades = {g.team_id: g for g in db.scalars(select(ProjectGrade).where(ProjectGrade.team_id.in_(list(teams) or [0])))}
     in_team = {uid for members in teams.values() for uid in members}
     team_names = {tid: [who.get(uid, "") for uid in uids] for tid, uids in teams.items()}
+    rows = {team.id: team for team in db.scalars(select(ProjectTeam).where(ProjectTeam.cohort_id == cohort_id))}
+    settings = db.get(ProjectSettings, cohort_id)
     return {
         "cohort_id": cohort_id,
+        "deposits_close_at": iso(settings.deposits_close_at) if settings else None,
         "teams": [{"id": tid, "members": [{"id": uid, "name": who.get(uid, "")} for uid in uids],
+                   "deposits": {**deposit_window(db, rows[tid]), "until": iso(rows[tid].deposits_until)},
                    "grade": grade_out(grades.get(tid), uids, who)} for tid, uids in sorted(teams.items())],
         "alone": [{"id": s.id, "name": who[s.id]} for s in students if s.id not in in_team],
         "milestones": [{**milestone_out(m), "reminders": reminder_plan(db, m), "submissions": [{"team_id": tid, "version": latest[(tid, m.id)].version,
@@ -686,6 +717,40 @@ def grades_csv(assignment_id: int, auth: AuthContext = Depends(require_teacher),
     return Response(content="﻿" + buffer.getvalue(), media_type="text/csv; charset=utf-8",
                     headers={"Content-Disposition": f'attachment; filename="shopflow-projet-notes-classe-{assignment_id}.csv"',
                              "Cache-Control": "no-store"})
+
+
+class DepositsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    close_at: datetime | None = None  # none: no closing time for the class
+
+
+@router.put("/teacher/classes/{assignment_id}/project/deposits")
+def class_deposits(assignment_id: int, payload: DepositsInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    """Issue #107: closing time of the deposits of the teams without a defence slot."""
+    _, _, cohort = owned_class(db, auth, assignment_id)
+    settings = db.get(ProjectSettings, cohort.id)
+    if settings is None:
+        settings = ProjectSettings(cohort_id=cohort.id)
+        db.add(settings)
+    settings.deposits_close_at = payload.close_at
+    audit(db, auth, "project.deposits_close", cohort.id, {"close_at": iso(payload.close_at)})
+    db.commit()
+    return {"deposits_close_at": iso(settings.deposits_close_at)}
+
+
+class TeamDepositsInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    until: datetime | None = None  # none: back to the usual rule (defence slot, then class time)
+
+
+@router.put("/teacher/project/teams/{team_id}/deposits")
+def team_deposits(team_id: int, payload: TeamDepositsInput, auth: AuthContext = Depends(require_teacher_csrf), db: Session = Depends(get_db)) -> dict:
+    """Issue #107: the teacher reopens one team's deposits until a given time (or goes back to the usual rule)."""
+    team = owned_team(db, auth, team_id)
+    team.deposits_until = payload.until
+    audit(db, auth, "project.team_deposits", team.cohort_id, {"team": team.id, "until": iso(payload.until)})
+    db.commit()
+    return {**deposit_window(db, team), "until": iso(team.deposits_until)}
 
 
 class SlotInput(BaseModel):

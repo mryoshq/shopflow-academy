@@ -8,6 +8,15 @@ Branche `claude/lucid-brahmagupta-htwgun-stats`, depuis `main` dc1dfa7. Non dép
 - PASS : `cd frontend && npx tsc -b` ; `npm run test -- --maxWorkers=1` : 44 fichiers, 253 tests ; `npm run build`.
 - PASS : `npx playwright test e2e/stats.spec.ts e2e/teacher-shell.spec.ts e2e/observer.spec.ts` sur la stack jetable : 9 (axe AA clair et sombre, 1366 et 390 px, page et projection). Captures : `docs/captures/statistiques/`.
 
+## 2026-11-21 — Dépôts ouverts jusqu'à la soutenance (issue #107)
+
+Branche `claude/lucid-brahmagupta-htwgun-depots`, depuis `main` dc1dfa7. Non déployé (accord du propriétaire attendu).
+
+- PASS : `cd backend && ../.venv/bin/python -m pytest -q` : 389 réussis, 8 ignorés (dont `tests/test_project_deposits.py`, 3 cas : créneau, heure de classe, réouverture, droits).
+- PASS : migration `0020_deposit_close` sur PostgreSQL 16 local : montée, retour, montée.
+- PASS : `cd frontend && npx tsc -b` ; `npm run test -- --maxWorkers=1` : 44 fichiers, 253 tests ; `npm run build`.
+- PASS : `npx playwright test e2e/project-deposits.spec.ts e2e/project-draw.spec.ts e2e/student-home.spec.ts` sur la stack jetable : 8 (axe AA compris). Un premier passage de `project-draw` a échoué sur des équipes laissées dans la base locale par d'anciennes exécutions ; base nettoyée, PASS.
+
 ## 2026-11-08 — CampusEquip : animation améliorée et accent vert (ADR-0044)
 
 Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle version de l'expérience dans `frontend/src/campusequip/` (`motion`, déjà présent), accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Modèle, données et fichiers servis inchangés. Données fictives uniquement.
@@ -23,6 +32,12 @@ Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle 
   - parcours : bouton d'étape et adresse, retour arrière, lien direct, flèches, lecture automatique, recommencer, `html.reduce-motion` : PASS.
 - NOT RUN : `npm run test:e2e` (stack et comptes de démonstration nécessaires) ; mode présentation réel (plein écran).
 - Captures (banc d'essai, données fictives) : `docs/captures/campusequip-anime/themes-1366.png`, `telephone-390.png`.
+- Mise en service (08/11/2026, Mac) : PR #105 fusionnée par le propriétaire (`36bb758`), CI verte (backend, frontend, studio-e2e, compose-config, verify-kit).
+  - PASS : stack de test `python3 scripts/test_stack.py up` (127.0.0.1:3180, construite depuis `feat/campusequip-motion` 7e8737c, comptes fictifs) ; `npm ci` ; `npm run test:e2e -- e2e/campusequip.spec.ts e2e/voyage.spec.ts` : 8 PASS (deux exécutions).
+  - PASS : sauvegarde `academy-20261108-080719-avant-campusequip-105.dump` vérifiée ; aucun étudiant en ligne ni tentative depuis 30 min ; `docker compose build frontend` puis `up -d --wait` ; une seule tête Alembic `0019_final_grade` ; `smoke_public.py` 16/16 en local et 18/18 en public ; n8n 302 ; blocs ouverts 85 avant et après.
+  - PASS : site public, compte enseignant (Vue étudiant → Projet → « Voir l'animation », et menu « Expérience CampusEquip »), clair et sombre à 1366, sombre 390x844, clair 375x667 : expérience chargée, pas de défilement de page, accent vert dans l'expérience et orange de l'Academy autour en sombre, aucune erreur CSP ni de chargement (seul le 401 attendu avant connexion).
+  - NOT RUN : contrôle manuel des 7 étapes sur la stack de test (390, sombre, clic sur les liens des sources) : il demande les identifiants de `.local`, hors des tests e2e.
+  - Constats : la bulle de Rafi « Bloc à terminer » couvre le bas du panneau de droite (sources) à 1366 ; à 390, la pastille « Que faire maintenant ? » cache le compteur du lecteur (même constat que le voyage, issue #104).
 
 ## 2026-11-07 — « Le voyage d'une donnée » : animation améliorée (ADR-0033)
 

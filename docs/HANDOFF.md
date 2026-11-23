@@ -10,18 +10,27 @@ Branche `claude/lucid-brahmagupta-htwgun-stats`, PR vers `main`, sans fusion ni 
 
 Prochaine action unique : revue de la PR par le propriétaire.
 
+## Soutenances du 23/11 : dépôts jusqu'à la soutenance (21/11/2026, issue #107)
+
+Branche `claude/lucid-brahmagupta-htwgun-depots`, PR vers `main`, **sans fusion ni déploiement** tant que le propriétaire n'a pas tout validé. Issues suivantes : #108 (parcours réduit), #109 (grille d'oral), #110 (statistiques), #111 (espace direction).
+
+### À faire en local après accord du propriétaire
+- Sauvegarde vérifiée, puis `docker compose build backend frontend` et `docker compose up -d --wait` (migration `0020_deposit_close` appliquée au démarrage) ; une seule tête Alembic `0020_deposit_close`.
+- Projet > Jalons : « Retirer toutes les dates », puis l'heure de fermeture des équipes sans créneau.
+- Attention : les créneaux créés dans Projet > Soutenances sont visibles des étudiants (heure comprise). Si les horaires sont annoncés lundi, créer les créneaux lundi matin.
+
+Prochaine action unique : revue de la PR par le propriétaire ; en parallèle, issue #108.
+
 ## CampusEquip : animation améliorée et accent vert (08/11/2026, ADR-0044)
 
-Branche `feat/campusequip-motion`, depuis `main` 1dfca25, sans fusion. Nouvelle expérience dans `frontend/src/campusequip/`, accent vert propre à l'expérience, `scripts/campusequip-css.mjs` retiré. Résultats exacts dans PROGRESS. Aucune migration, aucune dépendance nouvelle.
+PR #105 fusionnée (`36bb758`) et en service depuis le 08/11/2026 : e2e campusequip + voyage 8/8 sur la stack de test, smoke 16/16 local et 18/18 public, n8n 302, blocs inchangés (85). Résultats exacts dans PROGRESS. Aucune migration.
 
-### À faire en local après revue et fusion autorisées
-
+Restent ouverts :
 - Décisions du propriétaire : accent vert et trois choix de texte (ADR-0044, « Animation améliorée et accent vert »).
-- Mise en service : `docker compose build frontend`, `docker compose up -d --wait`, recharger la page.
-- Lancer `cd frontend && npm run test:e2e -- e2e/campusequip.spec.ts` sur la stack locale (non lancé dans cette session).
-- Issue #104 (masquer Rafi dans le voyage) : à étendre à `#/campusequip` si le propriétaire le souhaite ; d'ici là, la barre de lecture laisse sa place à Rafi.
+- Rafi gêne l'expérience comme dans le voyage (bulle sur le panneau des sources, pastille sur le compteur du lecteur à 390) : étendre l'issue #104 à `#/campusequip`.
+- Contrôle manuel des 7 étapes à 390 px et en sombre non lancé.
 
-Prochaine action unique : revue de la branche par le propriétaire.
+Prochaine action unique : traiter l'issue #104 (masquer Rafi) pour `#/voyage` et `#/campusequip` dans une même PR.
 
 ## « Le voyage d'une donnée » : animation améliorée (07/11/2026, ADR-0033)
 
