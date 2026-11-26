@@ -7,7 +7,7 @@ description: Compiler le cours Markdown du dossier local, écrire RETOURS-PLATEF
 
 Chaîne du cours écrit en Markdown (`docs/COURSE-AUTHORING.md`, format `shopflow-course-md` v1). Le dossier du cours est **local au Mac** et contient les corrigés : il ne va **jamais** dans ce dépôt public (seul `docs/examples/demo-course/`, fictif, y figure).
 
-## Étapes (dans le clone `~/Developer/shopflow-academy`, stack de production lancée)
+## Étapes (dans le clone `~/Developer/Academy/shopflow-academy`, stack de production lancée)
 
 1. **Compiler** : `python3 scripts/course_md.py compile "<dossier du cours>/cours"`.
    - Erreurs en français avec fichier et ligne ; résumé par module et par bloc (missions, leçons, bonus, points, durée) et couverture des objectifs.
@@ -17,7 +17,7 @@ Chaîne du cours écrit en Markdown (`docs/COURSE-AUTHORING.md`, format `shopflo
    - Crée ou met à jour le brouillon du cours (slug de `00-cours.md`). Ne publie rien, n'ouvre aucun bloc.
    - L'enseignant vérifie dans « Mon cours » → Aperçu.
 3. **Sauvegarder le dossier** après chaque étape validée :
-   - copie datée : `cp -R "<dossier du cours>" ~/Developer/shopflow-backups/cours/cours-$(date +%Y%m%d-%H%M%S)` ;
+   - copie datée : `cp -R "<dossier du cours>" ~/Developer/Academy/shopflow-backups/cours/cours-$(date +%Y%m%d-%H%M%S)` ;
    - dépôt privé `mryoshq/shopflow-courses` : **vérifier d'abord qu'il est privé** (`gh repo view mryoshq/shopflow-courses --json visibility` → `PRIVATE`), puis y copier `cours/` et les `.md` du dossier, commit et push. Personne d'autre n'y pousse ; le dossier local reste la source.
 4. **Avant de publier**, vérifier en lecture seule les réussites qui seraient perdues : `docker compose exec -T backend python -m app.carryover --course <slug>` (code 1 si des réussites seraient perdues ; les signaler au propriétaire).
 5. **Publier** (`--publish`) : **uniquement sur accord écrit du propriétaire dans la conversation**. `python3 scripts/course_md.py import "<dossier>/cours" --publish < .local/teacher-email.txt`. Les missions inchangées gardent leur version (progression et notes conservées) ; les nouveaux blocs arrivent fermés.

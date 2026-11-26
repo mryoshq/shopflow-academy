@@ -3,7 +3,7 @@
 
 Reads the identifiers from ``.local/student-emails.txt`` (never in Git) and writes one
 HTML page, ready to print (one sheet per student, cut lines), into
-``~/Developer/shopflow-notes/`` — outside the repository. Passwords are NOT printed
+``~/Developer/Academy/shopflow-notes/`` — outside the repository. Passwords are NOT printed
 unless ``--with-passwords`` is given explicitly; they are then read from
 ``.local/student-credentials.json`` (initial passwords) and the file name says so.
 Nothing is printed to the terminal except the path of the file.
