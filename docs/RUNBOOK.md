@@ -1,6 +1,6 @@
 # Runbook d'exploitation — Rapidfox Academy (shopflow.rapidfox.io, Mac + Docker Compose + Cloudflare Tunnel)
 
-Clone de travail : `~/Developer/shopflow-academy`. Projet Compose `shopflow-academy` (services `postgres`, `migrate`, `backend`, `frontend`, `gateway`, `backup`, `labdb`, `lab-init`). `labdb` est la base de laboratoire des exercices SQL (données fictives, non sauvegardée, rechargée à chaque import du cours, ADR-0017). Gateway : `127.0.0.1:3080` uniquement. Sauvegardes : `~/Developer/shopflow-backups` (hors dépôt, hors iCloud, disque chiffré FileVault, fichiers 0600). n8n (projet `wordpress`) et le connecteur `cloudflared` (LaunchDaemon) ne font **pas** partie de ShopFlow : ne jamais les arrêter ni les modifier.
+Clone de travail : `~/Developer/Academy/shopflow-academy`. Projet Compose `shopflow-academy` (services `postgres`, `migrate`, `backend`, `frontend`, `gateway`, `backup`, `labdb`, `lab-init`). `labdb` est la base de laboratoire des exercices SQL (données fictives, non sauvegardée, rechargée à chaque import du cours, ADR-0017). Gateway : `127.0.0.1:3080` uniquement. Sauvegardes : `~/Developer/Academy/shopflow-backups` (hors dépôt, hors iCloud, disque chiffré FileVault, fichiers 0600). n8n (projet `wordpress`) et le connecteur `cloudflared` (LaunchDaemon) ne font **pas** partie de ShopFlow : ne jamais les arrêter ni les modifier.
 
 **Deux stacks, jamais confondues** :
 
@@ -11,7 +11,7 @@ Clone de travail : `~/Developer/shopflow-academy`. Projet Compose `shopflow-acad
 | Configuration | `.env` (secrets, jamais affiché) | `config/test-stack.env` (valeurs fictives, versionné) |
 | Base | volume `shopflow-academy_pg_data`, données réelles | volume `shopflow-academy-test_pg_data`, jetable |
 | Comptes | propriétaire + étudiants `@ynov.com` | comptes fictifs `demo.*` (`.local/test-stack-credentials.json`) |
-| Sauvegardes | `~/Developer/shopflow-backups` | `./.backups-test` (ignoré par Git) |
+| Sauvegardes | `~/Developer/Academy/shopflow-backups` | `./.backups-test` (ignoré par Git) |
 
 E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test.py`, `persistence_check.py` et Playwright refusent une adresse de production avant toute requête.
 
@@ -26,7 +26,7 @@ E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test
 
 | Action | Commande |
 |---|---|
-| Démarrer / après redémarrage du Mac | `cd ~/Developer/shopflow-academy && docker compose up -d --wait` |
+| Démarrer / après redémarrage du Mac | `cd ~/Developer/Academy/shopflow-academy && docker compose up -d --wait` |
 | Arrêter ShopFlow seul | `docker compose stop` (ou `down` **sans** `-v`) |
 | Redéployer une branche (coupure réduite, ADR-0038) | `git switch <branche> && docker compose build && docker compose up -d --wait && python3 scripts/smoke_public.py http://127.0.0.1:3080` |
 | Journaux | `docker compose logs --tail 200 backend` (rotation 3 × 10 Mo par service) |
@@ -97,15 +97,15 @@ Pour l'envoi automatique avec Resend (domaine expéditeur vérifié chez Resend)
   `docker compose exec -T backup sh -c 'set -e; umask 077; f=/backups/academy-$(date -u +%Y%m%d-%H%M%S)-avant-OPERATION.dump; pg_dump -h postgres -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Fc -f "$f"; pg_restore --list "$f" >/dev/null && echo "$f"'`
   (`sh /ops/backup.sh once` produit une sauvegarde `*-auto`, supprimée à son tour par la rotation).
 - **Restauration testée** sans toucher à la base en service : `python3 scripts/restore_check.py` (conteneur jetable sans réseau, comparaison table par table, conteneur supprimé). À lancer au moins une fois par semaine. La CI fait la même vérification sur la stack de test (`--test-stack`).
-- **Seconde copie dans Docker** : chaque sauvegarde automatique vérifiée est aussi copiée (et contrôlée par SHA-256) dans le volume `backup_mirror`, même rotation. Lister : `docker compose exec backup ls -l /backups-mirror`. Récupérer un fichier : `docker compose cp backup:/backups-mirror/<fichier> ~/Developer/shopflow-backups/`. Protège contre la perte du dossier `shopflow-backups`, pas contre celle du Mac. Ne jamais lancer `docker volume rm` ni `down -v` : ce volume disparaîtrait.
+- **Seconde copie dans Docker** : chaque sauvegarde automatique vérifiée est aussi copiée (et contrôlée par SHA-256) dans le volume `backup_mirror`, même rotation. Lister : `docker compose exec backup ls -l /backups-mirror`. Récupérer un fichier : `docker compose cp backup:/backups-mirror/<fichier> ~/Developer/Academy/shopflow-backups/`. Protège contre la perte du dossier `shopflow-backups`, pas contre celle du Mac. Ne jamais lancer `docker volume rm` ni `down -v` : ce volume disparaîtrait.
 - **Pas de copie hors du Mac** (décision du propriétaire, 28/10/2026) : seule la sauvegarde automatique toutes les 6 h est conservée. Risque accepté : une panne ou un vol du Mac emporte la base et ses sauvegardes. Ces fichiers contiennent des données personnelles des étudiants : jamais dans Git, jamais par e-mail.
 
 ### Restaurer réellement la base (incident grave uniquement)
 
 1. `docker compose exec -T backup sh /ops/backup.sh once` (sauvegarder l'état actuel, même abîmé).
 2. `docker compose stop backend gateway` (les étudiants voient la page indisponible).
-3. Choisir le fichier : `ls -1t ~/Developer/shopflow-backups/*.dump | head`.
-4. `docker compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < ~/Developer/shopflow-backups/<fichier>.dump`
+3. Choisir le fichier : `ls -1t ~/Developer/Academy/shopflow-backups/*.dump | head`.
+4. `docker compose exec -T postgres sh -c 'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" --clean --if-exists --no-owner' < ~/Developer/Academy/shopflow-backups/<fichier>.dump`
 5. `docker compose up -d --wait` puis `python3 scripts/smoke_public.py http://127.0.0.1:3080` et vérification du suivi de classe.
 
 ## Tests (stack de test séparée)
@@ -147,7 +147,7 @@ Raccourcis : `make test-stack-up`, `make test-e2e`, `make test-load`, `make test
 ## Retour arrière de la publication (sans toucher à n8n)
 
 1. Tableau de bord Cloudflare → Networks → Tunnels → tunnel existant → supprimer **uniquement** la route `shopflow.rapidfox.io` (et le CNAME `shopflow` s'il reste).
-2. `docker compose stop` dans `~/Developer/shopflow-academy` si nécessaire.
+2. `docker compose stop` dans `~/Developer/Academy/shopflow-academy` si nécessaire.
 3. `curl -sI https://n8n.rapidfox.io` doit toujours répondre `302` vers `mryoshq.cloudflareaccess.com`.
 
 ## Sécurité
