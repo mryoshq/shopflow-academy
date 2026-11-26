@@ -3,7 +3,7 @@
 
 Checks: containers of the shopflow-academy project, readiness, age of the last
 automatic backup, free disk space, Mac sleep settings, the public URL (if its DNS
-exists) and that n8n.rapidfox.io still answers as before (302 to Cloudflare Access).
+exists) and that n8n.mryoshq.com still answers as before (302 to Cloudflare Access).
 Never prints secrets.
 
     python3 scripts/ops_status.py
@@ -24,8 +24,8 @@ from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT = Path(__file__).resolve().parents[1]
 LOCAL = "http://127.0.0.1:3080"
-PUBLIC = "https://shopflow.rapidfox.io"
-N8N = "https://n8n.rapidfox.io"
+PUBLIC = "https://dataflow.mryoshq.com"
+N8N = "https://n8n.mryoshq.com"
 BACKUP_MAX_AGE_HOURS = 7
 
 

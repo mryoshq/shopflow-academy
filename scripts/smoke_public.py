@@ -7,7 +7,7 @@ disabled demo accounts are refused. The test stack (any other address, for examp
 http://127.0.0.1:3180) signs in with a fictitious demo student. Never prints a
 credential, cookie value or token.
 
-    python3 scripts/smoke_public.py                       # https://shopflow.rapidfox.io
+    python3 scripts/smoke_public.py                       # https://dataflow.mryoshq.com
     python3 scripts/smoke_public.py http://127.0.0.1:3080 # local production gateway
     python3 scripts/smoke_public.py http://127.0.0.1:3180 # test stack (scripts/test_stack.py)
 """
@@ -27,8 +27,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEMO_CREDENTIALS = ROOT / ".local" / "demo-credentials.json"
 TEST_STACK_CREDENTIALS = ROOT / ".local" / "test-stack-credentials.json"
 TEACHER_CREDENTIALS = ROOT / ".local" / "teacher-credentials.json"
-PRODUCTION_HOSTS = {"shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"}
-N8N_URL = "https://n8n.rapidfox.io"
+PRODUCTION_HOSTS = {"dataflow.mryoshq.com", "shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"}
+N8N_URL = "https://n8n.mryoshq.com"
 
 
 class NoRedirect(HTTPRedirectHandler):
@@ -67,7 +67,7 @@ def parse_cookies(headers) -> dict[str, dict]:
 
 
 def main() -> int:
-    base = (sys.argv[1] if len(sys.argv) > 1 else "https://shopflow.rapidfox.io").rstrip("/")
+    base = (sys.argv[1] if len(sys.argv) > 1 else "https://dataflow.mryoshq.com").rstrip("/")
     host = urlparse(base).hostname or ""
     public = urlparse(base).scheme == "https"
 

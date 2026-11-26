@@ -1,5 +1,7 @@
 # Déploiement unique retenu — Mac Docker Compose + Cloudflare Tunnel
 
+> **Historique.** Depuis le 25/11/2026 l'adresse publique est `https://dataflow.mryoshq.com` (compte Cloudflare mryoshq, tunnel dédié `dataflow`) : voir ADR-0052 et `docs/RUNBOOK.md`. Ce document décrit la première publication sur `rapidfox.io`.
+
 **Domaine cible : `https://shopflow.rapidfox.io`. Domaine enregistré chez Hostinger, Cloudflare déjà utilisé pour `n8n.rapidfox.io`.** Le routage n'a pas été créé ni vérifié par ce kit. **Ne pas modifier n8n.**
 
 ## Principe : une seule stratégie, Cloudflare Tunnel

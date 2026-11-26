@@ -29,7 +29,7 @@ PRODUCTION_PROJECT = "shopflow-academy"
 BASE = "http://127.0.0.1:3180"
 CREDENTIALS = ROOT / ".local" / "test-stack-credentials.json"
 COMPOSE = ["docker", "compose", "-p", PROJECT, "-f", "compose.yaml", "--env-file", "config/test-stack.env"]
-PRODUCTION_NETLOCS = {"shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"}
+PRODUCTION_NETLOCS = {"dataflow.mryoshq.com", "shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"}
 CONTAINER_CREDENTIALS = "/tmp/academy-demo-credentials.json"
 
 assert PROJECT != PRODUCTION_PROJECT

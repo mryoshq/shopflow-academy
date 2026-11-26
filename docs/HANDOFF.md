@@ -1,5 +1,13 @@
 # HANDOFF — reprise Rapidfox Academy
 
+## Nouvelle adresse dataflow.mryoshq.com (26/11/2026, ADR-0052)
+
+- **Fait (hors dépôt, 25/11)** : compte Cloudflare mryoshq, tunnel dédié `dataflow` (connecteur en conteneur, `~/Developer/tunnels`), `.env` de production basculé (`APP_BASE_URL`, `APP_EXTRA_ORIGINS` avec l'ancienne origine, `SMTP_FROM` sur `mail.mryoshq.com`), backend recréé et sain. Sauvegarde : `.env.bak-2026-11-25`.
+- **Dans cette PR** : adresses dans le code, les tests, les scripts et la doc courante ; ADR-0052 ; `DEPLOY-RAPIDFOX.md` marqué historique.
+- **Reste** : quand `rapidfox.io` est actif dans le compte mryoshq (redirections), retirer `https://shopflow.rapidfox.io` de `APP_EXTRA_ORIGINS` ; régénérer les fiches de connexion/QR si elles sont réimprimées.
+- **Renommage** : le propriétaire veut **DataFlow KWS** (DataFlow Knowledge Sharing) à la place de « Rapidfox Academy » : issues #117 (marque), #118 (identifiants techniques), #119 (documentation). `SMTP_FROM` est désormais l'adresse seule `dataflow@mail.mryoshq.com` (l'ancienne valeur « Nom <adresse> » cassait l'en-tête From). Détails : `docs/MIGRATION-MRYOSHQ.md`.
+- **Prochaine tâche unique** : issue #120, vérifier la production sur `https://dataflow.mryoshq.com` (smoke public, e-mail de test, push) depuis un réseau externe.
+
 ## Statistiques pour la direction et la projection (21/11/2026, issue #110)
 
 Branche `claude/lucid-brahmagupta-htwgun-stats`, PR vers `main`, sans fusion ni déploiement tant que le propriétaire n'a pas tout validé. Indépendante de #107 (aucune migration).

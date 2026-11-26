@@ -4,7 +4,7 @@
 
 ## A. Objet et philosophie
 
-Construire **une Academy complète**, accessible dans le navigateur sur `https://shopflow.rapidfox.io`, destinée au cours **Python Data Engineering & SQL Avancé**. La plateforme sépare totalement **moteur pédagogique** (auth, activités, notation, parcours, données, administration) et **contenu** (cours, missions, textes, vidéos, datasets, corrigés). Aucun changement de code ne doit être nécessaire pour créer la plupart des activités depuis le studio enseignant. Le système est versionné et extensible sans réécriture.
+Construire **une Academy complète**, accessible dans le navigateur sur `https://dataflow.mryoshq.com`, destinée au cours **Python Data Engineering & SQL Avancé**. La plateforme sépare totalement **moteur pédagogique** (auth, activités, notation, parcours, données, administration) et **contenu** (cours, missions, textes, vidéos, datasets, corrigés). Aucun changement de code ne doit être nécessaire pour créer la plupart des activités depuis le studio enseignant. Le système est versionné et extensible sans réécriture.
 
 **Ne pas développer tous les cours maintenant.** Implémenter en premier l'application complète : gestion des comptes, studio de création de cours, lecteur étudiant, correcteur serveur, progression, dashboards, opérations/tests. Utiliser deux ou trois missions fictives de test, clairement indiquées « démonstration ». Les cours définitifs seront intégrés ensuite à partir des supports validés de l'enseignant.
 
@@ -100,11 +100,11 @@ Contraintes unicité pertinentes, clés étrangères, migrations Alembic et vér
 - Rate-limit et droits stricts des importeurs JSON ; aucun SQL/Python construit à partir d'un champ de réponse étudiant.
 - L'IA externe ne reçoit pas de PII ou réponses correctes cachées, n'attribue jamais de note et se dégrade vers indices statiques.
 - Persistance après redémarrage, sauvegarde chiffrée et procédure de restauration **testée**.
-- Rôle de `n8n.rapidfox.io` **préservé sans modification**, tunnel Academy publié uniquement après accord ; test de non-régression n8n.
+- Rôle de `n8n.mryoshq.com` **préservé sans modification**, tunnel Academy publié uniquement après accord ; test de non-régression n8n.
 
 ## J. Unique stratégie de déploiement
 
-**Mac Docker Compose + Cloudflare Tunnel uniquement**, adresse `shopflow.rapidfox.io`. Le Mac n'est pas nécessairement celui qui héberge n8n. Si c'est le même hôte que le tunnel existant, ajouter après accord une published application sur le tunnel existant. Sinon, créer un tunnel dédié sur le Mac Academy, sans déplacer n8n. Seul le gateway sur loopback `127.0.0.1:3080` (port à confirmer) est joignable par cloudflared installé sur Mac ; aucune exposition internet de DB/API dédiée. Voir runbook `docs/DEPLOY-RAPIDFOX.md`.
+**Mac Docker Compose + Cloudflare Tunnel uniquement**, adresse `dataflow.mryoshq.com`. Le Mac n'est pas nécessairement celui qui héberge n8n. Si c'est le même hôte que le tunnel existant, ajouter après accord une published application sur le tunnel existant. Sinon, créer un tunnel dédié sur le Mac Academy, sans déplacer n8n. Seul le gateway sur loopback `127.0.0.1:3080` (port à confirmer) est joignable par cloudflared installé sur Mac ; aucune exposition internet de DB/API dédiée. Voir runbook `docs/DEPLOY-RAPIDFOX.md`.
 
 Plafond d'hébergement **50 €/mois**, aucun abonnement additionnel autorisé implicitement. Domaine déjà possédé ; ne changer ni nameservers Hostinger, ni DNS `n8n`, ni site racine, ni MX. Sécuriser HTTPS via Cloudflare, sessions cookies et headers proxy. Aucun VPS ou Kubernetes dans cette version de plan.
 
@@ -115,7 +115,7 @@ Plafond d'hébergement **50 €/mois**, aucun abonnement additionnel autorisé i
 3. Deux étudiants n'accèdent pas aux notes/progression l'un de l'autre ; le navigateur ne reçoit aucun corrigé privé ; tests négatifs couvrent les contournements.
 4. L'enseignant observe le progrès de dix utilisateurs et exporte les notes ; les tentatives concurrentes n'engendrent pas de doublons.
 5. L'absence d'OpenRouter/API IA n'affecte jamais les fonctions essentielles.
-6. Un Mac peut lancer les services Compose sur réseau local ; puis, après accord uniquement, la publication `shopflow.rapidfox.io` fonctionne à distance, sans casser n8n.
+6. Un Mac peut lancer les services Compose sur réseau local ; puis, après accord uniquement, la publication `dataflow.mryoshq.com` fonctionne à distance, sans casser n8n.
 7. Playwright, pytest, Vitest et tests de migration/charge/backup sont mis en place au fur et à mesure, et les preuves réelles figurent dans GitHub/PROGRESS/HANDOFF.
 8. Les vrais cours du module sont éditables/importables dans le studio **sans développer de nouvelles pages React à chaque sujet**.
 

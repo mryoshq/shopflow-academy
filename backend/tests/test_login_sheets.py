@@ -14,7 +14,7 @@ import qrcode_min  # noqa: E402
 segno = pytest.importorskip("segno")
 
 
-@pytest.mark.parametrize("text", ["https://shopflow.rapidfox.io", "https://shopflow.rapidfox.io/#/", "Bonjour Tanzar " * 5, "x" * 200])
+@pytest.mark.parametrize("text", ["https://dataflow.mryoshq.com", "https://dataflow.mryoshq.com/#/", "Bonjour Tanzar " * 5, "x" * 200])
 @pytest.mark.parametrize("mask", range(8))
 def test_qr_matrix_matches_segno_for_every_mask(text, mask):
     ours = qrcode_min.encode(text, mask=mask, extra_zero_byte=True)
@@ -24,7 +24,7 @@ def test_qr_matrix_matches_segno_for_every_mask(text, mask):
 
 
 def test_qr_chooses_the_smallest_version_and_a_valid_mask():
-    matrix = qrcode_min.encode("https://shopflow.rapidfox.io")
+    matrix = qrcode_min.encode("https://dataflow.mryoshq.com")
     assert len(matrix) == 29  # version 3 for 28 bytes at level M
     assert "<svg" in qrcode_min.to_svg(matrix) and 'aria-label="QR code"' in qrcode_min.to_svg(matrix)
 
@@ -40,7 +40,7 @@ def test_login_sheets_never_print_passwords_unless_asked(tmp_path):
     assert "secret-de-salma" not in run.stdout + run.stderr
     sheet = next(out.glob("fiches-connexion-*.html")).read_text()
     assert "salma.test@ynov.com" in sheet and "youssef.test@ynov.com" in sheet and "secret-de-salma" not in sheet
-    assert sheet.count("<svg") == 2 and "https://shopflow.rapidfox.io" in sheet
+    assert sheet.count("<svg") == 2 and "https://dataflow.mryoshq.com" in sheet
     subprocess.run([sys.executable, str(script), "--local", str(local), "--output", str(out), "--with-passwords"], capture_output=True, text=True, check=True)
     newest = sorted(out.glob("fiches-connexion-*avec-mots-de-passe.html"))[-1].read_text()
     assert "secret-de-salma-123456789" in newest and "Mot de passe : donné par l’enseignant" in newest

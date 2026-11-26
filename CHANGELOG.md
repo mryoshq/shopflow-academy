@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-26 — Nouvelle adresse : dataflow.mryoshq.com (ADR-0052)
+
+- Adresse publique `https://dataflow.mryoshq.com` (compte Cloudflare mryoshq, tunnel dédié `dataflow`) ; `shopflow.rapidfox.io` redirige en 301.
+- Image de partage (Open Graph), fiches de connexion, QR codes, scripts `smoke_public`, `ops_status`, `login_sheets` et tests mis à jour ; n8n vérifié sur `n8n.mryoshq.com`.
+- Les gardes de production refusent les deux adresses. Aucune migration.
+
 ## 2026-11-21 — Statistiques pour la direction et la projection (#110)
 
 - Nouvelle vue enseignant « Statistiques » (`#/statistiques`) et onglet « Statistiques » de l'espace observateur : soutenances (passées, en cours, à venir, équipes notées), projet (équipes de 2 et 3, dépôts par jalon, versions, équipes sans dépôt), cours (progression, réussite, temps de travail, réussite par module).

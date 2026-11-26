@@ -25,7 +25,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from qrcode_min import encode, to_svg  # noqa: E402
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_URL = "https://shopflow.rapidfox.io"
+DEFAULT_URL = "https://dataflow.mryoshq.com"
 
 
 def read_accounts(local: Path, with_passwords: bool) -> list[dict]:
