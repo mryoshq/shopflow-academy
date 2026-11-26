@@ -17,7 +17,7 @@ curl --fail http://127.0.0.1:3080/health/ready
 
 Ouvrir `http://127.0.0.1:3080/` pour la page de connexion. Les comptes fictifs, le cours de démonstration et tous les tests de bout en bout, de charge et de persistance vivent sur une **stack de test séparée** (`python3 scripts/test_stack.py up`, `127.0.0.1:3180`, base jetable, identifiants dans `.local/test-stack-credentials.json`) ; la production (`127.0.0.1:3080`) n'a qu'un enseignant et les étudiants `@ynov.com` (voir `docs/RUNBOOK.md` et ADR-0016). Le compte enseignant réel peut être créé ou actualisé localement avec `python3 scripts/upsert_teacher.py` après placement de son adresse dans `.local/teacher-email.txt` ; son mot de passe généré reste dans `.local/teacher-credentials.json`. Les dix adresses fournies séparément sont importables avec `python3 scripts/import_students.py` depuis `.local/student-emails.txt`, également ignoré par Git. Aucun script n'envoie de message. Conserver les fichiers de mots de passe localement et ne pas les ajouter à Git. Voir [le guide du studio](docs/STUDIO.md). Arrêter uniquement cette stack avec `docker compose down` ; ne pas utiliser `-v` si les données PostgreSQL doivent être conservées. Pour les tests hors Docker : installer `backend/requirements-dev.txt` dans un environnement Python, exécuter `python -m pytest -q` depuis `backend`, puis `npm ci`, `npm run test -- --maxWorkers=1` et `npm run build` depuis `frontend`.
 
-Le domaine `https://shopflow.rapidfox.io` reste réservé au déploiement ultérieur sur Mac via Cloudflare Tunnel, après accord explicite. `n8n.rapidfox.io` est hors de cette stack et reste inchangé.
+Le domaine `https://dataflow.mryoshq.com` reste réservé au déploiement ultérieur sur Mac via Cloudflare Tunnel, après accord explicite. `n8n.mryoshq.com` est hors de cette stack et reste inchangé.
 
 ## Démarrage recommandé — directement dans Codex sur le Mac
 
@@ -30,7 +30,7 @@ Le domaine `https://shopflow.rapidfox.io` reste réservé au déploiement ultér
 ## Choix actés
 
 - **Développement** : Codex + GitHub ; OpenRouter uniquement si besoin ultérieur et clé ajoutée hors Git.
-- **Public URL** : `https://shopflow.rapidfox.io` ; `rapidfox.io` est enregistré chez Hostinger et **`n8n.rapidfox.io` fonctionne déjà sur Cloudflare**.
+- **Public URL** : `https://dataflow.mryoshq.com` (compte Cloudflare **mryoshq**, tunnel dédié `dataflow`, ADR-0052). L'ancienne adresse `dataflow.mryoshq.com` redirige vers elle (301) ; n8n est sur `n8n.mryoshq.com`.
 - **Une seule stratégie d'hébergement** : **Mac Docker Desktop/Compose + Cloudflare Tunnel**. Si n8n utilise le tunnel sur le même Mac, nouvelle route sur ce tunnel ; sinon tunnel nommé dédié sur le Mac Academy. **Ne pas toucher à n8n.** Aucun VPS, Kubernetes ou bascule DNS complète prévu.
 - **Budget** : ≤50 €/mois consacré **à l'hébergement uniquement**, pas au développement ou aux appels IA.
 - **10 étudiants** (9 en classe, 1 à distance, navigateurs Windows) et enseignant sur Mac.

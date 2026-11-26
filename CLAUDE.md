@@ -9,7 +9,7 @@ Les règles de `AGENTS.md` s'appliquent telles quelles ; « Codex » y désigne 
 
 ## Interdits sans accord écrit du propriétaire dans la conversation
 - Fusion de PR, `git push --force`, suppression de branche distante, réécriture d'historique.
-- Toute modification Cloudflare (tunnel, DNS, Access), `cloudflared`, `n8n.rapidfox.io` et le projet Compose `wordpress`.
+- Toute modification Cloudflare (tunnel, DNS, Access), `cloudflared`, `n8n.mryoshq.com` et le projet Compose `wordpress`.
 - Lire, afficher, copier dans Git `.env`, `.env.*` (sauf `.env.example`), `.local/**`, `~/.cloudflared/**`, tout jeton.
 - Copier `.env` ou un jeton dans un autre fichier, même local et ignoré par Git (pas de « sauvegarde » de `.env`) ; modifier `.env` seulement ligne par ligne, sur accord, sans l'afficher.
 - `scripts/upsert_teacher.py` (régénère le mot de passe enseignant) ; `scripts/seed_demo.py` si `.local/demo-credentials.json` existe.

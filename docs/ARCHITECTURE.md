@@ -4,7 +4,7 @@
 
 ```text
 10 étudiants Windows + enseignant Mac (navigateur)
-  └─ HTTPS shopflow.rapidfox.io
+  └─ HTTPS dataflow.mryoshq.com
      └─ Cloudflare Tunnel [existant partagé seulement si même hôte, sinon tunnel Academy dédié]
         └─ Mac Academy, cloudflared → 127.0.0.1:3080
            └─ Docker Compose gateway [bind local uniquement]
@@ -16,7 +16,7 @@
                                   └── Adaptateurs de simulations futures
 ```
 
-La route `n8n.rapidfox.io` est hors périmètre technique : ne pas la modifier. Le tunnel HTTP ne dispense pas d'une auth applicative. Nulle exposition directe de Postgres/MySQL. Un seul hostname web/API, pas de CORS multi-origine sans nécessité.
+La route `n8n.mryoshq.com` est hors périmètre technique : ne pas la modifier. Le tunnel HTTP ne dispense pas d'une auth applicative. Nulle exposition directe de Postgres/MySQL. Un seul hostname web/API, pas de CORS multi-origine sans nécessité.
 
 ## Modules backend
 

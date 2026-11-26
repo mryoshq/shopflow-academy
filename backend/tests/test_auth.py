@@ -120,11 +120,11 @@ def test_origin_and_production_cookie_attributes(auth_env, monkeypatch):
     client, _ = auth_env
     from app.config import get_settings
     monkeypatch.setenv("APP_ENV", "production")
-    monkeypatch.setenv("APP_BASE_URL", "https://shopflow.rapidfox.io")
+    monkeypatch.setenv("APP_BASE_URL", "https://dataflow.mryoshq.com")
     get_settings.cache_clear()
     try:
         assert client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test"}, headers={"Origin": "https://attacker.example"}).status_code == 403
-        response = client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test"}, headers={"Origin": "https://shopflow.rapidfox.io"})
+        response = client.post("/api/v1/auth/login", json={"username": "student.a", "password": "student-a-test"}, headers={"Origin": "https://dataflow.mryoshq.com"})
         assert response.status_code == 200
         cookies = response.headers.get_list("set-cookie")
         assert any("__Host-academy_session=" in c and "Secure" in c and "HttpOnly" in c and "SameSite=lax" in c for c in cookies)

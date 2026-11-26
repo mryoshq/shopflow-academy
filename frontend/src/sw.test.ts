@@ -6,8 +6,8 @@ import { expect, it } from "vitest"
 const source = readFileSync(resolve(process.cwd(), "public/sw.js"), "utf8")
 const start = source.indexOf("function cacheable(url)")
 const body = source.slice(start, source.indexOf("\n}\n", start) + 3)
-const cacheable = new Function("self", `${body}; return cacheable`)({ location: { origin: "https://shopflow.rapidfox.io" } }) as (url: URL) => boolean
-const at = (path: string, origin = "https://shopflow.rapidfox.io") => cacheable(new URL(path, origin))
+const cacheable = new Function("self", `${body}; return cacheable`)({ location: { origin: "https://dataflow.mryoshq.com" } }) as (url: URL) => boolean
+const at = (path: string, origin = "https://dataflow.mryoshq.com") => cacheable(new URL(path, origin))
 
 it("the service worker never caches the API, media or health checks, nor another origin (ADR-0024, ADR-0038)", () => {
   expect(at("/api/v1/auth/me")).toBe(false)

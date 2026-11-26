@@ -4,7 +4,7 @@ No dependency, enough for a URL on a printed login sheet. Follows ISO/IEC 18004 
 the structure of Project Nayuki's reference implementation). Verified module by module
 against ``segno`` for every mask in ``backend/tests/test_login_sheets.py``.
 
-    matrix = encode("https://shopflow.rapidfox.io")   # list of rows of booleans (True = dark)
+    matrix = encode("https://dataflow.mryoshq.com")   # list of rows of booleans (True = dark)
     svg = to_svg(matrix)                               # inline SVG with a 4-module quiet zone
 """
 

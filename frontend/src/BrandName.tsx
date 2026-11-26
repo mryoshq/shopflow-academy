@@ -1,7 +1,7 @@
 import { t, msg } from "./i18n"
 import { Box, Text } from "@chakra-ui/react"
 
-/** ADR-0037: the school, its module and the module's case studies (the subdomain stays shopflow.rapidfox.io). */
+/** ADR-0037: the school, its module and the module's case studies (public address dataflow.mryoshq.com since ADR-0052; shopflow.rapidfox.io redirects there). */
 export const SCHOOL = "Rapidfox Academy"
 export const MODULE = msg("Python Data Engineering & SQL Avancé")
 export const CASES = "ShopFlow · CampusEquip"

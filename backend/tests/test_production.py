@@ -12,16 +12,16 @@ def request_with_origin(origin: str) -> Request:
 
 
 def test_production_allows_only_public_and_explicit_extra_origins():
-    settings = Settings(app_env="production", app_base_url="https://shopflow.rapidfox.io/", app_extra_origins="http://127.0.0.1:3080, ")
-    assert allowed_origins(settings) == {"https://shopflow.rapidfox.io", "http://127.0.0.1:3080"}
-    strict = Settings(app_env="production", app_base_url="https://shopflow.rapidfox.io")
-    assert allowed_origins(strict) == {"https://shopflow.rapidfox.io"}
+    settings = Settings(app_env="production", app_base_url="https://dataflow.mryoshq.com/", app_extra_origins="http://127.0.0.1:3080, ")
+    assert allowed_origins(settings) == {"https://dataflow.mryoshq.com", "http://127.0.0.1:3080"}
+    strict = Settings(app_env="production", app_base_url="https://dataflow.mryoshq.com")
+    assert allowed_origins(strict) == {"https://dataflow.mryoshq.com"}
 
 
 def test_check_origin_rejects_foreign_origin_in_production(monkeypatch):
-    settings = Settings(app_env="production", app_base_url="https://shopflow.rapidfox.io", app_extra_origins="http://127.0.0.1:3080")
+    settings = Settings(app_env="production", app_base_url="https://dataflow.mryoshq.com", app_extra_origins="http://127.0.0.1:3080")
     monkeypatch.setattr(auth, "get_settings", lambda: settings)
-    auth.check_origin(request_with_origin("https://shopflow.rapidfox.io"))
+    auth.check_origin(request_with_origin("https://dataflow.mryoshq.com"))
     auth.check_origin(request_with_origin("http://127.0.0.1:3080"))
     with pytest.raises(HTTPException) as error:
         auth.check_origin(request_with_origin("https://evil.example"))

@@ -4,7 +4,7 @@
 
 Développer une **plateforme pédagogique complète et durable**, **par incréments testés**, pas un prototype à jeter. **Construire d'abord la plateforme et le studio d'auteur no-code ; intégrer les cours définitifs ensuite**. À ce stade, les activités ShopFlow servent de *démonstration fonctionnelle*, non de programme final. Le suivi dans Git est obligatoire pour pouvoir changer de modèle ou reprendre après interruption.
 
-**Déploiement public unique :** Docker Compose sur **Mac** + **Cloudflare Tunnel** vers `https://shopflow.rapidfox.io`. `n8n.rapidfox.io` existe déjà avec Cloudflare et doit rester inchangé. VPS, Kubernetes, nameserver migration et options alternatives sont hors périmètre, sauf décision future explicite dans un nouvel ADR.
+**Déploiement public unique :** Docker Compose sur **Mac** + **Cloudflare Tunnel** vers `https://dataflow.mryoshq.com`. `n8n.mryoshq.com` existe déjà avec Cloudflare et doit rester inchangé. VPS, Kubernetes, nameserver migration et options alternatives sont hors périmètre, sauf décision future explicite dans un nouvel ADR.
 
 ## Avant chaque session
 
@@ -40,7 +40,7 @@ Développer une **plateforme pédagogique complète et durable**, **par incréme
 - Auth côté serveur et permissions par objet (IDOR), CSRF si cookies, rate limits, validation stricte des imports JSON, sanitation HTML/Markdown.
 - DB plateforme PostgreSQL isolée de MySQL labs ; SQL libre bonus lecture seule + parsing AST, timeout, quotas, revues ; Python libre **jamais exécuté sur Mac ni dans le processus FastAPI**.
 - Aucun service DB exposé sur Internet ; gateway lié au loopback Mac. `localhost` d'un conteneur `cloudflared` n'est pas le Mac.
-- **NE PAS TOUCHER `n8n.rapidfox.io`** ni aux DNS, tunnels, tokens, routes et volumes existants sans accord explicite. Avant ajout, identifier où tourne cloudflared et où tourne ShopFlow : même Mac → route supplémentaire ; Mac différent → tunnel Academy dédié.
+- **NE PAS TOUCHER `n8n.mryoshq.com`** ni aux DNS, tunnels, tokens, routes et volumes existants sans accord explicite. Avant ajout, identifier où tourne cloudflared et où tourne ShopFlow : même Mac → route supplémentaire ; Mac différent → tunnel Academy dédié.
 - Ne jamais lancer automatiquement de déploiement, publication Cloudflare, achat ou opérations destructives.
 
 ## Stack et responsabilités

@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test"
 
 // E2E tests run on the test stack only (python3 scripts/test_stack.py up), never on production.
 const baseURL = process.env.SHOPFLOW_E2E_BASE_URL ?? "http://127.0.0.1:3180"
-const productionHosts = ["shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"]
+const productionHosts = ["dataflow.mryoshq.com", "shopflow.rapidfox.io", "127.0.0.1:3080", "localhost:3080"]
 if (productionHosts.includes(new URL(baseURL).host)) {
   throw new Error(`${baseURL} is the production stack: run E2E tests on the test stack (http://127.0.0.1:3180)`)
 }

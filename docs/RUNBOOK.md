@@ -1,4 +1,6 @@
-# Runbook d'exploitation — Rapidfox Academy (shopflow.rapidfox.io, Mac + Docker Compose + Cloudflare Tunnel)
+# Runbook d'exploitation — Rapidfox Academy (dataflow.mryoshq.com, Mac + Docker Compose + Cloudflare Tunnel)
+
+Tunnel public : tunnel dédié `dataflow` du compte Cloudflare **mryoshq**, route `dataflow.mryoshq.com` → `http://host.docker.internal:3080` ; connecteur `cloudflared` en conteneur dans `~/Developer/tunnels` (README). `shopflow.rapidfox.io` redirige en 301 (ADR-0052).
 
 Clone de travail : `~/Developer/shopflow-academy`. Projet Compose `shopflow-academy` (services `postgres`, `migrate`, `backend`, `frontend`, `gateway`, `backup`, `labdb`, `lab-init`). `labdb` est la base de laboratoire des exercices SQL (données fictives, non sauvegardée, rechargée à chaque import du cours, ADR-0017). Gateway : `127.0.0.1:3080` uniquement. Sauvegardes : `~/Developer/shopflow-backups` (hors dépôt, hors iCloud, disque chiffré FileVault, fichiers 0600). n8n (projet `wordpress`) et le connecteur `cloudflared` (LaunchDaemon) ne font **pas** partie de ShopFlow : ne jamais les arrêter ni les modifier.
 
@@ -7,7 +9,7 @@ Clone de travail : `~/Developer/shopflow-academy`. Projet Compose `shopflow-acad
 | | Production | Stack de test |
 |---|---|---|
 | Projet Compose | `shopflow-academy` | `shopflow-academy-test` |
-| Adresse | `127.0.0.1:3080` → `https://shopflow.rapidfox.io` | `127.0.0.1:3180` (locale seulement) |
+| Adresse | `127.0.0.1:3080` → `https://dataflow.mryoshq.com` | `127.0.0.1:3180` (locale seulement) |
 | Configuration | `.env` (secrets, jamais affiché) | `config/test-stack.env` (valeurs fictives, versionné) |
 | Base | volume `shopflow-academy_pg_data`, données réelles | volume `shopflow-academy-test_pg_data`, jetable |
 | Comptes | propriétaire + étudiants `@ynov.com` | comptes fictifs `demo.*` (`.local/test-stack-credentials.json`) |
@@ -19,7 +21,7 @@ E2E, charge et persistance ne tournent **que** sur la stack de test : `load_test
 
 1. Mac sur secteur, Docker Desktop lancé. La veille système est réglée sur « jamais » (`pmset -g` : `sleep 0`) ; sinon garder un terminal avec `caffeinate -dimsu` ouvert pendant le cours.
 2. `python3 scripts/ops_status.py` → « Prêt pour le cours. » (conteneurs, santé, sauvegarde < 7 h, disque, URL publique, n8n inchangé).
-3. Depuis un téléphone en 4G : ouvrir `https://shopflow.rapidfox.io` et se connecter.
+3. Depuis un téléphone en 4G : ouvrir `https://dataflow.mryoshq.com` et se connecter.
 4. Dans « Ma classe », vérifier que la séquence est « Ouverte » ; pendant le cours, « Ouvrir le bloc suivant » toutes les ~15 minutes (repère visible par vous seul, rien ne se ferme automatiquement) et traiter les demandes d'aide.
 
 ## Démarrer, arrêter, redéployer
@@ -136,7 +138,7 @@ Raccourcis : `make test-stack-up`, `make test-e2e`, `make test-load`, `make test
 
 | Symptôme | Cause probable | Action |
 |---|---|---|
-| `shopflow.rapidfox.io` : erreur Cloudflare 1033/502 | Mac en veille, Docker arrêté, ou connecteur coupé | Réveiller le Mac, `docker compose up -d --wait`, `python3 scripts/ops_status.py`. Si n8n répond aussi en erreur, le connecteur `cloudflared` est en cause : `sudo launchctl kickstart -k system/com.cloudflare.cloudflared` (coupe n8n quelques secondes). |
+| `dataflow.mryoshq.com` : erreur Cloudflare 1033/502 | Mac en veille, Docker arrêté, ou connecteur coupé | Réveiller le Mac, `docker compose up -d --wait`, `python3 scripts/ops_status.py`. Si n8n répond aussi en erreur, le connecteur `cloudflared` est en cause : `sudo launchctl kickstart -k system/com.cloudflare.cloudflared` (coupe n8n quelques secondes). |
 | Page ou bandeau « La plateforme est momentanément indisponible » | backend ou base arrêtés (la page retente seule ; personne n'est déconnecté) | `docker compose ps`, `docker compose logs --tail 100 backend postgres`, `docker compose up -d --wait` |
 | Un étudiant est bloqué « trop de tentatives » | 5 mots de passe faux en 15 min | Attendre 1 minute (verrou par identifiant). |
 | « Beaucoup d’essais en peu de temps » | plus de 20 réponses/min | Attendre 1 minute (protection voulue). |
@@ -146,9 +148,9 @@ Raccourcis : `make test-stack-up`, `make test-e2e`, `make test-load`, `make test
 
 ## Retour arrière de la publication (sans toucher à n8n)
 
-1. Tableau de bord Cloudflare → Networks → Tunnels → tunnel existant → supprimer **uniquement** la route `shopflow.rapidfox.io` (et le CNAME `shopflow` s'il reste).
+1. Tableau de bord Cloudflare → Networks → Tunnels → tunnel existant → supprimer **uniquement** la route `dataflow.mryoshq.com` (et le CNAME `shopflow` s'il reste).
 2. `docker compose stop` dans `~/Developer/shopflow-academy` si nécessaire.
-3. `curl -sI https://n8n.rapidfox.io` doit toujours répondre `302` vers `mryoshq.cloudflareaccess.com`.
+3. `curl -sI https://n8n.mryoshq.com` doit toujours répondre `302` vers `mryoshq.cloudflareaccess.com`.
 
 ## Sécurité
 

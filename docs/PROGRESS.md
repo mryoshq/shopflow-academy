@@ -284,3 +284,7 @@ Aucune modification des anciennes PR, aucun rebase/force-push et aucune fusion d
 La PR #85 est désormais fusionnée par le propriétaire vers main (c301e8f), avec cinq contrôles SUCCESS. La branche de fiche étudiant intègre ce main par merge normal et sera proposée directement vers main ; les conflits étaient uniquement des ajouts de journaux, conservés tous les deux. Les fichiers applicatifs sont inchangés par rapport à b5e6081 validé (238 Vitest, 18 pytest ciblés, build et 25 E2E composants PASS). Aucun lot 7 ou marqueur bonus ajouté.
 
 Revalidation après fusion du main #85 : 7 tests Vitest ciblés (fiche/date) et 13 pytest ciblés (fiche/ownership/carryover) PASS ; kit 0 erreur. Le diff applicatif avec b5e6081 validé reste vide, donc les preuves complètes 238/18/25 et build sont conservées. La PR vise main, sans base intermédiaire.
+
+## Adresse dataflow.mryoshq.com (26/11/2026, ADR-0052)
+
+Production basculée sur `https://dataflow.mryoshq.com` (compte Cloudflare mryoshq, tunnel `dataflow`). Code, tests, scripts et documentation courante mis à jour dans la branche `feat/domaine-mryoshq-com` ; résultats des tests dans la PR.
